@@ -92,6 +92,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
   const ui: TripUIState = {
     actionLoading,
     actionError,
+    setActionError,
     showReassign,
     reassignCarrierType,
     reassignTruckId,

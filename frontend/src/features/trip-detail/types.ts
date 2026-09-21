@@ -59,6 +59,9 @@ export interface TripPermissions {
 export interface TripUIState {
   actionLoading: boolean;
   actionError: string;
+  /** Lets a caller surface a pre-flight validation message (e.g. the external
+   *  plate required at completion — kanban 20260921_4) without hitting the API. */
+  setActionError: (message: string) => void;
   showReassign: boolean;
   reassignCarrierType: 'OWN' | 'EXTERNAL';
   reassignTruckId: string;
