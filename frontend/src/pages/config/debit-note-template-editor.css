@@ -1912,19 +1912,23 @@
   color: var(--accent-ink);
 }
 
+/* Control sits next to its own label: `space-between` pushed each checkbox to
+   the far edge of a wide grid cell, so the box of "Hiện cột" landed beside the
+   text of "Tính tổng" (kanban 20260921_15). */
 .debit-editor-switch-list {
   grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
 }
 
 .debit-editor-switch-list label {
   min-height: 44px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 8px;
   padding: 0 2px;
   color: var(--ink-2);
   font-size: var(--fs-sm);

@@ -320,22 +320,22 @@ export function ColumnPropertyPanel({
         </Field>
         <div className="debit-editor-switch-list">
           <label>
-            <span>Hiện cột</span>
             <input
               type="checkbox"
               checked={column.width > 0}
               disabled={disabled}
               onChange={event => onChange({ width: event.target.checked ? 14 : 0 })}
             />
+            <span>Hiện cột</span>
           </label>
           <label>
-            <span>Tính tổng</span>
             <input
               type="checkbox"
               checked={column.total}
               disabled={disabled}
               onChange={event => onChange({ total: event.target.checked })}
             />
+            <span>Tính tổng</span>
           </label>
         </div>
       </div>
