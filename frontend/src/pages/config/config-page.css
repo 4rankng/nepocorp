@@ -191,11 +191,32 @@
   .cfg-page .cfg-form-grid { grid-template-columns: 1fr; gap: 12px; }
 }
 
-.cfg-page .cfg-form-actions {
+/* Canonical config-modal footer: full-width row, actions right-aligned, hairline
+   separating them from the fields (kanban 20260921_20). NOT scoped under
+   `.cfg-page` — the modal renders in a portal outside that wrapper. */
+.cfg-form-actions {
   margin-top: 18px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
+  width: 100%;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+/* Fields wrap; the action footer always takes its own full-width line. */
+.cfg-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.cfg-inline-form > .cfg-form-actions {
+  flex-basis: 100%;
 }
 
 /* ── Company info singleton ─────────────────────────────────────────────── */
