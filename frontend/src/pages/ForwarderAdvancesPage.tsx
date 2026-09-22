@@ -19,6 +19,11 @@ const STATUS_COLORS: Record<string, string> = {
   REJECTED: '#DC2626',
 };
 
+// "N chờ duyệt" is one string with exactly one space before the words. The
+// counter suffix and the pre-animation JSX share this single definition so the
+// rendered text is identical before and after the animation (kanban 20260922_30).
+const PENDING_VALUE_SUFFIX = ' chờ duyệt';
+
 type StatusFilter = '' | AdvanceRequestStatus;
 
 export default function ForwarderAdvancesPage() {
@@ -75,7 +80,7 @@ export default function ForwarderAdvancesPage() {
     animateCounters([
       { el: heroAmountRef.current, value: totalAmount, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
       { el: heroTotalRef.current, value: totalRequests, suffix: ' yêu cầu' },
-      { el: heroPendingRef.current, value: pendingCount, suffix: ' chờ duyệt' },
+      { el: heroPendingRef.current, value: pendingCount, suffix: PENDING_VALUE_SUFFIX },
       { el: heroOutstandingRef.current, value: outstanding, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
     ]);
   }, [loading, totalRequests, totalAmount, pendingCount, outstanding, animateCounters, prefersReduced]);
@@ -145,15 +150,20 @@ export default function ForwarderAdvancesPage() {
             <div className="hero-kpi-mini hero-kpi-mini--accent">
               <div className="hero-kpi-mini__body">
                 <span className="hero-kpi-mini__title">Tồn tạm ứng</span>
-                <span className="hero-kpi-mini__value" ref={heroOutstandingRef}>{Math.round(outstanding).toLocaleString('vi-VN')}</span>
-                <span className="hero-kpi-mini__label">tồn tạm ứng (₫)</span>
+                <span className="hero-kpi-mini__value">
+                  <span ref={heroOutstandingRef}>{Math.round(outstanding).toLocaleString('vi-VN')}</span>
+                  <span className="hero-kpi-mini__currency">₫</span>
+                </span>
+                <span className="hero-kpi-mini__label">Đang tạm ứng thực tế</span>
               </div>
               <Wallet size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
             </div>
             <div className="hero-kpi-mini hero-kpi-mini--warn">
               <div className="hero-kpi-mini__body">
                 <span className="hero-kpi-mini__title">Chờ duyệt</span>
-                <span className="hero-kpi-mini__value" ref={heroPendingRef}>{pendingCount}</span>
+                <span className="hero-kpi-mini__value hero-kpi-mini__value--sentence" ref={heroPendingRef}>
+                  {Math.round(pendingCount).toLocaleString('vi-VN')}{PENDING_VALUE_SUFFIX}
+                </span>
                 <span className="hero-kpi-mini__label">yêu cầu · Đang chờ kế toán duyệt</span>
               </div>
               <Clock size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />

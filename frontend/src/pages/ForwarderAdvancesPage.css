@@ -308,6 +308,25 @@
   .fadv-empty__icon { animation: none; }
 }
 
+/* ── Hero KPI values (kanban 20260922_30) ────────────────────────────────── */
+/* ₫ marker beside the animated digits — same values as .hero-kpi-card__currency
+   so both hero cards share one currency treatment. */
+.fadv-page .hero-kpi-mini__currency {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-left: 6px;
+  line-height: 1.35;
+}
+
+/* "1 chờ duyệt" is a count written as a sentence: mono stretched the word
+   spacing into apparent double spaces (kanban 20260921_18). Body font keeps
+   tabular figures on the digits. */
+.fadv-page .hero-kpi-mini__value--sentence {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── C2b/C2c — Settlement (hoàn ứng) summary cards ────────────────────────
  * Two compact cards under the advances hero: amount requested for
  * reimbursement (non-rejected settlements) and amount already paid (approved). */
