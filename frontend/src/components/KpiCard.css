@@ -73,7 +73,7 @@
   background: var(--surface-3);
   flex-shrink: 0;
 }
-.kpi--warn .kpi__icon { background: var(--warning-soft); color: var(--warning); }
+.kpi--warn .kpi__icon { background: var(--warning-soft); color: var(--warning-text); }
 .kpi--danger .kpi__icon { background: var(--danger-soft); color: var(--danger); }
 .kpi--success .kpi__icon { background: var(--accent-soft); color: var(--accent); }
 .kpi--accent .kpi__icon { background: var(--accent-soft); color: var(--accent); }

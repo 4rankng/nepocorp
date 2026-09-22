@@ -177,7 +177,7 @@ const pageStyles = `
 type Severity = 'low' | 'mid' | 'high';
 const SEV_OPTIONS: { value: Severity; label: string; color: string }[] = [
   { value: 'low', label: 'Nhẹ', color: 'var(--ink-3)' },
-  { value: 'mid', label: 'Trung bình', color: 'var(--warning)' },
+  { value: 'mid', label: 'Trung bình', color: 'var(--warning-text)' },
   { value: 'high', label: 'Nghiêm trọng', color: 'var(--danger)' },
 ];
 const sevLabel: Record<string, string> = { high: 'Nghiêm trọng', mid: 'Trung bình', low: 'Nhẹ' };

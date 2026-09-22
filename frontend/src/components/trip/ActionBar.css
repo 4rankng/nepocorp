@@ -42,7 +42,7 @@
   height: 32px;
   border-radius: 8px;
   background: var(--warning-soft);
-  color: var(--warning);
+  color: var(--warning-text);
   display: grid;
   place-items: center;
 }

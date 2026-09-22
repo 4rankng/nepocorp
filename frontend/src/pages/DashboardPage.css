@@ -96,7 +96,7 @@
   flex-shrink: 0;
 }
 .todo__icon--danger { background: var(--danger-soft); color: var(--danger); }
-.todo__icon--warn { background: var(--warning-soft); color: var(--warning); }
+.todo__icon--warn { background: var(--warning-soft); color: var(--warning-text); }
 .todo__icon--info { background: var(--accent-soft); color: var(--accent); }
 .todo__body { flex: 1; min-width: 0; }
 .todo__title { font-size: var(--fs-sm); font-weight: 600; color: var(--ink); margin-bottom: 3px; line-height: 1.3; }

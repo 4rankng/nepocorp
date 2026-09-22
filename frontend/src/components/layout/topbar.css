@@ -246,15 +246,15 @@
   border-color: rgba(0, 90, 45, 0.22);
 }
 .month-picker__cell.is-current {
-  background: rgba(232, 241, 236, 0.78);
-  border-color: rgba(0, 90, 45, 0.28);
-  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-2);
+  color: var(--success-text);
 }
 .month-picker__cell.is-current .month-picker__cell-code {
-  color: var(--accent);
+  color: var(--success-text);
 }
 .month-picker__cell.is-current:hover {
-  background: rgba(232, 241, 236, 0.96);
+  background: var(--accent-soft);
 }
 .month-picker__cell.is-selected {
   background: var(--accent-2);

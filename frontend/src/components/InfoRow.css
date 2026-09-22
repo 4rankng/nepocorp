@@ -68,7 +68,7 @@
 /* Semantic tile tones (apply via class on the icon wrapper) */
 .info-row--feature .info-row__icon--accent { background: var(--accent-soft); color: var(--accent); }
 .info-row--feature .info-row__icon--info   { background: var(--info-soft);   color: var(--info); }
-.info-row--feature .info-row__icon--warn   { background: var(--warning-soft); color: var(--warning); }
+.info-row--feature .info-row__icon--warn   { background: var(--warning-soft); color: var(--warning-text); }
 .info-row--feature .info-row__icon--danger { background: var(--danger-soft); color: var(--danger); }
 .info-row--feature .info-row__icon--neutral { background: var(--surface-3); color: var(--ink-2); }
 

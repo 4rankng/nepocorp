@@ -253,10 +253,10 @@
   width: fit-content;
   min-height: 44px;
   padding: 6px 11px 6px 7px;
-  border: 1px solid rgba(0, 177, 79, 0.18);
+  border: 1px solid var(--success);
   border-radius: 8px;
-  background: rgba(230, 247, 237, 0.65);
-  color: var(--accent-2);
+  background: var(--accent-soft);
+  color: var(--success-text);
   font-size: var(--fs-xs);
   font-weight: 700;
   text-decoration: none;
@@ -265,9 +265,9 @@
 
 .fleet-page .fleet-tire-link:hover,
 .fleet-detail .fleet-tire-link:hover {
-  border-color: rgba(0, 177, 79, 0.34);
-  background: rgba(221, 247, 232, 0.95);
-  color: var(--accent);
+  border-color: var(--accent-2);
+  background: var(--surface-accent);
+  color: var(--success-text);
   transform: translateY(-1px);
 }
 
@@ -1079,7 +1079,7 @@
 }
 .truck-alert-badge--due {
   background: var(--warning-soft);
-  color: var(--warning);
+  color: var(--warning-text);
 }
 
 .truck-alert-field {

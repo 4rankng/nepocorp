@@ -415,7 +415,7 @@
   padding: 8px 10px;
   font-size: var(--fs-xs);
   background: var(--warning-soft);
-  color: var(--warning);
+  color: var(--warning-text);
   border-radius: 8px;
   display: flex;
   flex-wrap: wrap;

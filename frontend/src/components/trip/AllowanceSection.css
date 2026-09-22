@@ -175,7 +175,7 @@
 
 .as-inline-warning {
   margin-left: 8px;
-  color: var(--warning);
+  color: var(--warning-text);
 }
 
 .as-helper {

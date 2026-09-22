@@ -489,9 +489,9 @@ tbody tr:last-child td { border-bottom: none; }
   font-weight: 600;
   color: var(--ink-2);
   padding: 9px 14px;
-  background: rgba(247, 248, 250, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Solid: the app disables backdrop-filter, so a translucent sticky band
+     just washes out over whatever scrolls under it. */
+  background: var(--surface-2);
   border-bottom: 1px solid var(--line-2);
   letter-spacing: 0.05em;
   text-transform: uppercase;

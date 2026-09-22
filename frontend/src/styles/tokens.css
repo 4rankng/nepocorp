@@ -146,14 +146,17 @@
   /* Soft fills are the only thing separating a status chip from a white card —
      they must stay ≥1.15 against --surface, so they are darker than the
      near-white tints they replaced.
-     --success doubles as TEXT (amounts, "valid" states) and as a button FILL
+     Role split for the warm ramp, mirroring the success ramp:
+       --warning       borders, rails, chart strokes, fills  (3.5:1 on white)
+       --warning-text  any text or glyph                     (13:1 on white)
+     --success doubles as TEXT (amounts, valid states) and as a button FILL
      with white text, so it must clear 4.5:1 in both directions; #00B14F was
      2.84:1 and unreadable. --accent stays the bright brand signal because it is
      only ever a graphic (dots, bars, rings). */
   --success: #0B8745;
   --success-soft: #D9F2E3;
   --success-text: #004D22;
-  --warning: #F5A623;
+  --warning: #C2780B;
   --warning-soft: #FBE8C4;
   --warning-text: #4B2800;
   --warning-deep: #DD5A1F;

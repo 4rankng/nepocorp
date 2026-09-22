@@ -95,7 +95,7 @@
 
 .expense-kpi-card--unpaid .expense-kpi-label__icon {
   background: var(--warning-soft);
-  color: var(--warning);
+  color: var(--warning-text);
 }
 
 .expense-kpi-card--paid .expense-kpi-label__icon {
