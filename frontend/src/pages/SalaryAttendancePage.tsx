@@ -9,6 +9,7 @@ import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useSalaryList, useDriverSalary, useDriverWorkDays, useUpdateWorkDays, useConfirmSalary, useUnconfirmSalary } from '../hooks/useSalaryQueries';
 import { useAuth } from '../hooks/useAuth';
 import type { WorkDayRecord } from '../api/salaryClient';
+import { useSearchParams } from 'react-router-dom';
 import { useMonth } from '../hooks/useMonth';
 import { useToast } from '../components/shared/Toast';
 import { EmptyIllustration } from '../components/shared';
@@ -18,7 +19,14 @@ import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 
 export default function SalaryAttendancePage() {
   const { month, year, goPrev, goNext } = useMonth();
-  const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedDriverId, setSelectedDriverId] = useState<number | null>(() => {
+    // The viewed driver lives in the URL so a month switch, a refresh or a
+    // shared link keeps the accountant on the same person (kanban 20260922_35).
+    const raw = new URLSearchParams(window.location.search).get('driverId');
+    const parsed = raw === null ? NaN : Number(raw);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  });
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: salaryList, isLoading: listLoading } = useSalaryList(year, month);
@@ -55,12 +63,26 @@ export default function SalaryAttendancePage() {
   }, [drivers]);
   const { data: salaryPeriod } = useSalaryPeriod(month, year);
 
-  // Auto-select the first driver once the list loads
+  // Auto-select a driver once the list loads — but ONLY when nothing valid is
+  // selected. A driver that still exists in the new month's list is never
+  // replaced (kanban 20260922_35).
   useEffect(() => {
-    if (!listLoading && drivers.length > 0 && selectedDriverId === null) {
+    if (listLoading || drivers.length === 0) return;
+    if (selectedDriverId === null || !drivers.some(d => d.id === selectedDriverId)) {
       setSelectedDriverId(drivers[0].id);
     }
   }, [listLoading, drivers, selectedDriverId]);
+
+  // Mirror the selection into ?driverId= (replace, so Back isn't flooded).
+  useEffect(() => {
+    const current = searchParams.get('driverId');
+    const next = selectedDriverId === null ? null : String(selectedDriverId);
+    if (current === next) return;
+    const params = new URLSearchParams(searchParams);
+    if (next === null) params.delete('driverId');
+    else params.set('driverId', next);
+    setSearchParams(params, { replace: true });
+  }, [selectedDriverId, searchParams, setSearchParams]);
 
   // Search filter
   const filteredDrivers = useMemo(() => {
