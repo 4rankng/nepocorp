@@ -37,6 +37,6 @@ deploy:
 	@echo "Restarting frontend service..."
 	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate --no-deps frontend"
 	@echo "Cleaning up unused images..."
-	ssh root@$(PROD_SERVER) "docker image prune -f"
+	ssh root@$(PROD_SERVER) "docker image prune -af --filter 'until=72h' || true"
 	@echo "Frontend deployment complete!"
 	@echo "https://$(PROD_SERVER)"

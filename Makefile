@@ -152,6 +152,8 @@ demo-backend: push-backend
 	done
 	@echo "Running database migrations..."
 	@ssh root@$(DEMO_SERVER) "docker exec demo-backend-1 npx drizzle-kit migrate"
+	@echo "Reclaiming disk (unused images older than 72h)..."
+	@ssh root@$(DEMO_SERVER) "docker image prune -af --filter 'until=72h' || true"
 	@echo "Demo backend deployed! API: https://$(DEMO_SERVER)/api/health"
 
 ## demo-frontend: Push & deploy frontend to demo staging
@@ -159,6 +161,8 @@ demo-frontend: push-frontend
 	@echo "Deploying frontend on demo staging..."
 	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) pull frontend"
 	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) up -d --force-recreate --no-deps frontend"
+	@echo "Reclaiming disk (unused images older than 72h)..."
+	@ssh root@$(DEMO_SERVER) "docker image prune -af --filter 'until=72h' || true"
 	@echo "Demo frontend deployed! App: https://$(DEMO_SERVER)"
 
 ## prod-migrate: Apply all Drizzle SQL migrations to production DB

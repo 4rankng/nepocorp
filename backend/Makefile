@@ -47,7 +47,10 @@ deploy:
 	@echo "Running database migrations..."
 	ssh root@$(PROD_SERVER) "docker exec nepocorp-backend-1 npx drizzle-kit migrate"
 	@echo "Cleaning up unused images..."
-	ssh root@$(PROD_SERVER) "docker image prune -f"
+	# `-a` + `until` keeps the current and recent rollback tags but drops the build
+	# history that filled the demo box to 100% on 2026-09-22 (plain `prune -f` only
+	# removes dangling images, which is why 110 tagged images had piled up).
+	ssh root@$(PROD_SERVER) "docker image prune -af --filter 'until=72h' || true"
 	@echo "Backend deployment complete!"
 	@echo "API: https://$(PROD_SERVER)/api/health"
 
