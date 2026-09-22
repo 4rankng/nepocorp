@@ -126,7 +126,7 @@ React 18 SPA on port 7173. Path alias `@` -> `./src`.
 | `hooks/` | Custom hooks: `useAuth`, `useCRUD`, `useCatalogs`, `useTripForm`, `useObservedWidth` |
 | `api/` | API client (`tripClient.ts`, `ApiClient` class in `lib/api.ts`) |
 | `components/` | Layout, UI primitives, TripForm, LocationAutocomplete, agent/, billing/, charts/, config/, trip/ |
-| `features/` | Feature-scoped directories: dashboard, dispatch, fleet, penalties, tires, trip-detail, trips, users |
+| `features/` | Feature-scoped directories: advances, customers, dashboard, debt, dispatch, expenses, finance, fleet, forwarder, payables, penalties, tires, trip-detail, trips, users. The ten largest route pages delegate their sub-components/rows/modals/helpers here (enforced by `frontend/scripts/check-size.mjs`, 600 non-blank lines per file). |
 | `lib/` | Utilities: api, format (VND), date, round, route, maps, csv, avatar |
 | `design-system/` | Token definitions, theme configuration |
 | `styles/` | Global CSS, page-specific CSS files |
