@@ -442,7 +442,7 @@
 .penalty-grade.b {
   background: var(--warning-soft);
   color: var(--warning-text);
-  border: 1px solid rgba(245, 166, 35, 0.2);
+  border: 1px solid color-mix(in srgb, var(--warning) 20%, transparent);
 }
 
 .penalty-grade.c {

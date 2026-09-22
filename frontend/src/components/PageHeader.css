@@ -112,7 +112,7 @@
   white-space: nowrap;
 }
 .fuel-alert svg { width: 12px; height: 12px; }
-.fuel-alert--warn   { background: var(--warning-soft); color: var(--warning-text); border: 1px solid rgba(245, 166, 35, 0.25); }
+.fuel-alert--warn   { background: var(--warning-soft); color: var(--warning-text); border: 1px solid color-mix(in srgb, var(--warning) 25%, transparent); }
 .fuel-alert--danger { background: var(--danger-soft);  color: var(--danger-text);  border: 1px solid rgba(227, 36, 52, 0.25); }
 .fuel-alert--ok     { background: var(--accent-soft);  color: var(--accent-ink);   border: 1px solid rgba(0, 177, 79, 0.25); }
 

@@ -172,7 +172,10 @@ This project maintains a local codebase knowledge graph in `.ua/` (gitignored �
 **Agent maintenance contract — keep the KB fresh:**
 
 - **After finishing any task that changed source code** (`.ts`/`.tsx`/`.js`/`.jsx` in `shared/`, `backend/`, `frontend/`), run `/understand` so the knowledge graph picks up the structural changes. It is incremental by default — unchanged files cost zero tokens. Only new/changed files are re-analyzed.
-- Auto-update is enabled (`.ua/config.json` → `autoUpdate: true`), so a commit will normally trigger an incremental refresh automatically. If a task changed code without a commit (e.g. edits left in the working tree), invoke `/understand` explicitly before reporting done.
+- **How the automatic trigger actually works.** `.ua/config.json` → `autoUpdate: true` is only a flag; something has to read it. The plugin ships its trigger as a Claude Code `PostToolUse`/`SessionStart` hook pair, and it is a *prompt injector* — it cannot rebuild anything, it only tells the agent to run `~/.understand-anything-plugin/hooks/auto-update-prompt.md`. It is now wired for **both** harnesses in this repo:
+  - **OMP:** `.omp/hooks/post/graph-autoupdate.ts` (project hooks are discovered from `.omp/hooks/{pre,post}/*.ts`). It appends the nudge to the `git commit` tool result, and raises it once per session via `before_agent_start`.
+  - **Claude Code:** the plugin's own commands, added to `.claude/settings.json` alongside the existing code-review-graph hooks.
+  Before this was wired, the flag was set but nothing consumed it, so `.ua/` silently drifted — verify with `meta.json:gitCommitHash` vs `git rev-parse HEAD`. If a task changed code without a commit (e.g. edits left in the working tree), invoke `/understand` explicitly before reporting done.
 - Rebuilds are structural (tree-sitter fingerprints) — cosmetic changes (formatting, comments, internal logic) do **not** trigger a re-analysis, so running it is cheap and safe.
 - The graph is local only (gitignored). Do not commit `.ua/` — each developer/agent maintains their own.
 

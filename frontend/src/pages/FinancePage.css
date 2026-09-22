@@ -412,7 +412,7 @@
   white-space: nowrap;
 }
 .cost-check--ok { color: var(--success); background: var(--success-soft); }
-.cost-check--warning { color: var(--warning, #b45309); background: var(--warning-soft, #fef3c7); }
+.cost-check--warning { color: var(--warning-text); background: var(--warning-soft); }
 .truck-maintenance-note {
   position: relative;
   margin-top: 10px;

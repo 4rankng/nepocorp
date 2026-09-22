@@ -189,8 +189,8 @@
 }
 
 .fwd-row-legend__swatch--pending {
-  background: var(--warning-soft, #FFF4E0);
-  color: var(--warning, #F5A623);
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
 .fwd-row-legend__swatch--paid {
@@ -233,8 +233,8 @@
 
 /* pending (yellow tint): PENDING expense or non-APPROVED settlement */
 .ftrip-card.fwd-row--pending {
-  background: var(--warning-soft, #FFF4E0);
-  border-color: var(--warning, #F5A623);
+  background: var(--warning-soft);
+  border-color: var(--warning);
 }
 
 /* Keep the hover lift but tint the border to match the row state */
@@ -243,5 +243,5 @@
 }
 
 .ftrip-card.fwd-row--pending:hover {
-  border-color: var(--warning, #F5A623);
+  border-color: var(--warning);
 }

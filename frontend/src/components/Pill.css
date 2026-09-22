@@ -62,7 +62,7 @@
   text-transform: uppercase;
 }
 .badge-success { background: var(--accent-soft); color: var(--accent-ink); border-color: rgba(0, 177, 79, 0.2); }
-.badge-warning { background: var(--warning-soft); color: var(--warning-text); border-color: rgba(245, 166, 35, 0.2); }
+.badge-warning { background: var(--warning-soft); color: var(--warning-text); border-color: color-mix(in srgb, var(--warning) 20%, transparent); }
 .badge-danger  { background: var(--danger-soft); color: var(--danger-text); border-color: rgba(227, 36, 52, 0.2); }
 .badge-info    { background: var(--info-soft); color: var(--info-text); border-color: rgba(30, 91, 184, 0.2); }
 .badge-neutral { background: var(--surface-3); color: var(--ink-2); border-color: var(--line-2); }

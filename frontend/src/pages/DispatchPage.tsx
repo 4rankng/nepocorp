@@ -140,7 +140,7 @@ export default function DispatchPage() {
         </div>
       </div>
       {live?.error ? (
-        <div style={{ padding: '14px 16px', background: 'rgba(245,166,35,0.12)', color: '#B45309', borderRadius: 10, border: '1px solid rgba(245,166,35,0.35)', fontSize: 'var(--fs-body)', marginBottom: 20 }}>
+        <div style={{ padding: '14px 16px', background: 'color-mix(in srgb, var(--warning) 12%, transparent)', color: '#B45309', borderRadius: 10, border: '1px solid color-mix(in srgb, var(--warning) 35%, transparent)', fontSize: 'var(--fs-body)', marginBottom: 20 }}>
           Dữ liệu GPS tạm thời không khả dụng. {live.error === 'GPS provider not configured' ? 'Chưa cấu hình nhà cung cấp GPS.' : 'Vui lòng thử lại sau.'}
         </div>
       ) : live && live.vehicles.length > 0 ? (

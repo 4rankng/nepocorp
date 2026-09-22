@@ -66,7 +66,7 @@ const pageStyles = `
     font-size: 11px; font-weight: 600;
   }
   .faq-page .faq-badge.embedded { background: var(--success-soft, #dcfce7); color: #15803d; }
-  .faq-page .faq-badge.no-embed { background: #fef3c7; color: #b45309; }
+  .faq-page .faq-badge.no-embed { background: var(--warning-soft); color: var(--warning-text); }
   .faq-page .faq-badge.inactive { background: var(--surface-3); color: var(--ink-3); }
   .faq-page .faq-badge.terms { background: var(--surface-3); color: var(--ink-3); }
 
@@ -159,9 +159,9 @@ const pageStyles = `
     display: flex; align-items: center; gap: 8px;
     padding: 10px 12px; margin-bottom: 14px;
     border-radius: var(--r);
-    background: #fef3c7; color: #92400e;
+    background: var(--warning-soft); color: var(--warning-text);
     font-size: 12.5px; font-weight: 500;
-    border: 1px solid #fcd34d;
+    border: 1px solid var(--warning);
   }
 
   @media (max-width: 560px) {

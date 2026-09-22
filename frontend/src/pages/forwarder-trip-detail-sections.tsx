@@ -140,7 +140,7 @@ export function ForwarderExpenseRow({ exp, expenseTypeOptions: forwarderExpenseT
                       {exp.activeSettlementId && (
                         <span className="fwd-expense-row__status" style={{
                           fontSize: 'var(--fs-caption)', lineHeight: 1.35, fontWeight: 600,
-                          color: '#92400e', background: '#fef3c7',
+                          color: 'var(--warning-text)', background: 'var(--warning-soft)',
                           borderRadius: 4, padding: '3px 7px', marginLeft: 6,
                         }}>Đã gửi kế toán</span>
                       )}

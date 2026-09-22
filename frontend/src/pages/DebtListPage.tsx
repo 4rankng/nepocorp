@@ -77,7 +77,7 @@ type BucketFilterMode = 'all' | 'current' | 'd30' | 'd60' | 'over90';
 
 const AGING_BUCKETS: AgingBucket[] = [
   { key: 'current', label: '0–30 NGÀY', amountKey: 'current', countKey: 'currentCusts', dotClass: 'debt-aging__dot--ok', color: '#00B14F', filterMode: 'current' },
-  { key: 'd30', label: '31–60 NGÀY', amountKey: 'd30', countKey: 'd30Custs', dotClass: 'debt-aging__dot--warn', color: '#F5A623', filterMode: 'd30' },
+  { key: 'd30', label: '31–60 NGÀY', amountKey: 'd30', countKey: 'd30Custs', dotClass: 'debt-aging__dot--warn', color: 'var(--warning)', filterMode: 'd30' },
   { key: 'd60', label: '61–90 NGÀY', amountKey: 'd60', countKey: 'd60Custs', dotClass: 'debt-aging__dot--deep', color: '#DD5A1F', filterMode: 'd60' },
   { key: 'over90', label: 'TRÊN 90 NGÀY', amountKey: 'over90', countKey: 'over90Custs', dotClass: 'debt-aging__dot--danger', color: '#E32434', filterMode: 'over90' },
 ];

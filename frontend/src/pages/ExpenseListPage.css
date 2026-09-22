@@ -53,7 +53,7 @@
 .expense-kpi-card--unpaid {
   --stat-rail: var(--warning);
   background: var(--surface);
-  border-color: rgba(245, 166, 35, 0.25);
+  border-color: color-mix(in srgb, var(--warning) 25%, transparent);
 }
 
 /* Variant: paid */
@@ -396,7 +396,7 @@
 .expense-status--unpaid {
   background: var(--warning-soft);
   color: var(--warning-text);
-  border: 1px solid rgba(245, 166, 35, 0.15);
+  border: 1px solid color-mix(in srgb, var(--warning) 15%, transparent);
 }
 
 .expense-status--paid {
@@ -414,7 +414,7 @@
 
 .expense-status--unpaid .expense-status__dot {
   background: var(--warning);
-  box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--warning) 20%, transparent);
 }
 
 .expense-status--paid .expense-status__dot {

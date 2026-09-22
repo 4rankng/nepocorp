@@ -186,7 +186,7 @@ export function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
                 <label style={{
                   display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
                   padding: '9px 12px', border: '1px solid var(--line)',
-                  borderRadius: 'var(--radius-md)', background: isMountain ? 'var(--warning-soft, #fef3c7)' : 'transparent',
+                  borderRadius: 'var(--radius-md)', background: isMountain ? 'var(--warning-soft)' : 'transparent',
                 }}>
                   <input
                     type="checkbox"
