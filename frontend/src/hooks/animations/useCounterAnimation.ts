@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { animate } from 'animejs';
+import { animate, type JSAnimation } from 'animejs';
 import { usePrefersReducedMotion } from '../usePrefersReducedMotion';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
@@ -28,6 +28,27 @@ export interface CounterOptions {
   stagger?: number;
 }
 
+/* ─── Formatting ─────────────────────────────────────────────────────────── */
+
+/** Counters with |value| below this settle immediately — too small to count up. */
+const INSTANT_MAX = 10;
+
+/**
+ * Exact text for a counter at `val`. Single source of truth for mid-animation
+ * frames and settle writes, so a settled element can never hold an
+ * interpolated leftover.
+ */
+function textFor(target: CounterTarget, val: number): string {
+  const { prefix = '', suffix = '', locale = 'vi-VN', format } = target;
+  return format ? format(val) : `${prefix}${Math.round(val).toLocaleString(locale)}${suffix}`;
+}
+
+/** In-flight counter: the engine animation plus its exact-value settle write. */
+interface RunningCounter {
+  anim: JSAnimation;
+  settle: () => void;
+}
+
 /* ─── Hook ───────────────────────────────────────────────────────────────── */
 
 /**
@@ -35,6 +56,11 @@ export interface CounterOptions {
  *
  * Designed for KPI values. Uses Vietnamese locale formatting by default.
  * Cancels running animations when called again (handles data refresh).
+ *
+ * Settle guarantee: when an animation ends or is cancelled the element's
+ * textContent is exactly the final formatted value (+ suffix), never an
+ * interpolated frame. Counters with |value| < 10 skip the count-up and settle
+ * immediately.
  *
  * Usage:
  *   const { animateCounters } = useCounterAnimation({ duration: 1200 });
@@ -49,41 +75,51 @@ export function useCounterAnimation({
   delay = 300,
   stagger: staggerMs = 80,
 }: CounterOptions = {}) {
-  const animationsRef = useRef<ReturnType<typeof animate>[]>([]);
+  const animationsRef = useRef<RunningCounter[]>([]);
   const targetsRef = useRef<CounterTarget[]>([]);
   const reducedMotion = usePrefersReducedMotion();
 
+  // anime.js v4 fires onComplete only when the engine reaches the animation's
+  // duration — never on pause/cancel. Every abort path must therefore land the
+  // exact final value itself, or the DOM freezes at an interpolated frame.
+  const cancelRunning = useCallback(() => {
+    animationsRef.current.forEach(({ anim, settle }) => {
+      anim.pause();
+      settle();
+    });
+    animationsRef.current = [];
+  }, []);
+
   const animateCounters = useCallback(
     (targets: CounterTarget[]) => {
-      // Cancel any running counter animations
-      animationsRef.current.forEach((a) => a.pause());
-      animationsRef.current = [];
+      cancelRunning();
       targetsRef.current = targets;
 
-      targets.forEach(
-        ({ el, value, prefix = '', suffix = '', locale = 'vi-VN', format }, i) => {
-          if (!el) return;
-          if (reducedMotion) {
-            el.textContent = format ? format(value) : `${prefix}${Math.round(value).toLocaleString(locale)}${suffix}`;
-            return;
-          }
-          const obj = { val: 0 };
-          const anim = animate(obj, {
-            val: value,
-            duration,
-            delay: delay + i * staggerMs,
-            ease: 'outExpo',
-            onUpdate: () => {
-              el.textContent = format
-                ? format(obj.val)
-                : `${prefix}${Math.round(obj.val).toLocaleString(locale)}${suffix}`;
-            },
-          });
-          animationsRef.current.push(anim);
-        },
-      );
+      targets.forEach((target, i) => {
+        const { el, value } = target;
+        if (!el) return;
+        const settle = () => {
+          el.textContent = textFor(target, value);
+        };
+        if (reducedMotion || Math.abs(value) < INSTANT_MAX) {
+          settle();
+          return;
+        }
+        const obj = { val: 0 };
+        const anim = animate(obj, {
+          val: value,
+          duration,
+          delay: delay + i * staggerMs,
+          ease: 'outExpo',
+          onUpdate: () => {
+            el.textContent = textFor(target, obj.val);
+          },
+          onComplete: settle,
+        });
+        animationsRef.current.push({ anim, settle });
+      });
     },
-    [duration, delay, staggerMs, reducedMotion],
+    [duration, delay, staggerMs, reducedMotion, cancelRunning],
   );
 
   // A preference change during an animation must leave the authoritative
@@ -92,13 +128,8 @@ export function useCounterAnimation({
     if (reducedMotion) animateCounters(targetsRef.current);
   }, [reducedMotion, animateCounters]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      animationsRef.current.forEach((a) => a.pause());
-      animationsRef.current = [];
-    };
-  }, []);
+  // Cleanup on unmount — a cancelled counter must still land its final value.
+  useEffect(() => cancelRunning, [cancelRunning]);
 
   return { animateCounters };
 }
