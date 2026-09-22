@@ -26,11 +26,25 @@ export interface TripQuickEditDraft {
   revenue: string;
 }
 
+export interface TripQuickEditState {
+  /** ids of the rows ticked for saving */
+  selectedIds: Set<number>;
+  /** one draft per row being edited, keyed by trip id */
+  drafts: Record<number, TripQuickEditDraft>;
+  /** per-row validation message, keyed by trip id */
+  errors: Record<number, string>;
+}
+
 export interface TripQuickEditOptions {
   enabled: boolean;
-  selectedIds: Set<number>;
-  drafts: Record<number, TripQuickEditDraft>;
-  errors: Record<number, string>;
+  /**
+   * Live quick-edit state. The page refreshes this object in place on every
+   * render instead of handing the cells a new one: flexRender renders a column's
+   * `cell` as a React component, so a rebuilt column array remounts every cell
+   * and a focused <input> would lose focus after the first keystroke
+   * (kanban 20260922_31).
+   */
+  state: TripQuickEditState;
   onToggleSelect: (tripId: number) => void;
   onDraftChange: (tripId: number, field: keyof TripQuickEditDraft, value: string) => void;
 }
@@ -134,7 +148,7 @@ export function buildTripColumns(
           <input
             type="checkbox"
             className="quick-row-check"
-            checked={quickEdit.selectedIds.has(trip.id)}
+            checked={quickEdit.state.selectedIds.has(trip.id)}
             disabled={!editable}
             onClick={(e) => e.stopPropagation()}
             onChange={() => quickEdit.onToggleSelect(trip.id)}
@@ -333,7 +347,7 @@ export function buildTripColumns(
         const isCanceled = trip.status === TripStatus.CANCELED;
         if (quickEdit?.enabled) {
           const editable = isQuickEditable(trip);
-          const draft = quickEdit.drafts[trip.id];
+          const draft = quickEdit.state.drafts[trip.id];
           return (
             <div className="quick-edit-cell">
               <QuickMoneyInput
@@ -401,7 +415,7 @@ export function buildTripColumns(
         const road = Number(trip.totalRoadAllowance ?? 0);
         if (quickEdit?.enabled) {
           const editable = isQuickEditable(trip);
-          const draft = quickEdit.drafts[trip.id];
+          const draft = quickEdit.state.drafts[trip.id];
           return (
             <div className="quick-edit-cell">
               <QuickMoneyInput
@@ -424,7 +438,7 @@ export function buildTripColumns(
         const revenue = Number(trip.revenue ?? 0);
         if (quickEdit?.enabled) {
           const editable = isQuickEditable(trip);
-          const draft = quickEdit.drafts[trip.id];
+          const draft = quickEdit.state.drafts[trip.id];
           return (
             <div className="quick-edit-cell">
               <QuickMoneyInput
@@ -445,7 +459,7 @@ export function buildTripColumns(
       cell: ({ row }) => {
         const trip = row.original;
         const editable = isQuickEditable(trip);
-        const draft = quickEdit.drafts[trip.id];
+        const draft = quickEdit.state.drafts[trip.id];
         return (
           <div className="quick-edit-cell">
             <QuickMoneyInput
@@ -499,8 +513,8 @@ export function buildTripColumns(
             <span className={`status-pill ${pillClass}`}>
               {TRIP_STATUS_LABELS[trip.status]}
             </span>
-            {quickEdit?.enabled && quickEdit.errors[trip.id] && (
-              <span className="quick-row-error" title={quickEdit.errors[trip.id]}>Lỗi</span>
+            {quickEdit?.enabled && quickEdit.state.errors[trip.id] && (
+              <span className="quick-row-error" title={quickEdit.state.errors[trip.id]}>Lỗi</span>
             )}
           </div>
         );

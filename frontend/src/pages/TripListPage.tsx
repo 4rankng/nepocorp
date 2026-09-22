@@ -349,7 +349,7 @@ export default function TripListPage() {
     } finally {
       setSavingQuickEdit(false);
     }
-  }, [quickDrafts, savingQuickEdit, selectedDirtyTrips, table.query]);
+  }, [quickDrafts, savingQuickEdit, selectedDirtyTrips, table.query.refetch]);
 
   const handleCopyPlan = useCallback(async (tripId: number) => {
     if (copyingPlanId) return;
@@ -371,7 +371,7 @@ export default function TripListPage() {
     } finally {
       setCopyingPlanId(null);
     }
-  }, [copyingPlanId, dateFrom, dateTo, queryClient, table.query]);
+  }, [copyingPlanId, dateFrom, dateTo, queryClient, table.query.refetch]);
 
   // ── Export ──
   const handleExport = useCallback(async () => {
@@ -426,18 +426,21 @@ export default function TripListPage() {
   }, [statusFilter, truckFilter, customerFilter, debouncedSearch, listDateFrom, listDateTo]);
 
   // ── Table instance ──
+  const quickEditState = useRef({ selectedIds, drafts: quickDrafts, errors: quickErrors }).current;
+  quickEditState.selectedIds = selectedIds;
+  quickEditState.drafts = quickDrafts;
+  quickEditState.errors = quickErrors;
+
   const columns = useMemo(() => buildTripColumns(warnThreshold, {
     enabled: quickEdit,
-    selectedIds,
-    drafts: quickDrafts,
-    errors: quickErrors,
+    state: quickEditState,
     onToggleSelect: handleToggleSelect,
     onDraftChange: handleDraftChange,
   }, {
     copyingPlanId,
     onCopyPlan: canCopyPlan ? handleCopyPlan : undefined,
     detailState,
-  }), [canCopyPlan, copyingPlanId, detailState, handleCopyPlan, handleDraftChange, handleToggleSelect, quickDrafts, quickEdit, quickErrors, selectedIds, warnThreshold]);
+  }), [canCopyPlan, copyingPlanId, detailState, handleCopyPlan, handleDraftChange, handleToggleSelect, quickEdit, quickEditState, warnThreshold]);
   const tableInstance = useReactTable({
     data: table.rows,
     columns,
