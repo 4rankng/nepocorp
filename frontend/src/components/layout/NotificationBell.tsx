@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Bell } from 'lucide-react';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { useUnreadCount, useNotifications, useMarkAllAsRead, useMarkAsRead } from '../../hooks/useNotificationQueries';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
-import { AssetIcon } from '../AssetIcon';
 import type { Notification } from '@tingting/shared';
 
 /** Relative time in Vietnamese, e.g. "5 phút trước". */
@@ -59,7 +59,7 @@ export function NotificationBell() {
         aria-expanded={open}
         onClick={() => setOpen(v => !v)}
       >
-        <AssetIcon name="notification" size={20} alt="Thông báo" />
+        <Bell size={18} strokeWidth={2} aria-hidden="true" />
         {unread > 0 && <span className="badge">{unread > 99 ? '99+' : unread}</span>}
       </button>
 
