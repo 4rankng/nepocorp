@@ -6,7 +6,49 @@
 }
 
 .salary-summary-area {
-  /* wrapper */
+  /* wrapper — becomes the independent scroll region on desktop (below) */
+}
+
+/* Primary action — pinned in flow directly under the summary so it never
+   falls below the fold together with the card (card 20260922_25). */
+.salary-summary-actions {
+  flex: 0 0 auto;
+  margin-top: 12px;
+}
+
+/* Desktop two-column: breadcrumbs + hero + metrics + driver strip put the
+   layout top 574-591px down the viewport (measured at 1440x900 / 1366x768).
+   Cap the sidebar to what is left of the viewport so the summary card scrolls
+   on its own and 'Xác nhận kỳ lương' stays visible without page scrolling.
+   610 = 591 (tallest measured chrome) + slack. min-height keeps the scroller
+   usable in very short windows (where min-height wins over max-height). */
+@media (min-width: 1025px) {
+  .salary-page-layout__sidebar {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 610px);
+    min-height: 140px;
+  }
+
+  .salary-summary-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--ink-3) 28%, transparent) transparent;
+  }
+
+  .salary-summary-area::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .salary-summary-area::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink-3) 28%, transparent);
+  }
 }
 
 /* Light premium card — matches app-wide hero treatment */

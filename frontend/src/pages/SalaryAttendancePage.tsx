@@ -407,60 +407,27 @@ export default function SalaryAttendancePage() {
               ) : salary ? (
                 <>
                   <SalarySummaryCard salary={salary} />
-                    {/* Confirm button & status badge */}
-                    <div style={{ marginTop: 12 }}>
-                      {isConfirmed ? (
-                        <>
-                          <div className="salary-confirm-status">
-                            <CheckCircle2 size={16} />
-                            <span>Đã xác nhận</span>
-                            {salary.confirmedAt && (
-                              <span style={{ fontSize: 12, lineHeight: 1.35, opacity: 0.7, marginLeft: 'auto' }}>
-                                {new Date(salary.confirmedAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
-                              </span>
-                            )}
-                          </div>
-                          {canPostPayout && (
-                            <button
-                              className="btn btn--secondary btn--sm"
-                              style={{ width: '100%', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                              disabled={unconfirmMutation.isPending}
-                              onClick={() => setUnlockOpen(true)}
-                            >
-                              {unconfirmMutation.isPending ? (
-                                <Loader2 size={14} className="spin" />
-                              ) : (
-                                <Unlock size={14} />
-                              )}
-                              Mở khóa để chỉnh sửa
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <button
-                          className="btn btn--primary btn--sm"
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                          disabled={confirmMutation.isPending}
-                          onClick={() => {
-                            confirmMutation.mutate(undefined, {
-                              onError: (err: unknown) => {
-                                toast({
-                                  kind: 'error',
-                                  message: (err as Error)?.message || 'Không thể xác nhận kỳ lương. Vui lòng thử lại.',
-                                });
-                              },
-                            });
-                          }}
-                        >
-                          {confirmMutation.isPending ? (
-                            <Loader2 size={14} className="spin" />
-                          ) : (
-                            <CheckCircle2 size={14} />
-                          )}
-                          Xác nhận kỳ lương
-                        </button>
-                      )}
+                  {/* Confirmed status + lock notice — informational, scroll with the card */}
+                  {isConfirmed && (
+                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div className="salary-confirm-status">
+                        <CheckCircle2 size={16} />
+                        <span>Đã xác nhận</span>
+                        {salary.confirmedAt && (
+                          <span style={{ fontSize: 12, lineHeight: 1.35, opacity: 0.7, marginLeft: 'auto' }}>
+                            {new Date(salary.confirmedAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+                        borderRadius: 8, background: 'var(--surface-2)', fontSize: 12, color: 'var(--ink-3)',
+                      }}>
+                        <Lock size={14} style={{ flexShrink: 0 }} />
+                        <span>Kỳ lương đã khóa — không thể chỉnh sửa ngày công</span>
+                      </div>
                     </div>
+                  )}
                 </>
               ) : (
                 <div className="salary-summary-dark" style={{ textAlign: 'center', padding: 24, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
@@ -469,14 +436,47 @@ export default function SalaryAttendancePage() {
               )}
             </div>
 
-            {/* Confirmed lock notice */}
-            {isConfirmed && (
-              <div style={{
-                marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-                borderRadius: 8, background: 'var(--surface-2)', fontSize: 12, color: 'var(--ink-3)',
-              }}>
-                <Lock size={14} style={{ flexShrink: 0 }} />
-                <span>Kỳ lương đã khóa — không thể chỉnh sửa ngày công</span>
+            {/* Primary action — pinned directly under the summary, always in view */}
+            {salary && !salaryLoading && (!isConfirmed || canPostPayout) && (
+              <div className="salary-summary-actions">
+                {isConfirmed ? (
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    disabled={unconfirmMutation.isPending}
+                    onClick={() => setUnlockOpen(true)}
+                  >
+                    {unconfirmMutation.isPending ? (
+                      <Loader2 size={14} className="spin" />
+                    ) : (
+                      <Unlock size={14} />
+                    )}
+                    Mở khóa để chỉnh sửa
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn--primary btn--sm"
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    disabled={confirmMutation.isPending}
+                    onClick={() => {
+                      confirmMutation.mutate(undefined, {
+                        onError: (err: unknown) => {
+                          toast({
+                            kind: 'error',
+                            message: (err as Error)?.message || 'Không thể xác nhận kỳ lương. Vui lòng thử lại.',
+                          });
+                        },
+                      });
+                    }}
+                  >
+                    {confirmMutation.isPending ? (
+                      <Loader2 size={14} className="spin" />
+                    ) : (
+                      <CheckCircle2 size={14} />
+                    )}
+                    Xác nhận kỳ lương
+                  </button>
+                )}
               </div>
             )}
 
