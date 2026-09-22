@@ -75,8 +75,11 @@ function stalenessNotice(root: string): string | null {
 }
 
 export default function graphAutoUpdate(pi: HookAPI): void {
-  // Fires once per process so a long session does not repeat the nudge.
-  let announced = false;
+  // The session-start nudge fires once per process so a long session is not
+  // spammed on every agent start. The commit nudge deliberately does NOT
+  // de-duplicate: each commit adds drift, and suppressing the second nudge
+  // would let the graph fall further behind exactly when it matters.
+  let sessionNudged = false;
 
   // A commit just landed — surface the nudge in the very tool result the agent
   // is about to read, exactly where the plugin's PostToolUse hook lands.
@@ -87,7 +90,6 @@ export default function graphAutoUpdate(pi: HookAPI): void {
 
       const notice = stalenessNotice(ctx.cwd);
       if (!notice) return;
-      announced = true;
       return { content: [...event.content, { type: 'text', text: `\n\n${notice}` }] };
     } catch {
       // Never let a graph check break a tool call.
@@ -98,10 +100,10 @@ export default function graphAutoUpdate(pi: HookAPI): void {
   // another harness, or the graph drifted while the session was closed).
   pi.on('before_agent_start', async (_event, ctx) => {
     try {
-      if (announced) return;
+      if (sessionNudged) return;
       const notice = stalenessNotice(ctx.cwd);
       if (!notice) return;
-      announced = true;
+      sessionNudged = true;
       return {
         message: {
           customType: 'understand-anything-stale',
