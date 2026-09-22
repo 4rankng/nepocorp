@@ -45,7 +45,7 @@
   min-height: var(--control-h);
   padding: 0 10px;
   border: 1px solid var(--control-border);
-  background: var(--control-bg-hover);
+  background: var(--control-bg);
   border-radius: var(--fc-radius-pill);
   cursor: pointer;
   white-space: nowrap;

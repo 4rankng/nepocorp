@@ -410,7 +410,7 @@ export default function ProfitPage() {
                   )}
 
                   {previewEmptyMessage ? (
-                    <div style={{ padding: 12, background: 'var(--bg-1)', borderRadius: 6, color: 'var(--fg-3)', fontSize: 'var(--fs-body)', fontWeight: 600 }}>
+                    <div style={{ padding: 12, background: 'var(--surface-2)', borderRadius: 6, color: 'var(--fg-3)', fontSize: 'var(--fs-body)', fontWeight: 600 }}>
                       {previewEmptyMessage}
                     </div>
                   ) : preview.entity && preview.entity.length > 0 ? (
@@ -458,7 +458,7 @@ export default function ProfitPage() {
                     <div style={{ marginTop: 10 }}>
                       <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', marginBottom: 6 }}>CHI TIẾT THEO XE</div>
                       {preview.perTruck.filter(t => t.partners.length > 0).map(t => (
-                        <div key={t.truckId} style={{ marginBottom: 8, padding: '8px 10px', background: 'var(--bg-1)', borderRadius: 6 }}>
+                        <div key={t.truckId} style={{ marginBottom: 8, padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 6 }}>
                           <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
                             Xe {t.licensePlate ?? '(không rõ biển số)'} · Lợi nhuận: <span style={{ color: t.profit < 0 ? 'var(--danger)' : 'var(--brand)' }}>{formatVND(t.profit)}</span>
                           </div>

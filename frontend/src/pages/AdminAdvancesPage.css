@@ -68,7 +68,7 @@
   --stat-ink: var(--danger);
 }
 .adv-page .adv-kpi:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 /* Summary-only stat (no filter): neutral cursor, no hover affordance, and
    stays out of the tab order so it isn't mistaken for a clickable control. */

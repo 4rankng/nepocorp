@@ -52,7 +52,7 @@
 }
 .trip-list-page .table-card {
   background: var(--surface);
-  border: 1px solid rgba(203, 211, 206, 0.9);
+  border: 1px solid var(--line);
   border-radius: var(--r);
   overflow: hidden;
   display: flex;

@@ -25,7 +25,7 @@
   text-align: left;
   width: 100%;
 }
-.setting-card:hover { background: var(--surface-2); border-color: var(--line-2); }
+.setting-card:hover { background: var(--surface-hover); border-color: var(--accent-2); }
 .setting-card__icon {
   width: 52px;
   height: 52px;

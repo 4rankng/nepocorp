@@ -52,14 +52,14 @@
 }
 .btn--secondary:hover {
   border-color: color-mix(in srgb, var(--accent) 28%, var(--line-strong));
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 .btn--ghost {
   background: transparent;
   color: var(--ink-2);
   padding: 8px 10px;
 }
-.btn--ghost:hover { background: var(--surface-2); color: var(--ink); }
+.btn--ghost:hover { background: var(--surface-hover); color: var(--ink); }
 .btn--danger {
   background: var(--danger);
   color: var(--fg-on-brand);

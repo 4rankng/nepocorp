@@ -35,7 +35,7 @@
   flex-shrink: 0;
 }
 .tc-back-btn:hover {
-  background: var(--bg-3);
+  background: var(--surface-hover);
 }
 .tc-title-wrap { flex: 1; min-width: 0; }
 .tc-page-title {

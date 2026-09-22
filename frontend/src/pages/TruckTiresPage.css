@@ -52,7 +52,7 @@
 
 .ttp-panel {
   min-width: 0;
-  background: var(--bg-1, #fff);
+  background: var(--surface);
   border: 1px solid var(--border-2);
   border-radius: 12px;
   box-shadow: 0 12px 34px -30px rgba(20, 34, 29, 0.38);
@@ -445,7 +445,7 @@
   text-align: right;
   padding-left: 8px;
   padding-right: 18px;
-  background: var(--bg-1, #fff);
+  background: var(--surface);
   box-shadow: -10px 0 16px -16px rgba(15, 23, 42, 0.35);
 }
 
@@ -465,7 +465,7 @@
   justify-content: center;
   border: 1px solid var(--border-2);
   border-radius: 7px;
-  background: var(--bg-1, #fff);
+  background: var(--surface);
   color: var(--fg-2);
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -516,7 +516,7 @@
   justify-content: center;
   border: 1px solid var(--border-2);
   border-radius: 7px;
-  background: var(--bg-1, #fff);
+  background: var(--surface);
   color: var(--fg-2);
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -1182,7 +1182,7 @@
   padding: 12px 14px;
   border: 1px solid var(--border-2);
   border-radius: 12px;
-  background: var(--bg-1, #fff);
+  background: var(--surface);
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }

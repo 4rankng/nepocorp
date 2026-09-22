@@ -24,7 +24,7 @@
 }
 
 .plog-item:last-child { border-bottom: none; }
-.plog-item:hover { background: var(--surface-2); }
+.plog-item:hover { background: var(--surface-hover); }
 
 .plog-item--canceled {
   opacity: 0.45;

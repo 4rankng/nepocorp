@@ -164,7 +164,7 @@
 }
 
 .penalty-vio-type-row:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .penalty-vio-type-icon {

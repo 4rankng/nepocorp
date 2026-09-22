@@ -42,8 +42,11 @@ img { display: block; }
 }
 
 /* Product-wide flat-surface contract.
-   Page and vendor styles may still define shadows internally, but the app
-   deliberately renders hierarchy with borders, spacing, and solid color. */
+   The app deliberately renders hierarchy with the surface ladder, borders and
+   spacing — never with elevation. Removing this block re-enables ~58
+   `var(--shadow-*)` declarations scattered across 27 files, which reintroduces
+   a 3D look with only a fraction of the app covered. See
+   docs/design-guidelines.md → Surface Contrast. */
 #root .app *,
 #root .app *::before,
 #root .app *::after {

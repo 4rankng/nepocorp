@@ -30,7 +30,7 @@
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.trip-hero__back:hover { background: var(--surface-3); color: var(--ink); border-color: var(--line-2); }
+.trip-hero__back:hover { background: var(--surface-hover); color: var(--ink); border-color: var(--line-2); }
 .trip-hero__crumb {
   font-size: var(--fs-2xs);
   font-weight: 600;

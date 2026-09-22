@@ -173,8 +173,8 @@
 .hero-kpi-mini--warn { --stat-rail: var(--warning); }
 
 .hero-kpi-mini:hover {
-  background: var(--surface-2);
-  border-color: var(--line-2);
+  background: var(--surface-hover);
+  border-color: var(--accent-2);
 }
 
 /* Overlay watermark icon (replaces the old inline icon box) */

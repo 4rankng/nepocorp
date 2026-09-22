@@ -208,7 +208,7 @@
   transition: background 120ms ease;
 }
 .penalty-violation-row:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 .penalty-violation-row__icon {
   width: 36px;

@@ -46,7 +46,7 @@
 .kpi[role="button"]:hover,
 .kpi.kpi--clickable:hover {
   border-color: var(--line-strong);
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 .kpi__top {
   display: flex;
@@ -197,7 +197,7 @@
   min-width: 0;
 }
 .stat-card:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
   border-color: var(--line-strong);
 }
 

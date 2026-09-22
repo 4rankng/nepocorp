@@ -45,7 +45,7 @@
 }
 
 :is(.cfg-page--expense-categories, .cfg-page--fuel-suppliers) .cfg-compact-list__item:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 :is(.cfg-page--expense-categories, .cfg-page--fuel-suppliers) .cfg-compact-list__item:active {

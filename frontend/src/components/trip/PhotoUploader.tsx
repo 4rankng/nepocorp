@@ -35,7 +35,7 @@ export function PhotoUploader({ tripId }: PhotoUploaderProps) {
         border: "1px solid var(--border-2)",
         borderRadius: "var(--radius-md)",
         padding: 14,
-        background: "var(--bg-1)",
+        background: "var(--surface)",
       }}>
         <div style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: "var(--fg-1)", marginBottom: 8 }}>
           Ảnh đính kèm

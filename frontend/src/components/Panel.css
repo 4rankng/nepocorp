@@ -16,7 +16,7 @@
 .panel[role="button"]:hover,
 .panel--clickable:hover {
   border-color: var(--line-strong);
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 .panel[role="button"]:focus-visible,
 .panel--clickable:focus-visible {
@@ -42,7 +42,7 @@
 }
 .panel__subtitle {
   font-size: var(--fs-xs);
-  color: var(--ink-3);
+  color: var(--ink-2);
   margin-top: 2px;
   line-height: 1.45;
 }
@@ -73,7 +73,7 @@
   letter-spacing: 0;
   color: var(--ink);
 }
-.card-header p { margin: 3px 0 0; font-size: var(--fs-xs); color: var(--ink-3); }
+.card-header p { margin: 3px 0 0; font-size: var(--fs-xs); color: var(--ink-2); }
 
 /* Inner groups share their parent's surface; dividers provide hierarchy. */
 .subsection-card {
@@ -145,7 +145,6 @@
   border: 1px solid var(--line);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: none;
   width: 100%;
 }
 

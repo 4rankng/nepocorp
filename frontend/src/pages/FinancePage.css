@@ -635,13 +635,13 @@
  * Dashboard Card Styles (copied from DashboardPage.css)
  * ========================================================================== */
 .dash-wf {
-  --wf-bg: #EFF2F0;
-  --wf-card: #FFFFFF;
-  --wf-border: #E5E9E7;
-  --wf-border-2: #DCE2DF;
-  --wf-ink: #0E1F16;
-  --wf-ink-2: #56655C;
-  --wf-ink-3: #8A988F;
+  --wf-bg: var(--bg);
+  --wf-card: var(--surface);
+  --wf-border: var(--line);
+  --wf-border-2: var(--line-2);
+  --wf-ink: var(--ink);
+  --wf-ink-2: var(--ink-2);
+  --wf-ink-3: var(--ink-3);
   --wf-green: #005A2D;
   --wf-green-700: #0A6E3A;
   --wf-green-500: #16A34A;
@@ -674,7 +674,7 @@
 
 .dash-wf .wf-card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 0; }
 .dash-wf .wf-card-h .ttl { font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0; color: var(--wf-ink); }
-.dash-wf .wf-card-h .sub { font-size: var(--fs-xs); color: var(--wf-ink-3); margin-top: 2px; }
+.dash-wf .wf-card-h .sub { font-size: var(--fs-xs); color: var(--wf-ink-2); margin-top: 2px; }
 
 .dash-wf .wf-legend {
   display: flex;

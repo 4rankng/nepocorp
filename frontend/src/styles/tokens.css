@@ -22,21 +22,21 @@
   color-scheme: light;
 
   --color-base-100: #FFFFFF;
-  --color-base-200: #F8FAF9;
-  --color-base-300: #EEF3F0;
-  --color-base-content: #101513;
+  --color-base-200: #EDF1EE;
+  --color-base-300: #DCE3DF;
+  --color-base-content: #0F1713;
 
   --color-primary: #005A2D;
   --color-primary-content: #FFFFFF;
 
-  --color-secondary: #4D5852;
+  --color-secondary: #2E3B34;
   --color-secondary-content: #FFFFFF;
 
   --color-accent: #10B956;
   --color-accent-content: #06264A;
 
-  --color-neutral: #101513;
-  --color-neutral-content: #F8FAF9;
+  --color-neutral: #0F1713;
+  --color-neutral-content: #EDF1EE;
 
   --color-info: #1E5BB8;
   --color-info-content: #FFFFFF;
@@ -66,66 +66,102 @@
  * ========================================================================== */
 
 :root {
-  /* --- Wireframe canonical tokens --- */
-  --bg: #F5F7F6;
-  --bg-2-wire: #E9EDEB;
+  /* --- Wireframe canonical tokens ---
+   * FLAT-SURFACE CONTRAST CONTRACT — docs/design-guidelines.md → Surface Contrast.
+   *
+   * `base.css` disables every box-shadow inside the app shell, so hierarchy is
+   * carried ONLY by this value ladder plus borders. When the rungs collapse into
+   * 1.0–1.2 ratios, panels dissolve into the canvas and the whole UI reads as one
+   * white sheet — which is exactly what happened before this ladder was
+   * calibrated. Each rung must clear the ratio against #FFFFFF:
+   *
+   *   --surface-3 (walked-away, disabled) .......... 1.30
+   *   --bg (page canvas) ........................... 1.24
+   *   --surface-hover (canvas-level hover) ......... 1.09
+   *   --surface-2 (inset: chips, fields, hover) .... 1.14
+   *   --border-1 (card / control outline) .......... 1.44
+   *   --line (panel border, divider, sticky band) ... 1.55
+   *   --border-2 == --line-2 (hover outline) ....... 2.03
+   *   --line-3 (emphasis) .......................... 2.80
+   *   --line-strong ................................ 3.65
+   *   --control-border ............................. 3.05 (WCAG 1.4.11 non-text)
+   *   --ink-4 (placeholder, decorative glyph) ...... 4.85
+   *
+   * Never lighten a rung without re-measuring; the ramp is monotonic
+   * surface < surface-2 < surface-3 < border-1 < line < line-2 < line-3. */
+  --bg: #E3E8E5;
+  --bg-2-wire: #D3DAD6;
   --surface: #FFFFFF;
-  --surface-2: #F8FAF9;
-  --surface-3: #EEF3F0;
-  --surface-accent: #ECF8F1;
+  --surface-2: #EDF1EE;
+  --surface-3: #DCE3DF;
+  --surface-accent: #DDF3E7;
 
-  --ink: #101513;
-  --ink-2: #4D5852;
-  --ink-3: #5F6872;
-  --ink-4: #BABDC3;
+  --ink: #0F1713;
+  --ink-2: #2E3B34;
+  --ink-3: #4A5750;
+  --ink-4: #66756D;
 
-  --line: #E2E7E4;
-  --line-2: #CBD3CE;
-  --line-3: #AEB8B2;
-  --line-strong: #BAC5BE;
+  --line: #C8D2CC;
+  --line-2: #ADB9B3;
+  --line-3: #8F9E97;
+  --line-strong: #788A80;
 
   --accent: #10B956;
   --accent-2: #005A2D;
-  --accent-soft: #E8F8EE;
+  --accent-soft: #D9F2E3;
   --accent-ink: #00361B;
 
-  /* --- Backward-compat aliases (existing code uses these var names) --- */
-  --bg-1: #F5F7F6;
-  --bg-2: #FFFFFF;
-  --bg-3: #EEF3F0;
-  --bg-glass: rgba(255, 255, 255, 0.82);
+  /* --- Backward-compat aliases (existing code uses these var names) ---
+   * These point at the semantic layer instead of duplicating hexes, so a ladder
+   * change lands everywhere at once:
+   *   --bg-2 = inset fill  (chips, hovered rows, disabled fields, sticky bands)
+   *   --bg-3 = deep inset  (tracks, wells, walked-away states)
+   * A floating overlay (dropdown, popover, modal) is NOT any of these — it must
+   * use --surface, otherwise it loses its only elevation cue. `--bg-1` was the
+   * canvas alias; every one of its call sites now names --surface or the inset
+   * layer it actually meant, so the alias is gone. */
+  --bg-2: var(--surface-2);
+  --bg-3: var(--surface-3);
+  --bg-glass: rgba(255, 255, 255, 0.90);
 
   --brand: #005A2D;
   --brand-hover: #00361B;
-  --brand-soft: #E6F7EE;
+  --brand-soft: var(--accent-soft);
   --brand-2: #10B956;
   --brand-grad: #005A2D;
   --brand-glow: none;
 
-  --fg-1: #0A0A0A;
-  --fg-2: #535963;
-  --fg-3: #5F6872;
+  --fg-1: #0F1713;
+  --fg-2: #2E3B34;
+  --fg-3: #4A5750;
   --fg-on-brand: #FFFFFF;
   --fg-on-accent: #00381A;
   --fg-inverse: #FFFFFF;
 
-  --border-1: #EAECEF;
-  --border-2: #D6D9DE;
-  --border-glass: rgba(255, 255, 255, 0.4);
+  --border-1: #D1D9D4;
+  --border-2: #ADB9B3;
+  --border-glass: rgba(200, 210, 204, 0.6);
 
   /* --- Semantic status --- */
-  --success: #00B14F;
-  --success-soft: #E6F7EE;
+  /* Soft fills are the only thing separating a status chip from a white card —
+     they must stay ≥1.15 against --surface, so they are darker than the
+     near-white tints they replaced.
+     --success doubles as TEXT (amounts, "valid" states) and as a button FILL
+     with white text, so it must clear 4.5:1 in both directions; #00B14F was
+     2.84:1 and unreadable. --accent stays the bright brand signal because it is
+     only ever a graphic (dots, bars, rings). */
+  --success: #0B8745;
+  --success-soft: #D9F2E3;
   --success-text: #004D22;
   --warning: #F5A623;
-  --warning-soft: #FFF4E0;
+  --warning-soft: #FBE8C4;
   --warning-text: #4B2800;
   --warning-deep: #DD5A1F;
   --danger: #E32434;
-  --danger-soft: #FFEAEC;
+  --danger-soft: #FBD9DD;
   --danger-text: #B91C1C;
   --info: #1E5BB8;
-  --info-soft: #DCE9FC;
+  --info-soft: #D2E2F9;
   --info-text: #1E40AF;
 
   /* --- Sidebar (forest green) --- */
@@ -148,10 +184,14 @@
   --sidebar-hover: rgba(255, 255, 255, 0.10);
 
   /* --- Header (translucent + hairline) --- */
-  --header: rgba(255, 255, 255, 0.86);
-  --header-border: #E2E7E4;
+  --header: rgba(255, 255, 255, 0.92);
+  --header-border: var(--line);
 
-  /* --- Shadows --- */
+  /* --- Shadows ---
+   * Intentionally empty: the app is flat by contract (see base.css). Hierarchy
+   * is carried by the surface ladder and borders, so these stay `none` even
+   * though components still declare them. Do not "restore" a real elevation
+   * scale unless every surface is converted in the same pass. */
   --sh-sm: none;
   --sh: none;
   --sh-lg: none;
@@ -202,12 +242,21 @@
   --topbar-h: 40px;
   --control-h: 36px;
   /* Controls sit on a distinct, quiet field layer so filters and inputs do
-     not disappear into white workspace panels. */
-  --control-bg: #F0F4F1;
-  --control-bg-hover: #F8FBF9;
+     not disappear into white workspace panels. The fill is WHITE on purpose:
+     a grey field is indistinguishable from the grey canvas, which makes the
+     control read as "transparent with a wireframe border". Against --surface
+     the 3:1 --control-border carries the boundary instead. */
+  --control-bg: #FFFFFF;
+  --control-bg-hover: #E4EAE6;
   --control-border: #89978F;
   --control-border-hover: #65746B;
   --control-focus-ring: color-mix(in srgb, var(--accent-2) 38%, transparent);
+
+  /* Hover/selected fill for components that sit ON the canvas (cards, tiles,
+     clickable panels, chips). It must stay LIGHTER than --bg, otherwise a
+     hovered card loses its own background and degrades into an outline.
+     Insets *inside* a white surface use --surface-2 instead. */
+  --surface-hover: #E7F8EE;
 
   /* --- Canonical status strip (Vantai invariant) ---
    * Per docs/design-guidelines.md: every status marker is a centered 3x20px

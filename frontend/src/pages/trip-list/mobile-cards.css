@@ -22,8 +22,8 @@
   background: linear-gradient(to bottom, var(--strip-top) 50%, var(--strip-bottom) 50%);
 }
 .trip-list-page .trip-mcard:hover {
-  background: var(--surface-2);
-  border-color: var(--ink-2);
+  background: var(--surface-hover);
+  border-color: var(--accent-2);
 }
 .trip-list-page .trip-mcard__main-link {
   color: inherit;

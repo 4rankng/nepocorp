@@ -120,7 +120,7 @@
 
 .ds-mobile-card.is-clickable:hover {
   border-color: var(--line-strong);
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 
 .ds-table-wrap--mobile {

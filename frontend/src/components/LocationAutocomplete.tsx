@@ -231,7 +231,7 @@ export function LocationAutocomplete({
             padding: 0,
             margin: '4px 0 0 0',
             listStyle: 'none',
-            background: 'var(--bg-1, #fff)',
+            background: 'var(--surface)',
             border: '1px solid var(--border-2, var(--line))',
             borderRadius: 'var(--radius-md, 10px)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',

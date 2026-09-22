@@ -145,7 +145,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-1, #F7F8FA);
+  background: var(--surface-2);
   border: 1px solid var(--line, #EAECEF);
   border-radius: var(--r-sm, 8px);
   padding: 8px 14px;

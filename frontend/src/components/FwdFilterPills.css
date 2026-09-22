@@ -41,8 +41,8 @@
   color: rgb(91, 33, 182);
 }
 .fwd-filter-pill:hover {
-  border-color: var(--line-2);
-  background: var(--surface-2);
+  border-color: var(--accent-2);
+  background: var(--surface-hover);
   color: var(--ink);
 }
 .fwd-filter-pill[data-status="CREATED"]:hover {

@@ -68,6 +68,55 @@ to keep the route-T inside the platform safe zone.
 - Status colors follow the `statusStrip` convention (see below).
 - CTA buttons stay subtle and flat; avoid heavy or glossy treatment.
 
+## Surface Contrast
+
+The app is **flat by contract**: `styles/base.css` disables every `box-shadow`
+inside the app shell, so elevation is never available as a hierarchy cue. Rank,
+grouping and selection are carried entirely by the surface ladder and by borders.
+A shadow token that "looks unused" is not dead code — it is intentional, and
+restoring a real elevation scale would leave ~58 `var(--shadow-*)` declarations
+in 27 files lit up while the other ~200 stylesheets stay flat.
+
+Because there is no second cue, every rung of the ladder must clear a minimum
+contrast ratio against the surface it sits on. Measured against `#FFFFFF`:
+
+| Token | Role | Min ratio |
+| --- | --- | --- |
+| `--surface-3` | walked-away / disabled / deep inset | 1.30 |
+| `--bg` | page canvas | 1.24 |
+| `--surface-hover` | hover/selected for components **on the canvas** | 1.09 |
+| `--surface-2` | inset inside a white surface (chips, wells, table heads) | 1.14 |
+| `--border-1` | card / control outline | 1.44 |
+| `--line` | panel border, divider, sticky band | 1.55 |
+| `--line-2` / `--border-2` | hover outline | 1.90 |
+| `--line-3` | emphasis | 2.80 |
+| `--line-strong` | strongest outline | 3.65 |
+| `--control-border` | input/select boundary — WCAG 1.4.11 non-text | 3.05 |
+| `--ink-4` | placeholder, decorative glyph | 4.85 |
+
+`--success` doubles as text (amounts, valid states) and as a button fill with
+white text, so it must clear 4.5:1 in **both** directions. `--accent` stays the
+bright brand signal because it is only ever a graphic (dots, bars, rings) —
+never use it as a text colour; use `--success-text`, `--accent-2` or
+`--accent-ink`.
+
+**Rules**
+
+- Neither `--surface-2` nor `--surface-3` may be used as the fill of a component
+  that sits directly on `--bg` — both are lighter than the canvas, so the
+  component loses its own background and degrades into a wireframe outline. Use
+  `--surface` (white) or `--surface-hover` (a white-tinted accent wash) instead.
+- Controls are filled `--surface` (white), not a light grey: a grey field is
+  indistinguishable from the grey canvas. Against a white panel the 3:1
+  `--control-border` carries the boundary instead.
+- Floating overlays (dropdown, popover, modal) are `--surface` — never a canvas
+  alias — otherwise they lose their only elevation cue.
+- Chrome inside the header is sized from `--topbar-h` (`calc(var(--topbar-h) - 8px)`),
+  never a hardcoded 44px, so it can never be taller than the bar it lives in.
+
+Re-measure with a contrast script before lightening any rung; the ramp is
+monotonic: `surface < surface-2 < surface-3 < border-1 < line < line-2 < line-3`.
+
 ## Brand Copy
 
 Use the approved Vietnamese positioning copy on external-facing brand surfaces:
