@@ -65,15 +65,14 @@
 }
 
 .driver-select-card:hover {
-  border-color: var(--border-2);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  border-color: var(--accent-2);
+  background: var(--surface-hover);
 }
 
 .driver-select-card.is-active {
-  border-color: var(--accent);
+  border-color: var(--accent-2);
   border-width: 1.5px;
   background: var(--accent-soft);
-  box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.07);
 }
 
 .driver-select-card__dot {
@@ -83,7 +82,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-2);
 }
 
 .driver-select-card__name {
@@ -210,23 +209,24 @@
   position: relative;
   aspect-ratio: 1;
   border-radius: 9px;
-  border: 1px solid var(--border-1);
-  background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.86));
+  border: 1px solid var(--border-2);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 6px 5px 5px;
-  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
   min-width: 0;
   user-select: none;
   overflow: hidden;
 }
 
+/* A blank slot is the canvas showing through, not a white card with a hairline
+   that vanishes into the panel. */
 .cal-cell.is-empty {
-  background: var(--bg-2);
+  background: var(--surface-2);
   border-color: transparent;
   pointer-events: none;
-  opacity: 0.5;
 }
 
 .cal-cell.is-clickable {
@@ -234,15 +234,13 @@
 }
 
 .cal-cell.is-clickable:hover {
-  border-color: var(--accent);
-  background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.92));
+  border-color: var(--accent-2);
+  background: var(--surface-accent);
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px -16px rgba(0, 90, 45, 0.55);
 }
 
 .cal-cell.is-clickable:active {
   transform: translateY(0);
-  box-shadow: none;
 }
 
 .cal-cell-day-num {
@@ -269,20 +267,18 @@
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  opacity: 0.85;
   transition: transform 140ms ease;
 }
 
 .cal-cell:hover .cal-cell-icon-wrap {
   transform: scale(1.08);
-  opacity: 1;
 }
 
 .cal-cell-trip-code {
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--accent-ink);
-  background: rgba(0, 177, 79, 0.1);
+  background: var(--surface);
   padding: 1px 3px;
   border-radius: 3px;
   margin-top: 2px;
@@ -300,61 +296,65 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-2);
 }
 
-/* ─── Status Variants ─── */
-/* Đi chuyến — subtle green tint */
+/* ─── Status Variants ───
+ * Each state is a SOLID tint plus a ≥2:1 border, so a cell reads as a state at
+ * a glance. The previous tint→white gradient put half of every cell back to
+ * white, which halved the perceived state area and left the 1.2:1 pastel
+ * borders invisible against the white panel. Day number and icon glyph both
+ * clear 4.5:1 against the fill they sit on. */
+/* Đi chuyến — green */
 .cal-cell.status-trip_day {
-  background: linear-gradient(180deg, #f0fdf4, #ffffff);
-  border-color: #bbf7d0;
+  background: #DDF3E7;
+  border-color: #7FC79E;
 }
 .cal-cell.status-trip_day .cal-cell-day-num {
-  color: #15803d;
+  color: #12693A;
 }
 .cal-cell.status-trip_day .cal-cell-icon-wrap {
-  color: #16a34a;
-  background: rgba(34, 197, 94, 0.10);
+  color: #0D6E3B;
+  background: #C3E9D3;
 }
 
-/* Chờ việc — subtle amber tint */
+/* Chờ việc — amber */
 .cal-cell.status-standby {
-  background: linear-gradient(180deg, #fffbea, #ffffff);
-  border-color: #fde68a;
+  background: #FBEBC7;
+  border-color: #D9A93A;
 }
 .cal-cell.status-standby .cal-cell-day-num {
-  color: #a16207;
+  color: #7A4C05;
 }
 .cal-cell.status-standby .cal-cell-icon-wrap {
-  color: #ca8a04;
-  background: rgba(245, 158, 11, 0.11);
+  color: #7A4C05;
+  background: #F3DCA6;
 }
 
-/* Nghỉ riêng — subtle rose tint */
+/* Nghỉ riêng — rose */
 .cal-cell.status-personal_leave {
-  background: linear-gradient(180deg, #fff1f2, #ffffff);
-  border-color: #fecdd3;
+  background: #FBD9DD;
+  border-color: #DB8A96;
 }
 .cal-cell.status-personal_leave .cal-cell-day-num {
-  color: #be123c;
+  color: #9E1035;
 }
 .cal-cell.status-personal_leave .cal-cell-icon-wrap {
-  color: #e11d48;
-  background: rgba(225, 29, 72, 0.10);
+  color: #9E1035;
+  background: #F5BFC6;
 }
 
-/* Nghỉ tuần — neutral slate */
+/* Nghỉ tuần — neutral */
 .cal-cell.status-weekly_off {
-  background: linear-gradient(180deg, var(--surface-2), var(--surface));
-  border-color: var(--border-1);
+  background: #E4E9E6;
+  border-color: #ADB9B3;
 }
 .cal-cell.status-weekly_off .cal-cell-day-num {
-  color: var(--fg-3);
+  color: var(--ink-3);
 }
 .cal-cell.status-weekly_off .cal-cell-icon-wrap {
-  color: var(--fg-3);
-  opacity: 0.6;
-  background: var(--surface-3);
+  color: var(--ink-3);
+  background: #D5DCD8;
 }
 
 /* ─── Calendar Footer: Legend + Instruction ─── */
@@ -386,26 +386,26 @@
   background: var(--surface);
 }
 
-/* Semantic legend tints — match cell colors */
+/* Semantic legend tints — must match the cell palette exactly */
 .calendar-legend-item:nth-child(1) {
-  color: #15803d;
-  border-color: #bbf7d0;
-  background: #f0fdf4;
+  color: #12693A;
+  border-color: #7FC79E;
+  background: #DDF3E7;
 }
 .calendar-legend-item:nth-child(2) {
-  color: #a16207;
-  border-color: #fde68a;
-  background: #fefce8;
+  color: #7A4C05;
+  border-color: #D9A93A;
+  background: #FBEBC7;
 }
 .calendar-legend-item:nth-child(3) {
-  color: #be123c;
-  border-color: #fecdd3;
-  background: #fff1f2;
+  color: #9E1035;
+  border-color: #DB8A96;
+  background: #FBD9DD;
 }
 .calendar-legend-item:nth-child(4) {
-  color: var(--fg-3);
-  border-color: var(--border-1);
-  background: var(--surface);
+  color: var(--ink-3);
+  border-color: #ADB9B3;
+  background: #E4E9E6;
 }
 
 .calendar-legend-instruction {

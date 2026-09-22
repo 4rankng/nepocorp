@@ -450,7 +450,7 @@ export default function SalaryAttendancePage() {
             <div className="salary-summary-area">
               {salaryLoading ? (
                 <div className="salary-summary-dark" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 180 }}>
-                  <Loader2 size={24} className="spin" style={{ color: '#fff' }} />
+                  <Loader2 size={24} className="spin" style={{ color: 'var(--accent-2)' }} />
                 </div>
               ) : salary ? (
                 <>
@@ -478,7 +478,7 @@ export default function SalaryAttendancePage() {
                   )}
                 </>
               ) : (
-                <div className="salary-summary-dark" style={{ textAlign: 'center', padding: 24, fontSize: 'var(--fs-body)', color: 'rgba(255,255,255,0.6)' }}>
+                <div className="salary-summary-dark" style={{ textAlign: 'center', padding: 24, fontSize: 'var(--fs-body)', color: 'var(--ink-2)' }}>
                   Không thể tải dữ liệu lương
                 </div>
               )}
