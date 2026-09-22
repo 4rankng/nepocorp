@@ -1,19 +1,18 @@
 import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { formatCurrency, formatDate, formatNumber } from '../lib/format';
+import { formatCurrency } from '../lib/format';
 import { TxnType, FINANCIAL } from '@tingting/shared';
 import type {
   SupplierStatement as SupplierStatementType,
   LedgerEntry,
-  AgingBucket,
   VendorPaymentRequest,
 } from '@tingting/shared';
-import { AlertTriangle, Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
-import { useConfirm, Modal } from '../components/UI';
+import { useConfirm } from '../components/UI';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
@@ -24,42 +23,12 @@ import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import './DebtDetailPage.css';
 import { payableBillingDocumentEntityType } from './payable-billing-document';
-
-const TXN_META: Record<string, { label: string; pill: string }> = {
-  [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
-  [TxnType.VENDOR_PAYMENT]:  { label: 'Thanh toán công nợ',  pill: 'dd-txn-pill dd-txn-pill--pay' },
-  [TxnType.ADJUSTMENT]:      { label: 'Điều chỉnh',      pill: 'dd-txn-pill dd-txn-pill--adj' },
-  [TxnType.FUEL_EXPENSE]:    { label: 'Chi phí nhiên liệu',  pill: 'dd-txn-pill dd-txn-pill--pen' },
-  [TxnType.EXTERNAL_CARRIER_COST]: { label: 'Cước thuê ngoài', pill: 'dd-txn-pill dd-txn-pill--pen' },
-  [TxnType.UNLOCK_REVERSAL]: { label: 'Hoàn tác',         pill: 'dd-txn-pill dd-txn-pill--adj' },
-};
-const DEFAULT_META = { label: 'KHÁC', pill: 'dd-txn-pill dd-txn-pill--other' };
-
-const AGING_RANGES = [
-  { label: '0–30 NGÀY',    dotColor: 'var(--accent)',  index: 0 },
-  { label: '31–60 NGÀY',   dotColor: 'var(--warning)', index: 1 },
-  { label: '61–90 NGÀY',   dotColor: '#D97706',        index: 2 },
-  { label: 'TRÊN 90 NGÀY', dotColor: 'var(--danger)',  index: 3 },
-] as const;
-
-type LedgerFilter = 'all' | typeof TxnType.VENDOR_EXPENSE | typeof TxnType.VENDOR_PAYMENT | typeof TxnType.ADJUSTMENT | typeof TxnType.FUEL_EXPENSE | typeof TxnType.EXTERNAL_CARRIER_COST;
-
-const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
-  { key: 'all',                     label: 'Tất cả' },
-  { key: TxnType.VENDOR_EXPENSE,    label: 'Ghi nhận chi phí' },
-  { key: TxnType.VENDOR_PAYMENT,    label: 'Thanh toán công nợ' },
-  { key: TxnType.FUEL_EXPENSE,      label: 'Chi phí nhiên liệu' },
-  { key: TxnType.EXTERNAL_CARRIER_COST, label: 'Cước thuê ngoài' },
-  { key: TxnType.ADJUSTMENT,        label: 'Điều chỉnh' },
-];
-
-function normalizeAging(buckets: AgingBucket[]): number[] {
-  const amounts = [0, 0, 0, 0];
-  buckets.forEach((b, i) => {
-    if (i < 4) amounts[i] = b.amount;
-  });
-  return amounts;
-}
+import { FILTER_OPTIONS, normalizeAging } from '../features/payables/payableDetailUtils';
+import type { LedgerFilter } from '../features/payables/payableDetailUtils';
+import { LedgerRow, FuelLedgerRow, ExpenseLedgerRow } from '../features/payables/payableDetailLedger';
+import { PayableLedgerCard, FuelLedgerCard, ExpenseLedgerCard } from '../features/payables/payableDetailLedger';
+import { PayableSummarySection } from '../features/payables/payableDetailSummary';
+import { PayablePaymentModal } from '../features/payables/payableDetailPaymentModal';
 
 export default function PayableDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -322,72 +291,16 @@ export default function PayableDetailPage() {
       </div>
 
       {/* Summary Card */}
-      <section className="dd-summary">
-        <div className="dd-sum-top">
-          <div>
-            <div className="dd-sum-label">TỔNG CỘNG NỢ</div>
-            <div className={`dd-sum-total ${hasDebt ? '' : ' dd-sum-total--clear'}`}>
-              {hasDebt
-                ? <>{formatCurrency(totalOutstanding).replace(' ₫', '')}<span className="dd-cur">đ</span></>
-                : <>0<span className="dd-cur">đ</span></>
-              }
-            </div>
-            {hasDebt && (
-              <div className="dd-sum-note">
-                <AlertTriangle size={17} style={{ color: 'var(--danger)', flexShrink: 0 }} />
-                {activeAgingIdx <= 0
-                  ? 'Toàn bộ công nợ đang trong hạn 30 ngày.'
-                  : `Có công nợ quá hạn ${AGING_RANGES[activeAgingIdx].label.toLowerCase()} — cần ưu tiên thanh toán.`
-                }
-              </div>
-            )}
-            {hasCredit && (
-              <div className="dd-sum-note" style={{ marginTop: 4 }}>
-                <AlertTriangle size={17} style={{ color: 'var(--warning)', flexShrink: 0 }} />
-                Đã trả thừa {formatCurrency(overpaymentAmount).replace(' ₫', '')}đ — nhà cung cấp đang nợ lại công ty
-              </div>
-            )}
-          </div>
-          <div className="dd-sum-update">
-            Cập nhật lần cuối
-            <b>{new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</b>
-            {ledgerRows.length} giao dịch trong kỳ
-          </div>
-        </div>
-
-        {/* Aging bar */}
-        <div className="dd-aging-bar">
-          {effectiveAging.map((amt, i) => {
-            const pct = agingTotal > 0 ? (amt / agingTotal) * 100 : 0;
-            return pct > 0
-              ? <i key={i} className={`dd-seg-${i}`} style={{ width: `${pct}%` }} />
-              : null;
-          })}
-        </div>
-
-        {/* Aging grid */}
-        <div className="dd-aging-grid">
-          {AGING_RANGES.map((range, i) => {
-            const amt = effectiveAging[i];
-            const isActive = i === activeAgingIdx;
-            const pct = agingTotal > 0 ? Math.round((amt / agingTotal) * 100) : 0;
-            return (
-              <div key={i} className={`dd-aging-cell${isActive ? ' dd-aging-cell--active' : ''}`}>
-                <div className="dd-ac-head">
-                  <span className="dd-ac-dot" style={{ background: range.dotColor }} />
-                  {range.label}
-                </div>
-                <div className={`dd-ac-val${amt === 0 ? ' dd-ac-val--zero' : ''}`}>
-                  {formatCurrency(amt).replace(' ₫', '')}đ
-                </div>
-                <div className="dd-ac-share">
-                  {amt > 0 ? `${pct}% tổng công nợ` : 'Không phát sinh'}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <PayableSummarySection
+        totalOutstanding={totalOutstanding}
+        effectiveAging={effectiveAging}
+        agingTotal={agingTotal}
+        activeAgingIdx={activeAgingIdx}
+        hasDebt={hasDebt}
+        hasCredit={hasCredit}
+        overpaymentAmount={overpaymentAmount}
+        ledgerCount={ledgerRows.length}
+      />
 
       {/* Ledger Card */}
       <section className="dd-ledger dd-ledger--standalone">
@@ -530,257 +443,21 @@ export default function PayableDetailPage() {
       )}
 
       {/* Payment Modal */}
-      <Modal
+      <PayablePaymentModal
         isOpen={showPaymentModal}
-        title="Ghi thanh toán"
+        submitting={submitting}
+        amount={paymentAmount}
+        date={paymentDate}
+        receiptId={paymentReceiptId}
+        onAmountChange={setPaymentAmount}
+        onDateChange={setPaymentDate}
+        onReceiptIdChange={setPaymentReceiptId}
         onClose={() => setShowPaymentModal(false)}
         onConfirm={() => handlePaymentSubmit(false)}
-        maxWidth={440}
-        footer={
-          <>
-            <button className="btn btn--secondary" onClick={() => setShowPaymentModal(false)} disabled={submitting}>
-              Hủy
-            </button>
-            <button
-              className="btn btn--primary"
-              onClick={() => handlePaymentSubmit(false)}
-              disabled={submitting || !paymentAmount || !paymentDate || !paymentReceiptId.trim()}
-            >
-              {submitting ? 'Đang ghi…' : 'Xác nhận'}
-            </button>
-          </>
-        }
-      >
-        <div className="field">
-          <label htmlFor="payment-amount">Số tiền (đ) *</label>
-          <input
-            id="payment-amount"
-            type="number"
-            className="input"
-            value={paymentAmount}
-            onChange={e => setPaymentAmount(e.target.value)}
-            placeholder="Nhập số tiền"
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="payment-date">Ngày *</label>
-          <input
-            id="payment-date"
-            type="date"
-            className="input"
-            value={paymentDate}
-            onChange={e => setPaymentDate(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="payment-receipt-id">Mã biên lai *</label>
-          <input
-            id="payment-receipt-id"
-            type="text"
-            className="input"
-            value={paymentReceiptId}
-            onChange={e => setPaymentReceiptId(e.target.value)}
-            placeholder="VD: PT-20260531-01"
-          />
-          <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
-            Bắt buộc để đối chiếu sao kê ngân hàng / phiếu chi.
-          </p>
-        </div>
-      </Modal>
+      />
       {confirmDialog}
     </div>
   );
 }
 
-function LedgerRow({ row }: { row: LedgerEntry }) {
-  const debit = parseFloat(row.debit) || 0;
-  const credit = parseFloat(row.credit) || 0;
-  const balance = parseFloat(row.balance) || 0;
-  const meta = TXN_META[row.txnType] ?? DEFAULT_META;
-  const reference = row.receiptId
-    || (row.txnType === TxnType.FUEL_EXPENSE ? row.tripCode || 'Chuyến chưa có mã' : null)
-    || row.note
-    || meta.label;
-
-  return (
-    <tr>
-      <td className="dd-td-date">{formatDate(row.timestamp)}</td>
-      <td className="dd-reference">
-        <strong>{reference}</strong>
-        {row.expenseDetails?.vehiclePlate && <small>{row.expenseDetails.vehiclePlate}</small>}
-      </td>
-      <td><span className={meta.pill}>{meta.label}</span></td>
-      <td className={`dd-num ${credit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
-        {credit > 0 ? formatCurrency(credit).replace(' ₫', '') + 'đ' : '–'}
-      </td>
-      <td className={`dd-num ${debit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
-        {debit > 0 ? formatCurrency(debit).replace(' ₫', '') + 'đ' : '–'}
-      </td>
-      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
-        {balance < 0 ? '-' : ''}{formatCurrency(Math.abs(balance)).replace(' ₫', '')}đ
-      </td>
-      <td className="dd-td-note">{row.note || ''}</td>
-    </tr>
-  );
-}
-
-export function FuelLedgerRow({ row }: { row: LedgerEntry }) {
-  const detail = row.fuelDetails;
-  const balance = parseFloat(row.balance) || 0;
-  const amount = Number(detail?.amount ?? row.credit) || 0;
-  const reference = row.tripCode || row.note || 'Chuyến chưa có mã';
-
-  return (
-    <tr className="dd-fuel-row">
-      <td className="dd-td-date">{formatDate(detail?.departureDate ?? row.timestamp)}</td>
-      <td className="dd-fuel-vehicle">{detail?.truckPlate || '—'}</td>
-      <td className="dd-fuel-route">{detail?.routeName || '—'}</td>
-      <td className="dd-num">{detail?.liters ? `${formatNumber(Number(detail.liters))} lít` : '—'}</td>
-      <td className="dd-num">{detail?.unitPrice ? formatCurrency(Number(detail.unitPrice)) : '—'}</td>
-      <td className="dd-num dd-num--debit">{formatCurrency(amount)}</td>
-      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
-        {balance < 0 ? '-' : ''}{formatCurrency(Math.abs(balance))}
-      </td>
-      <td className="dd-reference">
-        <strong>{reference}</strong>
-        {row.note && row.note !== reference && <small>{row.note}</small>}
-      </td>
-    </tr>
-  );
-}
-
-export function ExpenseLedgerRow({ row }: { row: LedgerEntry }) {
-  const detail = row.expenseDetails;
-  const debit = parseFloat(row.debit) || 0;
-  const credit = parseFloat(row.credit) || 0;
-  const balance = parseFloat(row.balance) || 0;
-  const reference = row.receiptId || row.note || detail?.categoryName || 'Chi phí nhà cung cấp';
-
-  return (
-    <tr className="dd-expense-row">
-      <td className="dd-td-date">{formatDate(detail?.expenseDate ?? row.timestamp)}</td>
-      <td className="dd-expense-vehicle">{detail?.vehiclePlate || '—'}</td>
-      <td className="dd-expense-category">{detail?.categoryName || 'Ghi nhận chi phí'}</td>
-      <td className="dd-reference"><strong>{reference}</strong></td>
-      <td className={`dd-num ${credit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
-        {credit > 0 ? formatCurrency(credit) : '–'}
-      </td>
-      <td className={`dd-num ${debit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
-        {debit > 0 ? formatCurrency(debit) : '–'}
-      </td>
-      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
-        {balance < 0 ? '-' : ''}{formatCurrency(Math.abs(balance))}
-      </td>
-      <td className="dd-td-note">{row.note || ''}</td>
-    </tr>
-  );
-}
-
-export function PayableLedgerCard({ row }: { row: LedgerEntry }) {
-  const debit = parseFloat(row.debit) || 0;
-  const credit = parseFloat(row.credit) || 0;
-  const balance = parseFloat(row.balance) || 0;
-  const meta = TXN_META[row.txnType] ?? DEFAULT_META;
-  const reference = row.receiptId
-    || (row.txnType === TxnType.FUEL_EXPENSE ? row.tripCode || 'Chuyến chưa có mã' : null)
-    || row.note
-    || meta.label;
-
-  return (
-    <li className="dd-ledger-mobile-card d-card d-card-border bg-base-100">
-      <div className="dd-ledger-mobile-card__head">
-        <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
-        <span className={meta.pill}>{meta.label}</span>
-      </div>
-      <div className="dd-ledger-mobile-card__body">
-        <strong>{reference}</strong>
-        {row.note && row.note !== reference && <p>{row.note}</p>}
-      </div>
-      <dl className="dd-ledger-mobile-card__amounts">
-        <div>
-          <dt>Phải trả</dt>
-          <dd>{credit > 0 ? formatCurrency(credit).replace(' ₫', '') + 'đ' : '–'}</dd>
-        </div>
-        <div>
-          <dt>Đã trả</dt>
-          <dd className={debit > 0 ? 'text-success' : ''}>{debit > 0 ? formatCurrency(debit).replace(' ₫', '') + 'đ' : '–'}</dd>
-        </div>
-        <div className="dd-ledger-mobile-card__balance">
-          <dt>Số dư</dt>
-          <dd className={balance > 0 ? 'text-error' : balance < 0 ? 'text-success' : ''}>
-            {balance < 0 ? '-' : ''}{formatCurrency(Math.abs(balance)).replace(' ₫', '')}đ
-          </dd>
-        </div>
-      </dl>
-    </li>
-  );
-}
-
-export function FuelLedgerCard({ row }: { row: LedgerEntry }) {
-  const detail = row.fuelDetails;
-  const amount = Number(detail?.amount ?? row.credit) || 0;
-  const reference = row.tripCode || row.note || 'Chuyến chưa có mã';
-
-  return (
-    <li className="dd-ledger-mobile-card dd-fuel-card d-card d-card-border bg-base-100">
-      <div className="dd-ledger-mobile-card__head">
-        <time dateTime={detail?.departureDate ?? row.timestamp}>
-          {formatDate(detail?.departureDate ?? row.timestamp)}
-        </time>
-        <span className={TXN_META[TxnType.FUEL_EXPENSE].pill}>Chi phí nhiên liệu</span>
-      </div>
-      <div className="dd-ledger-mobile-card__body">
-        <strong>{detail?.truckPlate || 'Chưa có biển số xe'}</strong>
-        <p>{detail?.routeName || 'Chưa có tuyến vận chuyển'}</p>
-        <small>{reference}</small>
-      </div>
-      <dl className="dd-ledger-mobile-card__amounts dd-fuel-card__amounts">
-        <div>
-          <dt>Số lít dầu</dt>
-          <dd>{detail?.liters ? `${formatNumber(Number(detail.liters))} lít` : '—'}</dd>
-        </div>
-        <div>
-          <dt>Đơn giá</dt>
-          <dd>{detail?.unitPrice ? formatCurrency(Number(detail.unitPrice)) : '—'}</dd>
-        </div>
-        <div className="dd-ledger-mobile-card__balance">
-          <dt>Thành tiền</dt>
-          <dd>{formatCurrency(amount)}</dd>
-        </div>
-      </dl>
-    </li>
-  );
-}
-
-export function ExpenseLedgerCard({ row }: { row: LedgerEntry }) {
-  const detail = row.expenseDetails;
-  const credit = parseFloat(row.credit) || 0;
-  const balance = parseFloat(row.balance) || 0;
-  const reference = row.receiptId || row.note || detail?.categoryName || 'Chi phí nhà cung cấp';
-
-  return (
-    <li className="dd-ledger-mobile-card dd-expense-card d-card d-card-border bg-base-100">
-      <div className="dd-ledger-mobile-card__head">
-        <time dateTime={detail?.expenseDate ?? row.timestamp}>
-          {formatDate(detail?.expenseDate ?? row.timestamp)}
-        </time>
-        <span className={TXN_META[TxnType.VENDOR_EXPENSE].pill}>Ghi nhận chi phí</span>
-      </div>
-      <div className="dd-ledger-mobile-card__body">
-        <strong>{detail?.vehiclePlate || 'Chưa gắn biển số xe'}</strong>
-        <p>{detail?.categoryName || reference}</p>
-        {reference !== detail?.categoryName && <small>{reference}</small>}
-      </div>
-      <dl className="dd-ledger-mobile-card__amounts dd-expense-card__amounts">
-        <div>
-          <dt>Phải trả</dt>
-          <dd>{credit > 0 ? formatCurrency(credit) : '–'}</dd>
-        </div>
-        <div className="dd-ledger-mobile-card__balance">
-          <dt>Số dư</dt>
-          <dd>{balance < 0 ? '-' : ''}{formatCurrency(Math.abs(balance))}</dd>
-        </div>
-      </dl>
-    </li>
-  );
-}
+export { FuelLedgerRow, ExpenseLedgerRow, PayableLedgerCard, FuelLedgerCard, ExpenseLedgerCard } from '../features/payables/payableDetailLedger';

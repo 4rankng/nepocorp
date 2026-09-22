@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Loader2, X, Plus, Check } from 'lucide-react';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
 import { PageHeader, useConfirm } from '../components/UI';
@@ -16,6 +15,8 @@ import type { ExpenseWithRefs, Supplier, ExpenseCategory } from '@tingting/share
 import { qk } from '../api/keys';
 import { resolveExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import type { ExpenseCatalogs } from '../features/expenses/expenseCatalogs';
+import { ExpenseSupplierField, ExpenseCategoryField } from '../features/expenses/expenseCatalogFields';
+import { ExpenseDetailFields } from '../features/expenses/expenseDetailFields';
 import { EXPENSE_PHOTO_MAX_BYTES, convertHeicToJpeg, initialForm, type FormState } from './expense-entry-utils';
 import { ExpenseBasicFields, ExpenseLoading, ExpensePhotoAside } from './expense-entry-sections';
 import './ExpenseEntryPage.css';
@@ -184,17 +185,6 @@ export default function ExpenseEntryPage() {
     }
   };
 
-  const formatAmountDisplay = (val: string) => {
-    if (!val) return '';
-    const num = parseFloat(val.replace(/,/g, ''));
-    if (isNaN(num)) return val;
-    return num.toLocaleString('vi-VN');
-  };
-
-  const parseAmountInput = (displayVal: string) => {
-    return displayVal.replace(/[^\d]/g, '');
-  };
-
   const handleCreateSupplier = async () => {
     if (!newSupplierName.trim()) return;
     setCreatingSupplier(true);
@@ -248,6 +238,19 @@ export default function ExpenseEntryPage() {
       toast({ kind: 'error', message: e instanceof Error ? e.message : 'Lỗi tạo hạng mục' });
     } finally {
       setCreatingCategory(false);
+    }
+  };
+
+  // Switching the target vehicle clears any previously picked plate so the
+  // vehicle selector can never show a truck while TRAILER is selected (and
+  // vice versa); company-wide expenses carry no vehicle at all.
+  const handleExpenseTypeChange = (val: 'COMPANY' | 'TRUCK' | 'TRAILER') => {
+    setExpenseType(val);
+    if (val === 'COMPANY') {
+      set('truckId', '');
+    } else {
+      set('vehicleComponent', val);
+      set('truckId', '');
     }
   };
 
@@ -410,244 +413,56 @@ export default function ExpenseEntryPage() {
                 <div className="expense-panel__body expense-grid">
               <ExpenseBasicFields form={form} errors={errors} isEdit={isEdit} existingExpense={existingExpense} set={set} />
 
-              <div className="expense-group" style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <label htmlFor={showNewSupplier ? 'newSupplierName' : 'supplierId'} className="expense-label" style={{ marginBottom: 0 }}>Nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span></label>
-                  {!showNewSupplier && (
-                    <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-control)', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', fontWeight: 600, minHeight: 44, minWidth: 44, borderRadius: 6 }}>
-                      <Plus size={14} /> Thêm mới
-                    </button>
-                  )}
-                </div>
-                {showNewSupplier ? (
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      name="newSupplierName"
-                      id="newSupplierName"
-                      className={`expense-input${errors.supplierId ? ' expense-input--error' : ''}`}
-                      style={{ flex: 1 }}
-                      placeholder="Tên nhà cung cấp…"
-                      value={newSupplierName}
-                      onChange={e => setNewSupplierName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSupplier(); } if (e.key === 'Escape') { setShowNewSupplier(false); setNewSupplierName(''); } }}
-                      autoFocus
-                    />
-                    <button type="button" aria-label="Lưu nhà cung cấp mới" className="btn btn--primary" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingSupplier || !newSupplierName.trim()} onClick={handleCreateSupplier}>
-                      {creatingSupplier ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
-                    </button>
-                    <button type="button" aria-label="Hủy thêm nhà cung cấp" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewSupplier(false); setNewSupplierName(''); }}>
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    name="supplierId"
-                    id="supplierId"
-                    className={`expense-input${errors.supplierId ? ' expense-input--error' : ''}`}
-                    value={form.supplierId}
-                    disabled={loadingExpenseCatalogs}
-                    onChange={e => set('supplierId', e.target.value ? Number(e.target.value) : '')}
-                  >
-                    <option value="">
-                      {loadingExpenseCatalogs ? 'Đang tải nhà cung cấp…' : 'Chọn nhà cung cấp…'}
-                    </option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                )}
-                {errors.supplierId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.supplierId}</p>}
-              </div>
+              <ExpenseSupplierField
+                supplierId={form.supplierId}
+                error={errors.supplierId}
+                suppliers={suppliers}
+                loading={loadingExpenseCatalogs}
+                showNew={showNewSupplier}
+                newName={newSupplierName}
+                creating={creatingSupplier}
+                onStartNew={() => setShowNewSupplier(true)}
+                onNewNameChange={setNewSupplierName}
+                onCancelNew={() => { setShowNewSupplier(false); setNewSupplierName(''); }}
+                onCreate={handleCreateSupplier}
+                onSelect={v => set('supplierId', v)}
+              />
 
-              <div className="expense-group" style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <label htmlFor={showNewCategory ? 'newCategoryName' : 'categoryId'} className="expense-label" style={{ marginBottom: 0 }}>Hạng mục <span style={{ color: 'var(--danger)' }}>*</span></label>
-                  {!showNewCategory && (
-                    <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-control)', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', fontWeight: 600, minHeight: 44, minWidth: 44, borderRadius: 6 }}>
-                      <Plus size={14} /> Thêm mới
-                    </button>
-                  )}
-                </div>
-                {showNewCategory ? (
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      name="newCategoryName"
-                      id="newCategoryName"
-                      className={`expense-input${errors.categoryId ? ' expense-input--error' : ''}`}
-                      style={{ flex: 1 }}
-                      placeholder="Tên hạng mục…"
-                      value={newCategoryName}
-                      onChange={e => setNewCategoryName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } if (e.key === 'Escape') { setShowNewCategory(false); setNewCategoryName(''); } }}
-                      autoFocus
-                    />
-                    <button type="button" aria-label="Lưu hạng mục mới" className="btn btn--primary" style={{ padding: '12px', borderRadius: '12px' }} disabled={creatingCategory || !newCategoryName.trim()} onClick={handleCreateCategory}>
-                      {creatingCategory ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
-                    </button>
-                    <button type="button" aria-label="Hủy thêm hạng mục" className="btn btn--ghost btn--sm" style={{ padding: '12px', borderRadius: '12px', background: 'rgba(0,0,0,0.05)' }} onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }}>
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    name="categoryId"
-                    id="categoryId"
-                    className={`expense-input${errors.categoryId ? ' expense-input--error' : ''}`}
-                    value={form.categoryId}
-                    disabled={loadingExpenseCatalogs}
-                    onChange={e => set('categoryId', e.target.value ? Number(e.target.value) : '')}
-                  >
-                    <option value="">
-                      {loadingExpenseCatalogs ? 'Đang tải hạng mục…' : 'Chọn hạng mục…'}
-                    </option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                )}
-                {errors.categoryId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.categoryId}</p>}
-              </div>
+              <ExpenseCategoryField
+                categoryId={form.categoryId}
+                error={errors.categoryId}
+                categories={categories}
+                loading={loadingExpenseCatalogs}
+                showNew={showNewCategory}
+                newName={newCategoryName}
+                creating={creatingCategory}
+                onStartNew={() => setShowNewCategory(true)}
+                onNewNameChange={setNewCategoryName}
+                onCancelNew={() => { setShowNewCategory(false); setNewCategoryName(''); }}
+                onCreate={handleCreateCategory}
+                onSelect={v => set('categoryId', v)}
+              />
 
-              <div className="expense-group">
-                <label htmlFor="expenseType" className="expense-label">Loại chi phí</label>
-                <select
-                  id="expenseType"
-                  name="expenseType"
-                  className="expense-input"
-                  value={expenseType}
-                  onChange={e => {
-                    const val = e.target.value as 'COMPANY' | 'TRUCK' | 'TRAILER';
-                    setExpenseType(val);
-                    if (val === 'COMPANY') {
-                      set('truckId', '');
-                    } else {
-                      set('vehicleComponent', val);
-                      set('truckId', ''); 
-                    }
-                  }}
-                >
-                  <option value="COMPANY">Chi phí công ty</option>
-                  <option value="TRUCK">Xe (Đầu kéo)</option>
-                  <option value="TRAILER">Rơ-moóc</option>
-                </select>
-              </div>
-
-              {expenseType === 'TRUCK' && (
-                <div className="expense-group">
-                  <label htmlFor="truckId" className="expense-label">Biển số xe <span style={{ color: 'var(--danger)' }}>*</span></label>
-                  <select
-                    name="truckId"
-                    id="truckId"
-                    className={`expense-input${errors.truckId ? ' expense-input--error' : ''}`}
-                    value={form.truckId}
-                    onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
-                  >
-                    <option value="">Chọn xe…</option>
-                    {trucks.map(t => (
-                      <option key={t.id} value={t.id}>{t.licensePlate}</option>
-                    ))}
-                  </select>
-                  {errors.truckId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
-                </div>
-              )}
-
-              {expenseType === 'TRAILER' && (
-                <div className="expense-group">
-                  <label htmlFor="truckId" className="expense-label">Biển số rơ-moóc <span style={{ color: 'var(--danger)' }}>*</span></label>
-                  <select
-                    name="truckId"
-                    id="truckId"
-                    className={`expense-input${errors.truckId ? ' expense-input--error' : ''}`}
-                    value={form.truckId}
-                    onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
-                  >
-                    <option value="">Chọn rơ-moóc…</option>
-                    {trailers
-                      .map(t => (
-                        <option key={t.id} value={t.id}>{t.licensePlate}</option>
-                      ))}
-                  </select>
-                  {errors.truckId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
-                </div>
-              )}
-
-              <div className="expense-group">
-                <label htmlFor="amount" className="expense-label">Số tiền (đ) <span style={{ color: 'var(--danger)' }}>*</span></label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    name="amount"
-                    id="amount"
-                    inputMode="numeric"
-                    className={`expense-input${errors.amount ? ' expense-input--error' : ''}`}
-                    value={form.amount ? formatAmountDisplay(form.amount) : ''}
-                    onChange={e => set('amount', parseAmountInput(e.target.value))}
-                    placeholder="0"
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-control)', fontWeight: 600, color: 'var(--accent-2)' }}
-                  />
-                  <span style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-4)', pointerEvents: 'none', fontWeight: 500 }}>
-                    đ
-                  </span>
-                </div>
-                {errors.amount && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.amount}</p>}
-              </div>
-
-              {showValidityFields && (
-                <>
-                  <div className="expense-group">
-                    <label htmlFor="validFrom" className="expense-label">Hiệu lực từ <span style={{ color: 'var(--danger)' }}>*</span></label>
-                    <input
-                      type="date"
-                      name="validFrom"
-                      id="validFrom"
-                      className={`expense-input${errors.validFrom ? ' expense-input--error' : ''}`}
-                      value={form.validFrom}
-                      onChange={e => set('validFrom', e.target.value)}
-                    />
-                    {errors.validFrom && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.validFrom}</p>}
-                  </div>
-                  <div className="expense-group">
-                    <label htmlFor="validTo" className="expense-label">Hiệu lực đến <span style={{ color: 'var(--danger)' }}>*</span></label>
-                    <input
-                      type="date"
-                      name="validTo"
-                      id="validTo"
-                      className={`expense-input${errors.validTo ? ' expense-input--error' : ''}`}
-                      value={form.validTo}
-                      onChange={e => set('validTo', e.target.value)}
-                    />
-                    {errors.validTo && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.validTo}</p>}
-                  </div>
-                </>
-              )}
-
-              <div className="expense-group">
-                <label htmlFor="receiptId" className="expense-label">Mã biên lai</label>
-                <input
-                  type="text"
-                  name="receiptId"
-                  id="receiptId"
-                  className="expense-input"
-                  value={form.receiptId}
-                  onChange={e => set('receiptId', e.target.value)}
-                  placeholder="Nhập mã biên lai…"
-                />
-              </div>
-
-              <div className="expense-group" style={{ gridColumn: '1 / -1' }}>
-                <label htmlFor="note" className="expense-label">Ghi chú</label>
-                <input
-                  type="text"
-                  name="note"
-                  id="note"
-                  className="expense-input"
-                  value={form.note}
-                  onChange={e => set('note', e.target.value)}
-                  placeholder="Ghi chú thêm…"
-                />
-              </div>
+              <ExpenseDetailFields
+                expenseType={expenseType}
+                onExpenseTypeChange={handleExpenseTypeChange}
+                truckId={form.truckId}
+                onTruckIdChange={v => set('truckId', v)}
+                trucks={trucks}
+                trailers={trailers}
+                amount={form.amount}
+                onAmountChange={v => set('amount', v)}
+                showValidityFields={showValidityFields}
+                validFrom={form.validFrom}
+                onValidFromChange={v => set('validFrom', v)}
+                validTo={form.validTo}
+                onValidToChange={v => set('validTo', v)}
+                receiptId={form.receiptId}
+                onReceiptIdChange={v => set('receiptId', v)}
+                note={form.note}
+                onNoteChange={v => set('note', v)}
+                errors={errors}
+              />
                 </div>
               </div>
             </div>

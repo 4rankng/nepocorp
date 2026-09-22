@@ -1,16 +1,12 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { formatCurrency, formatDate } from '../lib/format';
+import { formatDate } from '../lib/format';
 import { TxnType } from '@tingting/shared';
-import type { LedgerEntry } from '@tingting/shared';
-import { AlertTriangle, Download, Phone, Building2, ArrowLeft, Plus, X, Loader2, Save, Truck } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { api } from '../lib/api';
-import { Modal } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
-import { Tooltip } from '../components/shared/Tooltip';
-import AssetIcon from '../components/AssetIcon';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { useToast } from '../components/shared/Toast';
 import { usePageAnimations } from '../hooks/animations';
@@ -19,32 +15,20 @@ import { useAgentOpenable } from '../hooks/useAgentOpenable';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { qk } from '../api/keys';
 import './DebtDetailPage.css';
-import { normalizeAging, money, rowTypeLabel, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
+import { normalizeAging, money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
 import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch } from '../components/debt/PeriodFilter';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import { matchLinkedSupplierStatement } from './linked-supplier-statement';
+import { DebtDetailHeader } from '../features/debt/debtHeader';
+import { DebtAccountStrip, DebtAgingSummary } from '../features/debt/debtSummary';
+import { DebtPaymentModal } from '../features/debt/debtPaymentModal';
+import { ReceivableLedgerRow, ReceivableLedgerCard } from '../features/debt/debtLedgerRows';
+import { DualEntityLookupError, LinkedSupplierPayableLedger } from '../features/debt/debtLinkedSupplierLedger';
 
-// ── Aging constants ────────────────────────────────────────────────────────
-
-const AGING_RANGES = [
-  { label: '0–30 NGÀY',  dotColor: 'var(--accent)',  index: 0 },
-  { label: '31–60 NGÀY', dotColor: 'var(--warning)', index: 1 },
-  { label: '61–90 NGÀY', dotColor: '#D97706',        index: 2 },
-  { label: 'TRÊN 90 NGÀY', dotColor: 'var(--danger)', index: 3 },
-] as const;
-
-export function DualEntityLookupError({ onRetry }: { onRetry: () => void }) {
-  return (
-    <section className="dd-ledger dd-ledger--standalone" style={{ marginBottom: 16 }}>
-      <div className="dd-table-empty" role="alert">
-        Không thể kiểm tra công nợ phải trả liên kết.{' '}
-        <button type="button" className="btn btn--secondary btn--sm" onClick={onRetry}>
-          Thử lại
-        </button>
-      </div>
-    </section>
-  );
-}
+// Re-exported so existing imports from this page keep resolving after the
+// split (tests + any future consumer).
+export { ReceivableLedgerCard };
+export { DualEntityLookupError, LinkedSupplierPayableLedger };
 
 // ── Ledger filter type ─────────────────────────────────────────────────────
 
@@ -250,10 +234,8 @@ export default function DebtDetailPage() {
 
   const { customer, ledgerRows } = profileStatement;
   const hasDebt = totalOutstanding > 0;
-  const agingTotal = agingAmounts.reduce((s, a) => s + a, 0) || 1; // avoid /0
   const unpaidTrips = profileStatement.unpaidTrips ?? [];
   const oldestUnpaidTrip = unpaidTrips[0] ?? null;
-  const activeAgingRange = activeAgingIdx >= 0 ? AGING_RANGES[activeAgingIdx] : null;
   const activeAgingAmount = activeAgingIdx >= 0 ? agingAmounts[activeAgingIdx] : 0;
   const workspaceTabs: Array<{ key: WorkspaceTab; label: string; meta: string }> = [
     { key: 'ledger', label: 'Chi tiết công nợ', meta: `${statement?.ledgerRows.length ?? 0} khoản phát sinh` },
@@ -338,151 +320,31 @@ export default function DebtDetailPage() {
         )}
       />
       {/* ── Customer Header ─────────────────────────────────────────────── */}
-      <div className="dd-header">
-        <Tooltip label="Quay lại" side="right">
-          <button className="dd-back" aria-label="Quay lại" onClick={handleBack}>
-            <ArrowLeft size={20} />
-          </button>
-        </Tooltip>
-        <div className="dd-avatar">
-          <AssetIcon
-            name="customer"
-            size={28}
-            alt="Biểu tượng khách hàng"
-            className="dd-avatar__icon"
-          />
-        </div>
-        <div className="dd-meta">
-          <div className="dd-name-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h1>{customer.name}</h1>
-            {customer.isCarrier && (
-              <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                <Truck size={12} aria-hidden="true" /> Xe ngoài
-              </span>
-            )}
-          </div>
-          <div className="dd-sub">
-            {customer.contactInfo && (
-              <span>
-                <Phone size={15} />
-                <span className="dd-mono">{customer.contactInfo}</span>
-              </span>
-            )}
-            <span>
-              <Building2 size={15} />
-              Khách hàng doanh nghiệp
-            </span>
-            {hasDebt ? (
-              <span className="dd-tag dd-tag--warn dd-tag--dot">Còn nợ trong hạn</span>
-            ) : (
-              <span className="dd-tag dd-tag--ok dd-tag--dot">Đã thanh toán đủ</span>
-            )}
-          </div>
-        </div>
-        <div className="dd-actions">
-          {hasDebt && (
-            <button
-              className="btn btn--primary"
-              data-tour-id="debt-record-payment"
-              onClick={openPaymentModal}
-            >
-              <Plus size={14} />
-              Ghi nhận thanh toán
-            </button>
-          )}
-          <button
-            className="btn btn--secondary"
-            onClick={() => downloadExport('xlsx')}
-          >
-            <Download size={14} />
-            Xuất sao kê
-          </button>
-        </div>
-      </div>
+      <DebtDetailHeader
+        customer={customer}
+        hasDebt={hasDebt}
+        onBack={handleBack}
+        onRecordPayment={openPaymentModal}
+        onExport={() => { void downloadExport('xlsx'); }}
+      />
 
-      <section className="dd-account-strip" aria-label="Tóm tắt công nợ">
-        <article className={`dd-account-card${hasDebt ? ' dd-account-card--debt' : ' dd-account-card--clear'}`}>
-          <span>Dư nợ hiện tại</span>
-          <strong>{money(totalOutstanding)}</strong>
-          <small>{hasDebt ? 'Cần theo dõi thu hồi' : 'Đã tất toán'}</small>
-        </article>
-        <article className="dd-account-card">
-          <span>Chuyến chưa thu</span>
-          <strong>{unpaidTrips.length}</strong>
-          <small>{oldestUnpaidTrip ? `Cũ nhất ${formatDate(oldestUnpaidTrip.date)}` : 'Không phát sinh'}</small>
-        </article>
-        <article className="dd-account-card">
-          <span>Phiếu thu gần nhất</span>
-          <strong>{lastPayment ? money(parseFloat(lastPayment.credit) || 0) : '-'}</strong>
-          <small>{lastPayment ? formatDate(lastPayment.timestamp) : 'Chưa có phiếu thu'}</small>
-        </article>
-        <article className="dd-account-card">
-          <span>Nhóm tuổi nợ nổi bật</span>
-          <strong>{activeAgingRange ? activeAgingRange.label : 'Không nợ'}</strong>
-          <small>{activeAgingRange ? money(activeAgingAmount) : 'Không có số dư'}</small>
-        </article>
-      </section>
+      <DebtAccountStrip
+        hasDebt={hasDebt}
+        totalOutstanding={totalOutstanding}
+        unpaidTripCount={unpaidTrips.length}
+        oldestUnpaidTripDate={oldestUnpaidTrip?.date ?? null}
+        lastPayment={lastPayment}
+        activeAgingIdx={activeAgingIdx}
+        activeAgingAmount={activeAgingAmount}
+      />
 
       {/* ── Aging Summary ───────────────────────────────────────────────── */}
-      <section className="dd-summary dd-summary--aging">
-        <div className="dd-sum-top">
-          <div>
-            <div className="dd-sum-label">PHÂN BỔ TUỔI NỢ</div>
-            <p className="dd-sum-copy">
-              {hasDebt
-                ? 'Theo dõi phần công nợ nào đang tiến gần hạn hoặc đã quá hạn.'
-                : 'Khách hàng không còn công nợ đang mở.'}
-            </p>
-            {hasDebt && (
-              <div className="dd-sum-note">
-                <AlertTriangle size={17} style={{ color: 'var(--danger)', flexShrink: 0 }} />
-                {activeAgingIdx <= 0
-                  ? 'Toàn bộ công nợ đang trong hạn 30 ngày — cần theo dõi thu hồi.'
-                  : `Có công nợ quá hạn ${AGING_RANGES[activeAgingIdx].label.toLowerCase()} — cần ưu tiên thu hồi.`
-                }
-              </div>
-            )}
-          </div>
-          <div className="dd-sum-update">
-            Cập nhật lần cuối
-            <b>{new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</b>
-            {ledgerRows.length} giao dịch trong kỳ
-          </div>
-        </div>
-
-        {/* Aging bar */}
-        <div className="dd-aging-bar">
-          {agingAmounts.map((amt, i) => {
-            const pct = agingTotal > 0 ? (amt / agingTotal) * 100 : 0;
-            return pct > 0
-              ? <i key={i} className={`dd-seg-${i}`} style={{ width: `${pct}%` }} />
-              : null;
-          })}
-        </div>
-
-        {/* Aging grid */}
-        <div className="dd-aging-grid">
-          {AGING_RANGES.map((range, i) => {
-            const amt = agingAmounts[i];
-            const isActive = i === activeAgingIdx;
-            const pct = agingTotal > 0 ? Math.round((amt / agingTotal) * 100) : 0;
-            return (
-              <div key={i} className={`dd-aging-cell${isActive ? ' dd-aging-cell--active' : ''}`}>
-                <div className="dd-ac-head">
-                  <span className="dd-ac-dot" style={{ background: range.dotColor }} />
-                  {range.label}
-                </div>
-                <div className={`dd-ac-val${amt === 0 ? ' dd-ac-val--zero' : ''}`}>
-                  {formatCurrency(amt).replace(' ₫', '')}đ
-                </div>
-                <div className="dd-ac-share">
-                  {amt > 0 ? `${pct}% tổng công nợ` : 'Không phát sinh'}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <DebtAgingSummary
+        hasDebt={hasDebt}
+        activeAgingIdx={activeAgingIdx}
+        agingAmounts={agingAmounts}
+        ledgerRowCount={ledgerRows.length}
+      />
 
       {isDualEntityLookupError && (
         <DualEntityLookupError onRetry={() => { void refetchDualEntities(); }} />
@@ -674,350 +536,20 @@ export default function DebtDetailPage() {
       </section>
 
       {/* Payment modal — FIFO across unpaid trips */}
-      <Modal
+      <DebtPaymentModal
         isOpen={showPay}
-        title={`Ghi nhận thanh toán — ${customer.name}`}
+        customerName={customer.name}
+        totalOutstanding={totalOutstanding}
+        unpaidTripCount={unpaidTrips.length}
+        payAmount={payAmount}
+        payReceipt={payReceipt}
+        payError={payError}
+        paySubmitting={paySubmitting}
+        onAmountChange={setPayAmount}
+        onReceiptChange={setPayReceipt}
+        onSubmit={() => { void submitPayment(); }}
         onClose={() => setShowPay(false)}
-        onConfirm={submitPayment}
-        footer={
-          <>
-            <button className="btn btn--ghost btn--sm" onClick={() => setShowPay(false)}>
-              <X size={14} /> Hủy
-            </button>
-            <button
-              className="btn btn--primary btn--sm"
-              data-tour-id="debt-payment-submit"
-              disabled={paySubmitting || !payAmount.trim() || !payReceipt.trim()}
-              onClick={submitPayment}
-            >
-              {paySubmitting ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-              Ghi nhận
-            </button>
-          </>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {payError && (
-            <div style={{ padding: '10px 12px', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8, fontSize: 'var(--fs-body)' }}>
-              {payError}
-            </div>
-          )}
-          <div style={{
-            padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 8,
-            fontSize: 'var(--fs-body)', color: 'var(--fg-2)',
-          }}>
-            Còn nợ: <strong style={{ color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
-              {formatCurrency(totalOutstanding)}
-            </strong> ({unpaidTrips.length} chuyến chưa thu)
-          </div>
-          <div className="field">
-            <label htmlFor="pay-amount" style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Số tiền nhận (đ) <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <input
-              id="pay-amount"
-              className="input"
-              type="number"
-              value={payAmount}
-              onChange={e => setPayAmount(e.target.value)}
-              placeholder="VD: 5000000"
-              autoFocus
-            />
-            <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
-              Sẽ phân bổ FIFO vào {unpaidTrips.length} chuyến chưa thu, bắt đầu từ chuyến cũ nhất.
-            </p>
-          </div>
-          <div className="field">
-            <label htmlFor="pay-receipt" style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-              Mã biên lai / phiếu thu <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <input
-              id="pay-receipt"
-              className="input"
-              value={payReceipt}
-              onChange={e => setPayReceipt(e.target.value)}
-              placeholder="VD: PT-20260601-01"
-            />
-            <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
-              Bắt buộc để đối chiếu với sao kê ngân hàng / sổ quỹ.
-            </p>
-          </div>
-        </div>
-      </Modal>
+      />
     </div>
-  );
-}
-
-// ── Sub-components ───────────────────────────────────────────────────────────
-
-function receivablePill(txnType: TxnType): string {
-  if (txnType === TxnType.PAYMENT_RECEIVED) return 'dd-txn-pill dd-txn-pill--pay';
-  if (txnType === TxnType.TRIP_REVENUE) return 'dd-txn-pill dd-txn-pill--rev';
-  if (txnType === TxnType.SERVICE_FEE) return 'dd-txn-pill dd-txn-pill--fee';
-  if (txnType === TxnType.ADJUSTMENT || txnType === TxnType.UNLOCK_REVERSAL) {
-    return 'dd-txn-pill dd-txn-pill--adj';
-  }
-  return 'dd-txn-pill dd-txn-pill--other';
-}
-
-function ReceivableLedgerRow({ row }: { row: LedgerEntry }) {
-  const debit = parseFloat(row.debit) || 0;
-  const credit = parseFloat(row.credit) || 0;
-  const balance = parseFloat(row.balance) || 0;
-  const tripId = row.tripId ?? (
-    row.txnType === TxnType.TRIP_REVENUE || row.txnType === TxnType.PAYMENT_RECEIVED
-      ? row.txnId
-      : null
-  );
-  const containers = row.containerNumbers?.filter(Boolean) ?? [];
-  const primaryContent = row.routeName || row.serviceFeeLabel || row.note || 'Không có ghi chú';
-  const secondaryContent = row.routeName && row.note && row.note !== row.routeName ? row.note : null;
-
-  return (
-    <tr>
-      <td className="dd-td-date">{formatDate(row.timestamp)}</td>
-      <td className="dd-reference">
-        <strong>{row.tripCode || (tripId ? 'Chuyến chưa có mã' : row.receiptId || row.note || 'Giao dịch')}</strong>
-        {containers.length > 0 && <small>Container {containers.join(', ')}</small>}
-        {row.receiptId && tripId && <small>{row.receiptId}</small>}
-      </td>
-      <td className="dd-detail-content">
-        <strong>{primaryContent}</strong>
-        {secondaryContent && <small>{secondaryContent}</small>}
-      </td>
-      <td><span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span></td>
-      <td className={`dd-num ${debit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
-        {debit > 0 ? money(debit) : '–'}
-      </td>
-      <td className={`dd-num ${credit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
-        {credit > 0 ? money(credit) : '–'}
-      </td>
-      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
-        {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
-      </td>
-    </tr>
-  );
-}
-
-export function ReceivableLedgerCard({ row }: { row: LedgerEntry }) {
-  const debit = parseFloat(row.debit) || 0;
-  const credit = parseFloat(row.credit) || 0;
-  const balance = parseFloat(row.balance) || 0;
-  const tripId = row.tripId ?? (
-    row.txnType === TxnType.TRIP_REVENUE || row.txnType === TxnType.PAYMENT_RECEIVED
-      ? row.txnId
-      : null
-  );
-  const containers = row.containerNumbers?.filter(Boolean) ?? [];
-  const reference = row.tripCode || (tripId ? 'Chuyến chưa có mã' : row.receiptId || row.note || 'Giao dịch');
-  const detail = row.routeName || row.serviceFeeLabel || row.note || 'Không có ghi chú';
-  const secondaryDetail = row.routeName && row.note && row.note !== row.routeName ? row.note : null;
-
-  return (
-    <li className="dd-ledger-mobile-card d-card d-card-border bg-base-100">
-      <div className="dd-ledger-mobile-card__head">
-        <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
-        <span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span>
-      </div>
-      <div className="dd-ledger-mobile-card__body">
-        <strong>{reference}</strong>
-        <p>{detail}</p>
-        {secondaryDetail && <p>{secondaryDetail}</p>}
-        {containers.length > 0 && <small>Container {containers.join(', ')}</small>}
-        {row.receiptId && tripId && <small>{row.receiptId}</small>}
-      </div>
-      <dl className="dd-ledger-mobile-card__amounts">
-        <div>
-          <dt>Phải thu</dt>
-          <dd>{debit > 0 ? money(debit) : '–'}</dd>
-        </div>
-        <div>
-          <dt>Đã thu</dt>
-          <dd className={credit > 0 ? 'text-success' : ''}>{credit > 0 ? money(credit) : '–'}</dd>
-        </div>
-        <div className="dd-ledger-mobile-card__balance">
-          <dt>Số dư</dt>
-          <dd className={balance > 0 ? 'text-error' : balance < 0 ? 'text-success' : ''}>
-            {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
-          </dd>
-        </div>
-      </dl>
-    </li>
-  );
-}
-
-const PAYABLE_TXN_META: Record<string, { label: string; pill: string }> = {
-  [TxnType.VENDOR_EXPENSE]: { label: 'Ghi nhận chi phí', pill: 'dd-txn-pill dd-txn-pill--pen' },
-  [TxnType.VENDOR_PAYMENT]: { label: 'Thanh toán công nợ', pill: 'dd-txn-pill dd-txn-pill--pay' },
-  [TxnType.ADJUSTMENT]: { label: 'Điều chỉnh', pill: 'dd-txn-pill dd-txn-pill--adj' },
-  [TxnType.FUEL_EXPENSE]: { label: 'Chi phí nhiên liệu', pill: 'dd-txn-pill dd-txn-pill--pen' },
-  [TxnType.COMMISSION]: { label: 'Hoa hồng', pill: 'dd-txn-pill dd-txn-pill--pen' },
-  [TxnType.UNLOCK_REVERSAL]: { label: 'Hoàn tác', pill: 'dd-txn-pill dd-txn-pill--adj' },
-};
-const DEFAULT_PAYABLE_TXN_META = {
-  label: 'Khác',
-  pill: 'dd-txn-pill dd-txn-pill--other',
-};
-
-function payableRowDetails(row: LedgerEntry) {
-  const meta = PAYABLE_TXN_META[row.txnType] ?? DEFAULT_PAYABLE_TXN_META;
-  const reference = row.receiptId
-    || (row.txnType === TxnType.FUEL_EXPENSE ? row.tripCode || 'Chuyến chưa có mã' : null)
-    || row.note
-    || meta.label;
-
-  return {
-    meta,
-    reference,
-    payable: parseFloat(row.credit) || 0,
-    paid: parseFloat(row.debit) || 0,
-    balance: parseFloat(row.balance) || 0,
-  };
-}
-
-function LinkedSupplierPayableRow({ row }: { row: LedgerEntry }) {
-  const { meta, reference, payable, paid, balance } = payableRowDetails(row);
-
-  return (
-    <tr>
-      <td className="dd-td-date">{formatDate(row.timestamp)}</td>
-      <td className="dd-reference"><strong>{reference}</strong></td>
-      <td><span className={meta.pill}>{meta.label}</span></td>
-      <td className={`dd-num ${payable > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
-        {payable > 0 ? money(payable) : '–'}
-      </td>
-      <td className={`dd-num ${paid > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
-        {paid > 0 ? money(paid) : '–'}
-      </td>
-      <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
-        {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
-      </td>
-      <td className="dd-td-note">{row.note || '–'}</td>
-    </tr>
-  );
-}
-
-function LinkedSupplierPayableCard({ row }: { row: LedgerEntry }) {
-  const { meta, reference, payable, paid, balance } = payableRowDetails(row);
-
-  return (
-    <li className="dd-ledger-mobile-card d-card d-card-border bg-base-100">
-      <div className="dd-ledger-mobile-card__head">
-        <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
-        <span className={meta.pill}>{meta.label}</span>
-      </div>
-      <div className="dd-ledger-mobile-card__body">
-        <strong>{reference}</strong>
-        <p>{row.note || 'Không có ghi chú'}</p>
-      </div>
-      <dl className="dd-ledger-mobile-card__amounts">
-        <div>
-          <dt>Phải trả</dt>
-          <dd>{payable > 0 ? money(payable) : '–'}</dd>
-        </div>
-        <div>
-          <dt>Đã trả</dt>
-          <dd className={paid > 0 ? 'text-success' : ''}>{paid > 0 ? money(paid) : '–'}</dd>
-        </div>
-        <div className="dd-ledger-mobile-card__balance">
-          <dt>Số dư</dt>
-          <dd className={balance > 0 ? 'text-error' : balance < 0 ? 'text-success' : ''}>
-            {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
-          </dd>
-        </div>
-      </dl>
-    </li>
-  );
-}
-
-interface LinkedSupplierPayableLedgerProps {
-  supplierId: number;
-  supplierName: string;
-  rows: LedgerEntry[];
-  isCompact: boolean;
-  isLoading: boolean;
-  isError?: boolean;
-  onRetry?: () => void;
-  arBalance: number;
-  apBalance: number;
-}
-
-export function LinkedSupplierPayableLedger({
-  supplierId,
-  supplierName,
-  rows,
-  isCompact,
-  isLoading,
-  isError = false,
-  onRetry = () => undefined,
-  arBalance,
-  apBalance,
-}: LinkedSupplierPayableLedgerProps) {
-  const emptyMessage = isLoading
-    ? 'Đang tải giao dịch công nợ phải trả...'
-    : 'Chưa có giao dịch công nợ phải trả';
-
-  return (
-    <section
-      className="dd-ledger dd-ledger--standalone"
-      aria-label={`Chi tiết công nợ phải trả của ${supplierName}`}
-      style={{ marginBottom: 16 }}
-    >
-      <div className="dd-ledger-head">
-        <div className="dd-ledger-heading">
-          <span className="dd-panel-eyebrow">Nhà cung cấp liên kết</span>
-          <h2>Chi tiết công nợ phải trả</h2>
-          <p>
-            {supplierName} · Còn phải trả {money(apBalance)} · Số ròng {money(arBalance - apBalance)}
-          </p>
-        </div>
-        <span className="dd-cnt">{rows.length} giao dịch</span>
-        <a
-          className="btn btn--secondary btn--sm"
-          href={`/payables/${supplierId}`}
-          aria-label="Mở trang công nợ nhà cung cấp"
-        >
-          Xem đầy đủ
-        </a>
-      </div>
-
-      {isError ? (
-        <div className="dd-table-empty" role="alert">
-          Không thể tải chi tiết công nợ phải trả.{' '}
-          <button type="button" className="btn btn--secondary btn--sm" onClick={onRetry}>
-            Thử lại
-          </button>
-        </div>
-      ) : isCompact ? (
-        <ul className="dd-ledger-mobile d-list" aria-label="Danh sách giao dịch công nợ phải trả">
-          {rows.map(row => <LinkedSupplierPayableCard key={row.id} row={row} />)}
-          {rows.length === 0 && <li className="dd-ledger-mobile-empty">{emptyMessage}</li>}
-        </ul>
-      ) : (
-        <div className="table-scroll">
-          <table className="dd-table dd-detail-table">
-            <thead>
-              <tr>
-                <th>Ngày</th>
-                <th>Đối chiếu</th>
-                <th>Loại giao dịch</th>
-                <th className="dd-r">Phải trả</th>
-                <th className="dd-r">Đã trả</th>
-                <th className="dd-r">Số dư</th>
-                <th>Ghi chú</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(row => <LinkedSupplierPayableRow key={row.id} row={row} />)}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="dd-table-empty">{emptyMessage}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
   );
 }

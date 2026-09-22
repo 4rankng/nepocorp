@@ -1,10 +1,9 @@
-import { Fragment, useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { formatNumber } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
-import { AlertTriangle, CalendarDays, CheckCircle2, ChevronDown, ExternalLink } from 'lucide-react';
-import { EmptyIllustration } from '../components/shared';
-import { PageHeader, Panel } from '../components/UI';
+import { AlertTriangle, CalendarDays } from 'lucide-react';
+import { PageHeader } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { Alert } from '../components/shared/Alert';
 import { AssetIcon } from '../components/AssetIcon';
@@ -12,11 +11,11 @@ import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable } from '../hoo
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
-import { RevenueTrendChart } from '../components/charts/RevenueTrendChart';
-import { TopTruckProfitChart } from '../components/charts/TopTruckProfitChart';
 import { compactNum, EMPTY_CAP, EMPTY_TRIPS, EMPTY_YEARLY, marginPct, useFinanceDerived, yoyClass, yoyPct } from './finance-derived';
 import { groupFinanceTripDetails } from './finance-trip-details';
-import type { PnlMaintenanceItem } from '@tingting/shared';
+import { FinanceChartsRow } from '../features/finance/financeChartsRow';
+import { FinanceCategoryPanel } from '../features/finance/financeCategoryPanel';
+import { TruckBreakdownPanel } from '../features/finance/financeTruckBreakdown';
 import './FinancePage.css';
 
 export default function FinancePage() {
@@ -167,138 +166,19 @@ export default function FinancePage() {
       )}
 
       {/* ── Charts ──────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3 finance-charts-row">
-        {/* Revenue trend */}
-        <div className="dash-wf" style={{ flex: '2 1 400px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <div className="wf-card wf-chart" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div className="wf-card-h">
-              <div>
-                <div className="ttl">Doanh thu {chartView === 'day' ? `Tháng ${month}/${year}` : year}</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div className="wf-chart-toggle">
-                  <button className={`wf-chart-toggle__btn${chartView === 'day' ? ' is-active' : ''}`} onClick={() => setChartView('day')}>Ngày</button>
-                  <button className={`wf-chart-toggle__btn${chartView === 'month' ? ' is-active' : ''}`} onClick={() => setChartView('month')}>Tháng</button>
-                </div>
-              </div>
-            </div>
-            <div className="wf-legend">
-              <span className="li"><span className="sw" style={{ background: 'var(--wf-green)' }} />Doanh thu</span>
-              <span className="li"><span className="sw" style={{ background: 'var(--wf-blue)' }} />Lợi nhuận gộp</span>
-            </div>
-            <div className="body">
-              {yearlyLoading ? (
-                <div style={{ padding: '40px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 'var(--fs-body)', flex: 1 }}>
-                  Đang tải dữ liệu...
-                </div>
-              ) : !hasChartData ? (
-                <div style={{ padding: '40px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--wf-ink-3)', fontSize: 'var(--fs-body)', gap: 8, flex: 1 }}>
-                  <EmptyIllustration name="empty-pricing" width={150} height={124} />
-                  <div>
-                    {chartView === 'day'
-                      ? `Chưa có chuyến nào được khóa trong tháng ${month}/${year}`
-                      : `Chưa có chuyến nào được khóa trong năm ${year}`}
-                  </div>
-                  <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--wf-ink-3)' }}>Khoá lệnh để xem xu hướng doanh thu</div>
-                </div>
-              ) : (
-                <RevenueTrendChart
-                  title={`Xu hướng doanh thu và lợi nhuận gộp ${chartView === 'day' ? `tháng ${month}/${year}` : `năm ${year}`}`}
-                  months={activeChartData.months}
-                  revenue={activeChartData.revenue}
-                  gross={activeChartData.gross}
-                  currentIdx={activeChartData.currentIdx}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right column: cost pie + top trucks stacked */}
-        <div className="panel" style={{ padding: '16px 20px', flex: '1 1 280px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {/* Cost pie */}
-          <div>
-            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
-              Cơ cấu chi phí {String(month).padStart(2, '0')}/{String(year).slice(-2)}
-            </div>
-            {loading ? (
-              <div style={{ height: 160, background: 'var(--bg-2)', borderRadius: 6 }} />
-            ) : costPieData.length > 0 ? (
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-                {(() => {
-                  const total = costPieData.reduce((s, d) => s + d.value, 0) || 1;
-                  const cx = 100, cy = 100, rOuter = 80, rInner = 50;
-                  let start = -Math.PI / 2;
-                  const arcs = costPieData.map((d) => {
-                    const angle = (d.value / total) * Math.PI * 2;
-                    const end = start + angle;
-                    const x1 = cx + rOuter * Math.cos(start), y1 = cy + rOuter * Math.sin(start);
-                    const x2 = cx + rOuter * Math.cos(end), y2 = cy + rOuter * Math.sin(end);
-                    const x3 = cx + rInner * Math.cos(end), y3 = cy + rInner * Math.sin(end);
-                    const x4 = cx + rInner * Math.cos(start), y4 = cy + rInner * Math.sin(start);
-                    const large = angle > Math.PI ? 1 : 0;
-                    const path = `M ${x1} ${y1} A ${rOuter} ${rOuter} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${rInner} ${rInner} 0 ${large} 0 ${x4} ${y4} Z`;
-                    start = end;
-                    return { path, fill: d.fill, name: d.name, value: d.value, pct: (d.value / total) * 100 };
-                  });
-                  return (
-                    <>
-                      <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <svg viewBox="0 0 200 200" width={140} height={140} style={{ flexShrink: 0 }} role="img" aria-label={`Cơ cấu chi phí tháng ${month}/${year}`}>
-                          {arcs.map((a, i) => <path key={i} d={a.path} fill={a.fill} stroke="#FFFFFF" strokeWidth={2.5} />)}
-                          <text x={cx} y={cy - 7} textAnchor="middle" fontSize="12" fill="var(--ink-2)" fontFamily="var(--font-sans)">Tổng chi phí</text>
-                          <text x={cx} y={cy + 11} textAnchor="middle" fontSize="14" fontWeight={700} fill="var(--ink)" fontFamily="var(--font-mono)">{compactNum(total)}</text>
-                        </svg>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 'var(--fs-body)', width: '100%' }}>
-                        {arcs.map((a, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                            <span style={{ width: 10, height: 10, background: a.fill, borderRadius: 2, flexShrink: 0 }} />
-                            <span style={{ flex: 1, color: 'var(--ink-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</span>
-                            <span style={{ fontWeight: 600, whiteSpace: 'nowrap', color: 'var(--ink)', marginRight: 4 }}>{formatNumber(a.value)}₫</span>
-                            <span style={{ color: 'var(--ink-3)', flexShrink: 0, fontFamily: 'var(--font-mono)' }}>{a.pct.toFixed(0)}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            ) : (
-              <div style={{ height: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 'var(--fs-body)', gap: 8 }}>
-                <EmptyIllustration name="empty-pie" width={126} height={104} />
-                <div>Chưa có dữ liệu chi phí</div>
-                <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)' }}>Khoá lệnh có chi tiết nhiên liệu/đường để xem cơ cấu</div>
-              </div>
-            )}
-          </div>
-
-          {/* Divider */}
-          <div style={{ margin: '16px 0', borderTop: '1px solid var(--line)' }} />
-
-          {/* Top trucks */}
-          <div>
-            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 10 }}>
-              Top xe theo lợi nhuận – {String(month).padStart(2, '0')}/{String(year).slice(-2)}
-            </div>
-            {loading ? (
-              <div style={{ height: 80, background: 'var(--bg-2)', borderRadius: 6 }} />
-            ) : topTrucks.length === 0 ? (
-              <div style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>
-                Chưa có xe nào có chuyến đã khóa trong tháng này
-              </div>
-            ) : (
-              <TopTruckProfitChart
-                items={topTrucks.map(truck => ({
-                  name: truck.name,
-                  profit: truck['LN gộp'],
-                }))}
-                ariaLabel={`Top xe theo lợi nhuận tháng ${month}/${year}`}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+      <FinanceChartsRow
+        chartView={chartView}
+        onChartViewChange={setChartView}
+        month={month}
+        year={year}
+        yearlyLoading={yearlyLoading}
+        hasChartData={hasChartData}
+        activeChartData={activeChartData}
+        loading={loading}
+        costPieData={costPieData}
+        topTrucks={topTrucks}
+        formatCompact={compactNum}
+      />
 
       {loading ? (
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
@@ -477,329 +357,21 @@ export default function FinancePage() {
             </Link>
           </p>
 
-          {/* Per-truck breakdown — from all active trips */}
-          {truckBreakdown.length > 0 && (
-            <Panel
-              title="Phân tích lãi gộp theo phương tiện"
-              subtitle={`Hiệu suất vận tải chi tiết của ${truckBreakdown.length} đầu xe`}
-              style={{ marginTop: 20 }}
-              flush
-            >
-              {/* ── Mobile card list (≤640px) ──────────────────────────────── */}
-              <div className="mobile-only">
-                <div className="truck-card-list">
-                  {truckBreakdown.map(t => {
-                    const margin = t.revenue > 0 ? ((t.profit / t.revenue) * 100).toFixed(1) : '0.0';
-                    const barPct = t.revenue > 0 ? Math.min(100, Math.max(0, (t.profit / t.revenue) * 100)) : 0;
-                    const maintComp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
-                    const isExpanded = expandedTruckIds.has(t.id);
-                    const tripDetails = tripDetailsByTruck.get(t.id) ?? [];
-                    return (
-                      <div key={t.id} className={`truck-card${isExpanded ? ' truck-card--expanded' : ''}`}>
-                        <button
-                          type="button"
-                          className="truck-card__toggle"
-                          onClick={() => toggleTruck(t.id)}
-                          aria-expanded={isExpanded}
-                          aria-controls={`truck-mobile-details-${t.id}`}
-                        >
-                        <div className="truck-card__header">
-                          <span className="truck-card__plate">
-                            <ChevronDown className="truck-expand-icon" size={16} aria-hidden="true" />
-                            {t.plate}
-                          </span>
-                          <span className={`truck-card__profit ${t.profit >= 0 ? 'truck-card__profit--up' : 'truck-card__profit--down'}`}>
-                            {formatNumber(t.profit)}₫
-                          </span>
-                        </div>
-                        <div className="truck-card__stats">
-                          <div className="truck-card__stat">
-                            <span className="truck-card__stat-label">Lệnh</span>
-                            <span className="truck-card__stat-value">{t.trips}</span>
-                          </div>
-                          <div className="truck-card__stat">
-                            <span className="truck-card__stat-label">Doanh thu</span>
-                            <span className="truck-card__stat-value">{formatNumber(t.revenue)}</span>
-                          </div>
-                          <div className="truck-card__stat">
-                            <span className="truck-card__stat-label">Chi phí</span>
-                            <span className="truck-card__stat-value">{formatNumber(t.costs)}</span>
-                          </div>
-                          {(maintComp.truck > 0 || maintComp.trailer > 0) && (
-                            <div className="truck-card__stat">
-                              <span className="truck-card__stat-label">Bảo dưỡng</span>
-                              <span className="truck-card__stat-value">
-                                {maintComp.truck > 0 ? `${formatNumber(maintComp.truck)} ĐK` : ''}
-                                {maintComp.truck > 0 && maintComp.trailer > 0 ? ' · ' : ''}
-                                {maintComp.trailer > 0 ? `${formatNumber(maintComp.trailer)} RM` : ''}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="truck-card__bar-track">
-                          <div
-                            className={`truck-card__bar-fill ${t.profit >= 0 ? 'truck-card__bar-fill--up' : 'truck-card__bar-fill--down'}`}
-                            style={{ width: `${Math.min(100, Math.abs(barPct))}%` }}
-                          />
-                        </div>
-                        <div className="truck-card__margin">
-                          Biên LN {margin}% · Bấm để {isExpanded ? 'thu gọn' : 'xem từng lệnh'}
-                        </div>
-                        </button>
-                        {isExpanded && (
-                          <div id={`truck-mobile-details-${t.id}`} className="truck-mobile-details">
-                            {tripDetails.map(detail => (
-                              <div className="truck-trip-card" key={detail.id}>
-                                <div className="truck-trip-card__head">
-                                  <div>
-                                    <Link to={`/trips/${detail.id}`} className="truck-trip-link">
-                                      {detail.tripCode}<ExternalLink size={12} aria-hidden="true" />
-                                    </Link>
-                                    <div>{detail.routeName} · {new Date(detail.departureDate).toLocaleDateString('vi-VN')}</div>
-                                  </div>
-                                  <CostCheck matches={detail.costMatches} difference={detail.costDifference} />
-                                </div>
-                                <div className="truck-trip-card__grid">
-                                  <TripAmount label="Doanh thu ghi nhận" value={detail.revenue} />
-                                  <TripAmount label="Hoa hồng KH" value={detail.customerCommission} />
-                                  <TripAmount label={detail.isExternal ? 'Thuê xe' : 'Nhiên liệu'} value={detail.fuelOrHireCost} />
-                                  <TripAmount label="Đi đường" value={detail.roadAllowance} />
-                                  <TripAmount label="Phí trạm/vé CT" value={detail.tollAndCompanyTickets} />
-                                  <TripAmount label="Lương & phụ cấp" value={detail.driverAndAllowances} />
-                                  <TripAmount label="Tổng chi phí" value={detail.totalCost} />
-                                  <TripAmount label="Lợi nhuận" value={detail.profit} emphasized />
-                                </div>
-                              </div>
-                            ))}
-                            <MaintenanceDetails
-                              truck={maintComp.truck}
-                              trailer={maintComp.trailer}
-                              items={report?.maintenanceItemsByTruck?.[t.id] ?? []}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+          <TruckBreakdownPanel
+            truckBreakdown={truckBreakdown}
+            maintenanceCost={maintenanceCost}
+            report={report}
+            expandedTruckIds={expandedTruckIds}
+            onToggleTruck={toggleTruck}
+            tripDetailsByTruck={tripDetailsByTruck}
+          />
 
-              {/* ── Desktop table (>640px) ─────────────────────────────────── */}
-              <div className="desktop-only">
-                <div className="table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Biển số xe</th>
-                        <th className="num">Lệnh</th>
-                        <th className="num">Doanh thu chặng</th>
-                        <th className="num">Tổng chi phí</th>
-                        {maintenanceCost > 0 && (
-                          <>
-                            <th className="num">BD đầu kéo</th>
-                            <th className="num">BD rơ-mooc</th>
-                          </>
-                        )}
-                        <th className="num">Lợi nhuận gộp</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {truckBreakdown.map(t => {
-                        const maintComp = report?.maintenanceByComponent?.[t.id] ?? { truck: 0, trailer: 0 };
-                        const isExpanded = expandedTruckIds.has(t.id);
-                        const tripDetails = tripDetailsByTruck.get(t.id) ?? [];
-                        return (
-                          <Fragment key={t.id}>
-                            <tr className={`truck-summary-row${isExpanded ? ' is-expanded' : ''}`}>
-                              <td style={{ fontWeight: 600, color: t.id === 0 ? 'var(--fg-3)' : 'var(--fg-1)', fontStyle: t.id === 0 ? 'italic' : 'normal' }}>
-                                <button
-                                  type="button"
-                                  className="truck-row-toggle"
-                                  onClick={() => toggleTruck(t.id)}
-                                  aria-expanded={isExpanded}
-                                  aria-controls={`truck-details-${t.id}`}
-                                >
-                                  <ChevronDown className="truck-expand-icon" size={16} aria-hidden="true" />
-                                  <span>{t.plate}</span>
-                                  <span className="truck-row-toggle__hint">{isExpanded ? 'Thu gọn' : 'Xem chi tiết'}</span>
-                                </button>
-                              </td>
-                              <td className="num">{t.trips}</td>
-                              <td className="num">{formatNumber(t.revenue)}</td>
-                              <td className="num">{formatNumber(t.costs)}</td>
-                              {maintenanceCost > 0 && (
-                                <>
-                                  <td className="num">{maintComp.truck > 0 ? formatNumber(maintComp.truck) : '—'}</td>
-                                  <td className="num">{maintComp.trailer > 0 ? formatNumber(maintComp.trailer) : '—'}</td>
-                                </>
-                              )}
-                              <td className="num" style={{ color: t.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>
-                                {formatNumber(t.profit)}
-                              </td>
-                            </tr>
-                            {isExpanded && (
-                              <tr id={`truck-details-${t.id}`} className="truck-details-row">
-                                <td colSpan={maintenanceCost > 0 ? 7 : 5}>
-                                  <div className="truck-details-panel">
-                                    <div className="truck-details-panel__intro">
-                                      <span><strong>{tripDetails.length}/{t.trips}</strong> lệnh trong kỳ</span>
-                                      <span>“Khớp” chỉ xác nhận phép cộng các khoản bằng tổng chi phí đã lưu.</span>
-                                    </div>
-                                    <div className="truck-trip-table-wrap">
-                                      <table className="truck-trip-table">
-                                        <thead>
-                                          <tr>
-                                            <th>Lệnh / tuyến</th>
-                                            <th className="num">Doanh thu ghi nhận</th>
-                                            <th className="num">Hoa hồng KH</th>
-                                            <th className="num">Nhiên liệu / thuê xe</th>
-                                            <th className="num">Đi đường</th>
-                                            <th className="num">Phí trạm / vé CT</th>
-                                            <th className="num">Lương & phụ cấp</th>
-                                            <th className="num">Tổng chi phí</th>
-                                            <th className="num">Lợi nhuận</th>
-                                            <th>Đối chiếu</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {tripDetails.map(detail => (
-                                            <tr key={detail.id}>
-                                              <td>
-                                                <Link to={`/trips/${detail.id}`} className="truck-trip-link">
-                                                  {detail.tripCode}<ExternalLink size={12} aria-hidden="true" />
-                                                </Link>
-                                                <div className="truck-trip-route">{detail.routeName} · {new Date(detail.departureDate).toLocaleDateString('vi-VN')}</div>
-                                              </td>
-                                              <td className="num">{formatNumber(detail.revenue)}</td>
-                                              <td className="num">{detail.customerCommission ? formatNumber(detail.customerCommission) : '—'}</td>
-                                              <td className="num">{formatNumber(detail.fuelOrHireCost)}</td>
-                                              <td className="num">{detail.roadAllowance ? formatNumber(detail.roadAllowance) : '—'}</td>
-                                              <td className="num">{detail.tollAndCompanyTickets ? formatNumber(detail.tollAndCompanyTickets) : '—'}</td>
-                                              <td className="num">{detail.driverAndAllowances ? formatNumber(detail.driverAndAllowances) : '—'}</td>
-                                              <td className="num"><strong>{formatNumber(detail.totalCost)}</strong></td>
-                                              <td className="num" style={{ color: detail.profit >= 0 ? 'var(--brand)' : 'var(--danger)', fontWeight: 700 }}>{formatNumber(detail.profit)}</td>
-                                              <td><CostCheck matches={detail.costMatches} difference={detail.costDifference} /></td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                    <MaintenanceDetails
-                                      truck={maintComp.truck}
-                                      trailer={maintComp.trailer}
-                                      items={report?.maintenanceItemsByTruck?.[t.id] ?? []}
-                                    />
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </Panel>
-          )}
-
-          {/* Expense category breakdown */}
-          {categoryBreakdown.length > 0 && (
-            <Panel
-              title="Cơ cấu chi phí theo hạng mục"
-              subtitle={`Tổng hợp chi phí ${String(month).padStart(2, '0')}/${String(year).slice(-2)} phân theo loại`}
-              style={{ marginTop: 20 }}
-              flush
-            >
-              <div className="table-scroll finance-category-scroll">
-                <table className="finance-category-table" aria-label="Cơ cấu chi phí theo hạng mục">
-                  <thead>
-                    <tr>
-                      <th>Hạng mục</th>
-                      <th className="num" style={{ width: 200 }}>Tổng chi phí</th>
-                      <th style={{ width: 200 }}>Tỷ trọng</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const grandTotal = categoryBreakdown.reduce((s, c) => s + c.total, 0) || 1;
-                      return categoryBreakdown.map((cat, i) => {
-                        const pct = (cat.total / grandTotal) * 100;
-                        return (
-                          <tr key={i}>
-                            <td style={{ fontWeight: 600, color: 'var(--fg-1)' }}>{cat.categoryName}</td>
-                            <td className="num" data-label="Tổng chi phí">{formatNumber(cat.total)} ₫</td>
-                            <td data-label="Tỷ trọng">
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'var(--border)', overflow: 'hidden' }}>
-                                  <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4, background: 'var(--brand)' }} />
-                                </div>
-                                <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', minWidth: 40, textAlign: 'right' }}>
-                                  {pct.toFixed(1)}%
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      });
-                    })()}
-                  </tbody>
-                </table>
-              </div>
-            </Panel>
-          )}
+          <FinanceCategoryPanel
+            categoryBreakdown={categoryBreakdown}
+            month={month}
+            year={year}
+          />
         </>
-      )}
-    </div>
-  );
-}
-
-function CostCheck({ matches, difference }: { matches: boolean; difference: number }) {
-  return matches ? (
-    <span className="cost-check cost-check--ok" title="Các khoản chi phí cộng lại khớp với tổng chi phí đã lưu">
-      <CheckCircle2 size={14} aria-hidden="true" /> Khớp
-    </span>
-  ) : (
-    <span className="cost-check cost-check--warning" title={`Chênh ${formatNumber(Math.abs(difference))} ₫ so với tổng chi phí đã lưu`}>
-      <AlertTriangle size={14} aria-hidden="true" /> Cần kiểm tra {formatNumber(Math.abs(difference))}₫
-    </span>
-  );
-}
-
-function TripAmount({ label, value, emphasized = false }: { label: string; value: number; emphasized?: boolean }) {
-  return (
-    <div className={emphasized ? 'truck-trip-amount truck-trip-amount--emphasized' : 'truck-trip-amount'}>
-      <span>{label}</span>
-      <strong>{formatNumber(value)}₫</strong>
-    </div>
-  );
-}
-
-function MaintenanceDetails({ truck, trailer, items }: { truck: number; trailer: number; items: PnlMaintenanceItem[] }) {
-  if (truck <= 0 && trailer <= 0) return null;
-  return (
-    <div className="truck-maintenance-details">
-      <div className="truck-maintenance-note">
-        Chi phí phát sinh ngoài từng lệnh trong kỳ:
-        {truck > 0 ? <> đầu kéo <strong>{formatNumber(truck)}₫</strong></> : null}
-        {truck > 0 && trailer > 0 ? ' · ' : null}
-        {trailer > 0 ? <> rơ-moóc <strong>{formatNumber(trailer)}₫</strong></> : null}.
-      </div>
-      {items.length > 0 && (
-        <div className="truck-maintenance-list">
-          {items.map(item => (
-            <Link key={item.id} to={`/expenses/${item.id}/edit`} className="truck-maintenance-item">
-              <span className="truck-maintenance-item__main">
-                <strong>{item.categoryName}</strong>
-                <small>
-                  {item.vehicleComponent === 'TRAILER' ? 'Rơ-moóc' : 'Đầu kéo'} · {item.supplierName} · {new Date(item.expenseDate).toLocaleDateString('vi-VN')}
-                  {item.note ? ` · ${item.note}` : ''}
-                </small>
-              </span>
-              <span className="truck-maintenance-item__amount">{formatNumber(item.amount)}₫ <ExternalLink size={12} aria-hidden="true" /></span>
-            </Link>
-          ))}
-        </div>
       )}
     </div>
   );

@@ -1,75 +1,31 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, AlertTriangle, ChevronRight, ChevronUp, Download, Truck } from 'lucide-react';
-import { formatNumber } from '../lib/format';
+import { Activity, AlertTriangle, Download, Truck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardDecisionItem, Role, TripDetail } from '@tingting/shared';
 import { isFinancialRole, ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { Banner } from '../components/shared/Banner';
-import { EmptyState as DsEmptyState } from '../design-system/EmptyState';
-import { StatusStrip } from '../components/shared/StatusStrip';
-import { AssetIcon } from '../components/AssetIcon';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
 import { styles, fmtMoM } from '../features/dashboard/utils';
 import { useMonth } from '../hooks/useMonth';
-import { RevenueTrendChart } from '../components/charts/RevenueTrendChart';
 import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget';
 import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueueCard';
 import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
 import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
 import './DashboardPage.css';
-import { CostBreakdown, DeltaPill, decisionIcon, fmtVN, greeting, runningSum, severityLabel, type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
+import { greeting, runningSum, type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
+import { DashboardKpiRow } from '../features/dashboard/components/DashboardKpiRow';
+import { AttentionBoard } from '../features/dashboard/components/AttentionBoard';
+import {
+  CostCompositionCard,
+  FleetStatusCard,
+  ProfitByTruckCard,
+  RevenueChartCard,
+  TopRoutesCard,
+} from '../features/dashboard/components/DashboardPanels';
 import { VehicleScheduleBanner } from '../features/fleet/schedules/VehicleScheduleBanner';
 import { useActiveVehicleSchedules } from '../hooks/useVehicleSchedules';
-
-type DashboardStatTone = 'revenue' | 'cost' | 'gross' | 'net' | 'debt';
-
-const DASHBOARD_STAT_STRIP_COLORS: Record<DashboardStatTone, string> = {
-  revenue: 'var(--wf-green)',
-  cost: 'var(--wf-amber)',
-  gross: 'var(--wf-blue)',
-  net: 'var(--wf-green-500)',
-  debt: 'var(--wf-red)',
-};
-
-const DECISION_STRIP_COLORS: Record<DashboardDecisionItem['severity'], string> = {
-  critical: 'var(--wf-red)',
-  warning: 'var(--wf-amber)',
-  info: 'var(--wf-blue)',
-  success: 'var(--wf-green-500)',
-};
-
-interface DashboardStatProps {
-  tone: DashboardStatTone;
-  icon: React.ReactNode;
-  label: string;
-  delta?: React.ReactNode;
-  value: string;
-  valueRef?: (element: HTMLSpanElement | null) => void;
-  description: React.ReactNode;
-}
-
-function DashboardStat({ tone, icon, label, delta, value, valueRef, description }: DashboardStatProps) {
-  return (
-    <div className={`d-stats d-card d-card-border bg-base-100 wf-kpi wf-kpi--${tone}`}>
-      <StatusStrip color={DASHBOARD_STAT_STRIP_COLORS[tone]} />
-      <div className="d-stat">
-        <div className="d-stat-title row1">
-          <span className="lbl">
-            <span className="wf-kpi__icon" aria-hidden="true">{icon}</span>
-            {label}
-          </span>
-          {delta}
-        </div>
-        <div className="d-stat-value val">
-          <span ref={valueRef}>{value}</span> <i>đ</i>
-        </div>
-        <div className="d-stat-desc foot">{description}</div>
-      </div>
-    </div>
-  );
-}
 
 /**
  * Dashboard — wireframe redesign per /wireframe/nepo-dashboard.html.
@@ -414,51 +370,25 @@ export default function DashboardPage() {
       </header>
 
       {/* ── KPI row ── */}
-      <div className="wf-kpis" data-tour-id="dashboard-kpis">
-        <DashboardStat
-          tone="revenue"
-          icon={<AssetIcon name="analytics" size={15} />}
-          label={`Doanh thu · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
-          delta={<DeltaPill mom={revenueMoM} />}
-          value={fmtVN(revenue)}
-          valueRef={element => { kpiRefs.current.revenue = element; }}
-          description={<>Tháng trước · {formatNumber(prevRevenue)} đ</>}
-        />
-        <DashboardStat
-          tone="cost"
-          icon={<AssetIcon name="expense" size={15} />}
-          label="Tổng chi phí"
-          delta={<DeltaPill mom={costsMoM} />}
-          value={fmtVN(costs)}
-          valueRef={element => { kpiRefs.current.costs = element; }}
-          description={<>{costRatio.toFixed(1)}% doanh thu</>}
-        />
-        <DashboardStat
-          tone="gross"
-          icon={<AssetIcon name="gross-margin" size={15} />}
-          label="Lợi nhuận gộp"
-          delta={<DeltaPill mom={grossMoM} />}
-          value={fmtVN(grossProfit)}
-          valueRef={element => { kpiRefs.current.gross = element; }}
-          description={<>Biên gộp · {grossMargin.toFixed(1)}%</>}
-        />
-        <DashboardStat
-          tone="net"
-          icon={<AssetIcon name="profit" size={15} />}
-          label="Lợi nhuận ròng"
-          delta={<DeltaPill mom={netMoM} />}
-          value={fmtVN(netProfit)}
-          valueRef={element => { kpiRefs.current.net = element; }}
-          description={<>Sau phí quản lý · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => navigate('/profit')}>Phân chia →</button></>}
-        />
-        <DashboardStat
-          tone="debt"
-          icon={<AssetIcon name="receivables" size={15} />}
-          label="Công nợ phải thu"
-          value={fmtVN(receivablesSummary?.totalOutstanding ?? 0)}
-          description={<>{receivablesSummary?.overdueCustomers ?? 0} khách quá hạn</>}
-        />
-      </div>
+      <DashboardKpiRow
+        currentMonth={currentMonth}
+        currentYear={currentYear}
+        revenue={revenue}
+        prevRevenue={prevRevenue}
+        revenueMoM={revenueMoM}
+        costs={costs}
+        costsMoM={costsMoM}
+        costRatio={costRatio}
+        grossProfit={grossProfit}
+        grossMoM={grossMoM}
+        grossMargin={grossMargin}
+        netProfit={netProfit}
+        netMoM={netMoM}
+        totalOutstanding={receivablesSummary?.totalOutstanding ?? 0}
+        overdueCustomers={receivablesSummary?.overdueCustomers ?? 0}
+        kpiRefs={kpiRefs}
+        onNavigate={navigate}
+      />
 
       {/* ── Operations grid ──
            Tiles auto-flow into rows based on their grid-column/row spans.
@@ -488,233 +418,42 @@ export default function DashboardPage() {
 
         {/* Action-first priority board — the most important operational
             decisions stay in the first scan path on every breakpoint. */}
-        <section
-          className={`d-card d-card-border bg-base-100 wf-card wf-att wf-att--wide wf-bento-full wf-priority-board${showAllAttention ? ' is-expanded' : ''}`}
-          data-tour-id="dashboard-attention"
-          aria-labelledby="dashboard-priority-title"
-        >
-            <div className="wf-card-h">
-              <div>
-                <h2 className="ttl" id="dashboard-priority-title">Việc cần xử lý</h2>
-                <div className="sub">Ưu tiên theo mức độ ảnh hưởng · {orderedAttention.length} mục</div>
-              </div>
-            </div>
-            <div className="body" id="dashboard-priority-list">
-              {visibleAttention.map((item, i) => {
-                const iconName = decisionIcon(item.kind);
-                return (
-                <React.Fragment key={item.id}>
-                  {i > 0 && <div className="wf-divider" />}
-                  <div className={`wf-arow wf-arow--${item.severity}`}>
-                    <StatusStrip color={DECISION_STRIP_COLORS[item.severity]} />
-                    <div className={`ic wf-ic-${item.severity}`}>
-                      <AssetIcon name={iconName} size={18} />
-                    </div>
-                    <div className="tx">
-                      <div className="t">
-                        {item.title}
-                        <span className={`d-badge d-badge-soft d-badge-sm wf-severity wf-severity--${item.severity}`}>
-                          {severityLabel(item.severity)}
-                        </span>
-                      </div>
-                      <div className="s">{item.subtitle}</div>
-                    </div>
-                    {item.route && item.actionLabel && (
-                      <div className="go">
-                        <button
-                          className={`d-btn d-btn-sm wf-minibtn${item.severity === 'success' ? ' d-btn-success green' : ''}`}
-                          onClick={() => navigate(item.route!)}
-                        >
-                          <span>{item.actionLabel}</span>
-                          <ChevronRight className="wf-minibtn__icon" aria-hidden="true" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </React.Fragment>
-                );
-              })}
-              {orderedAttention.length > 4 && (
-                <div className="wf-priority-more">
-                  <button
-                    type="button"
-                    className="d-btn d-btn-link d-btn-sm wf-link"
-                    aria-expanded={showAllAttention}
-                    aria-controls="dashboard-priority-list"
-                    onClick={() => setShowAllAttention(value => !value)}
-                  >
-                    {showAllAttention ? (
-                      <>Thu gọn <ChevronUp aria-hidden="true" /></>
-                    ) : (
-                      <>Xem tất cả {orderedAttention.length} mục <ChevronRight aria-hidden="true" /></>
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
+        <AttentionBoard
+          orderedAttention={orderedAttention}
+          visibleAttention={visibleAttention}
+          showAllAttention={showAllAttention}
+          onToggleShowAll={() => setShowAllAttention(value => !value)}
+          onNavigate={navigate}
+        />
 
         {/* Hero 1 — Chart (8 cols × 2 rows) */}
-        <section className="d-card d-card-border bg-base-100 wf-card wf-chart wf-bento-hero" aria-labelledby="dashboard-revenue-title">
-            <div className="wf-card-h">
-              <div>
-                <h2 className="ttl" id="dashboard-revenue-title">Doanh thu & Lợi nhuận gộp</h2>
-                <div className="sub">
-                  {chartMonths.length > 0
-                    ? chartView === 'day'
-                      ? `${chartMonths.length} ngày · Tháng ${currentMonth}/${currentYear}`
-                      : `${chartMonths.length} tháng gần nhất`
-                    : 'Chưa có dữ liệu'}
-                </div>
-              </div>
-              <div className="wf-chart-actions">
-                <div className="wf-chart-toggle">
-                  <button className={`d-btn d-btn-sm wf-chart-toggle__btn${chartView === 'day' ? ' is-active' : ''}`} onClick={() => setChartView('day')} aria-pressed={chartView === 'day'}>Ngày</button>
-                  <button className={`d-btn d-btn-sm wf-chart-toggle__btn${chartView === 'month' ? ' is-active' : ''}`} onClick={() => setChartView('month')} aria-pressed={chartView === 'month'}>Tháng</button>
-                </div>
-                <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/finance')}>Xem báo cáo
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                </button>
-              </div>
-            </div>
-            <div className="wf-legend">
-              <span className="li"><span className="sw" style={{ background: 'var(--wf-green)' }} />Doanh thu</span>
-              <span className="li"><span className="sw" style={{ background: 'var(--wf-blue)' }} />Lợi nhuận gộp</span>
-            </div>
-            <div className="body">
-              {(() => {
-                if (chartRevenue.length === 0) {
-                  return (
-                    <div style={{ padding: '24px 16px', flex: 1 }}>
-                      <DsEmptyState
-                        title="Đang tải dữ liệu"
-                        description="Đang thu thập số liệu doanh thu và lợi nhuận…"
-                        preview="rows"
-                        previewCount={3}
-                      />
-                    </div>
-                  );
-                }
-                const totalRev = chartRevenue.reduce((a, b) => a + b, 0);
-                const totalGp = chartGross.reduce((a, b) => a + b, 0);
-                if (totalRev === 0 && totalGp === 0) {
-                  return (
-                    <div style={{ padding: '24px 16px', flex: 1 }}>
-                      <DsEmptyState
-                        title="Chưa đủ dữ liệu lịch sử"
-                        description="Biểu đồ doanh thu & lợi nhuận gộp sẽ xuất hiện tại đây sau khi có chuyến đầu tiên trong kỳ."
-                        preview="rows"
-                        previewCount={4}
-                      />
-                    </div>
-                  );
-                }
-                return <RevenueTrendChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
-              })()}
-            </div>
-          </section>
+        <RevenueChartCard
+          chartMonths={chartMonths}
+          chartRevenue={chartRevenue}
+          chartGross={chartGross}
+          chartView={chartView}
+          onChartViewChange={setChartView}
+          currentMonth={currentMonth}
+          currentYear={currentYear}
+          onNavigate={navigate}
+        />
 
         {/* Fleet (4 cols × 1 row) — right of chart, row 1 */}
-        <div className="d-card d-card-border bg-base-100 wf-card wf-fleet wf-bento-third">
-            <div className="wf-card-h">
-              <div>
-                <h2 className="ttl">Tình trạng đội xe</h2>
-                <div className="sub">{fleet.total} đầu kéo · {fleet.drivers} lái xe</div>
-              </div>
-              <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/fleet')}>Quản lý</button>
-            </div>
-            <div className="body">
-              <div className="wf-fstats">
-                <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-green-500)' }} />{fleet.ready}</div><div className="k">Sẵn sàng</div></div>
-                <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-green)' }} />{fleet.inTransit}</div><div className="k">Đang chạy</div></div>
-                <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-amber)' }} />{fleet.maintenance}</div><div className="k">Bảo dưỡng</div></div>
-                <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-ink-3)' }} />{fleet.idle}</div><div className="k">Ngừng</div></div>
-              </div>
-              {fleet.utilization != null && (
-                <div
-                  className="wf-util"
-                  title={`Đội xe nội bộ: ${fleet.internalInTransit}/${fleet.utilizable} (${Math.round(fleet.utilization)}%) · Thuê xe ngoài: ${fleet.externalInTransit} chuyến`}
-                >
-                  <span className="cap">Tỷ lệ sử dụng</span>
-                  <progress
-                    className={`d-progress track ${fleet.utilTone === 'over' ? 'd-progress-warning' : fleet.utilTone === 'high' ? 'd-progress-info' : 'd-progress-success'}`}
-                    value={Math.min(100, fleet.utilization)}
-                    max="100"
-                    aria-label="Tỷ lệ sử dụng đội xe"
-                  />
-                  <span className={`pct pct--${fleet.utilTone}`}>{Math.round(fleet.utilization)}%</span>
-                  {fleet.utilTone === 'over' && (
-                    <span className="wf-util__flag wf-util__flag--over">
-                      <AlertTriangle size={12} aria-hidden="true" /> Vượt công suất
-                    </span>
-                  )}
-                  {fleet.externalInTransit > 0 && (
-                    <span className="wf-util__flag wf-util__flag--external">Thuê ngoài: {fleet.externalInTransit} chuyến</span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+        <FleetStatusCard fleet={fleet} onNavigate={navigate} />
 
         {/* Cost composition (4 cols × 1 row) — right of chart, row 2 */}
-        <div className="d-card d-card-border bg-base-100 wf-card wf-cost wf-bento-third">
-            <div className="wf-card-h">
-              <div>
-                <h2 className="ttl">Cơ cấu chi phí</h2>
-                <div className="sub">Tháng {String(currentMonth).padStart(2, '0')}/{currentYear} · xếp theo giá trị</div>
-              </div>
-            </div>
-            <div className="body">
-              {costBreakdown.length === 0 ? (
-                <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có chi phí ghi nhận trong tháng.</div>
-              ) : (
-                <CostBreakdown items={costBreakdown} total={d?.totalPie ?? costs} />
-              )}
-            </div>
-          </div>
+        <CostCompositionCard
+          items={costBreakdown}
+          total={d?.totalPie ?? costs}
+          currentMonth={currentMonth}
+          currentYear={currentYear}
+        />
 
         {/* Lợi nhuận theo xe (6 cols × 1 row) — below chart */}
-        <div className="d-card d-card-border bg-base-100 wf-card wf-bento-half">
-              <div className="wf-card-h">
-                <div>
-                  <h2 className="ttl">Lợi nhuận theo xe</h2>
-                  <div className="sub">Biên gộp từng đầu kéo · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
-                </div>
-              </div>
-              <div className="wf-vlist">
-                {topTrucks.length === 0 ? (
-                  <div style={{ padding: '8px 0', fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu xe trong tháng.</div>
-                ) : topTrucks.map((t, i) => (
-                  <div key={i} className="wf-vrow">
-                    <span className="plate" title={t.plate}>{t.plate}</span>
-                    <progress className="d-progress d-progress-success bar" value={t.widthPct} max="100" aria-label={`Biên lợi nhuận xe ${t.plate}`} />
-                    <span className="pct">{t.pct}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <ProfitByTruckCard trucks={topTrucks} currentMonth={currentMonth} currentYear={currentYear} />
 
         {/* Top tuyến sinh lời (6 cols × 1 row) — below chart, right half */}
-        <div className="d-card d-card-border bg-base-100 wf-card wf-bento-half">
-              <div className="wf-card-h">
-                <div>
-                  <h2 className="ttl">Top tuyến sinh lời</h2>
-                  <div className="sub">Theo lợi nhuận gộp · {String(currentMonth).padStart(2, '0')}/{currentYear}</div>
-                </div>
-                <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => navigate('/finance')}>Tất cả</button>
-              </div>
-              <div className="wf-rlist">
-                {topRoutes.length === 0 ? (
-                  <div style={{ padding: 10, fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu tuyến.</div>
-                ) : topRoutes.map((r, i) => (
-                  <div key={i} className="wf-rrow">
-                    <span className="rk">{i + 1}</span>
-                    <span className="rt" title={r.name}>{r.name}</span>
-                    <span className="rv">{formatNumber(r.profit)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <TopRoutesCard routes={topRoutes} currentMonth={currentMonth} currentYear={currentYear} onNavigate={navigate} />
 
         {/* Cần duyệt — full-width so its height does not inherit the much
             taller decision list beside it. */}

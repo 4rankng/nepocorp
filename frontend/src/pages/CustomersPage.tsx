@@ -1,40 +1,24 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, UserCheck, BarChart3, Lock, Plus, Download,
-  MoreHorizontal, Pencil, Trash2, X, Save, Loader2, Truck,
+  Users, UserCheck, BarChart3, Lock, Plus, Download, Loader2,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
-import { labelStyle } from '../utils/formStyles';
-import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
+import { PageHeader, KPI } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { EmptyState, Pagination } from '../design-system';
-import { formatCurrency, formatNumber } from '../lib/format';
-import type { Customer, Supplier } from '@tingting/shared';
+import { formatNumber } from '../lib/format';
 import { CustomerStatus } from '@tingting/shared';
 import { useAllCustomers, useCustomerBalances, useSuppliers } from '../hooks/useQueries';
 import { usePageAnimations } from '../hooks/animations';
-import { ClickableCard } from '../components/shared/ClickableCard';
-import { StatusStrip } from '../components/shared/StatusStrip';
-import { Money } from '../components/shared/Money';
 import { EmptyIllustration } from '../components/shared';
 import { ListFilterBar } from '../components/shared/ListFilterBar';
+import { CustomerFormModal } from '../features/customers/CustomerFormModal';
+import { CustomerCard, CustomerRow } from '../features/customers/customerRows';
+import { STATUS_LABELS } from '../features/customers/customerUtils';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
-
-const STATUS_LABELS: Record<string, string> = {
-  [CustomerStatus.ACTIVE]: 'Hoạt động',
-  [CustomerStatus.LOCKED]: 'Tạm khoá',
-};
-
-function riskDot(debt: number | null, limit: number | null) {
-  if (!debt || !limit || limit === 0) return 'low';
-  const ratio = debt / limit;
-  if (ratio > 0.8) return 'high';
-  if (ratio >= 0.5) return 'med';
-  return 'low';
-}
 
 export function buildCustomerDebtMap(entries: Array<{
   entityType: string;
@@ -66,146 +50,6 @@ export function buildCustomerDebtMap(entries: Array<{
     );
   }
   return map;
-}
-
-// ─── Modal-based Form ────────────────────────────────────────────────────────
-//
-// Was an inline <tr> form that swapped in for the row. The row-replacement
-// looked cramped (5 fields squeezed into one table cell) and made it easy to
-// miss that edit mode had even opened. Modal gives proper breathing room.
-
-function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers, error }: {
-  item?: Customer; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean; suppliers: Supplier[]; error?: string | null;
-}) {
-  const [name, setName] = useState(item?.name || '');
-  const [taxCode, setTaxCode] = useState(item?.taxCode || '');
-  const [contactPerson, setContactPerson] = useState(item?.contactPerson || '');
-  const [phone, setPhone] = useState(item?.phone || '');
-  const [creditLimit, setCreditLimit] = useState(item?.creditLimit || '');
-  const [status, setStatus] = useState<string>(item?.status || CustomerStatus.ACTIVE);
-  const [isCarrier, setIsCarrier] = useState(item?.isCarrier ?? false);
-  const [debitNoteMode, setDebitNoteMode] = useState<string>(item?.debitNoteMode ?? 'MONTHLY');
-  const [linkedSupplierId, setLinkedSupplierId] = useState<number | null>(item?.linkedSupplierId ?? null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setName(item?.name || '');
-      setTaxCode(item?.taxCode || '');
-      setContactPerson(item?.contactPerson || '');
-      setPhone(item?.phone || '');
-      setCreditLimit(item?.creditLimit || '');
-      setStatus(item?.status || CustomerStatus.ACTIVE);
-      setIsCarrier(item?.isCarrier ?? false);
-      setDebitNoteMode(item?.debitNoteMode ?? 'MONTHLY');
-      setLinkedSupplierId(item?.linkedSupplierId ?? null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-sync only when the target customer ID changes, not on every prop update
-  }, [isOpen, item?.id]);
-
-  const handleSave = () => {
-    if (!name.trim()) return;
-    onsave({
-      name: name.trim(),
-      taxCode: taxCode.trim() || undefined,
-      contactPerson: contactPerson.trim() || undefined,
-      phone: phone.trim() || undefined,
-      creditLimit: creditLimit ? Number(creditLimit) : undefined,
-      status,
-      isCarrier,
-      debitNoteMode,
-      linkedSupplierId: linkedSupplierId ?? null,
-    });
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      title={item ? `Sửa khách hàng — ${item.name}` : 'Thêm khách hàng'}
-      onClose={oncancel}
-      onConfirm={handleSave}
-      footer={
-        <>
-          <button className="btn btn--ghost btn--sm" onClick={oncancel}>
-            <X size={14} /> Hủy
-          </button>
-          <button className="btn btn--primary btn--sm" disabled={saving || !name.trim()} onClick={handleSave}>
-            {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            {item ? 'Cập nhật' : 'Thêm khách hàng'}
-          </button>
-        </>
-      }
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {error && <p role="alert" style={{ color: 'var(--danger)', margin: 0 }}>{error}</p>}
-        <div className="field">
-          <label htmlFor="cust-name" style={labelStyle}>
-            Tên khách hàng <span style={{ color: 'var(--danger)' }}>*</span>
-          </label>
-          <input id="cust-name" className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Tên công ty hoặc cá nhân" autoFocus />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="cust-tax" style={labelStyle}>Mã số thuế</label>
-            <input id="cust-tax" className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="0312…" />
-          </div>
-          <div className="field">
-            <label htmlFor="cust-status" style={labelStyle}>Trạng thái</label>
-            <select id="cust-status" className="input" value={status} onChange={e => setStatus(e.target.value)}>
-              {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="cust-contact" style={labelStyle}>Người liên hệ</label>
-            <input id="cust-contact" className="input" value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Anh Tuấn · Kế toán" />
-          </div>
-          <div className="field">
-            <label htmlFor="cust-phone" style={labelStyle}>Điện thoại</label>
-            <input id="cust-phone" className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0912…" />
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="cust-credit" style={labelStyle}>Hạn mức tín dụng (đ)</label>
-          <input id="cust-credit" className="input" type="number" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="0" />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="field">
-            <label htmlFor="cust-debit-mode" style={labelStyle}>Giấy báo nợ</label>
-            <select id="cust-debit-mode" className="input" value={debitNoteMode} onChange={e => setDebitNoteMode(e.target.value)}>
-              <option value="MONTHLY">Theo tháng</option>
-              <option value="PER_BATCH">Theo lô</option>
-            </select>
-          </div>
-          <div className="field" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 4 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={isCarrier}
-                onChange={e => setIsCarrier(e.target.checked)}
-                style={{ width: 14, height: 14 }}
-              />
-              <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)' }}>Đối tác vận tải (xe ngoài)</span>
-            </label>
-          </div>
-        </div>
-        <div className="field">
-          <label htmlFor="cust-linked-supplier" style={labelStyle}>Nhà cung cấp liên quan</label>
-          <select
-            id="cust-linked-supplier"
-            className="input"
-            value={linkedSupplierId ?? ''}
-            onChange={e => setLinkedSupplierId(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">-- Không liên kết --</option>
-            {suppliers.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-    </Modal>
-  );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -446,57 +290,13 @@ export default function CustomersPage() {
             />
           ) : (
             visibleCustomers.map(c => (
-              <ClickableCard key={c.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/customers/${c.id}`)}>
-                <StatusStrip status={c.status} />
-                <div className="m-card__top">
-                  <span className="m-card__title">
-                    <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number(c.creditLimit || 0))}`} />
-                    {c.name}
-                    {c.linkedSupplierId && (
-                      <span style={{ marginLeft: 6, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
-                        2 chiều
-                      </span>
-                    )}
-                    {/* TODO: extract a shared <Badge> component for "2 chiều" / "Xe ngoài" */}
-                    {c.isCarrier && (
-                      <span style={{ marginLeft: 6, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                        <Truck size={11} aria-hidden="true" /> Xe ngoài
-                      </span>
-                    )}
-                  </span>
-                  <StatusPill variant={c.status === CustomerStatus.ACTIVE ? 'success' : 'danger'}>
-                    {STATUS_LABELS[c.status] || c.status}
-                  </StatusPill>
-                </div>
-                {c.taxCode && (
-                  <div className="m-card__meta" style={{ fontFamily: 'var(--font-mono)' }}>
-                    MST {c.taxCode}
-                  </div>
-                )}
-                {(c.contactPerson || c.phone) && (
-                  <div className="m-card__meta">
-                    {c.contactPerson}
-                    {c.phone && <><span className="m-card__meta-sep">·</span>{c.phone}</>}
-                  </div>
-                )}
-                {c.creditLimit && (
-                  <div className="m-card__row">
-                    <span className="m-card__row-label">Hạn mức tín dụng</span>
-                    <span className="m-card__row-value">{formatCurrency(c.creditLimit)}</span>
-                  </div>
-                )}
-                <div className="m-card__row">
-                  <span className="m-card__row-label">Công nợ</span>
-                  <span className="m-card__row-value" style={debtMap.get(c.id) ? { color: 'var(--danger)' } : undefined}>
-                    <Money value={debtMap.get(c.id) ?? 0} />
-                  </span>
-                </div>
-                <div className="m-card-edit-row">
-                  <button className="btn btn--ghost btn--sm" onClick={(e) => { e.stopPropagation(); setEditingId(c.id); setShowAddForm(false); }}>
-                    Sửa
-                  </button>
-                </div>
-              </ClickableCard>
+              <CustomerCard
+                key={c.id}
+                customer={c}
+                debt={debtMap.get(c.id) ?? 0}
+                onOpen={() => navigate(`/customers/${c.id}`)}
+                onEdit={() => { setEditingId(c.id); setShowAddForm(false); }}
+              />
             ))
           )}
         </div>
@@ -536,77 +336,19 @@ export default function CustomersPage() {
                 </td></tr>
               )}
               {visibleCustomers.map((c, index) => (
-                  <tr key={c.id} role="button" tabIndex={0}
-                    style={{ cursor: 'pointer', transition: 'background 0.12s ease' }}
-                    onClick={() => navigate(`/customers/${c.id}`)}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '')}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/customers/${c.id}`); } }}
-                  >
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', position: 'relative', verticalAlign: 'middle' }}>
-                      <StatusStrip status={c.status} />
-                      <div style={{ fontWeight: 600, display: 'flex', alignItems: 'flex-start', gap: 6, width: '100%', minWidth: 0, flexWrap: 'wrap' }}>
-                        <span style={{ wordBreak: 'break-word', whiteSpace: 'normal', minWidth: 0 }}>
-                          {c.name}
-                        </span>
-                        {c.linkedSupplierId && (
-                          <span style={{ flexShrink: 0, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', marginTop: 1 }}>
-                            2 chiều
-                          </span>
-                        )}
-                        {c.isCarrier && (
-                          <span style={{ flexShrink: 0, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', marginTop: 1, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                            <Truck size={11} aria-hidden="true" /> Xe ngoài
-                          </span>
-                        )}
-                      </div>
-                      {c.taxCode && <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {c.taxCode}</div>}
-                    </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                      {c.contactPerson && <div style={{ fontWeight: 600 }}>{c.contactPerson}</div>}
-                      {(c.phone || c.contactInfo) && (
-                        <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-3)', marginTop: 2, fontFamily: c.phone ? 'var(--font-mono)' : 'var(--font-body)' }}>
-                          {c.phone || c.contactInfo}
-                        </div>
-                      )}
-                      {!c.contactPerson && !c.phone && !c.contactInfo && <span style={{ color: 'var(--ink-3)' }}>—</span>}
-                    </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {c.creditLimit ? formatCurrency(c.creditLimit) : '—'}
-                    </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      <span style={debtMap.get(c.id) ? { color: 'var(--danger)', fontFamily: 'var(--font-mono)' } : { color: 'var(--ink-3)' }}>
-                        <Money value={debtMap.get(c.id) ?? 0} />
-                      </span>
-                    </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', position: 'relative' }}>
-                      <div className="row-actions">
-                        <button className="row-action" aria-label={`Mở thao tác cho ${c.name}`} onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === c.id ? null : c.id); }}>
-                          <MoreHorizontal size={14} />
-                        </button>
-                      </div>
-                      {menuOpenId === c.id && (
-                        <div style={{
-                          position: 'absolute', right: 12, zIndex: 20,
-                          background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
-                          boxShadow: '0 4px 14px rgba(10,10,10,0.06)', overflow: 'hidden', minWidth: 140,
-                          ...(index >= visibleCustomers.length - 2 && visibleCustomers.length > 2
-                            ? { bottom: '100%', marginBottom: 4 }
-                            : { top: '100%' }),
-                        }} onClick={(e) => e.stopPropagation()}>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
-                            onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
-                            <Pencil size={13} /> Sửa
-                          </button>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)' }}
-                            disabled={deleting === c.id}
-                            onClick={() => doDelete(c.id)}>
-                            {deleting === c.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                <CustomerRow
+                  key={c.id}
+                  customer={c}
+                  index={index}
+                  debt={debtMap.get(c.id) ?? 0}
+                  visibleCount={visibleCustomers.length}
+                  menuOpen={menuOpenId === c.id}
+                  deleting={deleting === c.id}
+                  onOpen={() => navigate(`/customers/${c.id}`)}
+                  onEdit={() => { setEditingId(c.id); setShowAddForm(false); }}
+                  onDelete={() => doDelete(c.id)}
+                  onToggleMenu={() => setMenuOpenId(menuOpenId === c.id ? null : c.id)}
+                />
               ))}
             </tbody>
           </table>

@@ -5,7 +5,7 @@ import { formatDate } from '../lib/format';
 import { api } from '../lib/api';
 import { ExpenseEntryStatus, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
-import { StatusPill, FormGroup, useConfirm } from '../components/UI';
+import { StatusPill, useConfirm } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
 import { qk } from '../api/keys';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
@@ -16,6 +16,8 @@ import { forwarderClient } from '../api/forwarderClient';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { ForwarderContainersSection, ForwarderExpenseRow, ForwarderTripError, ForwarderTripLoading, type ForwarderContainer } from './forwarder-trip-detail-sections';
+import { ForwarderExpenseForm, type ExpenseFormErrors, type ExpenseFormState } from '../features/forwarder/ForwarderExpenseForm';
+import { containerDisplayName } from '../features/forwarder/forwarderContainerLabel';
 import './ForwarderTripDetailPage.css';
 
 function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
@@ -23,11 +25,6 @@ function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 's
   if (status === 'COMPLETED') return 'success';
   if (status === 'CANCELED') return 'danger';
   return 'neutral';
-}
-
-function containerDisplayName(container: ForwarderContainer): string {
-  return container.containerNumber?.trim()
-    || [container.containerTypeName, 'Chưa nhập số container'].filter(Boolean).join(' · ');
 }
 
 export default function ForwarderTripDetailPage() {
@@ -59,7 +56,7 @@ export default function ForwarderTripDetailPage() {
 
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
-  const [expenseForm, setExpenseForm] = useState({
+  const [expenseForm, setExpenseForm] = useState<ExpenseFormState>({
     expenseType: 'LIFTING' as string,
     buyAmount: '',
     sellAmount: '',
@@ -71,7 +68,7 @@ export default function ForwarderTripDetailPage() {
     declarationNumber: '',
     note: '',
   });
-  const [expenseErrors, setExpenseErrors] = useState<{ buyAmount?: string; declarationNumber?: string; supplierId?: string }>({});
+  const [expenseErrors, setExpenseErrors] = useState<ExpenseFormErrors>({});
   const [expenseSubmitError, setExpenseSubmitError] = useState<string | null>(null);
 
   // Expense photo state: maps expenseId → photo URLs
@@ -361,228 +358,22 @@ export default function ForwarderTripDetailPage() {
         </div>
 
         {showExpenseForm && (
-          <div className="fwd-expense-form">
-            {/* Row 1: type + amounts + settlement */}
-            <div className="fwd-expense-grid fwd-expense-grid--primary">
-              <FormGroup label="Loại chi phí">
-                <select
-                  className="input"
-                  value={expenseForm.expenseType}
-                  onChange={e => handleExpenseTypeChange(e.target.value)}
-                >
-                  {Object.entries(FORWARDER_EXPENSE_TYPE_DEFAULTS).map(([code, cfg]) => (
-                    <option key={code} value={code}>{cfg.name}</option>
-                  ))}
-                </select>
-              </FormGroup>
-
-              <FormGroup
-                label="Giá mua vào (VNĐ) *"
-              >
-                <input
-                  className={`input${expenseErrors.buyAmount ? ' input--error' : ''}`}
-                  type="number"
-                  value={expenseForm.buyAmount}
-                  onChange={e => handleBuyAmountChange(e.target.value)}
-                  placeholder="0"
-                  min="1"
-                />
-                {expenseErrors.buyAmount && (
-                  <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
-                    {expenseErrors.buyAmount}
-                  </span>
-                )}
-              </FormGroup>
-
-              <FormGroup
-                label="Giá bán ra (VNĐ)"
-              >
-                <input
-                  className="input"
-                  type="number"
-                  value={expenseForm.sellAmount}
-                  onChange={e => setExpenseForm(f => ({ ...f, sellAmount: e.target.value }))}
-                  placeholder="0"
-                  min="0"
-                  readOnly={!FORWARDER_EXPENSE_TYPE_DEFAULTS[expenseForm.expenseType]?.defaultMarkup}
-                  style={
-                    !FORWARDER_EXPENSE_TYPE_DEFAULTS[expenseForm.expenseType]?.defaultMarkup
-                      ? { background: 'var(--bg-3)', color: 'var(--fg-3)' }
-                      : undefined
-                  }
-                />
-              </FormGroup>
-
-              <FormGroup label="Hình thức chi">
-                <select
-                  className="input"
-                  value={expenseForm.settlementMethod}
-                  onChange={e => {
-                    const v = e.target.value as 'FORWARDER_ADVANCE' | 'COMPANY_DIRECT';
-                    setExpenseForm(f => ({ ...f, settlementMethod: v, supplierId: v === 'FORWARDER_ADVANCE' ? '' : f.supplierId }));
-                    if (expenseErrors.supplierId) setExpenseErrors(e => ({ ...e, supplierId: undefined }));
-                  }}
-                >
-                  <option value="FORWARDER_ADVANCE">Chi hộ tạm ứng</option>
-                  <option value="COMPANY_DIRECT">Công ty trả trực tiếp</option>
-                </select>
-              </FormGroup>
-            </div>
-
-            {/* Row 2: supplier (when company-direct) + container number */}
-            <div className="fwd-expense-grid fwd-expense-grid--context">
-              {expenseForm.settlementMethod === 'COMPANY_DIRECT' && (
-                <FormGroup label="Nhà cung cấp *">
-                  <select
-                    className={`input${expenseErrors.supplierId ? ' input--error' : ''}`}
-                    value={expenseForm.supplierId}
-                    onChange={e => {
-                      setExpenseForm(f => ({ ...f, supplierId: e.target.value }));
-                      if (expenseErrors.supplierId) setExpenseErrors(err => ({ ...err, supplierId: undefined }));
-                    }}
-                  >
-                    <option value="">-- Chọn NCC --</option>
-                    {supplierOptions.map(s => (
-                      <option key={s.id} value={String(s.id)}>{s.name}</option>
-                    ))}
-                  </select>
-                  {expenseErrors.supplierId && (
-                    <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
-                      {expenseErrors.supplierId}
-                    </span>
-                  )}
-                </FormGroup>
-              )}
-
-              {containers.length === 0 && (
-                <div className="fwd-expense-empty-container">
-                  Chưa có container; chi phí này sẽ lưu như chi phí chung của chuyến.
-                </div>
-              )}
-
-              {containers.length === 1 && selectedExpenseContainer && (
-                <FormGroup label="Container áp dụng">
-                  <div
-                    className="input"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 10,
-                      background: 'var(--brand-subtle, rgba(0,177,79,0.08))',
-                      borderColor: 'rgba(0, 107, 63, 0.22)',
-                    }}
-                  >
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{containerDisplayName(selectedExpenseContainer)}</span>
-                    {selectedExpenseContainer.sealNumber && (
-                      <span style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>Seal {selectedExpenseContainer.sealNumber}</span>
-                    )}
-                  </div>
-                </FormGroup>
-              )}
-
-              {containers.length > 1 && (
-                <FormGroup label="Container áp dụng">
-                  <select
-                    className="input"
-                    value={expenseForm.tripContainerId}
-                    onChange={e => setExpenseForm(f => ({ ...f, tripContainerId: e.target.value }))}
-                  >
-                    <option value="">Chi phí chung của chuyến</option>
-                    {containers.map(c => (
-                      <option key={c.id} value={String(c.id)}>
-                        {containerDisplayName(c)}{c.sealNumber ? ` · Seal ${c.sealNumber}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--fg-3)', display: 'block', marginTop: 4 }}>
-                    Chọn container từ danh sách đã nhập, không cần gõ lại số container.
-                  </span>
-                </FormGroup>
-              )}
-            </div>
-
-            {/* Row 3: invoice + declaration + note */}
-            <div className="fwd-expense-grid fwd-expense-grid--invoice">
-              {expenseForm.expenseType !== 'INFRASTRUCTURE' && (
-                <>
-                  <FormGroup label="Số hóa đơn">
-                    <input
-                      className="input"
-                      value={expenseForm.invoiceNumber}
-                      onChange={e => setExpenseForm(f => ({ ...f, invoiceNumber: e.target.value }))}
-                      placeholder="Số hóa đơn"
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                    />
-                  </FormGroup>
-                  <FormGroup label="Ngày hóa đơn">
-                    <input
-                      className="input"
-                      type="date"
-                      value={expenseForm.invoiceDate}
-                      onChange={e => setExpenseForm(f => ({ ...f, invoiceDate: e.target.value }))}
-                    />
-                  </FormGroup>
-                </>
-              )}
-
-              {expenseForm.expenseType === 'CUSTOMS' && (
-                <FormGroup label="Số tờ khai hải quan *">
-                  <input
-                    className={`input${expenseErrors.declarationNumber ? ' input--error' : ''}`}
-                    value={expenseForm.declarationNumber}
-                    onChange={e => {
-                      setExpenseForm(f => ({ ...f, declarationNumber: e.target.value }));
-                      if (expenseErrors.declarationNumber) setExpenseErrors(err => ({ ...err, declarationNumber: undefined }));
-                    }}
-                    placeholder="Số tờ khai"
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                  />
-                  {expenseErrors.declarationNumber && (
-                    <span style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--danger)', display: 'block', marginTop: 2 }}>
-                      {expenseErrors.declarationNumber}
-                    </span>
-                  )}
-                </FormGroup>
-              )}
-
-              <FormGroup label="Ghi chú">
-                <input
-                  className="input"
-                  value={expenseForm.note}
-                  onChange={e => setExpenseForm(f => ({ ...f, note: e.target.value }))}
-                  placeholder="Ghi chú (tuỳ chọn)"
-                />
-              </FormGroup>
-            </div>
-
-            {expenseSubmitError && (
-              <div
-                className="animate-shake"
-                role="alert"
-                style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 6, background: 'var(--danger-soft)', color: 'var(--danger-text)', fontSize: 'var(--fs-body)' }}
-              >
-                {expenseSubmitError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button
-                className="btn btn--ghost btn--sm"
-                onClick={() => { setShowExpenseForm(false); setEditingExpenseId(null); setExpenseErrors({}); setExpenseSubmitError(null); }}
-                disabled={createExpenseMut.isPending || updateExpenseMut.isPending}
-              >
-                Hủy
-              </button>
-              <button
-                className="btn btn--primary btn--sm"
-                onClick={handleAddExpense}
-                disabled={createExpenseMut.isPending || updateExpenseMut.isPending}
-              >
-                {createExpenseMut.isPending || updateExpenseMut.isPending ? 'Đang lưu…' : editingExpenseId ? 'Lưu điều chỉnh' : 'Lưu chi phí'}
-              </button>
-            </div>
-          </div>
+          <ForwarderExpenseForm
+            form={expenseForm}
+            setForm={setExpenseForm}
+            errors={expenseErrors}
+            setErrors={setExpenseErrors}
+            submitError={expenseSubmitError}
+            supplierOptions={supplierOptions}
+            containers={containers}
+            selectedContainer={selectedExpenseContainer}
+            editing={editingExpenseId !== null}
+            saving={createExpenseMut.isPending || updateExpenseMut.isPending}
+            onTypeChange={handleExpenseTypeChange}
+            onBuyAmountChange={handleBuyAmountChange}
+            onSubmit={handleAddExpense}
+            onCancel={() => { setShowExpenseForm(false); setEditingExpenseId(null); setExpenseErrors({}); setExpenseSubmitError(null); }}
+          />
         )}
 
         {expenses.length === 0 ? (

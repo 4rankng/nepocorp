@@ -6,7 +6,7 @@ import { MousePointerClick, Save, X } from 'lucide-react';
 import { tripClient } from '../api/tripClient';
 import { qk } from '../api/keys';
 import { formatCurrency } from '../lib/format';
-import { parseThreshold, Role, TripStatus, TRIP_STATUS_LABELS, type TripDetail } from '@tingting/shared';
+import { parseThreshold, Role, TripStatus, type TripDetail } from '@tingting/shared';
 import { useFuelConfig } from '../hooks/useQueries';
 import { useAuth } from '../hooks/useAuth';
 import { useMonth } from '../hooks/useMonth';
@@ -14,67 +14,19 @@ import { getCalendarMonthRange } from '../lib/calendar-month';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState, Pagination } from '../design-system';
-import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit, getMissingPlanFields, isTripToday } from '../features/trips';
+import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, getMissingPlanFields, isTripToday } from '../features/trips';
+import { TRIP_LIST_EXPORT_HEADERS, buildTripListExportRows } from '../features/trips/tripListExport';
+import { TripQuickEditMobileCard } from '../features/trips/tripQuickEditCard';
 import { columnClass, draftChanged, figuresPayloadFromDraft, invalidQuickField, isEditableInQuickMode, quickDraftFromTrip, QUICK_DRAFT_FIELD_LABELS } from './trip-list-helpers';
 import { TripListHero } from './trip-list-hero';
 import { useTripListAnimations } from './use-trip-list-animations';
 import './TripListPage.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
-export const TRIP_LIST_EXPORT_HEADERS = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng tiền đi đường lái xe nhận', 'Doanh thu', 'Tổng chi phí', 'Trả hàng 2 điểm', 'Lưu ca xe', 'LN gộp', 'Trạng thái'];
-
-export function buildTripListExportRows(allTrips: TripDetail[]) {
-  return allTrips.map((t) => {
-    const containers = (t as unknown as { containers?: Array<{ containerNumber: string; containerTypeCode: string | null; containerTypeName: string | null }> }).containers ?? [];
-    const typeCodes = Array.from(new Set(containers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
-    const numbers = containers.map((c) => c.containerNumber).join(', ');
-    return [
-      t.tripCode ?? '—',
-      t.customer?.name ?? '',
-      t.route?.name ?? '',
-      t.carrierType === 'EXTERNAL' ? (t.externalPlateNumber ?? 'Xe ngoài') : (t.truck?.licensePlate ?? ''),
-      t.departureDate ?? '',
-      getTripDistance(t) || '',
-      typeCodes, numbers,
-      t.fuelLiters ?? '',
-      t.fuelSupplier?.name ?? '',
-      t.totalFuelCost ?? '',
-      Number(t.totalRoadAllowance ?? 0) || '',
-      t.revenue ?? '',
-      t.totalCost ?? '',
-      t.twoPointDeliveryBonus ?? '',
-      t.vehicleShiftAllowance ?? '',
-      getTripDisplayGrossProfit(t),
-      t.status,
-    ];
-  });
-}
-
-export function QuickEditTripSummary({ trip }: { trip: TripDetail }) {
-  const totalCost = Number(trip.totalCost ?? 0);
-  const grossProfit = getTripDisplayGrossProfit(trip);
-  const ancillaryCosts = getAncillaryTripCostBreakdown(trip);
-
-  return (
-    <div className="quick-card-summary">
-      <div>
-        <span>Tổng chi phí</span>
-        <b>{totalCost > 0 ? `${formatMoney(totalCost)} ₫` : '—'}</b>
-        {ancillaryCosts.length > 0 && (
-          <div className="quick-card-cost-details">
-            {ancillaryCosts.map((cost) => (
-              <span key={cost.label}>{cost.label}: {formatMoney(cost.amount)} ₫</span>
-            ))}
-          </div>
-        )}
-      </div>
-      <div>
-        <span>LN gộp</span>
-        <b className={grossProfit < 0 ? 'money-loss' : ''}>{grossProfit !== 0 ? `${formatMoney(grossProfit)} ₫` : '—'}</b>
-      </div>
-    </div>
-  );
-}
+// The export helpers and the quick-edit summary now live in features/trips;
+// they are re-exported here so the page keeps its public surface unchanged.
+export { TRIP_LIST_EXPORT_HEADERS, buildTripListExportRows } from '../features/trips/tripListExport';
+export { QuickEditTripSummary } from '../features/trips/tripQuickEditCard';
 
 export default function TripListPage() {
   const rootRef = useTripListAnimations();
@@ -620,65 +572,18 @@ export default function TripListPage() {
                 );
               }
 
-              const editable = isEditableInQuickMode(trip);
-              const draft = quickDrafts[trip.id] ?? quickDraftFromTrip(trip);
-              const selected = selectedIds.has(trip.id);
-              const routeLabel = trip.route?.name ?? '—';
-              const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
-              const quickFields: Array<{ key: keyof TripQuickEditDraft; label: string; unit?: string }> = [
-                { key: 'fuelLiters', label: 'Dầu', unit: 'L' },
-                { key: 'roadAllowance', label: 'Đi đường', unit: '₫' },
-                { key: 'revenue', label: 'Doanh thu', unit: '₫' },
-                { key: 'driverSalary', label: 'Lương chuyến', unit: '₫' },
-              ];
-
               return (
-                <div
+                <TripQuickEditMobileCard
                   key={trip.id}
-                  className={`trip-mcard trip-mcard--quick${selected ? ' selected' : ''}${!editable ? ' locked' : ''}`}
+                  trip={trip}
+                  draft={quickDrafts[trip.id] ?? quickDraftFromTrip(trip)}
+                  selected={selectedIds.has(trip.id)}
+                  editable={isEditableInQuickMode(trip)}
+                  error={quickErrors[trip.id]}
                   style={tripRowStyle(trip) as CSSProperties}
-                >
-                  <div className="trip-mcard__top">
-                    <label className="trip-mcard__check">
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        disabled={!editable}
-                        onChange={() => handleToggleSelect(trip.id)}
-                      />
-                      <span>{editable ? 'Chọn' : 'Khóa'}</span>
-                    </label>
-                    <span className={`status-pill ${pillClass}`}>{TRIP_STATUS_LABELS[trip.status]}</span>
-                  </div>
-                  <div className="trip-mcard__name">{trip.customer?.name ?? '—'}</div>
-                  <div className="trip-mcard__id">
-                    {buildTripCode(trip)}
-                    <span className="trip-meta-sep">·</span>
-                    <span>{trip.departureDate ?? '—'}</span>
-                  </div>
-                  <div className="trip-mcard__route">{routeLabel}</div>
-
-                  <div className="quick-card-grid">
-                    {quickFields.map((field) => (
-                      <label key={field.key} className="quick-card-field">
-                        <span>{field.label}</span>
-                        <div className="quick-edit-cell">
-                          <input
-                            className="quick-money-input"
-                            inputMode="decimal"
-                            value={draft[field.key]}
-                            disabled={!editable}
-                            onChange={(event) => handleDraftChange(trip.id, field.key, event.target.value)}
-                          />
-                          {field.unit && <span className="quick-unit">{field.unit}</span>}
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-
-                  <QuickEditTripSummary trip={trip} />
-                  {quickErrors[trip.id] && <div className="quick-card-error">{quickErrors[trip.id]}</div>}
-                </div>
+                  onToggleSelect={handleToggleSelect}
+                  onDraftChange={handleDraftChange}
+                />
               );
             })
           )}

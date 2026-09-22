@@ -4,14 +4,9 @@ import { Loader2, FileText, Pencil, XCircle, CheckCircle2 } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
 import { formatNumber, formatDate } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
-import {
-  ADVANCE_SETTLEMENT_STATUS_LABELS,
-  AdvanceSettlementStatus,
-  Role,
-} from '@tingting/shared';
+import { AdvanceSettlementStatus, Role } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill, ConfirmDialog } from '../components/UI';
-import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { Money } from '../components/shared/Money';
 import {
@@ -28,65 +23,13 @@ import {
   groupSettlementExpensesByTrip,
   summarizeSettlementExpenses,
 } from './admin-advance-settlement-summary';
+import { TABS, STATUS_COLORS, settlementStatusLabel, type StatusFilter } from '../features/advances/settlementLedgerView';
+import { AsKPI } from '../features/advances/settlementKpi';
 import './AdminAdvanceSettlementsPage.css';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
 
 type Settlement = AdvanceSettlementWithRefs;
-
-type StatusFilter = '' | AdvanceSettlementStatus;
-
-const TABS: { key: StatusFilter; label: string }[] = [
-  { key: '', label: 'Tất cả' },
-  { key: AdvanceSettlementStatus.PENDING, label: 'Chờ xử lý' },
-  { key: AdvanceSettlementStatus.APPROVED, label: 'Đã duyệt' },
-  { key: AdvanceSettlementStatus.REJECTED, label: 'Từ chối' },
-];
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: '#D97706',
-  CHECKED_BY_ACCOUNTANT: '#2563EB',
-  APPROVED: '#059669',
-  REJECTED: '#DC2626',
-};
-
-function settlementStatusLabel(status: AdvanceSettlementStatus): string {
-  return status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT
-    ? 'Chờ xử lý'
-    : ADVANCE_SETTLEMENT_STATUS_LABELS[status];
-}
-
-/* ── Compact KPI card — mirrors AdminAdvancesPage .adv-kpi proportions ── */
-
-interface AsKPIProps {
-  label: string;
-  value: number;
-  meta: string;
-  variant: 'warn' | 'info' | 'success' | 'danger';
-  iconName: AssetIconName;
-  active?: boolean;
-  hasItems?: boolean;
-  // Omit onClick for a summary-only stat (no filter to toggle). Renders as a
-  // non-interactive element instead of a dead role="button" in the tab order.
-  onClick?: () => void;
-}
-
-function AsKPI({ label, value, meta, variant, iconName, active = false, hasItems = false, onClick }: AsKPIProps) {
-  const interactive = typeof onClick === 'function';
-  return (
-    <div
-      className={`as-kpi as-kpi--${variant}${active ? ' is-active' : ''}${hasItems ? ' has-items' : ''}${interactive ? '' : ' as-kpi--static'}`}
-      {...(interactive
-        ? { onClick, role: 'button', tabIndex: 0, onKeyDown: (e: import('react').KeyboardEvent) => e.key === 'Enter' && onClick() }
-        : {})}
-    >
-      <div className="as-kpi__label">{label}</div>
-      <div className="as-kpi__value">{value}</div>
-      <div className="as-kpi__meta">{meta}</div>
-      <AssetIcon name={iconName} size={58} className="as-kpi__asset" />
-    </div>
-  );
-}
 
 /* ── Desktop grid row ──────────────────────────────────────────────────── */
 
