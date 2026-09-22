@@ -209,13 +209,59 @@
 }
 .as-page .as-settlement-summary {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, auto));
+  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, auto)) auto;
   gap: 20px;
   align-items: center;
   padding: 10px 16px;
   background: color-mix(in srgb, var(--brand) 5%, var(--surface));
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+}
+
+/* Settlement-level actions live on the header, not repeated per child row
+   (kanban 20260922_34). */
+.as-page .as-settlement-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.as-page .as-batch-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.as-page .as-batch-action:hover:not(:disabled) { border-color: var(--ink-3); }
+.as-page .as-batch-action:disabled { opacity: 0.55; cursor: default; }
+.as-page .as-batch-action--approve { border-color: color-mix(in srgb, var(--accent) 40%, var(--line-2)); color: var(--accent-700, #0A6E3A); }
+.as-page .as-batch-action--reject { border-color: color-mix(in srgb, var(--danger) 35%, var(--line-2)); color: var(--danger); }
+
+/* Narrow screens: the four stat cells stack, and the actions take their own row. */
+@media (max-width: 900px) {
+  .as-page .as-settlement-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+  .as-page .as-settlement-actions {
+    justify-content: stretch;
+    margin-top: 4px;
+  }
+  .as-page .as-batch-action {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 44px;
+  }
 }
 .as-page .as-settlement-summary > div {
   display: flex;

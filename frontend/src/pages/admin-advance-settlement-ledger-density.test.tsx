@@ -74,11 +74,9 @@ describe('admin advance settlement ledger density', () => {
     },
   } as unknown as AdvanceSettlementWithRefs;
 
-  const rejectMutation = {
-    isPending: false,
-    variables: undefined,
-    mutate: vi.fn(),
-  } as never;
+  // Named action contract (kanban 20260922_34) — the row components no longer
+  // take react-query mutation objects.
+  const settlementActions = { onApprove: vi.fn(), onReject: vi.fn() };
 
   it.each([
     {
@@ -86,7 +84,7 @@ describe('admin advance settlement ledger density', () => {
       component: (
         <SettlementGridRow
           s={settlement}
-          rejectMutation={rejectMutation}
+          actions={settlementActions}
           canApproveReject
         />
       ),
@@ -96,7 +94,7 @@ describe('admin advance settlement ledger density', () => {
       component: (
         <SettlementMobileCard
           s={settlement}
-          rejectMutation={rejectMutation}
+          actions={settlementActions}
           canApproveReject
         />
       ),
@@ -137,7 +135,7 @@ describe('admin advance settlement ledger density', () => {
       <MemoryRouter>
         <SettlementMobileCard
           s={reimbursementSettlement}
-          rejectMutation={rejectMutation}
+          actions={settlementActions}
           canApproveReject
         />
       </MemoryRouter>,

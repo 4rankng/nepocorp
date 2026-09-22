@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, FileText, Pencil, XCircle } from 'lucide-react';
+import { Loader2, FileText, Pencil, XCircle, CheckCircle2 } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
 import { formatNumber, formatDate } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
@@ -10,7 +10,7 @@ import {
   Role,
 } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
-import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import { PageHeader, StatusPill, Toolbar, FilterPill, ConfirmDialog } from '../components/UI';
 import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { Money } from '../components/shared/Money';
@@ -18,6 +18,7 @@ import {
   useAdminSettlements,
   useAdminAdvanceBalances,
   useRejectSettlement,
+  useApproveSettlement,
 } from '../hooks/useForwarderQueries';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
@@ -89,21 +90,42 @@ function AsKPI({ label, value, meta, variant, iconName, active = false, hasItems
 
 /* ── Desktop grid row ──────────────────────────────────────────────────── */
 
+/**
+ * Settlement-level approve/reject handles shared by the desktop row and the
+ * mobile card. Plain callbacks plus the in-flight id — so the row components
+ * stay decoupled from the react-query layer.
+ */
+export interface SettlementActions {
+  /** Settlement id with an in-flight mutation, if any. */
+  pendingId?: number;
+  /** Which mutation is in flight for `pendingId`. */
+  pendingKind?: 'approve' | 'reject';
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+}
+
 export function SettlementGridRow({
   s,
-  rejectMutation,
+  actions,
   focusId,
   canApproveReject,
 }: {
   s: Settlement;
-  rejectMutation: ReturnType<typeof useRejectSettlement>;
+  actions: SettlementActions;
   focusId?: string;
   canApproveReject: boolean;
 }) {
-  const isRejecting = rejectMutation.isPending && rejectMutation.variables === s.id;
+  const isRejecting = actions.pendingId === s.id && actions.pendingKind === 'reject';
+  const isApproving = actions.pendingId === s.id && actions.pendingKind === 'approve';
   const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
   const plans = groupSettlementExpensesByTrip(s.linkedExpenses ?? []);
   const rows = plans.length > 0 ? plans : [null];
+  const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | null>(null);
+  // Money the accountant is signing off on — shown in the confirm step so a
+  // batch action is never a blind tap (kanban 20260922_34).
+  const payout = Number(s.reimbursementAmount || 0) > 0
+    ? { label: 'Công ty hoàn thêm', value: Number(s.reimbursementAmount || 0) }
+    : { label: 'Ops tạm ứng', value: Number(s.refundAmount) };
 
   return (
     <>
@@ -139,7 +161,48 @@ export function SettlementGridRow({
             <strong><Money value={Number(s.refundAmount)} /></strong>
           </div>
         )}
+        {canAct && canApproveReject && (
+          <div className="as-settlement-actions">
+            <button
+              type="button"
+              className="as-batch-action as-batch-action--approve"
+              onClick={() => setPendingAction('approve')}
+              disabled={isApproving || isRejecting}
+              aria-label={`Duyệt cả phiếu ${s.code}`}
+            >
+              {isApproving ? <Loader2 size={15} className="spin" /> : <CheckCircle2 size={15} aria-hidden="true" />}
+              Duyệt cả phiếu
+            </button>
+            <button
+              type="button"
+              className="as-batch-action as-batch-action--reject"
+              onClick={() => setPendingAction('reject')}
+              disabled={isApproving || isRejecting}
+              aria-label={`Từ chối cả phiếu ${s.code}`}
+            >
+              {isRejecting ? <Loader2 size={15} className="spin" /> : <XCircle size={15} aria-hidden="true" />}
+              Từ chối cả phiếu
+            </button>
+          </div>
+        )}
       </div>
+      <ConfirmDialog
+        isOpen={pendingAction !== null}
+        variant={pendingAction === 'reject' ? 'danger' : 'primary'}
+        confirmLabel={pendingAction === 'reject' ? 'Từ chối cả phiếu' : 'Duyệt cả phiếu'}
+        message={
+          pendingAction === 'reject'
+            ? `Từ chối cả phiếu ${s.code}? Toàn bộ chi phí trong phiếu sẽ không được hoàn ứng.`
+            : `Duyệt cả phiếu ${s.code}? ${payout.label}: ${formatNumber(payout.value)} ₫ sẽ được ghi nhận.`
+        }
+        onCancel={() => setPendingAction(null)}
+        onConfirm={() => {
+          const action = pendingAction;
+          setPendingAction(null);
+          if (action === 'approve') actions.onApprove(s.id);
+          else if (action === 'reject') actions.onReject(s.id);
+        }}
+      />
       {rows.map((plan, index) => (
         <div
           className="as-grid-row"
@@ -200,17 +263,6 @@ export function SettlementGridRow({
                   {canApproveReject && <Pencil size={15} aria-hidden="true" />}
                   {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
                 </Link>
-                {canApproveReject && (
-                  <button
-                    className="as-reject-action"
-                    onClick={() => rejectMutation.mutate(s.id)}
-                    disabled={isRejecting}
-                    title="Từ chối hoàn ứng"
-                    aria-label={`Từ chối hoàn ứng ${s.code}`}
-                  >
-                    {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
-                  </button>
-                )}
               </>
             ) : (
               <>
@@ -235,16 +287,17 @@ export function SettlementGridRow({
 
 export function SettlementMobileCard({
   s,
-  rejectMutation,
+  actions,
   focusId,
   canApproveReject,
 }: {
   s: Settlement;
-  rejectMutation: ReturnType<typeof useRejectSettlement>;
+  actions: SettlementActions;
   focusId?: string;
   canApproveReject: boolean;
 }) {
-  const isRejecting = rejectMutation.isPending && rejectMutation.variables === s.id;
+  const isRejecting = actions.pendingId === s.id && actions.pendingKind === 'reject';
+  const isApproving = actions.pendingId === s.id && actions.pendingKind === 'approve';
   const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
   const scope = summarizeSettlementExpenses(s.linkedExpenses);
   const plans = groupSettlementExpensesByTrip(s.linkedExpenses ?? []);
@@ -348,13 +401,26 @@ export function SettlementMobileCard({
           )}
           {canApproveReject && (
             <button
+              type="button"
+              className="btn btn--primary as-mcard__approve"
+              onClick={() => actions.onApprove(s.id)}
+              disabled={isApproving || isRejecting}
+              aria-label={`Duyệt cả phiếu ${s.code}`}
+            >
+              {isApproving ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} aria-hidden="true" />}
+              Duyệt cả phiếu
+            </button>
+          )}
+          {canApproveReject && (
+            <button
+              type="button"
               className="btn as-mcard__reject"
-              onClick={() => rejectMutation.mutate(s.id)}
-              disabled={isRejecting}
-              aria-label={`Từ chối hoàn ứng ${s.code}`}
+              onClick={() => actions.onReject(s.id)}
+              disabled={isApproving || isRejecting}
+              aria-label={`Từ chối cả phiếu ${s.code}`}
             >
               {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
-              Từ chối
+              Từ chối cả phiếu
             </button>
           )}
         </div>
@@ -381,6 +447,15 @@ export default function AdminAdvanceSettlementsPage() {
   const { data: balancesData } = useAdminAdvanceBalances();
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const rejectMutation = useRejectSettlement();
+  const approveMutation = useApproveSettlement();
+  const settlementActions: SettlementActions = {
+    pendingId: approveMutation.isPending
+      ? approveMutation.variables
+      : rejectMutation.isPending ? rejectMutation.variables : undefined,
+    pendingKind: approveMutation.isPending ? 'approve' : rejectMutation.isPending ? 'reject' : undefined,
+    onApprove: (id: number) => approveMutation.mutate(id),
+    onReject: (id: number) => rejectMutation.mutate(id),
+  };
   const { user } = useAuth();
   const canApproveReject = user?.role === Role.ADMIN || user?.role === Role.ACCOUNTANT;
 
@@ -529,7 +604,7 @@ export default function AdminAdvanceSettlementsPage() {
                     <SettlementGridRow
                       key={s.id}
                       s={s}
-                      rejectMutation={rejectMutation}
+                      actions={settlementActions}
                       focusId={`as-${s.id}`}
                       canApproveReject={canApproveReject}
                     />
@@ -544,7 +619,7 @@ export default function AdminAdvanceSettlementsPage() {
                 <SettlementMobileCard
                   key={s.id}
                   s={s}
-                  rejectMutation={rejectMutation}
+                  actions={settlementActions}
                   focusId={`as-${s.id}`}
                   canApproveReject={canApproveReject}
                 />
