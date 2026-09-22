@@ -1,0 +1,69 @@
+/* ============================================================================
+ * Breadcrumbs — overflow hardening for daisyUI's `.d-breadcrumbs`.
+ *
+ * daisyUI ships the trail as `overflow-x: auto` + `white-space: nowrap`, so a
+ * long trailing crumb (customer / truck / route names) overflows the row:
+ *   - the browser paints a hairline horizontal scrollbar right under the trail
+ *     (reads as a stray divider rule on every detail page), and
+ *   - the current-page crumb is clipped mid-glyph instead of truncating.
+ *
+ * Fixed once, here, instead of per page: every page renders <Breadcrumbs>, and
+ * the per-page `*__crumbs` classes only set margins/padding/color.
+ *
+ * Result: no scroll container at all. The parent crumbs keep their intrinsic
+ * width and are never clipped; the trailing (current-page) crumb gives up
+ * width and ellipsizes, with a 5ch floor so it degrades to `TÊN…` instead of
+ * vanishing. Trails are 2–3 items with short fixed parents — a parent longer
+ * than the row would clip at the edge (no scrollbar) rather than scroll.
+ *
+ * Selectors are `nav.d-breadcrumbs`-prefixed (element + class) so they outrank
+ * daisyUI's `.d-breadcrumbs > …` rules regardless of stylesheet order —
+ * component CSS is injected before the global index.css in main.tsx.
+ * -------------------------------------------------------------------------- */
+
+nav.d-breadcrumbs {
+  /* `clip` keeps the row from becoming a scroll container — no scrollbar, no
+     sticky scroll position. `hidden` is the fallback for engines without
+     `clip` support. */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+/* Flex container itself must be shrinkable when a parent grid/flex box is
+   narrow, otherwise the trail forces the whole column wide. */
+nav.d-breadcrumbs > ul,
+nav.d-breadcrumbs > ol,
+nav.d-breadcrumbs > menu {
+  min-width: 0;
+}
+
+/* Separator chevron (daisyUI draws it as a rotated bordered box on
+   `li + li::before`) — never shrink it away. */
+nav.d-breadcrumbs > ul > li + li::before,
+nav.d-breadcrumbs > ol > li + li::before,
+nav.d-breadcrumbs > menu > li + li::before {
+  flex: 0 0 auto;
+}
+
+/* Trailing crumb is the only one allowed below its content width. Parents keep
+   the default `min-width: auto`, so they are never squeezed (and therefore
+   never ellipsized by sub-pixel rounding). */
+nav.d-breadcrumbs > ul > li:last-child,
+nav.d-breadcrumbs > ol > li:last-child,
+nav.d-breadcrumbs > menu > li:last-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* daisyUI makes `li > *` a flex container, and a flex container cannot render
+   an ellipsis — the label has to be a clippable block. */
+nav.d-breadcrumbs > ul > li:last-child > *,
+nav.d-breadcrumbs > ol > li:last-child > *,
+nav.d-breadcrumbs > menu > li:last-child > * {
+  display: block;
+  min-width: 5ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

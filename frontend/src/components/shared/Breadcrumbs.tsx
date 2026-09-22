@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import './Breadcrumbs.css';
 
 /* ─── Breadcrumbs ──────────────────────────────────────────────────────────
  * Hierarchical "you are here" trail for detail pages. Wraps daisyUI's
