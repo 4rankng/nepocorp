@@ -1,0 +1,92 @@
+.list-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  margin: 0 0 16px;
+}
+
+.list-filter-options {
+  display: flex;
+  flex: 1 1 300px;
+  min-width: 0;
+  gap: 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+  scroll-padding-inline: 2px;
+}
+
+.list-filter-option {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--control-h);
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: 500 var(--fs-control)/1.35 var(--font-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.list-filter-option:hover { color: var(--ink); }
+.list-filter-option[aria-pressed="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.list-filter-option:focus-visible { outline-offset: -3px; }
+.list-filter-count { color: var(--ink-3); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.list-filter-option[aria-pressed="true"] .list-filter-count { color: inherit; }
+
+.list-filter-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 280px;
+  min-width: 0;
+  min-height: var(--control-h);
+  padding-left: 12px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--r-sm);
+  background: var(--control-bg);
+  color: var(--ink-3);
+}
+.list-filter-search > svg { flex-shrink: 0; }
+.list-filter-search:focus-within { outline: 2px solid var(--control-focus-ring); outline-offset: 2px; border-color: var(--accent); }
+.list-filter-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-h);
+  padding: 8px 8px 8px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 var(--fs-control)/1.35 var(--font-body);
+}
+.list-filter-search input::-webkit-search-cancel-button { display: none; }
+.list-filter-search button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--control-h);
+  min-height: var(--control-h);
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+@media (max-width: 640px) {
+  .list-filter-bar { gap: 12px; }
+  .list-filter-options { flex-basis: 100%; }
+  .list-filter-search { flex-basis: 100%; }
+}

@@ -43,7 +43,7 @@
 .modal__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: var(--fs-xl);
+  font-size: var(--fs-dialog);
   font-weight: 700;
   letter-spacing: 0;
   color: var(--ink);
@@ -92,7 +92,7 @@
   }
 
   .modal__title {
-    font-size: var(--fs-xl);
+    font-size: var(--fs-dialog);
     letter-spacing: 0;
   }
 

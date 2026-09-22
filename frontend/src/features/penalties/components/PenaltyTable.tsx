@@ -154,7 +154,7 @@ export function PenaltyTable({
 
       {/* ── KPI strip (4 cards) ──────────────────────────────────────────── */}
       {periodLoading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '24px 0', color: 'var(--fg-3)', fontSize: 13 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '24px 0', color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>
           <Loader2 size={16} className="spin" />
           Đang tải dữ liệu kỳ lương...
         </div>
@@ -415,11 +415,11 @@ export function PenaltyTable({
                   const drv = drivers.find(dr => dr.id === logDriverFilter);
                   return drv ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--brand)', fontWeight: 600 }}>
+                      <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--brand)', fontWeight: 600 }}>
                         Lọc theo: {drv.name}
                       </span>
                       <button
-                        style={{ minHeight: 44, fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', background: 'var(--bg-2)', border: 'none', borderRadius: 6, padding: '0 10px', cursor: 'pointer' }}
+                        style={{ minHeight: 44, fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', background: 'var(--bg-2)', border: 'none', borderRadius: 6, padding: '0 10px', cursor: 'pointer' }}
                         onClick={() => setLogDriverFilter(null)}
                       >
                         ✕ Xóa lọc

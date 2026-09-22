@@ -1,6 +1,6 @@
 import {
   Users, ShieldCheck, UserCog, Lock, Plus, Pencil, Trash2,
-  Loader2, KeyRound, Mail, Phone, Search, UserX, MoreVertical, X,
+  Loader2, KeyRound, Mail, Phone, UserX, MoreVertical,
   ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -10,6 +10,7 @@ import type { UserRow } from '../utils';
 import { StatusStrip, StatusSwatch } from '../../../components/shared/StatusStrip';
 import { resolveEmptyIllustration } from '../../../lib/emptyIllustrations';
 import { PageHeader } from '../../../components/UI';
+import { ListFilterBar } from '../../../components/shared/ListFilterBar';
 import { AssetIcon } from '../../../components/AssetIcon';
 
 interface UserTableProps {
@@ -61,14 +62,6 @@ const AVATAR_ICON: Record<Role, typeof Users> = {
   [Role.ACCOUNTANT]: KeyRound,
   [Role.DRIVER]: Users,
   [Role.FORWARDER]: UserCog,
-};
-
-const ROLE_FILTER_CLS: Record<string, string> = {
-  [Role.ADMIN]: 'filter-pill--admin',
-  [Role.MANAGER]: 'filter-pill--manager',
-  [Role.ACCOUNTANT]: 'filter-pill--accountant',
-  [Role.DRIVER]: 'filter-pill--driver',
-  [Role.FORWARDER]: 'filter-pill--forwarder',
 };
 
 function RoleAvatar({ role }: { role: Role }) {
@@ -180,56 +173,21 @@ export function UserTable({
         </div>
       </div>
 
-      {/* ── Unified panel: toolbar + table + footer ─────────────────────── */}
+      <div data-tour-id="users-role-filters">
+        <ListFilterBar<FilterKey>
+          label="Lọc tài khoản theo vai trò"
+          options={(['all', ...Object.values(Role)] as FilterKey[]).map(f => ({
+            value: f,
+            label: f === 'all' ? 'Tất cả' : ROLE_LABELS[f as Role],
+            // The API supplies a filtered total only for the selected role.
+            count: filter === f ? (f === 'all' ? total : f === Role.DRIVER ? driverCount : filteredTotal) : undefined,
+          }))}
+          value={filter}
+          onChange={onFilterChange}
+          search={{ value: search, onChange: onSearchChange, label: 'Tìm tài khoản', placeholder: 'Tìm theo username, email, SĐT…' }}
+        />
+      </div>
       <div className="users-table-panel" data-tour-id="users-table">
-        {/* Filter toolbar */}
-        <div
-          className="toolbar users-role-toolbar"
-          data-tour-id="users-role-filters"
-          role="group"
-          aria-label="Lọc tài khoản theo vai trò"
-        >
-          {(['all', ...Object.values(Role)] as FilterKey[]).map(f => {
-            // Counts are only rendered on the active pill; the active tab's
-            // server response total is exactly that tab's row count.
-            const count = f === 'all' ? total : f === Role.DRIVER ? driverCount : filteredTotal;
-            const label = f === 'all' ? 'Tất cả' : ROLE_LABELS[f as Role];
-            return (
-              <button
-                key={f}
-                className={`filter-pill${filter === f ? ' is-active' : ''} ${ROLE_FILTER_CLS[f] || ''}`}
-                onClick={() => onFilterChange(f)}
-                aria-pressed={filter === f}
-              >
-                <span>{label}</span>
-                {filter === f && <span className="filter-pill__count">{count}</span>}
-              </button>
-            );
-          })}
-          <div className="toolbar__spacer" />
-          <div className="toolbar__search" style={{ position: 'relative' }}>
-            <Search size={14} />
-            <input
-              type="text"
-              aria-label="Tìm tài khoản"
-              placeholder="Tìm theo username, email, SĐT..."
-              value={search}
-              onChange={e => onSearchChange(e.target.value)}
-              style={{ paddingRight: search ? '28px' : '10px' }}
-            />
-            {search && (
-              <button
-                className="search-clear-btn"
-                onClick={() => onSearchChange('')}
-                title="Xóa tìm kiếm"
-                aria-label="Xóa nội dung tìm kiếm"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-        </div>
-
         {/* Legend */}
         {(canManage || canEditDriversOnly) && (
           <div className="users-list-legend">
@@ -296,7 +254,7 @@ export function UserTable({
                     style={{
                       minHeight: 44, padding: '8px 12px', border: '1px solid var(--line-2)', borderRadius: 9,
                       background: currentPage === 1 ? 'var(--surface-2)' : '#fff',
-                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: 12,
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: 'var(--fs-body)',
                       color: currentPage === 1 ? 'var(--ink-4)' : 'var(--ink-2)'
                     }}
                   >
@@ -315,7 +273,7 @@ export function UserTable({
                           background: currentPage === page ? 'var(--brand)' : '#fff',
                           color: currentPage === page ? '#fff' : 'var(--ink)',
                           fontWeight: currentPage === page ? '600' : 'normal',
-                          cursor: 'pointer', fontSize: 12
+                          cursor: 'pointer', fontSize: 'var(--fs-body)'
                         }}
                       >
                         {page}
@@ -329,7 +287,7 @@ export function UserTable({
                     style={{
                       minHeight: 44, padding: '8px 12px', border: '1px solid var(--line-2)', borderRadius: 9,
                       background: currentPage === totalPages ? 'var(--surface-2)' : '#fff',
-                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: 12,
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: 'var(--fs-body)',
                       color: currentPage === totalPages ? 'var(--ink-4)' : 'var(--ink-2)'
                     }}
                   >
@@ -348,7 +306,7 @@ export function UserTable({
           marginTop: 20, padding: '12px 16px',
           background: 'var(--surface-2)', borderRadius: 8,
           display: 'flex', alignItems: 'center', gap: 10,
-          color: 'var(--ink-3)', fontSize: 12.5,
+          color: 'var(--ink-3)', fontSize: 'var(--fs-body)',
         }}>
           <KeyRound size={14} />
           {canEditDriversOnly
@@ -478,7 +436,7 @@ function DesktopTable({
                       ? <span className="user-truck-plate">{plate}</span>
                       : <span style={{ color: 'var(--ink-4)' }}>—</span>}
                   </td>
-                  <td style={{ color: 'var(--ink-3)', fontSize: 12.5, whiteSpace: 'nowrap' }}>
+                  <td style={{ color: 'var(--ink-3)', fontSize: 'var(--fs-body)', whiteSpace: 'nowrap' }}>
                     {formatDate(u.createdAt)}
                   </td>
                 </tr>
@@ -593,7 +551,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                         overflow: 'hidden', minWidth: 120,
                       }} onClick={(e) => e.stopPropagation()}>
                         {canManage && canDelete && (
-                          <button role="menuitem" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
+                          <button role="menuitem" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
                             disabled={!!deleting || isMe}
                             onClick={() => { setActiveMenuId(null); if (!isMe) onDelete(u.id); }}>
                             {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá

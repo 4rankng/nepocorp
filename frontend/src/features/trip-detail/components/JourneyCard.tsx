@@ -30,7 +30,7 @@ export function JourneyCard({
           <h2 style={{ gap: '8px', margin: 0 }}>
             <span className="hicon" style={{ width: 24, height: 24 }}><Route size={14} /></span>
             Hành trình
-            <span className="sub" style={{ margin: 0, marginLeft: '4px', fontSize: '13px', fontWeight: 500, color: 'var(--ink-3)' }}>
+            <span className="sub" style={{ margin: 0, marginLeft: '4px', fontSize: 'var(--fs-body)', fontWeight: 500, color: 'var(--ink-3)' }}>
               • {legCount} chặng đường
             </span>
           </h2>
@@ -39,7 +39,7 @@ export function JourneyCard({
               title="Vị trí trực tiếp từ GPS"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4, marginLeft: 6,
-                padding: '3px 8px', borderRadius: 999, fontSize: 12, lineHeight: 1.35, fontWeight: 600,
+                padding: '3px 8px', borderRadius: 999, fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 600,
                 background: `${LIVE_STATUS_COLOR[liveVehicle.status]}22`, color: LIVE_STATUS_COLOR[liveVehicle.status],
               }}
             >

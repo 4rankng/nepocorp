@@ -40,7 +40,7 @@
   width: 100px;
   flex-shrink: 0;
   font-weight: 600;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   color: var(--ink);
   overflow: visible;
   overflow-wrap: anywhere;
@@ -51,7 +51,7 @@
 .cfg-row__city {
   width: 100px;
   flex-shrink: 0;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   color: var(--ink-2);
   overflow: visible;
   overflow-wrap: anywhere;
@@ -61,7 +61,7 @@
 .cfg-row__notes {
   flex: 1;
   min-width: 0;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   color: var(--ink-3);
   overflow: visible;
   overflow-wrap: anywhere;

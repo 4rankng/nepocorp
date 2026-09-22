@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { FuelMode, TripStatus } from '@tingting/shared';
 import type { TripDetail } from '@tingting/shared';
@@ -33,12 +33,16 @@ export async function saveTripFiguresOnce<T>(
   }
 }
 
-export function useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, requiredFieldsFilled, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos }: Params): (e?: React.FormEvent) => Promise<number | undefined> {
+export function useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, requiredFieldsFilled, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos }: Params) {
 const queryClient = useQueryClient();
 const { toast: showToast } = useToast();
+const createdTrip = useRef<{ id: number; plan: string } | null>(null);
+const [createdTripId, setCreatedTripId] = useState<number | null>(null);
+const submitting = useRef(false);
 const handleSubmit = useCallback(
   async (e?: React.FormEvent): Promise<number | undefined> => {
     e?.preventDefault();
+    if (submitting.current) return;
     s.setError("");
 
     const focusAndScroll = (id: string) => {
@@ -112,23 +116,26 @@ const handleSubmit = useCallback(
     // assigned a truck yet. It is required when the trip is completed (server
     // guard in transitionTripStatus) — kanban 20260921_4.
 
-    if (isEditMode) {
-      if (legs.length === 0) {
-        const msg = 'At least one journey leg is required.';
+    const legsToSubmit = isEditMode ? legs : legs.filter(
+      leg => leg.origin.trim() !== '' || leg.destination.trim() !== '' || leg.km.trim() !== '',
+    );
+    if (isEditMode || hasOptionalData) {
+      if (isEditMode && legsToSubmit.length === 0) {
+        const msg = 'Vui lòng nhập ít nhất một chặng đường.';
         s.setError(msg);
         showToast({ kind: 'error', message: msg });
         return;
       }
-      for (const leg of legs) {
+      for (const leg of legsToSubmit) {
         if (!leg.origin.trim() || !leg.destination.trim()) {
-          const msg = `Leg ${leg.sequence}: Both origin and destination are required.`;
+          const msg = `Chặng ${leg.sequence}: Vui lòng nhập đủ điểm đi và điểm đến.`;
           s.setError(msg);
           showToast({ kind: 'error', message: msg });
           return;
         }
         const kmRaw = (leg.km ?? '').toString().trim();
-        if (kmRaw !== '' && (isNaN(Number(kmRaw)) || Number(kmRaw) < 0)) {
-          const msg = `Leg ${leg.sequence}: Distance must be a non-negative number.`;
+        if (kmRaw !== '' && (!Number.isFinite(Number(kmRaw)) || Number(kmRaw) < 0)) {
+          const msg = `Chặng ${leg.sequence}: Quãng đường phải là số không âm.`;
           s.setError(msg);
           showToast({ kind: 'error', message: msg });
           return;
@@ -136,7 +143,7 @@ const handleSubmit = useCallback(
       }
       const supplementNum = Number(s.fuelSupplementLiters);
       if (supplementNum > 0 && !s.fuelSupplementReason.trim()) {
-        const msg = 'Please enter a reason for fuel supplement.';
+        const msg = 'Vui lòng nhập lý do cấp dầu bổ sung.';
         s.setError(msg);
         showToast({ kind: 'error', message: msg });
         focusAndScroll("fuelSupplementReason");
@@ -178,6 +185,7 @@ const handleSubmit = useCallback(
       allocation => allocation.paymentMethod === 'CREDIT',
     )?.supplierId ?? null;
 
+    submitting.current = true;
     s.setSubmitting(true);
     try {
       // Container type is planning data and must be preserved even when the
@@ -439,7 +447,23 @@ const handleSubmit = useCallback(
       const count = resolveContainerCount(s.containerCount);
       createPayload.containerCount = count;
       createPayload.containerTypeId = Number(s.plannedContainerTypeId || s.containerRows.find(r => r.containerTypeId)?.containerTypeId);
-      const trip = await api.post<{ id: number }>("/trips", createPayload);
+      // Creation and the following figures/container requests are separate
+      // commits. Keep the first ID so a rejected follow-up cannot create a
+      // second trip when the user corrects the form and retries.
+      const planningFields = { ...createPayload };
+      delete planningFields.fuelMode;
+      delete planningFields.fuelActualUnitPrice;
+      const plan = JSON.stringify(planningFields);
+      if (createdTrip.current && createdTrip.current.plan !== plan) {
+        throw new Error('Thông tin lệnh đã thay đổi sau khi tạo. Khôi phục thông tin ban đầu để thử lưu lại, hoặc mở chuyến đã tạo để chỉnh sửa.');
+      }
+      if (!createdTrip.current) {
+        const trip = await api.post<{ id: number }>("/trips", createPayload);
+        createdTrip.current = { id: trip.id, plan };
+        setCreatedTripId(trip.id);
+        void queryClient.invalidateQueries({ queryKey: qk.trips.all });
+      }
+      const trip = createdTrip.current;
 
       // Upload any create-mode OCR photos now that we have a trip id,
       // replacing their local previews with real server URLs.
@@ -451,37 +475,14 @@ const handleSubmit = useCallback(
       }
 
       if (hasOptionalData) {
-        const legsToSubmit = legs.filter(
-          (leg) => leg.origin.trim() !== '' || leg.destination.trim() !== '' || leg.km.trim() !== '',
-        );
-        for (const leg of legsToSubmit) {
-          const kmRaw = (leg.km ?? '').toString().trim();
-          const kmNum = kmRaw === '' ? 0 : Number(kmRaw);
-          if (
-            !leg.origin.trim() ||
-            !leg.destination.trim() ||
-            Number.isNaN(kmNum) ||
-            kmNum < 0
-          ) {
-            throw new Error(
-              `Leg ${leg.sequence} is invalid (Both origin and destination are required; Distance must be a non-negative number).`,
-            );
-          }
-        }
-
-        const supplementNum = Number(s.fuelSupplementLiters);
-        if (supplementNum > 0 && !s.fuelSupplementReason.trim()) {
-          throw new Error("Please enter a reason for fuel supplement.");
-        }
-
         const preDeparturePayload = {
-          legs: legsToSubmit.map((l) => ({
+          legs: legsToSubmit.length ? legsToSubmit.map((l) => ({
             sequence: l.sequence,
             origin: l.origin.trim(),
             destination: l.destination.trim(),
             km: Number(l.km),
             loadingType: l.loadingType,
-          })),
+          })) : undefined,
           fuelMode: s.fuelMode,
           fuelLitersOverride:
             s.fuelMode === FuelMode.FLAT_RATE
@@ -538,10 +539,14 @@ const handleSubmit = useCallback(
       } else if (err instanceof Error) {
         msg = err.message;
       }
+      if (!isEditMode && createdTrip.current) {
+        msg = `Lệnh đã được tạo nhưng chưa lưu đủ dữ liệu. ${msg}`;
+      }
       s.setError(msg);
       showToast({ kind: 'error', message: msg });
       return undefined;
     } finally {
+      submitting.current = false;
       s.setSubmitting(false);
     }
   },
@@ -571,5 +576,5 @@ const handleSubmit = useCallback(
     queryClient,
   ],
 );
-return handleSubmit;
+return { handleSubmit, createdTripId };
 }

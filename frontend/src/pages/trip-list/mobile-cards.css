@@ -60,7 +60,7 @@
 }
 .trip-list-page .trip-mcard__top .left { min-width: 0; flex: 1; }
 .trip-list-page .trip-mcard__name {
-  font-size: var(--fs-sm); font-weight: 600; color: var(--ink);
+  font-size: var(--fs-table); font-weight: 600; color: var(--ink);
   margin-bottom: 2px;
   overflow-wrap: anywhere;
 }

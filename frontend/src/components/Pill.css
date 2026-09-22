@@ -34,7 +34,7 @@
 .pill--neutral .dot { background: var(--ink-3); }
 
 /* Pill size + solid variants — for header-level status emphasis */
-.pill--md { font-size: var(--fs-xs); padding: 5px 12px; letter-spacing: 0.04em; }
+.pill--md { font-size: var(--fs-body); padding: 5px 12px; letter-spacing: 0.04em; }
 .pill--md .dot { width: 6px; height: 6px; }
 .pill--solid { color: var(--fg-on-brand); text-transform: none; letter-spacing: 0.01em; font-weight: 600; }
 .pill--solid.pill--success { background: var(--accent); }

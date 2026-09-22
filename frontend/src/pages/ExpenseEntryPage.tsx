@@ -403,8 +403,8 @@ export default function ExpenseEntryPage() {
             <div className="expense-layout__main">
               <div className="expense-panel">
                 <div className="expense-panel__header">
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>Thông tin chung</h2>
-                  <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>{isEdit ? 'Cập nhật' : 'Nhập'} các thông tin cơ bản cho phiếu chi</p>
+                  <h2 style={{ fontSize: 'var(--fs-section)', fontWeight: 700, color: 'var(--ink)' }}>Thông tin chung</h2>
+                  <p style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-3)', marginTop: 4 }}>{isEdit ? 'Cập nhật' : 'Nhập'} các thông tin cơ bản cho phiếu chi</p>
                 </div>
 
                 <div className="expense-panel__body expense-grid">
@@ -414,7 +414,7 @@ export default function ExpenseEntryPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <label htmlFor={showNewSupplier ? 'newSupplierName' : 'supplierId'} className="expense-label" style={{ marginBottom: 0 }}>Nhà cung cấp <span style={{ color: 'var(--danger)' }}>*</span></label>
                   {!showNewSupplier && (
-                    <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', fontWeight: 600, minHeight: 44, minWidth: 44, borderRadius: 6 }}>
+                    <button type="button" onClick={() => setShowNewSupplier(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-control)', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', fontWeight: 600, minHeight: 44, minWidth: 44, borderRadius: 6 }}>
                       <Plus size={14} /> Thêm mới
                     </button>
                   )}
@@ -457,14 +457,14 @@ export default function ExpenseEntryPage() {
                     ))}
                   </select>
                 )}
-                {errors.supplierId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.supplierId}</p>}
+                {errors.supplierId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.supplierId}</p>}
               </div>
 
               <div className="expense-group" style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <label htmlFor={showNewCategory ? 'newCategoryName' : 'categoryId'} className="expense-label" style={{ marginBottom: 0 }}>Hạng mục <span style={{ color: 'var(--danger)' }}>*</span></label>
                   {!showNewCategory && (
-                    <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', fontWeight: 600, minHeight: 44, minWidth: 44, borderRadius: 6 }}>
+                    <button type="button" onClick={() => setShowNewCategory(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-control)', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', fontWeight: 600, minHeight: 44, minWidth: 44, borderRadius: 6 }}>
                       <Plus size={14} /> Thêm mới
                     </button>
                   )}
@@ -507,7 +507,7 @@ export default function ExpenseEntryPage() {
                     ))}
                   </select>
                 )}
-                {errors.categoryId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.categoryId}</p>}
+                {errors.categoryId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.categoryId}</p>}
               </div>
 
               <div className="expense-group">
@@ -549,7 +549,7 @@ export default function ExpenseEntryPage() {
                       <option key={t.id} value={t.id}>{t.licensePlate}</option>
                     ))}
                   </select>
-                  {errors.truckId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
+                  {errors.truckId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
                 </div>
               )}
 
@@ -569,7 +569,7 @@ export default function ExpenseEntryPage() {
                         <option key={t.id} value={t.id}>{t.licensePlate}</option>
                       ))}
                   </select>
-                  {errors.truckId && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
+                  {errors.truckId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
                 </div>
               )}
 
@@ -585,13 +585,13 @@ export default function ExpenseEntryPage() {
                     value={form.amount ? formatAmountDisplay(form.amount) : ''}
                     onChange={e => set('amount', parseAmountInput(e.target.value))}
                     placeholder="0"
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 600, color: 'var(--accent-2)' }}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-control)', fontWeight: 600, color: 'var(--accent-2)' }}
                   />
                   <span style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-4)', pointerEvents: 'none', fontWeight: 500 }}>
                     đ
                   </span>
                 </div>
-                {errors.amount && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.amount}</p>}
+                {errors.amount && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.amount}</p>}
               </div>
 
               {showValidityFields && (
@@ -606,7 +606,7 @@ export default function ExpenseEntryPage() {
                       value={form.validFrom}
                       onChange={e => set('validFrom', e.target.value)}
                     />
-                    {errors.validFrom && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.validFrom}</p>}
+                    {errors.validFrom && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.validFrom}</p>}
                   </div>
                   <div className="expense-group">
                     <label htmlFor="validTo" className="expense-label">Hiệu lực đến <span style={{ color: 'var(--danger)' }}>*</span></label>
@@ -618,7 +618,7 @@ export default function ExpenseEntryPage() {
                       value={form.validTo}
                       onChange={e => set('validTo', e.target.value)}
                     />
-                    {errors.validTo && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.validTo}</p>}
+                    {errors.validTo && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.validTo}</p>}
                   </div>
                 </>
               )}

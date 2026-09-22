@@ -236,22 +236,24 @@
   --ff-sans: var(--font-display);
   --ff-mono: var(--font-mono);
 
-  /* One UI scale across pages, legacy controls and Radix/Tailwind primitives.
-     Touch targets grow independently of text; dropdowns never become headings. */
+  /* Dense data UI: 12px body/data/controls, 11px labels and supporting text.
+     Heading hierarchy is 14/16/18px; touch targets stay independent of type. */
   --fs-2xs: 11px;
-  --fs-xs:  12px;
+  --fs-xs: 11px;
   --fs-status-pill: 11px;
-  --fs-sm:  13px;
-  --fs-md:  14px;
-  --fs-lg:  16px;
-  --fs-xl:  18px;
-  --fs-2xl: 20px;
-  --fs-3xl: 24px;
-  --fs-4xl: 28px;
-  --fs-5xl: 32px;
+  --fs-sm: 11px;
+  --fs-md: 12px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 18px;
+  --fs-3xl: 20px;
+  --fs-4xl: 24px;
+  --fs-5xl: 28px;
 
   --fs-body: var(--fs-md);
   --fs-control: var(--fs-md);
+  --fs-table: var(--fs-md);
+  --fs-dialog: var(--fs-xl);
   --fs-label: var(--fs-sm);
   --fs-caption: var(--fs-xs);
   --fs-section: var(--fs-lg);

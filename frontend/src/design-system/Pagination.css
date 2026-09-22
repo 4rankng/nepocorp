@@ -35,7 +35,7 @@
   border: 1px solid var(--line);
   background: linear-gradient(180deg, var(--surface), var(--surface-2));
   color: var(--ink-2, var(--fg-2));
-  font-size: var(--fs-sm);
+  font-size: var(--fs-control);
   line-height: 1.35;
   font-weight: 500;
   cursor: pointer;

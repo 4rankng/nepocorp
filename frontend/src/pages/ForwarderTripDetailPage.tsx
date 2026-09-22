@@ -25,6 +25,10 @@ function tripStatusVariant(status: TripStatus): 'neutral' | 'info' | 'warn' | 's
   return 'neutral';
 }
 
+function containerDisplayName(container: ForwarderContainer): string {
+  return container.containerNumber?.trim()
+    || [container.containerTypeName, 'Chưa nhập số container'].filter(Boolean).join(' · ');
+}
 
 export default function ForwarderTripDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -255,7 +259,7 @@ export default function ForwarderTripDetailPage() {
     ...containers.map(container => ({
       key: String(container.id),
       tripContainerId: container.id as number | null,
-      label: `Container ${container.containerNumber}`,
+      label: `Container ${containerDisplayName(container)}`,
       expenses: expenses.filter(exp => exp.tripContainerId === container.id),
     })),
     ...(generalExpenses.length > 0 || completionScopes.some(scope => scope.tripContainerId == null)
@@ -469,9 +473,9 @@ export default function ForwarderTripDetailPage() {
                       borderColor: 'rgba(0, 107, 63, 0.22)',
                     }}
                   >
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{selectedExpenseContainer.containerNumber}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{containerDisplayName(selectedExpenseContainer)}</span>
                     {selectedExpenseContainer.sealNumber && (
-                      <span style={{ color: 'var(--fg-3)', fontSize: 12 }}>Seal {selectedExpenseContainer.sealNumber}</span>
+                      <span style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>Seal {selectedExpenseContainer.sealNumber}</span>
                     )}
                   </div>
                 </FormGroup>
@@ -487,7 +491,7 @@ export default function ForwarderTripDetailPage() {
                     <option value="">Chi phí chung của chuyến</option>
                     {containers.map(c => (
                       <option key={c.id} value={String(c.id)}>
-                        {c.containerNumber}{c.sealNumber ? ` · Seal ${c.sealNumber}` : ''}
+                        {containerDisplayName(c)}{c.sealNumber ? ` · Seal ${c.sealNumber}` : ''}
                       </option>
                     ))}
                   </select>
@@ -556,7 +560,7 @@ export default function ForwarderTripDetailPage() {
               <div
                 className="animate-shake"
                 role="alert"
-                style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 6, background: 'var(--danger-soft)', color: 'var(--danger-text)', fontSize: 13 }}
+                style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 6, background: 'var(--danger-soft)', color: 'var(--danger-text)', fontSize: 'var(--fs-body)' }}
               >
                 {expenseSubmitError}
               </div>

@@ -1,3 +1,4 @@
+import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Loader2, Plus, ArrowRight, Clock } from 'lucide-react';
@@ -187,35 +188,18 @@ export default function ForwarderSettlementsPage() {
         </div>
       )}
 
-      {/* Status filter pills — matching ForwarderTripsPage design */}
       {settlements.length > 0 && (
-        <div className="fwd-filter-pills">
-          <button
-            className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
-            aria-pressed={activeFilter === ''}
-            onClick={() => setActiveFilter('')}
-          >
-            Tất cả
-            <span className="fwd-filter-pill__count">{settlements.length}</span>
-          </button>
-          {(Object.entries(ADVANCE_SETTLEMENT_STATUS_LABELS) as [AdvanceSettlementStatus, string][]).map(([status, label]) => {
-            const count = statusCounts[status] ?? 0;
-            if (count === 0) return null;
-            return (
-              <button
-                key={status}
-                className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
-                data-status={status}
-                aria-pressed={activeFilter === status}
-                onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
-              >
-                <span className="fwd-filter-pill__dot" style={{ background: STATUS_STRIP[status] }} />
-                {label}
-                <span className="fwd-filter-pill__count">{count}</span>
-              </button>
-            );
-          })}
-        </div>
+        <ListFilterBar<AdvanceSettlementStatus | ''>
+          label="Lọc trạng thái"
+          value={activeFilter}
+          onChange={status => setActiveFilter(prev => prev === status ? '' : status)}
+          options={[
+            { value: '', label: 'Tất cả', count: settlements.length },
+            ...(Object.entries(ADVANCE_SETTLEMENT_STATUS_LABELS) as [AdvanceSettlementStatus, string][])
+              .filter(([status]) => (statusCounts[status] ?? 0) > 0 || activeFilter === status)
+              .map(([value, label]) => ({ value, label, count: statusCounts[value] ?? 0 })),
+          ]}
+        />
       )}
 
       {/* Empty state */}
@@ -284,8 +268,8 @@ export default function ForwarderSettlementsPage() {
                         {containerGroups.map(g => (
                           <div key={g.containerNumber} className="fset-container-group" style={{ marginTop: 6, paddingLeft: 8, borderLeft: '2px solid var(--accent)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>{g.containerNumber}</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-2)' }}>{formatCurrency(g.total)}</span>
+                              <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)' }}>{g.containerNumber}</span>
+                              <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--accent-2)' }}>{formatCurrency(g.total)}</span>
                             </div>
                             <div className="fset-card__chips">
                               {[...g.byType.entries()].map(([label, amount]) => (

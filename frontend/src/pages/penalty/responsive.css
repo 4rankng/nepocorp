@@ -141,7 +141,7 @@
 }
 
 .penalty-m-card__name {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   font-weight: 600;
   color: var(--ink);
   white-space: normal;

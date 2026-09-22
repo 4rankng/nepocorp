@@ -40,8 +40,8 @@ export function JourneyLegsCard({ collapsible, defaultCollapsed, number = 2 }: J
             <img src="/assets/illustrations/empty-routes.svg" alt="" style={{ width: 80, height: 60, objectFit: 'contain' }} />
           </div>
           <div className="tc-journey-empty__text">
-            <h4 style={{ margin: '0 0 4px', fontSize: '14.5px', fontWeight: 700, color: 'var(--fg-1)' }}>Chưa có chặng nào</h4>
-            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--fg-3)' }}>
+            <h4 style={{ margin: '0 0 4px', fontSize: 'var(--fs-section)', fontWeight: 700, color: 'var(--fg-1)' }}>Chưa có chặng nào</h4>
+            <p style={{ margin: 0, fontSize: 'var(--fs-body)', color: 'var(--fg-3)' }}>
               Nhập địa điểm và cự ly (Km) cho từng chặng để tính nhiên liệu theo định mức. Bạn cũng có thể bỏ qua và nhập thủ công.
             </p>
           </div>

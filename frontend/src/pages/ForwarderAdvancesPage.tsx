@@ -1,3 +1,4 @@
+import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { useState, useRef, useEffect } from 'react';
 import { Wallet, Loader2, Plus, X, User, AlertCircle, Clock, FileText, CheckCircle2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -11,13 +12,6 @@ import { useMonth } from '../hooks/useMonth';
 import { getCalendarMonthRange } from '../lib/calendar-month';
 import './ForwarderAdvancesPage.css';
 import '../components/shared/HeroKpiRow.css';
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: '#D97706',
-  CHECKED_BY_ACCOUNTANT: '#2563EB',
-  APPROVED: '#059669',
-  REJECTED: '#DC2626',
-};
 
 // "N chờ duyệt" is one string with exactly one space before the words. The
 // counter suffix and the pre-animation JSX share this single definition so the
@@ -250,34 +244,18 @@ export default function ForwarderAdvancesPage() {
         </div>
       )}
 
-      {/* Filter pills */}
       {totalRequests > 0 && (
-        <div className="fwd-filter-pills">
-          <button
-            className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
-            aria-pressed={activeFilter === ''}
-            onClick={() => setActiveFilter('')}
-          >
-            Tất cả
-            <span className="fwd-filter-pill__count">{totalRequests}</span>
-          </button>
-          {(Object.entries(ADVANCE_REQUEST_STATUS_LABELS) as [AdvanceRequestStatus, string][]).map(([status, label]) => {
-            const count = counts[status] ?? 0;
-            if (count === 0) return null;
-            return (
-              <button
-                key={status}
-                className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
-                aria-pressed={activeFilter === status}
-                onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
-              >
-                <span className="fwd-filter-pill__dot" style={{ background: STATUS_COLORS[status] }} />
-                {label}
-                <span className="fwd-filter-pill__count">{count}</span>
-              </button>
-            );
-          })}
-        </div>
+        <ListFilterBar<AdvanceRequestStatus | ''>
+          label="Lọc trạng thái"
+          value={activeFilter}
+          onChange={status => setActiveFilter(prev => prev === status ? '' : status)}
+          options={[
+            { value: '', label: 'Tất cả', count: totalRequests },
+            ...(Object.entries(ADVANCE_REQUEST_STATUS_LABELS) as [AdvanceRequestStatus, string][])
+              .filter(([status]) => (counts[status] ?? 0) > 0 || activeFilter === status)
+              .map(([value, label]) => ({ value, label, count: counts[value] ?? 0 })),
+          ]}
+        />
       )}
 
       {/* Empty state */}

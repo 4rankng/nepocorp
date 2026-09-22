@@ -189,7 +189,7 @@ export default function TruckOwnersConfigPage() {
       </div>
 
       {!pctBalanced && activeOwners.length > 0 && (
-        <div style={{ padding: 12, background: 'var(--warn-soft)', color: 'var(--warn)', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+        <div style={{ padding: 12, background: 'var(--warn-soft)', color: 'var(--warn)', borderRadius: 8, marginBottom: 16, fontSize: 'var(--fs-body)' }}>
           ⚠️ Tổng tỷ lệ đang là <strong>{totalPct.toFixed(2)}%</strong> — nên bằng 100% để lợi nhuận xe được phân phối đầy đủ.
         </div>
       )}

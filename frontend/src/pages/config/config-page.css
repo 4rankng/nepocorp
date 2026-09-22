@@ -232,18 +232,40 @@
 }
 
 .cfg-page--company-info .company-info-preview {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  overflow: clip;
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
   min-width: 0;
 }
+
+.cfg-page--company-info .company-info-preview__title {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.cfg-page--company-info .company-info-logo {
+  max-height: 80px;
+  max-width: min(200px, 100%);
+  object-fit: contain;
+}
+
+.cfg-page--company-info .company-info-logo-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--ink-3);
+  font-size: var(--fs-sm);
+}
+
+.cfg-page--company-info .company-info-logo-empty svg { flex: none; }
 
 .cfg-page--company-info .company-info-preview-row {
   display: grid;
   grid-template-columns: minmax(120px, 0.34fr) minmax(0, 1fr);
   gap: 16px;
-  padding: 12px 14px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--line);
   line-height: 1.45;
 }
@@ -259,7 +281,7 @@
 
 .cfg-page--company-info .company-info-preview-row__value {
   min-width: 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-table);
   color: var(--ink);
   overflow-wrap: anywhere;
   word-break: normal;
@@ -273,6 +295,11 @@
 @media (max-width: 1180px) {
   .cfg-page--company-info .company-info-layout {
     grid-template-columns: 1fr;
+  }
+  .cfg-page--company-info .company-info-preview {
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 }
 
@@ -631,6 +658,42 @@
   white-space: nowrap;
 }
 
+/* Route details remain reachable when the list and inspector cannot fit side by side. */
+.routes-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.routes-config-grid--selected { grid-template-columns: minmax(0, 1fr) 380px; }
+.routes-config-detail {
+  position: sticky;
+  top: 20px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+}
+.routes-config-detail__heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+@media (max-width: 1180px) {
+  .routes-config-grid--selected { grid-template-columns: minmax(0, 1fr); }
+  .routes-config-detail {
+    position: static;
+    order: -1;
+    padding: 16px 0;
+    border-left: 0;
+    border-block: 1px solid var(--line);
+  }
+}
+
 /* ── Responsive overrides (from responsive.css decomposition) ── */
 @media (max-width: 820px) {
   /* ── Routes config page — Mobile Pass 1 (2026-06-02) ──
@@ -639,7 +702,6 @@
      - Other cells become inline chips with light bg
      - Watermarks hidden on KPI tiles to free up space */
   .routes-config-grid { grid-template-columns: 1fr; gap: 12px; }
-  .routes-config-grid > .sticky-card { display: none; }
 
   /* Container — disable horizontal scroll since rows are vertical cards */
   .routes-config-page .table-wrap { background: transparent; border: none; box-shadow: none; }
@@ -911,21 +973,14 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
   cursor: pointer;
-  transition: border-color 140ms var(--ease), background 140ms var(--ease);
 }
 
-.cfg-provider-option:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-}
-
-.cfg-provider-option.is-selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+.cfg-provider-option:hover strong,
+.cfg-provider-option.is-selected strong {
+  color: var(--accent-ink);
 }
 
 .cfg-provider-option input {

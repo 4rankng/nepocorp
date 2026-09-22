@@ -224,7 +224,7 @@ export default function PayableDetailPage() {
           </div>
         </div>
         <div className="dd-summary">
-          <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error || 'Không tìm thấy dữ liệu'}</p>
+          <p style={{ color: 'var(--danger)', fontSize: 'var(--fs-body)' }}>{error || 'Không tìm thấy dữ liệu'}</p>
         </div>
       </div>
     );
@@ -582,7 +582,7 @@ export default function PayableDetailPage() {
             onChange={e => setPaymentReceiptId(e.target.value)}
             placeholder="VD: PT-20260531-01"
           />
-          <p style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
+          <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
             Bắt buộc để đối chiếu sao kê ngân hàng / phiếu chi.
           </p>
         </div>

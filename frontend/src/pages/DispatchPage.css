@@ -115,18 +115,19 @@
   min-width: 0;
 }
 .dispatch-page .metric {
-  background: rgba(255, 255, 255, 0.76);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
   padding: 8px 10px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+  box-shadow: none;
   min-width: 0;
 }
 .dispatch-page .metric.featured {
   grid-row: auto;
   grid-column: auto;
-  background: linear-gradient(135deg, rgba(0, 177, 79, 0.10), rgba(255, 255, 255, 0.86));
-  border-color: rgba(0, 177, 79, 0.18);
+  background: transparent;
+  border-color: var(--line);
 }
 .dispatch-page .metric.featured .metric-label { color: var(--accent-ink); }
 .dispatch-page .metric-label {
@@ -771,9 +772,11 @@ font-weight: 600;
   .dispatch-page .orders-head { display: none; }
   .dispatch-page .order-row {
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-areas: "date route action" "cust cust cust";
-    column-gap: 10px; row-gap: 4px;
+    /* Route names need the whole row; fixed date/actions must not squeeze
+       a long origin or destination into a one-character-wide middle column. */
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "date action" "route route" "cust cust";
+    column-gap: 10px; row-gap: 8px;
     padding: 10px 14px; align-items: center;
   }
   .dispatch-page .order-row .o-date { grid-area: date; font-size: var(--fs-xs); }

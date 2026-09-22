@@ -388,7 +388,7 @@
   border-color: var(--line-2);
   border-radius: var(--r-sm);
   font-family: var(--font-body);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-control);
   font-weight: var(--fw-regular);
 }
 

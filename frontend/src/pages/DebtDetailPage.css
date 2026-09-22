@@ -320,15 +320,16 @@
 }
 
 .dd-aging-cell {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px 14px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 12px 0;
   transition: var(--t-normal);
 }
-.dd-aging-cell:hover { box-shadow: var(--sh-sm); }
+.dd-aging-cell:hover { box-shadow: none; }
 .dd-aging-cell--active {
-  background: var(--accent-soft);
-  border-color: #BCE9CF;
+  background: transparent;
+  border-color: var(--accent);
 }
 .dd-aging-cell--active .dd-ac-val { color: var(--sidebar); }
 
@@ -1261,7 +1262,7 @@
 .dd-table tbody td {
   padding: 13px 24px;
   border-bottom: 1px solid var(--bg-3);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   line-height: 1.35;
   vertical-align: middle;
 }
@@ -1277,9 +1278,9 @@
 
 @media (max-width: 640px) {
   .debt-detail-page .dd-table thead th { padding: 10px 10px; font-size: var(--fs-xs); letter-spacing: 0.06em; }
-  .debt-detail-page .dd-table tbody td { padding: 10px 10px; font-size: var(--fs-xs); }
+  .debt-detail-page .dd-table tbody td { padding: 10px 10px; font-size: var(--fs-table); }
   .debt-detail-page .dd-table { min-width: 520px; }
-  .debt-detail-page .dd-td-date { font-size: var(--fs-xs); }
+  .debt-detail-page .dd-td-date { font-size: var(--fs-table); }
 }
 .dd-table tbody tr:last-child td { border-bottom: none; }
 .dd-table tbody tr { transition: background .12s; }
@@ -1509,7 +1510,7 @@
 }
 .dd-ledger-detail-row td {
   color: var(--ink-2);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-table);
 }
 .dd-ledger-detail-row td:first-child {
   padding-left: 54px;
@@ -1519,7 +1520,7 @@
   font-family: var(--font-mono);
   font-weight: 500;
   color: var(--ink-2);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   white-space: nowrap;
 }
 
@@ -1634,7 +1635,7 @@
 
 .dd-td-note {
   color: var(--ink-2);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   white-space: nowrap;
 }
 .dd-group-detail-btn {
@@ -1657,7 +1658,7 @@
 }
 .dd-td-note .dd-code {
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-table);
   color: var(--ink-3);
   font-weight: 500;
 }

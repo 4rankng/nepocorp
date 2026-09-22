@@ -206,11 +206,11 @@ export function ContainerScanner({ onCapture, onClose }: ContainerScannerProps) 
           gap: 10, padding: 24, textAlign: 'center', color: '#fff',
         }}>
           {status === 'loading' ? (
-            <span style={{ fontSize: 14, opacity: 0.8 }}>Đang mở camera…</span>
+            <span style={{ fontSize: 'var(--fs-body)', opacity: 0.8 }}>Đang mở camera…</span>
           ) : (
             <>
               <CameraOff size={32} style={{ opacity: 0.6 }} />
-              <span style={{ fontSize: 13, opacity: 0.85, lineHeight: 1.5, maxWidth: 280 }}>
+              <span style={{ fontSize: 'var(--fs-body)', opacity: 0.85, lineHeight: 1.5, maxWidth: 280 }}>
                 Không truy cập được camera. Hãy cấp quyền hoặc dùng nút chọn ảnh từ thư viện bên dưới.
               </span>
             </>

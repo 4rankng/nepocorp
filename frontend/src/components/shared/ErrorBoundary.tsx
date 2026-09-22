@@ -37,8 +37,8 @@ export class ErrorBoundary extends Component<Props, State> {
         }}>
           <EmptyIllustration name="empty-error" width={156} height={124} />
           <div>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: 'var(--ink)' }}>Đã xảy ra lỗi</h3>
-            <p style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+            <h3 style={{ fontSize: 'var(--fs-section)', fontWeight: 600, marginBottom: 4, color: 'var(--ink)' }}>Đã xảy ra lỗi</h3>
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-3)' }}>
               {this.state.error?.message || 'Không thể hiển thị nội dung này.'}
             </p>
           </div>
@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '8px 16px', borderRadius: 'var(--r-sm, 8px)', border: '1px solid var(--line)',
-              background: 'var(--surface)', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+              background: 'var(--surface)', cursor: 'pointer', fontSize: 'var(--fs-body)', fontWeight: 500,
             }}
           >
             <RotateCw size={14} /> Thử lại

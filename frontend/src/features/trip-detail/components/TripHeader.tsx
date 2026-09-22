@@ -102,7 +102,7 @@ export function TripHeader({
             data-tour-id="trip-detail-lock"
             disabled={actionLoading || needsPhotos}
             title={needsPhotos ? 'Chưa có ảnh chuyến đi. Vui lòng tải lên ít nhất 1 ảnh trước khi khóa.' : undefined}
-            onClick={onLock}
+            onClick={() => onLock()}
           >
             {actionLoading ? <Loader2 size={14} className="spin" /> : <Lock size={14} />}
             Khóa chuyến

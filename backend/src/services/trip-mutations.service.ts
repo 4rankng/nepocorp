@@ -574,14 +574,6 @@ export async function updateTripFigures(
     trailerType?: string | null;
   },
 ) {
-  // Normalize leg distances to integers to satisfy strict database integer constraints and avoid PG 22P02 syntax errors.
-  // An omitted `legs` means "leave the stored legs alone" — the replace below is
-  // skipped when the list is empty (kanban 20260921_3).
-  const normalizedLegs = (data.legs ?? []).map(leg => ({
-    ...leg,
-    km: Math.round(leg.km),
-  }));
-
   return await db.transaction(async (tx) => {
     // 1. Fetch trip and check lock status
     await lockTripMutation(tx, tripId);
@@ -590,6 +582,15 @@ export async function updateTripFigures(
     if (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED) {
       throw new ApiError(400, 'Chuyến đi đã chốt hoặc đã hủy, không thể sửa');
     }
+    // A figures-only update may omit the legs. Read them under the same trip
+    // lock so AUTO fuel uses the segments that remain stored on the trip.
+    const storedLegs = data.legs === undefined
+      ? await tx.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, tripId)).orderBy(s.tripLegs.sequence)
+      : [];
+    const normalizedLegs = (data.legs ?? storedLegs).map(leg => ({
+      ...leg,
+      km: Math.round(leg.km),
+    }));
     const existingFuelAllocations = await tx.select()
       .from(s.tripFuelAllocations)
       .where(eq(s.tripFuelAllocations.tripId, tripId))
@@ -1110,23 +1111,31 @@ export async function updateTripFigures(
       }, { strict: false });
     }
 
-    // 7. Persist physical leg segments
-    await tx.delete(s.tripLegs).where(eq(s.tripLegs.tripId, tripId));
-    if (normalizedLegs.length > 0) {
-      await tx.insert(s.tripLegs).values(
-        normalizedLegs.map((leg, _i) => {
-          const calcLeg = totals.legCalculations.find(cl => cl.sequence === leg.sequence);
-          return {
-            tripId,
-            sequence: leg.sequence,
-            origin: leg.origin,
-            destination: leg.destination,
-            km: leg.km,
-            loadingType: leg.loadingType,
-            calculatedLiters: calcLeg ? String(calcLeg.calculatedLiters) : '0',
-          };
-        })
-      );
+    // 7. Replace physical segments only when the caller supplied them. An
+    // omitted list keeps row identity; fuel-mode changes still refresh each
+    // segment's derived fuel figure.
+    const litersBySequence = new Map(totals.legCalculations.map(leg => [leg.sequence, leg.calculatedLiters]));
+    if (data.legs !== undefined) {
+      await tx.delete(s.tripLegs).where(eq(s.tripLegs.tripId, tripId));
+      if (normalizedLegs.length > 0) {
+        await tx.insert(s.tripLegs).values(normalizedLegs.map(leg => ({
+          tripId,
+          sequence: leg.sequence,
+          origin: leg.origin,
+          destination: leg.destination,
+          km: leg.km,
+          loadingType: leg.loadingType,
+          calculatedLiters: String(litersBySequence.get(leg.sequence) ?? 0),
+        })));
+      }
+    } else {
+      for (const leg of storedLegs) {
+        const calculatedLiters = litersBySequence.get(leg.sequence) ?? 0;
+        if (leg.calculatedLiters == null || Number(leg.calculatedLiters) !== calculatedLiters) {
+          await tx.update(s.tripLegs).set({ calculatedLiters: String(calculatedLiters), updatedAt: new Date() })
+            .where(eq(s.tripLegs.id, leg.id));
+        }
+      }
     }
 
     // Audit row is produced by auditLogMiddleware on PUT /api/trips/:id/

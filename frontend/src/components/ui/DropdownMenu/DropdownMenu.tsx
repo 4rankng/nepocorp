@@ -17,7 +17,7 @@ const DropdownMenuContent = React.forwardRef<
       className={cn(
         "z-50 min-w-[8rem] overflow-hidden",
         "rounded-xl border border-[var(--line)] bg-[var(--surface)] p-1",
-        "text-[var(--ink)] text-sm tracking-normal",
+        "text-[var(--ink)] text-base tracking-normal",
         // Same refined shadow as SelectContent
         "shadow-[0_8px_24px_-4px_rgba(10,10,10,0.12),0_2px_6px_-1px_rgba(10,10,10,0.06)]",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
@@ -40,7 +40,7 @@ const DropdownMenuItem = React.forwardRef<
     className={cn(
       "relative flex cursor-default select-none items-center gap-2 rounded-lg",
       "min-h-9 px-3 py-2",
-      "text-sm leading-snug tracking-normal text-[var(--ink-2)]",
+      "text-base leading-snug tracking-normal text-[var(--ink-2)]",
       "outline-none transition-colors duration-100",
       "focus:bg-[var(--surface-2)] focus:text-[var(--ink)]",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",

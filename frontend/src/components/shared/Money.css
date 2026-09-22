@@ -20,7 +20,7 @@
 }
 
 .money__unit {
-  font-size: 12px !important;
+  font-size: var(--fs-caption);
   line-height: 1.35;
   font-weight: 500;
   opacity: 0.65;

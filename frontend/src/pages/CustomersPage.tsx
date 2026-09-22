@@ -1,25 +1,25 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, UserCheck, BarChart3, Lock, Plus, Download, Search,
+  Users, UserCheck, BarChart3, Lock, Plus, Download,
   MoreHorizontal, Pencil, Trash2, X, Save, Loader2, Truck,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { labelStyle } from '../utils/formStyles';
-import { PageHeader, KPI, FilterPill, StatusPill, Modal } from '../components/UI';
+import { PageHeader, KPI, StatusPill, Modal } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
-import { EmptyState } from '../design-system';
+import { EmptyState, Pagination } from '../design-system';
 import { formatCurrency, formatNumber } from '../lib/format';
 import type { Customer, Supplier } from '@tingting/shared';
 import { CustomerStatus } from '@tingting/shared';
-import { useCustomers, useCustomerBalances, useSuppliers } from '../hooks/useQueries';
+import { useAllCustomers, useCustomerBalances, useSuppliers } from '../hooks/useQueries';
 import { usePageAnimations } from '../hooks/animations';
 import { ClickableCard } from '../components/shared/ClickableCard';
-import { StatusStrip, StatusDot } from '../components/shared/StatusStrip';
+import { StatusStrip } from '../components/shared/StatusStrip';
 import { Money } from '../components/shared/Money';
 import { EmptyIllustration } from '../components/shared';
-import './CustomersPage.css';
+import { ListFilterBar } from '../components/shared/ListFilterBar';
 
 type FilterKey = 'all' | 'locked' | 'active' | 'risk';
 
@@ -74,8 +74,8 @@ export function buildCustomerDebtMap(entries: Array<{
 // looked cramped (5 fields squeezed into one table cell) and made it easy to
 // miss that edit mode had even opened. Modal gives proper breathing room.
 
-function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers }: {
-  item?: Customer; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean; suppliers: Supplier[];
+function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers, error }: {
+  item?: Customer; saving: boolean; onsave: (d: Record<string, unknown>) => void; oncancel: () => void; isOpen: boolean; suppliers: Supplier[]; error?: string | null;
 }) {
   const [name, setName] = useState(item?.name || '');
   const [taxCode, setTaxCode] = useState(item?.taxCode || '');
@@ -136,6 +136,7 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers }
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {error && <p role="alert" style={{ color: 'var(--danger)', margin: 0 }}>{error}</p>}
         <div className="field">
           <label htmlFor="cust-name" style={labelStyle}>
             Tên khách hàng <span style={{ color: 'var(--danger)' }}>*</span>
@@ -184,7 +185,7 @@ function CustomerFormModal({ item, saving, onsave, oncancel, isOpen, suppliers }
                 onChange={e => setIsCarrier(e.target.checked)}
                 style={{ width: 14, height: 14 }}
               />
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>Đối tác vận tải (xe ngoài)</span>
+              <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)' }}>Đối tác vận tải (xe ngoài)</span>
             </label>
           </div>
         </div>
@@ -223,15 +224,14 @@ export default function CustomersPage() {
 
   const pageSize = 10;
 
-  const { data: customersData, isLoading: loading, error: queryError, refetch: refetchCustomers } = useCustomers(page, search);
+  const { data: customersData, isLoading: loading, error: queryError, refetch: refetchCustomers } = useAllCustomers();
   const { rootRef } = usePageAnimations({ ready: !loading });
-  const { data: customerBalances } = useCustomerBalances();
+  const { data: customerBalances, isLoading: balancesLoading, error: balancesError, refetch: refetchBalances } = useCustomerBalances();
   const { data: suppliersData } = useSuppliers(1, '');
   const allSuppliers = suppliersData?.items ?? [];
-  const customers = useMemo(() => customersData?.items ?? [], [customersData]);
-  const total = customersData?.total ?? 0;
+  const customers = useMemo(() => customersData ?? [], [customersData]);
+  const total = customers.length;
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const error = queryError ? 'Không thể tải dữ liệu' : mutationError;
 
   // Server-side aggregates from /ledger/balances — replaced the former
   // load-all-ledger-entries client-side reduces (arDebt excludes carrier AP).
@@ -257,16 +257,14 @@ export default function CustomersPage() {
     return { customers: customerRevenues, total: totalRevenue };
   }, [customers, revenueMap]);
 
-  useEffect(() => {
-    if (search === '') { setPage(1); return; }
-    const t = setTimeout(() => setPage(1), 300);
-    return () => clearTimeout(t);
-  }, [search]);
+  useEffect(() => { setPage(1); }, [search, filter]);
 
   const { activeCount, lockedCount, filtered } = useMemo(() => {
     const activeCount = customers.filter(c => c.status === CustomerStatus.ACTIVE).length;
     const lockedCount = customers.filter(c => c.status === CustomerStatus.LOCKED).length;
+    const needle = search.trim().toLocaleLowerCase('vi');
     const filtered = customers.filter(c => {
+      if (needle && ![c.name, c.taxCode, c.contactPerson, c.phone].some(value => value?.toLocaleLowerCase('vi').includes(needle))) return false;
       if (filter === 'active') return c.status === CustomerStatus.ACTIVE;
       if (filter === 'locked') return c.status === CustomerStatus.LOCKED;
       if (filter === 'risk') {
@@ -280,12 +278,15 @@ export default function CustomersPage() {
       return true;
     });
     return { activeCount, lockedCount, filtered };
-  }, [customers, filter, debtMap]);
+  }, [customers, filter, search, debtMap]);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const visibleCustomers = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   async function doCreate(body: Record<string, unknown>) {
     setSaving(true);
+    setMutationError(null);
     try {
       await api.post('/customers', body);
       setShowAddForm(false);
@@ -295,6 +296,7 @@ export default function CustomersPage() {
 
   async function doUpdate(id: number, body: Record<string, unknown>) {
     setSaving(true);
+    setMutationError(null);
     try {
       await api.put(`/customers/${id}`, body);
       await refetchCustomers();
@@ -305,12 +307,29 @@ export default function CustomersPage() {
 
   async function doDelete(id: number) {
     setDeleting(id);
+    setMutationError(null);
     try {
       await api.delete(`/customers/${id}`);
       setMenuOpenId(null);
       await refetchCustomers();
     } catch (e: unknown) { setMutationError(e instanceof Error ? e.message : 'Lỗi xóa'); } finally { setDeleting(null); }
   }
+
+  if (queryError || balancesError) return (
+    <div className="customers-page">
+      <PageHeader title="Khách hàng" iconName="customer" />
+      <div role="alert">
+        <p>Không thể tải danh sách hoặc công nợ khách hàng.</p>
+        <button className="btn btn--secondary" onClick={() => { void Promise.all([refetchCustomers(), refetchBalances()]); }}>Thử lại</button>
+      </div>
+    </div>
+  );
+  if (loading || balancesLoading) return (
+    <div className="customers-page">
+      <PageHeader title="Khách hàng" iconName="customer" />
+      <p role="status">Đang tải khách hàng và công nợ…</p>
+    </div>
+  );
 
   return (
     <div className="customers-page" ref={rootRef}>
@@ -354,6 +373,8 @@ export default function CustomersPage() {
         }
       />
 
+      {mutationError && !showAddForm && editingId == null && <p role="alert" style={{ color: 'var(--danger)' }}>{mutationError}</p>}
+
       {/* KPI strip */}
       <div className="kpi-grid">
         <KPI
@@ -389,39 +410,22 @@ export default function CustomersPage() {
           variant="danger"
           icon={Lock}
           assetIconName="overdue"
-          meta="Do nợ quá hạn"
+          meta="Đang tạm khóa giao dịch"
         />
       </div>
 
-      {/* Toolbar with filter pills */}
-      <div className="toolbar">
-        <FilterPill active={filter === 'all'} onClick={() => setFilter('all')}>Tất cả · {total}</FilterPill>
-        <FilterPill active={filter === 'risk'} onClick={() => setFilter('risk')}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#D97706', display: 'inline-block', marginRight: 4 }} />
-          Rủi ro cao
-        </FilterPill>
-        <FilterPill active={filter === 'active'} onClick={() => setFilter('active')}>
-          <StatusDot status="ACTIVE" style={{ marginRight: 4 }} />
-          Hoạt động · {activeCount}
-        </FilterPill>
-        <FilterPill active={filter === 'locked'} onClick={() => setFilter('locked')}>
-          <StatusDot status="INACTIVE" style={{ marginRight: 4 }} />
-          Tạm khoá · {lockedCount}
-        </FilterPill>
-        <div style={{ flex: 1 }} />
-        <div style={{ position: 'relative', width: 240, maxWidth: '100%' }}>
-          <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }} />
-          <input
-            type="text"
-            name="customerSearch"
-            aria-label="Tìm khách hàng theo tên hoặc mã số thuế"
-            placeholder="Tìm theo tên, MST…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', minHeight: 44, padding: '10px 11px 10px 32px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8, fontSize: 13, lineHeight: 1.35 }}
-          />
-        </div>
-      </div>
+      <ListFilterBar<FilterKey>
+        label="Lọc khách hàng"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: 'all', label: 'Tất cả', count: total },
+          { value: 'risk', label: 'Rủi ro cao' },
+          { value: 'active', label: 'Hoạt động', count: activeCount },
+          { value: 'locked', label: 'Tạm khoá', count: lockedCount },
+        ]}
+        search={{ value: search, onChange: setSearch, label: 'Tìm khách hàng theo tên hoặc mã số thuế', placeholder: 'Tìm theo tên, MST…' }}
+      />
 
       {/* ── Mobile card list (≤820px) ──────────────────────────────────── */}
       <div className="mobile-only mobile-table-wrap">
@@ -431,12 +435,12 @@ export default function CustomersPage() {
           ) : filtered.length === 0 ? (
             <EmptyState
               illustration="/assets/illustrations/empty-clients.svg"
-              title="Chưa có khách hàng"
-              description="Thêm khách hàng đầu tiên để bắt đầu quản lý công nợ."
+              title={total ? "Không có khách hàng phù hợp" : "Chưa có khách hàng"}
+              description={total ? "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm." : "Thêm khách hàng đầu tiên để bắt đầu quản lý công nợ."}
               action={<button className="btn btn--primary" onClick={() => { setShowAddForm(true); setEditingId(null); }}><Plus size={14} /> Thêm khách hàng</button>}
             />
           ) : (
-            filtered.map(c => (
+            visibleCustomers.map(c => (
               <ClickableCard key={c.id} className="m-card" style={{ position: 'relative' }} onClick={() => navigate(`/customers/${c.id}`)}>
                 <StatusStrip status={c.status} />
                 <div className="m-card__top">
@@ -444,13 +448,13 @@ export default function CustomersPage() {
                     <span className={`risk-dot risk-dot--${riskDot(debtMap.get(c.id) ?? 0, Number(c.creditLimit || 0))}`} />
                     {c.name}
                     {c.linkedSupplierId && (
-                      <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
+                      <span style={{ marginLeft: 6, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
                         2 chiều
                       </span>
                     )}
                     {/* TODO: extract a shared <Badge> component for "2 chiều" / "Xe ngoài" */}
                     {c.isCarrier && (
-                      <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <span style={{ marginLeft: 6, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                         <Truck size={11} aria-hidden="true" /> Xe ngoài
                       </span>
                     )}
@@ -491,15 +495,12 @@ export default function CustomersPage() {
             ))
           )}
         </div>
-        <div className="table-foot">
-          <span>Hiển thị <strong style={{ fontFamily: 'var(--font-mono)' }}>{filtered.length}</strong> khách hàng</span>
-        </div>
       </div>
 
       {/* ── Desktop table (>640px) ──────────────────────────────────────── */}
       <div className="desktop-only table-wrap">
         <div className="table-scroll">
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 900, tableLayout: 'fixed' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-table)', minWidth: 900, tableLayout: 'fixed' }}>
             <colgroup>
               <col style={{ width: '44%' }} />
               <col style={{ width: '22%' }} />
@@ -509,10 +510,10 @@ export default function CustomersPage() {
             </colgroup>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Khách hàng</th>
-                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Liên hệ</th>
-                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>Hạn mức TD</th>
-                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>Công nợ</th>
+                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Khách hàng</th>
+                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Liên hệ</th>
+                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}>Hạn mức TD</th>
+                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}>Công nợ</th>
                 <th style={{ width: 60 }}></th>
               </tr>
             </thead>
@@ -520,13 +521,7 @@ export default function CustomersPage() {
               {loading && (
                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-                  <p style={{ fontSize: 13 }}>Đang tải…</p>
-                </td></tr>
-              )}
-              {error && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--danger)' }}>
-                  <p>{error}</p>
-                  <button className="btn btn--secondary btn--sm" style={{ marginTop: 8 }} onClick={() => refetchCustomers()}>Thử lại</button>
+                  <p style={{ fontSize: 'var(--fs-body)' }}>Đang tải…</p>
                 </td></tr>
               )}
               {!loading && filtered.length === 0 && (
@@ -535,7 +530,7 @@ export default function CustomersPage() {
                   <div>Chưa có dữ liệu</div>
                 </td></tr>
               )}
-              {filtered.map((c, index) => (
+              {visibleCustomers.map((c, index) => (
                   <tr key={c.id} role="button" tabIndex={0}
                     style={{ cursor: 'pointer', transition: 'background 0.12s ease' }}
                     onClick={() => navigate(`/customers/${c.id}`)}
@@ -550,22 +545,22 @@ export default function CustomersPage() {
                           {c.name}
                         </span>
                         {c.linkedSupplierId && (
-                          <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', marginTop: 1 }}>
+                          <span style={{ flexShrink: 0, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', marginTop: 1 }}>
                             2 chiều
                           </span>
                         )}
                         {c.isCarrier && (
-                          <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', marginTop: 1, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                          <span style={{ flexShrink: 0, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', marginTop: 1, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                             <Truck size={11} aria-hidden="true" /> Xe ngoài
                           </span>
                         )}
                       </div>
-                      {c.taxCode && <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {c.taxCode}</div>}
+                      {c.taxCode && <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>MST {c.taxCode}</div>}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'normal', wordBreak: 'break-word' }}>
                       {c.contactPerson && <div style={{ fontWeight: 600 }}>{c.contactPerson}</div>}
                       {(c.phone || c.contactInfo) && (
-                        <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-3)', marginTop: 2, fontFamily: c.phone ? 'var(--font-mono)' : 'var(--font-body)' }}>
                           {c.phone || c.contactInfo}
                         </div>
                       )}
@@ -590,15 +585,15 @@ export default function CustomersPage() {
                           position: 'absolute', right: 12, zIndex: 20,
                           background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
                           boxShadow: '0 4px 14px rgba(10,10,10,0.06)', overflow: 'hidden', minWidth: 140,
-                          ...(index >= filtered.length - 2 && filtered.length > 2
+                          ...(index >= visibleCustomers.length - 2 && visibleCustomers.length > 2
                             ? { bottom: '100%', marginBottom: 4 }
                             : { top: '100%' }),
                         }} onClick={(e) => e.stopPropagation()}>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
                             onClick={() => { setEditingId(c.id); setShowAddForm(false); }}>
                             <Pencil size={13} /> Sửa
                           </button>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)' }}
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)' }}
                             disabled={deleting === c.id}
                             onClick={() => doDelete(c.id)}>
                             {deleting === c.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
@@ -612,19 +607,13 @@ export default function CustomersPage() {
           </table>
         </div>
 
-        {/* Table footer with pagination */}
-        <div className="table-foot">
-          <span>Đang hiển thị <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, total)}</strong> trên <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{total}</strong> khách hàng</span>
-          <div className="pagination">
-            <button className="page-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              const p = i + 1;
-              return <button key={p} className={`page-btn${p === page ? ' is-active' : ''}`} onClick={() => setPage(p)}>{p}</button>;
-            })}
-            <button className="page-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>›</button>
-          </div>
-        </div>
       </div>
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        onChange={setPage}
+        summary={<span>Hiển thị <strong>{filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filtered.length)}</strong> trên <strong>{filtered.length}</strong> khách hàng</span>}
+      />
 
       {/* Customer add/edit modal */}
       <CustomerFormModal
@@ -633,6 +622,7 @@ export default function CustomersPage() {
         saving={saving}
         item={editingId != null ? customers.find(c => c.id === editingId) : undefined}
         suppliers={allSuppliers}
+        error={mutationError}
         onsave={d => {
           if (editingId != null) doUpdate(editingId, d);
           else doCreate(d);

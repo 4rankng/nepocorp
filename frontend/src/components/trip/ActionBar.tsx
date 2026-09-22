@@ -26,16 +26,16 @@ export function ActionBar({ loading, onCancel, onSubmit }: ActionBarProps) {
           </span>
           <div>
             <div className="tc-action-bar__status-main">
-              {allFilled ? 'Sẵn sàng tạo lệnh' : `Còn ${form.totalRequiredFields - form.requiredFieldsFilled} trường bắt buộc chưa điền`}
+              {form.createdTripId ? 'Lệnh đã được tạo' : allFilled ? 'Sẵn sàng tạo lệnh' : `Còn ${form.totalRequiredFields - form.requiredFieldsFilled} trường bắt buộc chưa điền`}
             </div>
-            <div className="tc-action-bar__status-sub">Điền đủ trường bắt buộc để bật nút "Tạo lệnh"</div>
+            <div className="tc-action-bar__status-sub">{form.createdTripId ? 'Sửa dữ liệu báo lỗi rồi tiếp tục lưu vào chuyến này.' : 'Điền đủ trường bắt buộc để bật nút "Tạo lệnh"'}</div>
           </div>
         </div>
         <div className="tc-action-bar__actions">
           <button className="btn btn--ghost" type="button" onClick={onCancel} disabled={form.submitting}>Hủy</button>
           <button className="btn btn--primary" id="trip-new-submit" type="button" disabled={disabled || !allFilled} onClick={onSubmit}>
             {form.submitting ? <Loader2 size={16} className="spin" /> : <ArrowRight size={16} />}
-            Tạo lệnh
+            {form.createdTripId ? 'Tiếp tục lưu' : 'Tạo lệnh'}
           </button>
         </div>
       </div>

@@ -5,7 +5,8 @@ import type { PaginatedResponse } from '@tingting/shared';
 /**
  * Auto-paginate a list endpoint. The backend caps page size at 100; this
  * walks pages with bounded concurrency (default 5) and concatenates items.
- * A single failed page is logged but does not abort the rest.
+ * A failed page rejects the whole list so callers can retry instead of displaying
+ * incomplete catalogs and incorrect totals.
  *
  * Returns a flat array of items; the `total` count is dropped because
  * callers usually display the full list anyway.
@@ -27,17 +28,14 @@ export async function fetchAllPaginated<T>(
   const pageNums = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
   for (let i = 0; i < pageNums.length; i += concurrency) {
     const batch = pageNums.slice(i, i + concurrency);
-    const batchResults = await Promise.allSettled(
+    const batchResults = await Promise.all(
       batch.map((p) =>
         api.get<PaginatedResponse<T>>(
           `${endpoint}${toQuery({ ...params, limit: pageSize, page: p })}`,
         ),
       ),
     );
-    for (const r of batchResults) {
-      if (r.status === 'fulfilled') results.push(r.value);
-      else console.warn('[fetchAllPaginated] page fetch failed:', r.reason);
-    }
+    results.push(...batchResults);
   }
   return results.flatMap((r) => r.items ?? []);
 }

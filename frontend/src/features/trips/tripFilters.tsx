@@ -1,6 +1,7 @@
+import { ListFilterBar } from '../../components/shared/ListFilterBar';
 import { Search } from 'lucide-react';
 import {
-  TripStatus, TRIP_STATUS_COLORS,
+  TripStatus,
   type TripDetail,
 } from '@tingting/shared';
 
@@ -52,31 +53,12 @@ export function TripFiltersBar(props: TripFiltersBarProps) {
 
   return (
     <div className="filters-card">
-      <div className="filters-row-top">
-        <div className="status-tabs">
-          {STATUS_TABS.map((tab) => {
-            const isAll = tab.key === '';
-            const colorVar = isAll ? '#0F1A14' : TRIP_STATUS_COLORS[tab.key as TripStatus];
-            const count = isAll ? statusCounts.all : statusCounts[tab.key as TripStatus];
-            const isActive = statusFilter === tab.key;
-            const isZero = count === 0;
-            return (
-              <button
-                key={tab.key || 'all'}
-                className={`stab-pill${isActive ? ' active' : ''}${isZero ? ' zero' : ''}`}
-                onClick={() => onStatusFilter(tab.key)}
-                aria-pressed={isActive}
-              >
-                <span className="stab-dot" aria-hidden="true" style={{ '--dot': colorVar } as React.CSSProperties} />
-                {tab.label}
-                <span className="stab-count">{count}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="filters-divider" />
+      <ListFilterBar
+        label="Lọc trạng thái chuyến đi"
+        options={STATUS_TABS.map(tab => ({ value: tab.key, label: tab.label, count: tab.key === '' ? statusCounts.all : statusCounts[tab.key] }))}
+        value={statusFilter}
+        onChange={onStatusFilter}
+      />
 
       <div className="filters-row-bottom">
         <div className="filters-search">

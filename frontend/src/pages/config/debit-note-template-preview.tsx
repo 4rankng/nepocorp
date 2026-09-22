@@ -1,6 +1,8 @@
-import type React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import type { DebitNoteTemplateColumn, DebitNoteTemplateInput } from '@tingting/shared';
 import { cloneStarterColumns, sampleCell, type SelectedTarget } from './debit-note-template-editor-utils';
+import { DocumentZoomControls } from '../../components/shared/DocumentZoomControls';
+import './debit-note-template-preview.css';
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -32,17 +34,42 @@ export function TemplatePreview({
   const canvasLocked = disabled;
   const previewTerms = (form.termsText || '- Số TK ...\n- Tại ngân hàng ...').split('\n');
   const accentStyle = { '--accent': form.accentColor } as React.CSSProperties;
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ available: 0, height: 1123 });
+  const [zoom, setZoom] = useState<number | null>(null);
+  const paperWidth = form.orientation === 'landscape' ? 1123 : 794;
+  const paperHeight = form.orientation === 'landscape' ? 794 : 1123;
+  const scale = zoom === null ? Math.min(1, (dimensions.available || paperWidth) / paperWidth) : zoom / 100;
+  const columnWidth = visible.reduce((sum, column) => sum + Math.max(column.width || 8, 8), 0);
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    const paper = paperRef.current;
+    if (!viewport || !paper) return;
+    const measure = () => {
+      const available = Math.max(1, viewport.clientWidth - 24);
+      const height = paper.offsetHeight;
+      setDimensions(previous => previous.available === available && previous.height === height ? previous : { available, height });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    observer.observe(paper);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <aside className="debit-editor-preview" style={accentStyle} aria-label="Xem trước mẫu">
-      <div className="debit-editor-canvas-frame">
-        <div className="debit-editor-canvas-dragbar" aria-hidden="true">
-          <span>⋮⋮</span>
-          <span>Chọn nội dung để chỉnh</span>
-          <span>⋮⋮</span>
-        </div>
-        <div className="debit-editor-preview__sheet">
-          <div className="debit-editor-page-boundary">
+      <div className="debit-editor-preview-tools">
+        <span>Xem trước mẫu · A4 {form.orientation === 'landscape' ? 'ngang' : 'dọc'}</span>
+        <DocumentZoomControls percent={Math.round(scale * 100)} fitActive={zoom === null} onZoomChange={setZoom} onFitWidth={() => setZoom(null)} />
+      </div>
+      <p className="debit-editor-preview-hint">Chọn nội dung để chỉnh sửa. Phóng to để đọc chi tiết; thu phóng không thay đổi bản xuất.</p>
+      <div className="debit-editor-canvas-frame" ref={viewportRef} role="region" aria-label="Nội dung bản xem trước" tabIndex={0}>
+        <div className="debit-editor-preview-extent" style={{ width: paperWidth * scale, height: dimensions.height * scale }}>
+        <div className="debit-editor-preview__sheet" style={{ width: paperWidth, transform: `scale(${scale})` }}>
+          <div ref={paperRef} className="debit-editor-page-boundary" style={{ width: paperWidth, minHeight: paperHeight }}>
             <div className="debit-editor-preview__export-header">
               <textarea
                 className={`debit-editor-preview__title debit-editor-canvas-input ${selectedTarget.type === 'general' && selectedTarget.field === 'titleText' ? 'is-selected' : ''}`}
@@ -125,8 +152,7 @@ export function TemplatePreview({
                           key={column.id}
                           className={isSelected ? 'is-selected' : undefined}
                           style={{
-                            width: `${Math.max(column.width || 8, 8) * 12}px`,
-                            minWidth: `${Math.max(column.width || 8, 8) * 12}px`,
+                            width: `${Math.max(column.width || 8, 8) / columnWidth * 100}%`,
                           }}
                           onClick={() => {
                             if (!canvasLocked) onSelect({ type: 'column', columnId: column.id });
@@ -136,6 +162,7 @@ export function TemplatePreview({
                             <textarea
                               className="debit-editor-canvas-th-input"
                               value={column.label}
+                              aria-label={`Tên cột ${column.label}`}
                               rows={2}
                               onClick={event => event.stopPropagation()}
                               onFocus={() => onSelect({ type: 'column', columnId: column.id })}
@@ -178,6 +205,7 @@ export function TemplatePreview({
                   className="debit-editor-canvas-input debit-editor-canvas-input--signature"
                   value={form.signatureLeftLabel || ''}
                   placeholder="Người lập biểu"
+                  aria-label="Chức danh người ký bên trái"
                   onFocus={() => onSelect({ type: 'footer', field: 'signatureLeftLabel' })}
                   onChange={event => onSet('signatureLeftLabel', event.target.value || null)}
                   disabled={canvasLocked}
@@ -187,6 +215,7 @@ export function TemplatePreview({
                   className={`debit-editor-canvas-input debit-editor-canvas-input--signature-name ${selectedTarget.type === 'footer' && selectedTarget.field === 'signatureLeftName' ? 'is-selected' : ''}`}
                   value={form.signatureLeftName || ''}
                   placeholder="Tên người ký"
+                  aria-label="Tên người ký bên trái"
                   onFocus={() => onSelect({ type: 'footer', field: 'signatureLeftName' })}
                   onChange={event => onSet('signatureLeftName', event.target.value || null)}
                   disabled={canvasLocked}
@@ -197,6 +226,7 @@ export function TemplatePreview({
                   className="debit-editor-canvas-input debit-editor-canvas-input--signature"
                   value={form.signatureRightLabel || ''}
                   placeholder="Kế toán trưởng"
+                  aria-label="Chức danh người ký bên phải"
                   onFocus={() => onSelect({ type: 'footer', field: 'signatureRightLabel' })}
                   onChange={event => onSet('signatureRightLabel', event.target.value || null)}
                   disabled={canvasLocked}
@@ -206,6 +236,7 @@ export function TemplatePreview({
                   className={`debit-editor-canvas-input debit-editor-canvas-input--signature-name ${selectedTarget.type === 'footer' && selectedTarget.field === 'signatureRightName' ? 'is-selected' : ''}`}
                   value={form.signatureRightName || ''}
                   placeholder="Tên người ký"
+                  aria-label="Tên người ký bên phải"
                   onFocus={() => onSelect({ type: 'footer', field: 'signatureRightName' })}
                   onChange={event => onSet('signatureRightName', event.target.value || null)}
                   disabled={canvasLocked}
@@ -213,6 +244,7 @@ export function TemplatePreview({
               </label>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </aside>

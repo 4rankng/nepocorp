@@ -1008,3 +1008,39 @@
     flex: none;
   }
 }
+
+/* The form owns the surface; its steps and totals are sections, not cards. */
+.fset-create-form :is(.fset-step-panel, .fset-summary, .fset-details-card) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.fset-create-form .fset-step-panel + .fset-step-panel {
+  margin-top: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.fset-create-form .fset-step-panel + .fset-step-panel::before { display: none; }
+.fset-create-form :is(.fset-step-header, .fset-summary__header) {
+  background: transparent;
+  padding: 0 0 12px;
+  border: 0;
+}
+.fset-create-form :is(.fset-step-body, .fset-summary__grid, .fset-details-card) { padding: 0; }
+.fset-create-form .fset-empty-inline {
+  background: transparent;
+  border-radius: 0;
+  padding: 8px 0;
+}
+.fset-create-form .fset-summary {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.fset-create-form .fset-check-item { border-radius: 0; }
+.fset-create-form .fset-summary__header { color: var(--accent-ink); }
+.fset-create-form .fset-sticky-bar {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}

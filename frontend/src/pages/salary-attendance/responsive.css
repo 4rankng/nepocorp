@@ -73,12 +73,12 @@
   }
 
   .driver-select-card__name {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-table);
     max-width: 100px;
   }
 
   .driver-select-card__salary {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-table);
   }
 
   /* --- Day list wrapper --- */
@@ -346,7 +346,7 @@
   }
 
   .driver-select-card__name {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-table);
     max-width: 72px;
   }
 }
@@ -392,6 +392,6 @@
     min-width: 88px;
     padding: 6px 10px;
   }
-  .driver-select-card__name { font-size: var(--fs-xs); max-width: 120px; }
-  .driver-select-card__salary { font-size: var(--fs-xs); }
+  .driver-select-card__name { font-size: var(--fs-table); max-width: 120px; }
+  .driver-select-card__salary { font-size: var(--fs-table); }
 } /* end 640px */

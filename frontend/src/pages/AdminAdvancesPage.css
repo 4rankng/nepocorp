@@ -348,7 +348,7 @@
 }
 .adv-page .adv-mcard__name {
   font-weight: var(--fw-semibold);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   color: var(--ink);
   overflow: visible;
   overflow-wrap: anywhere;

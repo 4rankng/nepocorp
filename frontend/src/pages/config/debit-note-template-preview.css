@@ -1,0 +1,50 @@
+.debit-editor-preview-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+  font: 600 var(--fs-sm)/1.4 var(--font-body);
+}
+.debit-editor-preview-hint { margin: 8px 0 12px; color: var(--ink-3); font-size: var(--fs-xs); }
+.debit-editor-preview .debit-editor-canvas-frame {
+  padding: 12px;
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--surface-3);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overscroll-behavior: contain;
+}
+.debit-editor-preview-extent { position: relative; margin-inline: auto; }
+.debit-editor-preview .debit-editor-preview__sheet {
+  /* Printed paper keeps its own scale when the surrounding app density changes. */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 20px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 0;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  transform-origin: top left;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 12%);
+}
+.debit-editor-preview .debit-editor-page-boundary {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 28px 32px 72px;
+}
+.debit-editor-preview .debit-editor-preview__table { width: 100%; table-layout: fixed; }
+.debit-editor-preview .debit-editor-preview__table th { min-width: 0; }
+.debit-editor-preview .debit-editor-preview__table td { overflow-wrap: anywhere; }

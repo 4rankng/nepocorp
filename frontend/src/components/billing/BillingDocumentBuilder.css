@@ -244,7 +244,7 @@
   background: transparent;
   box-shadow: none;
   line-height: 1.35;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-control);
   font-weight: 500;
   color: #111827;
 }
@@ -257,7 +257,7 @@
 .billing-builder textarea.input.billing-builder__route-field {
   height: 44px;
   min-height: 44px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-control);
   font-weight: 600;
 }
 

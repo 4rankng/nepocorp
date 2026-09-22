@@ -168,7 +168,7 @@
     overflow: visible;
   }
   .trip-list-page .metric {
-    padding: 9px 10px;
+    padding: 9px 0;
     min-width: 0;
   }
   .trip-list-page .metric-label {
@@ -244,7 +244,7 @@
     display: none;
   }
   .trip-list-page .filters-card {
-    padding: 12px;
+    padding: 0;
   }
   .trip-list-page .filters-divider {
     margin: 10px 0;

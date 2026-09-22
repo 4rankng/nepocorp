@@ -254,7 +254,7 @@ export default function AdminAdvancesPage() {
   const periodFilters = { dateFrom: monthRange.start, dateTo: monthRange.end };
 
   // Fetch ALL requests once — client-side filtering for accurate counts/totals
-  const { data, isLoading } = useAdminAdvanceRequests(periodFilters);
+  const { data, isLoading, error: queryError, refetch } = useAdminAdvanceRequests(periodFilters);
   const { data: balancesData } = useAdminAdvanceBalances();
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const approveMutation = useApproveAdvanceRequest();
@@ -296,6 +296,19 @@ export default function AdminAdvancesPage() {
     [AdvanceRequestStatus.APPROVED]: stats.counts.APPROVED,
     [AdvanceRequestStatus.REJECTED]: stats.counts.REJECTED,
   }), [stats]);
+
+  if (queryError) {
+    return (
+      <div className="adv-page">
+        <PageHeader title="Quản lý tạm ứng" />
+        <div className="empty-state" role="alert">
+          <h3>Không thể tải danh sách</h3>
+          <p>Vui lòng thử lại để xem đúng dữ liệu tạm ứng và hoàn ứng.</p>
+          <button type="button" className="btn btn--secondary" onClick={() => void refetch()}>Thử lại</button>
+        </div>
+      </div>
+    );
+  }
 
   /* ── Render ──────────────────────────────────────────────────────────── */
   return (

@@ -1,0 +1,17 @@
+.document-zoom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.document-zoom-controls .btn { white-space: nowrap; }
+.document-zoom-controls__scale { min-width: 44px; text-align: center; font-size: var(--fs-control); font-variant-numeric: tabular-nums; }
+.document-zoom-controls [aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
+@media (max-width: 640px) {
+  .document-zoom-controls { gap: 4px; padding-inline: 8px; }
+  .document-zoom-controls .btn { padding-inline: 8px; }
+}

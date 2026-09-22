@@ -3,6 +3,7 @@ import { usePageAnimations } from '../../hooks/animations';
 import { Save, Loader2, Trash2 } from 'lucide-react';
 import { Field } from '../../components/config/Field';
 import { CrudTable } from '../../components/config/CrudTable';
+import './forwarder-expense-types.css';
 
 interface ForwarderExpenseType {
   id: number;
@@ -44,9 +45,8 @@ function ExpenseTypeForm({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
-      {/* Row 1: Mã (Code) (Left, 30% width) and Tên tiếng Việt (Right, 70% width) */}
-      <div style={{ display: 'flex', gap: 16 }}>
-        <div style={{ width: '30%', minWidth: 120 }}>
+      <div className="forwarder-type-form__identity">
+        <div>
           <Field label="Mã (code)">
             <input
               className="input"
@@ -55,7 +55,7 @@ function ExpenseTypeForm({
               placeholder="LIFTING"
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: 13,
+                fontSize: 'var(--fs-body)',
                 ...(isDuplicate ? { borderColor: 'var(--danger)' } : {}),
                 ...(item ? { background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed' } : {})
               }}
@@ -63,25 +63,25 @@ function ExpenseTypeForm({
               title={item ? 'Mã liên kết với mã hệ thống — không sửa được sau khi tạo.' : undefined}
             />
             {isDuplicate && (
-              <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--danger)', marginTop: 2, display: 'block' }}>
+              <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--danger)', marginTop: 2, display: 'block' }}>
                 Mã này đã tồn tại.
               </span>
             )}
             {item && (
-              <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 2, display: 'block' }}>
+              <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 2, display: 'block' }}>
                 Mã liên kết với mã hệ thống — không sửa được sau khi tạo.
               </span>
             )}
           </Field>
         </div>
-        <div style={{ width: '70%', minWidth: 180 }}>
+        <div>
           <Field label="Tên tiếng Việt">
             <input
               className="input"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Nâng hạ"
-              style={{ fontSize: 13 }}
+              style={{ fontSize: 'var(--fs-body)' }}
             />
           </Field>
         </div>
@@ -95,14 +95,13 @@ function ExpenseTypeForm({
             value={billingLabel}
             onChange={e => setBillingLabel(e.target.value)}
             placeholder="(mặc định: dùng Tên)"
-            style={{ fontSize: 13 }}
+            style={{ fontSize: 'var(--fs-body)' }}
           />
         </Field>
       </div>
 
-      {/* Row 3: VAT (%) (Left, 50%) and the Checkbox area (Right, 50%) */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
-        <div style={{ width: '50%', minWidth: 110 }}>
+      <div className="forwarder-type-form__options">
+        <div>
           <Field label="VAT (%)">
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
@@ -114,13 +113,13 @@ function ExpenseTypeForm({
                 min="0"
                 max="100"
                 step="0.1"
-                style={{ paddingRight: 32, fontSize: 13 }}
+                style={{ paddingRight: 32, fontSize: 'var(--fs-body)' }}
               />
               <span style={{
                 position: 'absolute',
                 right: 12,
                 color: 'var(--ink-3)',
-                fontSize: 13,
+                fontSize: 'var(--fs-body)',
                 fontWeight: 500,
                 pointerEvents: 'none'
               }}>
@@ -129,9 +128,9 @@ function ExpenseTypeForm({
             </div>
           </Field>
         </div>
-        <div style={{ width: '50%', minWidth: 140, paddingBottom: 4 }}>
+        <div style={{ paddingBottom: 4 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, color: 'var(--ink-2)', fontSize: 13 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, color: 'var(--ink-2)', fontSize: 'var(--fs-body)' }}>
               <input
                 type="checkbox"
                 checked={defaultMarkup}
@@ -140,7 +139,7 @@ function ExpenseTypeForm({
               />
               <span>Cho phép báo khách khác số gốc</span>
             </label>
-            <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--ink-3)', paddingLeft: 24 }}>
+            <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-3)', paddingLeft: 24 }}>
               (Báo khách ≠ số gốc)
             </span>
           </div>
@@ -150,7 +149,7 @@ function ExpenseTypeForm({
       {/* Dialog Footer Section */}
       <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '12px 0 4px' }} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingTop: 4 }}>
+      <div className="forwarder-type-form__actions">
         {/* Destructive Xóa cấu hình này (Delete) button on the bottom left (only in edit mode) */}
         <div>
           {item && onDelete && (
@@ -160,7 +159,7 @@ function ExpenseTypeForm({
               style={{
                 borderColor: 'var(--danger-soft)',
                 cursor: 'pointer',
-                fontSize: 13,
+                fontSize: 'var(--fs-body)',
                 fontWeight: 500,
                 display: 'flex',
                 alignItems: 'center',
@@ -192,7 +191,7 @@ function ExpenseTypeForm({
             type="button"
             className="btn btn--secondary"
             style={{
-              fontSize: 13,
+              fontSize: 'var(--fs-body)',
               fontWeight: 500,
               cursor: 'pointer'
             }}
@@ -208,7 +207,7 @@ function ExpenseTypeForm({
             className="btn btn--primary"
             style={{
               boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-              fontSize: 13,
+              fontSize: 'var(--fs-body)',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -285,7 +284,7 @@ export default function ForwarderExpenseTypesConfigPage() {
           header: 'Cộng lãi',
           render: (t) => (
             <span style={{
-              fontSize: 12, lineHeight: 1.35, fontWeight: 600,
+              fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 600,
               padding: '2px 8px', borderRadius: 4,
               background: t.defaultMarkup ? 'rgba(0,177,79,0.1)' : 'rgba(120,120,120,0.1)',
               color: t.defaultMarkup ? 'var(--brand)' : 'var(--fg-3)',

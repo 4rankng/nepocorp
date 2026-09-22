@@ -597,7 +597,7 @@
 .as-page .as-mcard__name {
   margin-top: 4px;
   font-weight: var(--fw-medium);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }

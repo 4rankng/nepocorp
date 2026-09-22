@@ -80,7 +80,7 @@
 .expense-category-row__name {
   min-width: 0;
   color: var(--fg-1);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   font-weight: 650;
   line-height: 1.35;
   overflow-wrap: anywhere;

@@ -130,11 +130,12 @@ export default function DashboardPage() {
   const prevRevenue = d?.prevRevenue ?? 0;
   const prevCosts = d?.prevCosts ?? 0;
   const prevGross = d?.prevGross ?? 0;
+  const prevNet = d?.prevNet ?? 0;
 
   const revenueMoM = fmtMoM(revenue, prevRevenue);
   const costsMoM = fmtMoM(costs, prevCosts);
   const grossMoM = fmtMoM(grossProfit, prevGross);
-  const netMoM = fmtMoM(netProfit, prevGross); // approx vs prev gross when prevPnl unavailable
+  const netMoM = fmtMoM(netProfit, prevNet);
 
   const grossMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
   const costRatio = revenue > 0 ? (costs / revenue) * 100 : 0;
@@ -665,7 +666,7 @@ export default function DashboardPage() {
             </div>
             <div className="body">
               {costBreakdown.length === 0 ? (
-                <div style={{ padding: 16, fontSize: 12, color: 'var(--wf-ink-3)' }}>Chưa có chi phí ghi nhận trong tháng.</div>
+                <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có chi phí ghi nhận trong tháng.</div>
               ) : (
                 <CostBreakdown items={costBreakdown} total={d?.totalPie ?? costs} />
               )}
@@ -682,7 +683,7 @@ export default function DashboardPage() {
               </div>
               <div className="wf-vlist">
                 {topTrucks.length === 0 ? (
-                  <div style={{ padding: '8px 0', fontSize: 12, color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu xe trong tháng.</div>
+                  <div style={{ padding: '8px 0', fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu xe trong tháng.</div>
                 ) : topTrucks.map((t, i) => (
                   <div key={i} className="wf-vrow">
                     <span className="plate" title={t.plate}>{t.plate}</span>
@@ -704,7 +705,7 @@ export default function DashboardPage() {
               </div>
               <div className="wf-rlist">
                 {topRoutes.length === 0 ? (
-                  <div style={{ padding: 10, fontSize: 12, color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu tuyến.</div>
+                  <div style={{ padding: 10, fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu tuyến.</div>
                 ) : topRoutes.map((r, i) => (
                   <div key={i} className="wf-rrow">
                     <span className="rk">{i + 1}</span>

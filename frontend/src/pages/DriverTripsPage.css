@@ -151,7 +151,7 @@
     gap: 6px 12px;
   }
   .dt-card__salary {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-table);
   }
   .dt-card__meta {
     gap: 8px 12px;

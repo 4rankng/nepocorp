@@ -70,8 +70,12 @@ export default function ForwarderSettlementCreatePage() {
     confirmDiscard: () => confirm('Thoát mà không lưu? Các thay đổi chưa lưu sẽ bị mất.', { variant: 'warning', confirmLabel: 'Thoát' }),
   });
 
-  const { data: requestsData } = useForwarderEligibleAdvanceRequests();
-  const { data: unlinkedData } = useUnlinkedExpenses();
+  const requestsQuery = useForwarderEligibleAdvanceRequests();
+  const expensesQuery = useUnlinkedExpenses();
+  const { data: requestsData } = requestsQuery;
+  const { data: unlinkedData } = expensesQuery;
+  const optionsLoading = requestsQuery.isLoading || expensesQuery.isLoading;
+  const optionsError = requestsQuery.error || expensesQuery.error;
   const { data: catalogs } = useCatalogs();
   const createSettlement = useCreateAdvanceSettlement();
 
@@ -179,16 +183,20 @@ export default function ForwarderSettlementCreatePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (selectedRequestIds.size === 0) return;
-    const result = await createSettlement.mutateAsync({
-      totalExpenseAmount: totalExpense,
-      refundAmount: totalRefund,
-      reimbursementAmount: totalReimbursement,
-      note: note || undefined,
-      advanceRequestIds: Array.from(selectedRequestIds),
-      tripExpenseIds: selectedExpenseIds.size > 0 ? Array.from(selectedExpenseIds) : undefined,
-    });
-    setCreated(result as CreatedSettlement);
+    if (selectedRequestIds.size === 0 || optionsLoading || optionsError) return;
+    try {
+      const result = await createSettlement.mutateAsync({
+        totalExpenseAmount: totalExpense,
+        refundAmount: totalRefund,
+        reimbursementAmount: totalReimbursement,
+        note: note || undefined,
+        advanceRequestIds: Array.from(selectedRequestIds),
+        tripExpenseIds: selectedExpenseIds.size > 0 ? Array.from(selectedExpenseIds) : undefined,
+      });
+      setCreated(result as CreatedSettlement);
+    } catch {
+      // The mutation error is rendered below; keep the completed form for retry.
+    }
   }
 
   const isFormReady = selectedRequestIds.size > 0;
@@ -224,6 +232,26 @@ export default function ForwarderSettlementCreatePage() {
           </div>
         </div>
 
+      </div>
+    );
+  }
+
+  if (optionsLoading || optionsError) {
+    return (
+      <div className="fset-page">
+        <PageHeader title="Tạo phiếu thanh toán" onBack={handleBack} />
+        <div className="empty-state" role={optionsError ? 'alert' : 'status'}>
+          {optionsError ? (
+            <>
+              <h3>Không thể tải dữ liệu lập phiếu</h3>
+              <p>Vui lòng tải lại tạm ứng và chi phí trước khi lập phiếu thanh toán.</p>
+              <button type="button" className="btn btn--secondary" onClick={() => { void requestsQuery.refetch(); void expensesQuery.refetch(); }}>Thử lại</button>
+            </>
+          ) : (
+            <><Loader2 size={20} className="spin" /><p>Đang tải tạm ứng và chi phí…</p></>
+          )}
+        </div>
+        {dialog}
       </div>
     );
   }

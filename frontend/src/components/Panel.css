@@ -75,22 +75,22 @@
 }
 .card-header p { margin: 3px 0 0; font-size: var(--fs-xs); color: var(--ink-3); }
 
-/* subsection-card — a soft-bordered block used INSIDE a panel for grouping
-   related fields. Has a left accent bar + eyebrow title. */
+/* Inner groups share their parent's surface; dividers provide hierarchy. */
 .subsection-card {
   position: relative;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface-2);
-  padding: 8px 10px;
-  margin-top: 8px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 16px 0 0;
+  margin-top: 16px;
 }
 /* Callout accents use the canonical 3×20px status strip (::before), never a
    full-height colored left border. Each variant sets its --strip + soft fill. */
-.subsection-card--accent { background: var(--accent-soft);  --strip: var(--accent); }
-.subsection-card--info   { background: var(--info-soft);    --strip: var(--info); }
-.subsection-card--warn   { background: var(--warning-soft); --strip: var(--warning); }
-.subsection-card--danger { background: var(--danger-soft);  --strip: var(--danger); }
+.subsection-card--accent { --strip: var(--accent); }
+.subsection-card--info   { --strip: var(--info); }
+.subsection-card--warn   { --strip: var(--warning); }
+.subsection-card--danger { --strip: var(--danger); }
 .subsection-card--accent::before,
 .subsection-card--info::before,
 .subsection-card--warn::before,
@@ -172,8 +172,16 @@
   }
 
   .subsection-card {
-    padding: 13px 14px;
+    padding: 16px 0 0;
   }
+}
+
+/* A shared panel embedded in another section is content, not a second card. */
+:is(.panel, .card-shell, .drawer, .modal) :is(.panel, .card-shell) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Section header row inside a grouped card */

@@ -30,7 +30,7 @@ function RoleTag({ role }: { role?: TruckCapRole | string | null }) {
   const label = TRUCK_CAP_ROLE_LABELS[TruckCapRole.DRIVER];
   return (
     <span style={{
-      marginLeft: 6, fontSize: 12, fontWeight: 700, color: 'var(--warn)',
+      marginLeft: 6, fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--warn)',
       background: 'var(--warn-soft)', padding: '1px 6px', borderRadius: 999,
       letterSpacing: '0.02em', verticalAlign: 'middle',
     }}>{label}</span>
@@ -174,7 +174,7 @@ export default function ProfitPage() {
   const previewEmptyMessage = preview ? getProfitPreviewEmptyMessage(preview) : null;
 
   return (
-    <div ref={rootRef} style={{ paddingBottom: 40 }}>
+    <div ref={rootRef} className="profit-page" style={{ paddingBottom: 40 }}>
       <Breadcrumbs
         className="profit-page__crumbs"
         items={[
@@ -206,7 +206,7 @@ export default function ProfitPage() {
           <div className="profit-bento-hero">
             <div className="profit-hero" style={{ height: '100%', marginBottom: 0 }}>
               <div className="profit-hero__label">Lợi nhuận ròng để phân chia · T{selectedMonth} / {selectedYear}</div>
-              <div className="profit-hero__value">
+              <div className="profit-hero__value" style={{ color: netProfit < 0 ? 'var(--danger)' : undefined }}>
                 <span ref={heroValueRef}>{Math.round(netProfit).toLocaleString('vi-VN')}</span>
                 <span className="profit-hero__currency">₫</span>
               </div>
@@ -272,7 +272,7 @@ export default function ProfitPage() {
                 </div>
                 <div className="calc-row calc-row--total calc-row--final" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
                   <div className="calc-row__label calc-row__label--bold">Lợi nhuận ròng chia cổ đông</div>
-                  <div className="calc-row__value"><Money value={netProfit} /></div>
+                  <div className="calc-row__value" style={{ color: netProfit < 0 ? 'var(--danger)' : undefined }}><Money value={netProfit} /></div>
                 </div>
               </div>
             </Card>
@@ -314,7 +314,7 @@ export default function ProfitPage() {
                         </div>
                       </div>
                       <div className="partner-card__amount-label">Phần lợi nhuận tháng {selectedMonth}</div>
-                      <div className="partner-card__amount" style={{ color: isPrimary ? 'var(--brand)' : 'var(--info)' }}>
+                      <div className="partner-card__amount" style={{ color: partnerShare < 0 ? 'var(--danger)' : isPrimary ? 'var(--brand)' : 'var(--info)' }}>
                         <Money value={partnerShare} />
                       </div>
                     </div>
@@ -329,7 +329,7 @@ export default function ProfitPage() {
                   borderRadius: 8,
                   textAlign: 'center',
                   color: 'var(--fg-3)',
-                  fontSize: 13,
+                  fontSize: 'var(--fs-body)',
                 }}>
                   <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--fg-2)' }}>Chưa cấu hình tỷ lệ cổ phần</p>
                   <p style={{ margin: 0 }}>
@@ -398,25 +398,25 @@ export default function ProfitPage() {
 
               {preview && !distResult && (
                 <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--fg-1)' }}>📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}</h4>
-                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>
-                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến</strong>: <strong>{formatVND(preview.netProfit)}</strong>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--fg-1)' }}>📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}</h4>
+                  <p style={{ margin: '0 0 12px', fontSize: 'var(--fs-body)', color: 'var(--fg-2)' }}>
+                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến</strong>: <strong style={{ color: preview.netProfit < 0 ? 'var(--danger)' : undefined }}>{formatVND(preview.netProfit)}</strong>
                   </p>
 
                   {(preview.undistributedProfit ?? 0) > 0 && (
-                    <div style={{ marginBottom: 10, padding: 10, background: 'var(--warn-soft)', color: 'var(--warn)', borderRadius: 6, fontSize: 12.5 }}>
+                    <div style={{ marginBottom: 10, padding: 10, background: 'var(--warn-soft)', color: 'var(--warn)', borderRadius: 6, fontSize: 'var(--fs-body)' }}>
                       ⚠️ <strong>{formatVND(preview.undistributedProfit ?? 0)}</strong> lợi nhuận từ xe chưa cấu hình đối tác sở hữu sẽ <strong>không được phân phối</strong>. Cài đặt tại <a href="/config/trucks" style={{ color: 'var(--warn)', fontWeight: 700 }}>Cấu hình → Xe → Sở hữu</a>.
                     </div>
                   )}
 
                   {previewEmptyMessage ? (
-                    <div style={{ padding: 12, background: 'var(--bg-1)', borderRadius: 6, color: 'var(--fg-3)', fontSize: 12.5, fontWeight: 600 }}>
+                    <div style={{ padding: 12, background: 'var(--bg-1)', borderRadius: 6, color: 'var(--fg-3)', fontSize: 'var(--fs-body)', fontWeight: 600 }}>
                       {previewEmptyMessage}
                     </div>
                   ) : preview.entity && preview.entity.length > 0 ? (
                     <>
-                      <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', margin: '8px 0 4px' }}>TỔNG CÔNG TY (Σ các xe)</div>
-                      <table style={{ width: '100%', fontSize: 12.5 }}>
+                      <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', margin: '8px 0 4px' }}>TỔNG CÔNG TY (Σ các xe)</div>
+                      <table style={{ width: '100%', fontSize: 'var(--fs-table)' }}>
                         <thead>
                           <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
                             <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
@@ -427,14 +427,14 @@ export default function ProfitPage() {
                           {preview.entity.map((d, idx) => (
                             <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
                               <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}</td>
-                              <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(d.amount)}</td>
+                              <td style={{ padding: '6px 0', textAlign: 'right', color: d.amount < 0 ? 'var(--danger)' : 'var(--brand)', fontWeight: 700 }}>{formatVND(d.amount)}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </>
                   ) : (
-                    <table style={{ width: '100%', fontSize: 12.5 }}>
+                    <table style={{ width: '100%', fontSize: 'var(--fs-table)' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
                           <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
@@ -447,7 +447,7 @@ export default function ProfitPage() {
                           <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
                             <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}<RoleTag role={d.role} /></td>
                             <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--fg-3)' }}>{d.percentage ?? '—'}%</td>
-                            <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
+                            <td style={{ padding: '6px 0', textAlign: 'right', color: Number(d.amount) < 0 ? 'var(--danger)' : 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -456,16 +456,16 @@ export default function ProfitPage() {
 
                   {preview.perTruck && preview.perTruck.filter(t => t.partners.length > 0).length > 0 && (
                     <div style={{ marginTop: 10 }}>
-                      <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', marginBottom: 6 }}>CHI TIẾT THEO XE</div>
+                      <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', letterSpacing: '0.04em', marginBottom: 6 }}>CHI TIẾT THEO XE</div>
                       {preview.perTruck.filter(t => t.partners.length > 0).map(t => (
                         <div key={t.truckId} style={{ marginBottom: 8, padding: '8px 10px', background: 'var(--bg-1)', borderRadius: 6 }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-                            Xe {t.licensePlate ?? '(không rõ biển số)'} · Lợi nhuận: <span style={{ color: 'var(--brand)' }}>{formatVND(t.profit)}</span>
+                          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+                            Xe {t.licensePlate ?? '(không rõ biển số)'} · Lợi nhuận: <span style={{ color: t.profit < 0 ? 'var(--danger)' : 'var(--brand)' }}>{formatVND(t.profit)}</span>
                           </div>
                           {t.partners.map((p, i) => (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, color: 'var(--fg-3)', padding: '3px 0' }}>
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 'var(--fs-body)', color: 'var(--fg-3)', padding: '3px 0' }}>
                               <span>{p.partnerName} ({p.percentage}%)<RoleTag role={p.role} /></span>
-                              <span style={{ fontWeight: 600, color: 'var(--fg-1)', whiteSpace: 'nowrap' }}>{formatVND(p.amount)}</span>
+                              <span style={{ fontWeight: 600, color: p.amount < 0 ? 'var(--danger)' : 'var(--fg-1)', whiteSpace: 'nowrap' }}>{formatVND(p.amount)}</span>
                             </div>
                           ))}
                         </div>
@@ -477,9 +477,9 @@ export default function ProfitPage() {
 
               {distResult && (
                 <div style={{ marginTop: 16, padding: 16, background: 'var(--brand-soft)', borderRadius: 8, border: '1px dashed var(--brand)' }}>
-                  <h4 style={{ margin: '0 0 10px', fontSize: 13.5, fontWeight: 700, color: 'var(--brand)' }}>✅ Đã phân chia lợi nhuận Quý {distResult.quarter} / {distResult.year}</h4>
-                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)' }}>Tổng lợi nhuận ròng phân phối: <strong>{formatVND(distResult.netProfit)}</strong></p>
-                  <table style={{ width: '100%', fontSize: 12.5 }}>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--brand)' }}>✅ Đã phân chia lợi nhuận Quý {distResult.quarter} / {distResult.year}</h4>
+                  <p style={{ margin: '0 0 12px', fontSize: 'var(--fs-body)', color: 'var(--fg-2)' }}>Tổng lợi nhuận ròng phân phối: <strong style={{ color: distResult.netProfit < 0 ? 'var(--danger)' : undefined }}>{formatVND(distResult.netProfit)}</strong></p>
+                  <table style={{ width: '100%', fontSize: 'var(--fs-table)' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
                         <th style={{ textAlign: 'left', paddingBottom: 6 }}>Đối tác</th>
@@ -490,12 +490,12 @@ export default function ProfitPage() {
                       {distResult.distributions.map((d, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-3)' }}>
                           <td style={{ padding: '6px 0', fontWeight: 600 }}>{d.partnerName}<RoleTag role={d.role} /></td>
-                          <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
+                          <td style={{ padding: '6px 0', textAlign: 'right', color: Number(d.amount) < 0 ? 'var(--danger)' : 'var(--brand)', fontWeight: 700 }}>{formatVND(Number(d.amount))}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  <p style={{ margin: '8px 0 0', fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)' }}>Bản ghi không thể thay đổi. Xem chi tiết trong Lịch sử phân phối bên dưới.</p>
+                  <p style={{ margin: '8px 0 0', fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)' }}>Bản ghi không thể thay đổi. Xem chi tiết trong Lịch sử phân phối bên dưới.</p>
                 </div>
               )}
             </Card>
@@ -514,7 +514,7 @@ export default function ProfitPage() {
                           <span className="profit-history-item__partner">{d.partnerName}</span>
                         </div>
                         <div className="profit-history-item__bottom">
-                          <span className="profit-history-item__amount"><Money value={Number(d.amount)} /></span>
+                          <span className="profit-history-item__amount" style={{ color: Number(d.amount) < 0 ? 'var(--danger)' : undefined }}><Money value={Number(d.amount)} /></span>
                           <span className="profit-history-item__date">{new Date(d.createdAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</span>
                         </div>
                       </div>

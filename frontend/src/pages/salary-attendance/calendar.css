@@ -42,6 +42,8 @@
 
 /* ─── Individual Driver Card (Selector) ─── */
 .driver-select-card {
+  font: inherit;
+  text-align: left;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -55,6 +57,11 @@
   flex-shrink: 0;
   transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
   min-width: 120px;
+}
+
+.driver-select-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .driver-select-card:hover {
@@ -80,7 +87,7 @@
 }
 
 .driver-select-card__name {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-table);
   font-weight: 600;
   color: var(--fg-1);
   white-space: normal;
@@ -94,7 +101,7 @@
 }
 
 .driver-select-card__salary {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-table);
   font-weight: 600;
   font-family: var(--font-mono);
 }
@@ -412,4 +419,11 @@
   align-items: center;
   gap: 7px;
   line-height: 1.4;
+}
+
+.salary-page .driver-select-row {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }

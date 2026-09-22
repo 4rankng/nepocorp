@@ -91,13 +91,13 @@
   gap: 14px;
 }
 .agent-drawer .drawer__title {
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-dialog);
   font-weight: 800;
   letter-spacing: 0;
 }
 .agent-drawer .drawer__subtitle {
   color: var(--ink-2, #4d5852);
-  font-size: var(--fs-md);
+  font-size: var(--fs-caption);
   font-weight: 500;
 }
 .agent-drawer .drawer__close {
@@ -300,7 +300,7 @@
 }
 .agent-record-field__value {
   color: var(--ink, #101513);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-body);
   font-weight: 500;
 }
 .agent-field-list .agent-record-field {
@@ -351,7 +351,7 @@
 }
 .agent-card__widget-title {
   color: var(--ink, #101513);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-section);
   font-weight: 700;
   line-height: 1.4;
   margin-bottom: 8px;
@@ -377,7 +377,7 @@
   background: transparent;
   border-radius: 999px;
   padding: 6px 14px;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-control);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
@@ -457,7 +457,7 @@
   grid-template-columns: minmax(0, 110px) minmax(0, 1fr) minmax(0, 90px);
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-body);
   min-width: 0;
 }
 .agent-bar-row__name {
@@ -504,7 +504,7 @@
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
 }
 .agent-table th {
   text-align: left;
@@ -534,7 +534,7 @@
   }
   .agent-table {
     display: block;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-table);
   }
   .agent-table thead {
     display: none;
@@ -601,7 +601,7 @@
   position: relative;
   border-radius: var(--r, 12px);
   padding: 10px 12px;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-body);
 }
 .agent-callout::before {
   content: "";
@@ -686,7 +686,7 @@
 }
 .agent-error {
   color: var(--danger, #dc2626);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-body);
   background: var(--danger-soft, #fef2f2);
   padding: 8px 10px;
   border-radius: var(--r-sm, 8px);
@@ -767,7 +767,7 @@
     flex-basis: 50px;
   }
   .agent-drawer .drawer__title {
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-dialog);
   }
   .agent-thread {
     padding: 18px 14px 14px;

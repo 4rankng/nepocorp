@@ -4,7 +4,7 @@ import { FormGroup } from '../components/UI';
 import { formatCurrency } from '../lib/format';
 import type { useForwarderTripDetail } from '../hooks/useQueries';
 
-export interface ForwarderContainer { id: number; containerNumber?: string; sealNumber?: string | null; notes?: string | null }
+export interface ForwarderContainer { id: number; containerNumber?: string | null; containerTypeName?: string | null; sealNumber?: string | null; notes?: string | null }
 
 export function ForwarderTripLoading() {
   return <div style={{ padding: 32, textAlign: 'center', color: 'var(--fg-3)' }}>
@@ -85,32 +85,36 @@ export function ForwarderContainersSection({ containers, show: showContainerForm
               {containers.map((c) => {
                 const isActive = selectedContainerId === String(c.id);
                 return (
-                <div
+                <button
+                  type="button"
+                  aria-pressed={isActive}
+                  aria-label={[c.containerNumber || c.containerTypeName || 'Container', !c.containerNumber && 'Chưa nhập số container', c.sealNumber && `Seal: ${c.sealNumber}`, c.notes].filter(Boolean).join(' ')}
                   key={c.id}
                   className={isActive ? 'fwd-cont-row fwd-cont-row--active' : 'fwd-cont-row'}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
+                    display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: 0, textAlign: 'left', color: 'inherit', font: 'inherit',
                     padding: '10px 20px', borderBottom: '1px solid var(--border-1)',
                     cursor: 'pointer',
-                    background: isActive ? 'var(--brand-subtle, rgba(0,177,79,0.08))' : undefined,
+                    background: isActive ? 'var(--brand-subtle, rgba(0,177,79,0.08))' : 'transparent',
                     boxShadow: isActive ? 'inset 3px 0 0 var(--brand)' : undefined,
                   }}
                   onClick={() => onSelectContainer(String(c.id))}
                   title="Chọn container này cho chi phí"
                 >
                   <Package size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: 600, fontSize: 'var(--fs-body)', fontFamily: 'var(--font-mono)' }}>{c.containerNumber}</span>
+                  <span style={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>
+                    <span style={{ fontWeight: 600, fontSize: 'var(--fs-body)', fontFamily: 'var(--font-mono)' }}>{c.containerNumber || c.containerTypeName || 'Container'}</span>
+                    {!c.containerNumber && <span style={{ display: 'block', color: 'var(--fg-3)', fontSize: 'var(--fs-caption)' }}>Chưa nhập số container</span>}
                     {c.sealNumber && (
                       <span style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-caption)', marginLeft: 12 }}>
                         Seal: <span style={{ fontFamily: 'var(--font-mono)' }}>{c.sealNumber}</span>
                       </span>
                     )}
-                  </div>
+                  </span>
                   {c.notes && (
                     <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--fg-3)' }}>{c.notes}</span>
                   )}
-                </div>
+                </button>
                 );
               })}
             </div>
@@ -127,24 +131,24 @@ export function ForwarderExpenseRow({ exp, expenseTypeOptions: forwarderExpenseT
  const deleteExpenseMut = { isPending: deletePending };
  return <>
                 <div key={exp.id} style={{ padding: '10px 20px', borderBottom: '1px solid var(--border-1)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <DollarSign size={14} style={{ color: 'var(--brand)', flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>
+                  <div className="fwd-expense-row">
+                    <DollarSign className="fwd-expense-row__icon" size={14} aria-hidden="true" />
+                    <div className="fwd-expense-row__content">
+                      <span style={{ fontWeight: 600, fontSize: 'var(--fs-body)' }}>
                         {FORWARDER_EXPENSE_TYPE_DEFAULTS[exp.expenseType]?.name || forwarderExpenseTypeOptions.find(t => t.code === exp.expenseType)?.name || exp.expenseType}
                       </span>
                       {exp.activeSettlementId && (
-                        <span style={{
+                        <span className="fwd-expense-row__status" style={{
                           fontSize: 'var(--fs-caption)', lineHeight: 1.35, fontWeight: 600,
                           color: '#92400e', background: '#fef3c7',
                           borderRadius: 4, padding: '3px 7px', marginLeft: 6,
                         }}>Đã gửi kế toán</span>
                       )}
                       {exp.note && (
-                        <span style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-caption)', marginLeft: 8 }}>{exp.note}</span>
+                        <div className="fwd-expense-row__note">{exp.note}</div>
                       )}
                     </div>
-                    <div style={{ textAlign: 'right' }}>
+                    <div className="fwd-expense-row__amount">
                       <div style={{ fontWeight: 600, fontSize: 'var(--fs-body)', fontVariantNumeric: 'tabular-nums' }}>
                         {formatCurrency(exp.buyAmount)}
                       </div>
@@ -152,9 +156,10 @@ export function ForwarderExpenseRow({ exp, expenseTypeOptions: forwarderExpenseT
                         <div style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--fg-3)' }}>Công ty trả</div>
                       )}
                     </div>
+                    <div className="fwd-expense-row__actions">
                     {/* Photo upload button */}
                     <label
-                      className="icon-btn"
+                      className="icon-btn fwd-expense-action"
                       title="Thêm ảnh hóa đơn"
                       style={{ color: 'var(--fg-3)', opacity: 0.7, padding: 4, cursor: 'pointer' }}
                     >
@@ -191,6 +196,7 @@ export function ForwarderExpenseRow({ exp, expenseTypeOptions: forwarderExpenseT
                     >
                       <Trash2 size={14} />
                     </button>
+                    </div>
                   </div>
                   {/* Photo thumbnails */}
                   {expensePhotos[exp.id] && expensePhotos[exp.id].length > 0 && (

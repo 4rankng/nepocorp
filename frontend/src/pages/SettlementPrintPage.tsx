@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, FileSpreadsheet, X, Pencil, Save, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, FileSpreadsheet, Pencil, Save, CheckCircle2 } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
@@ -11,6 +11,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { groupSettlementExpensesByTrip } from './admin-advance-settlement-summary';
 import { settlementExportEndpoint } from './settlement-export-endpoint';
+import { PrintPreviewDialog } from '../components/shared/PrintPreviewDialog';
 import './SettlementPrintPage.css';
 
 // ─── Expense type Vietnamese labels ───
@@ -100,7 +101,6 @@ export default function SettlementPrintPage() {
   const error = isPortal ? fwdQuery.error : admQuery.error;
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const [showPreview, setShowPreview] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<LinkedExpense | null>(null);
   const [editedAmount, setEditedAmount] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
@@ -111,21 +111,11 @@ export default function SettlementPrintPage() {
   const updateExpense = useUpdateSettlementExpense();
   const updateSettlement = useUpdateAdvanceSettlement();
   const approveSettlement = useApproveSettlement();
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleBack = () => navigate(-1);
   useBackShortcut(handleBack);
 
-  const handlePrint = async () => {
-    const endpoint = settlementExportEndpoint(isPortal, Number(id), 'html');
-    const html = await api.getForText(endpoint);
-    setPreviewHtml(html);
-    setShowPreview(true);
-  };
-
-  const handleIframePrint = () => {
-    iframeRef.current?.contentWindow?.print();
-  };
+  const loadPrintHtml = useCallback(() => api.getForText(settlementExportEndpoint(isPortal, Number(id), 'html')), [isPortal, id]);
 
   const loadedSettlement = settlement as SettlementData | undefined;
   useEffect(() => {
@@ -140,7 +130,7 @@ export default function SettlementPrintPage() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--ink-3)' }}>
         <Loader2 size={20} className="spin" />
-        <span style={{ fontSize: 14 }}>Đang tải phiếu thanh toán…</span>
+        <span style={{ fontSize: 'var(--fs-body)' }}>Đang tải phiếu thanh toán…</span>
       </div>
     );
   }
@@ -149,7 +139,7 @@ export default function SettlementPrintPage() {
     return (
       <div className="fade-up">
         <div className="card" style={{ padding: 24 }}>
-          <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error ? String(error) : 'Không tìm thấy phiếu thanh toán'}</p>
+          <p style={{ color: 'var(--danger)', fontSize: 'var(--fs-body)' }}>{error ? String(error) : 'Không tìm thấy phiếu thanh toán'}</p>
           <button className="btn btn--secondary btn--sm" style={{ marginTop: 12 }} onClick={() => navigate('/my-settlements')}>
             Quay lại
           </button>
@@ -251,7 +241,7 @@ export default function SettlementPrintPage() {
               <button className="btn btn--secondary btn--sm" onClick={handleBack}>
                 <ArrowLeft size={14} /> Trở về
               </button>
-              <button className="btn btn--primary btn--sm" onClick={handlePrint}>
+              <button className="btn btn--primary btn--sm" onClick={() => setShowPreview(true)}>
                 <Printer size={14} /> In
               </button>
               <button
@@ -506,29 +496,12 @@ export default function SettlementPrintPage() {
         </div>
       </div>
 
-      {/* ── Print Preview Modal ── */}
-      {showPreview && previewHtml && (
-        <div className="print-preview-overlay">
-          <div className="print-preview-toolbar">
-            <span className="print-preview-title">Phiếu thanh toán {s.code}</span>
-            <div className="print-preview-actions">
-              <button className="btn btn--primary btn--sm" onClick={handleIframePrint}>
-                <Printer size={14} /> In / Lưu PDF
-              </button>
-              <button className="btn btn--secondary btn--sm" onClick={() => setShowPreview(false)}>
-                <X size={14} /> Đóng
-              </button>
-            </div>
-          </div>
-          <div className="print-preview-body">
-            <iframe
-              ref={iframeRef}
-              className="print-preview-iframe"
-              title={`Phiếu thanh toán ${s.code}`}
-              srcDoc={previewHtml}
-            />
-          </div>
-        </div>
+      {showPreview && (
+        <PrintPreviewDialog
+          title={`Phiếu thanh toán ${s.code}`}
+          loadHtml={loadPrintHtml}
+          onClose={() => setShowPreview(false)}
+        />
       )}
     </div>
   );

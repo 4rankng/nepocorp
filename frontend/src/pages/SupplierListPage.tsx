@@ -150,7 +150,7 @@ function SupplierFormModal({ item, saving, onsave, oncancel, isOpen, customers }
             onChange={e => setIsFuelSupplier(e.target.checked)}
             style={{ width: 16, height: 16, cursor: 'pointer' }}
           />
-          <label htmlFor="supp-is-fuel" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', cursor: 'pointer', margin: 0 }}>
+          <label htmlFor="supp-is-fuel" style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', cursor: 'pointer', margin: 0 }}>
             Là nhà cung cấp nhiên liệu (xăng, dầu)
           </label>
         </div>
@@ -355,7 +355,7 @@ export default function SupplierListPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span className="m-card__title">{s.name}</span>
                     {s.isFuelSupplier && (
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand, #10B981)', background: 'var(--brand-soft, #E6FBF3)', border: '1px solid var(--brand-border, #A7F3D0)', borderRadius: 4, padding: '1px 5px' }}>
+                      <span style={{ fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--brand, #10B981)', background: 'var(--brand-soft, #E6FBF3)', border: '1px solid var(--brand-border, #A7F3D0)', borderRadius: 4, padding: '1px 5px' }}>
                         Nhiên liệu
                       </span>
                     )}
@@ -395,7 +395,7 @@ export default function SupplierListPage() {
 
       <div className="desktop-only table-wrap">
         <div className="table-scroll">
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 800, tableLayout: 'fixed' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-table)', minWidth: 800, tableLayout: 'fixed' }}>
             <colgroup>
               <col style={{ width: '26%' }} />
               <col style={{ width: '15%' }} />
@@ -407,12 +407,12 @@ export default function SupplierListPage() {
             </colgroup>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Tên</th>
-                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Người liên hệ</th>
-                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>SĐT</th>
-                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>Mã số thuế</th>
-                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>KH liên kết</th>
-                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Công nợ</th>
+                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Tên</th>
+                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Người liên hệ</th>
+                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>SĐT</th>
+                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>Mã số thuế</th>
+                <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>KH liên kết</th>
+                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Công nợ</th>
                 <th style={{ width: 60 }}></th>
               </tr>
             </thead>
@@ -420,7 +420,7 @@ export default function SupplierListPage() {
               {loading && (
                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
-                  <p style={{ fontSize: 13 }}>Đang tải…</p>
+                  <p style={{ fontSize: 'var(--fs-body)' }}>Đang tải…</p>
                 </td></tr>
               )}
               {error && (
@@ -450,7 +450,7 @@ export default function SupplierListPage() {
                           {s.name}
                         </span>
                         {s.isFuelSupplier && (
-                          <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: 'var(--brand, #10B981)', background: 'var(--brand-soft, #E6FBF3)', border: '1px solid var(--brand-border, #A7F3D0)', borderRadius: 4, padding: '1px 5px', marginTop: 1 }}>
+                          <span style={{ flexShrink: 0, fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--brand, #10B981)', background: 'var(--brand-soft, #E6FBF3)', border: '1px solid var(--brand-border, #A7F3D0)', borderRadius: 4, padding: '1px 5px', marginTop: 1 }}>
                             Nhiên liệu
                           </span>
                         )}
@@ -459,16 +459,16 @@ export default function SupplierListPage() {
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'normal', wordBreak: 'break-word' }}>
                       {s.contactPerson || <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-body)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {s.phone || <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-body)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {s.taxCode || <span style={{ color: 'var(--ink-3)' }}>—</span>}
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {s.linkedCustomerId ? (
-                        <span style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
-                          <span style={{ flexShrink: 0, color: '#16a34a', fontWeight: 700, background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', fontSize: 12 }}>2 chiều</span>
+                        <span style={{ fontSize: 'var(--fs-body)', display: 'inline-flex', alignItems: 'center', gap: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                          <span style={{ flexShrink: 0, color: '#16a34a', fontWeight: 700, background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', fontSize: 'var(--fs-body)' }}>2 chiều</span>
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {customerLookup.get(s.linkedCustomerId) ?? `ID ${s.linkedCustomerId}`}
                           </span>
@@ -477,7 +477,7 @@ export default function SupplierListPage() {
                         <span style={{ color: 'var(--ink-3)' }}>—</span>
                       )}
                     </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-body)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       <Money value={payableBySupplier.get(s.id) ?? 0} />
                     </td>
                     <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', position: 'relative' }}>
@@ -495,11 +495,11 @@ export default function SupplierListPage() {
                             ? { bottom: '100%', marginBottom: 4 }
                             : { top: '100%' }),
                         }} onClick={(e) => e.stopPropagation()}>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}
                             onClick={() => { setEditingId(s.id); setShowAddForm(false); }}>
                             <Pencil size={13} /> Sửa
                           </button>
-                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 12.5, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)' }}
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)' }}
                             disabled={deleting === s.id}
                             onClick={() => doDelete(s.id)}>
                             {deleting === s.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá

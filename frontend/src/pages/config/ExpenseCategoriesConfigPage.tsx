@@ -24,7 +24,7 @@ function ExpenseCategoryForm({ saving, item, onsave, oncancel }: {
         </Field>
       </div>
       <div style={{ flex: 1, minWidth: 100, display: 'flex', alignItems: 'flex-end', paddingBottom: 18 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-body)', cursor: 'pointer' }}>
           <input type="checkbox" checked={isRenewable} onChange={e => setIsRenewable(e.target.checked)} />
           Định kỳ
         </label>

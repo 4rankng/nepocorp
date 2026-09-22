@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPlaceSuggestions, PlaceSuggestion } from '../lib/maps';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -7,6 +7,7 @@ import { qk } from '../api/keys';
 import type { Port } from '@tingting/shared';
 
 interface LocationAutocompleteProps {
+  id?: string;
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
@@ -23,6 +24,7 @@ interface MergedSuggestion {
 }
 
 export function LocationAutocomplete({
+  id,
   value,
   onChange,
   placeholder,
@@ -32,11 +34,18 @@ export function LocationAutocomplete({
 }: LocationAutocompleteProps) {
   const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const listboxId = useId();
   const [, setLoading] = useState(false);
   const [sessionToken, setSessionToken] = useState(() => Math.random().toString(36).substring(2, 15));
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const skipNextOpenRef = useRef(false);
-  const closeDropdown = useCallback(() => setIsOpen(false), []);
+  const dismissedRef = useRef(false);
+  const activeOptionRef = useRef<HTMLLIElement>(null);
+  const closeDropdown = useCallback(() => {
+    dismissedRef.current = true;
+    setIsOpen(false);
+    setActiveIndex(-1);
+  }, []);
 
   const [isFocused, setIsFocused] = useState(false);
 
@@ -138,22 +147,21 @@ export function LocationAutocomplete({
     return out;
   }, [portMatches, placeSuggestions]);
 
-  // Open/close the dropdown whenever the merged list changes and we have focus.
-  // skipNextOpenRef is set by handleSelect to prevent the dropdown from
-  // reopening when onChange causes portMatches to recompute with the new value.
+  // A selection or explicit dismissal stays closed even when a pending place
+  // search resolves. Typing or focusing the field starts a new interaction.
   useEffect(() => {
-    if (!isFocused) return;
-    if (skipNextOpenRef.current) {
-      skipNextOpenRef.current = false;
-      return;
-    }
+    if (!isFocused || dismissedRef.current) return;
     setIsOpen(allSuggestions.length > 0);
   }, [allSuggestions, isFocused]);
 
+  useEffect(() => {
+    if (activeIndex >= allSuggestions.length) setActiveIndex(-1);
+    if (isOpen) activeOptionRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [activeIndex, allSuggestions.length, isOpen]);
+
   const handleSelect = (suggestion: MergedSuggestion) => {
-    skipNextOpenRef.current = true;
+    closeDropdown();
     onChange(suggestion.description);
-    setIsOpen(false);
     setPlaceSuggestions([]);
     refreshSessionToken();
   };
@@ -161,26 +169,59 @@ export function LocationAutocomplete({
   return (
     <div ref={wrapperRef} style={{ position: 'relative', width: '100%' }}>
       <input
+        id={id}
         className={className}
         style={style}
         placeholder={placeholder}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          dismissedRef.current = false;
+          setActiveIndex(-1);
+          setPlaceSuggestions([]);
+          onChange(e.target.value);
+        }}
         onFocus={() => {
+          dismissedRef.current = false;
           setIsFocused(true);
           // Show port catalog immediately on focus, even with empty input.
           if (allSuggestions.length > 0) setIsOpen(true);
         }}
         onBlur={() => {
-          // Delay blur to allow click on suggestion
-          setTimeout(() => setIsFocused(false), 200);
+          setIsFocused(false);
+          closeDropdown();
         }}
+        onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing) return;
+          if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && allSuggestions.length > 0) {
+            event.preventDefault();
+            dismissedRef.current = false;
+            setIsOpen(true);
+            setActiveIndex(current => event.key === 'ArrowDown'
+              ? Math.min(current + 1, allSuggestions.length - 1)
+              : current < 0 ? allSuggestions.length - 1 : Math.max(0, current - 1));
+          } else if (isOpen && (event.key === 'Enter' || event.key === 'Escape')) {
+            event.preventDefault();
+            event.stopPropagation();
+            const suggestion = allSuggestions[activeIndex];
+            if (event.key === 'Enter' && suggestion) handleSelect(suggestion);
+            else closeDropdown();
+          }
+        }}
+        role="combobox"
+        aria-label={placeholder ?? 'Địa điểm'}
+        aria-autocomplete="list"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-activedescendant={isOpen && allSuggestions[activeIndex] ? `${listboxId}-${allSuggestions[activeIndex].key}` : undefined}
         required={required}
         autoComplete="off"
       />
 
       {isOpen && allSuggestions.length > 0 && (
         <ul
+          id={listboxId}
+          role="listbox"
+          aria-label={placeholder ?? 'Địa điểm'}
           style={{
             position: 'absolute',
             top: '100%',
@@ -199,14 +240,21 @@ export function LocationAutocomplete({
             overflowY: 'auto',
           }}
         >
-          {allSuggestions.map((s) => (
+          {allSuggestions.map((s, index) => (
             <li
+              id={`${listboxId}-${s.key}`}
               key={s.key}
+              ref={index === activeIndex ? activeOptionRef : undefined}
+              role="option"
+              aria-selected={index === activeIndex}
+              onMouseDown={event => event.preventDefault()}
               onClick={() => handleSelect(s)}
               style={{
                 padding: '8px 12px',
                 cursor: 'pointer',
-                fontSize: 13,
+                fontSize: 'var(--fs-control)',
+                minHeight: 'var(--control-h)',
+                background: index === activeIndex ? 'var(--bg-2, var(--surface-2))' : 'transparent',
                 borderBottom: '1px solid var(--border-1, var(--line))',
                 color: 'var(--fg-1, var(--ink))',
                 display: 'flex',
@@ -214,19 +262,14 @@ export function LocationAutocomplete({
                 justifyContent: 'space-between',
                 gap: 8,
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLLIElement).style.background = 'var(--bg-2, var(--surface-2))';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLLIElement).style.background = 'transparent';
-              }}
+              onMouseEnter={() => setActiveIndex(index)}
             >
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ overflowWrap: 'anywhere' }}>
                   {s.description}
                 </div>
                 {s.hint && (
-                  <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3, var(--ink-3))', marginTop: 1 }}>
+                  <div style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.35, color: 'var(--fg-3, var(--ink-3))', marginTop: 1 }}>
                     {s.hint}
                   </div>
                 )}
@@ -234,7 +277,7 @@ export function LocationAutocomplete({
               {s.source === 'port' && (
                 <span
                   style={{
-                    fontSize: 12,
+                    fontSize: 'var(--fs-caption)',
                     padding: '2px 6px',
                     borderRadius: 999,
                     background: 'rgba(16,185,129,0.15)',

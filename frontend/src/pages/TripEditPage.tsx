@@ -158,7 +158,7 @@ export default function TripEditPage() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
         <Spinner size={20} />
-        <span style={{ fontSize: 14 }}>Đang tải dữ liệu…</span>
+        <span style={{ fontSize: 'var(--fs-body)' }}>Đang tải dữ liệu…</span>
       </div>
     );
   }

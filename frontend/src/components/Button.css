@@ -69,7 +69,7 @@
   background: var(--danger-text);
   border-color: var(--danger-text);
 }
-.btn--sm { min-height: var(--control-h); padding: 7px 10px; font-size: var(--fs-sm); line-height: 1.35; }
+.btn--sm { min-height: var(--control-h); padding: 7px 10px; font-size: var(--fs-control); line-height: 1.35; }
 .btn--lg { padding: 7px 14px; font-size: var(--fs-control, var(--fs-md)); border-radius: 9px; min-height: var(--control-h); }
 .btn--icon { width: var(--control-h); min-width: var(--control-h); height: var(--control-h); min-height: var(--control-h); padding: 0; }
 .btn--icon.btn--sm { width: var(--control-h); min-width: var(--control-h); height: var(--control-h); min-height: var(--control-h); padding: 0; }
@@ -90,7 +90,7 @@
   .btn--sm {
     min-height: 45px;
     padding: 9px 11px;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-control);
   }
 
   .btn--icon {

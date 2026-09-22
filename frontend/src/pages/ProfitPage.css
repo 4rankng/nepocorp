@@ -124,7 +124,7 @@
 .partner-card__avatar--primary { background: linear-gradient(135deg, var(--sb-bg), var(--accent-2)); }
 .partner-card__avatar--thuong,
 .partner-card__avatar--secondary { background: linear-gradient(135deg, #6E9DCB, #3D6FA3); }
-.partner-card__name { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0; margin-bottom: 2px; color: var(--ink); }
+.partner-card__name { font-family: var(--font-display); font-size: var(--fs-table); font-weight: 600; letter-spacing: 0; margin-bottom: 2px; color: var(--ink); }
 .partner-card__role { font-size: var(--fs-xs); color: var(--ink-3); }
 .partner-card__pct { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-sm); color: var(--accent); letter-spacing: 0; }
 .partner-card__amount { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 700; letter-spacing: 0; line-height: 1.25; margin-bottom: 6px; color: var(--ink); }
@@ -138,7 +138,7 @@
    operator sign and must not read as another deduction (kanban 20260921_22). */
 .calc-row--sub { padding-top: 6px; padding-bottom: 6px; }
 .calc-row__label--sub { font-size: var(--fs-xs); color: var(--ink-3); font-style: italic; padding-left: 24px; }
-.calc-row__value--sub { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 500; }
+.calc-row__value--sub { font-size: var(--fs-table); color: var(--ink-3); font-weight: 500; }
 .calc-row--final {
   background: linear-gradient(180deg, var(--surface-accent), var(--surface));
   border-top: 2px solid var(--sb-bg);
@@ -146,7 +146,7 @@
 .calc-row__label { font-size: var(--fs-sm); color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .calc-row__label--bold { color: var(--ink); font-weight: 600; }
 .calc-row__op { font-family: var(--font-mono); font-weight: 700; color: var(--ink-3); width: 16px; display: inline-block; text-align: center; flex-shrink: 0; }
-.calc-row__value { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 600; letter-spacing: 0; color: var(--ink); white-space: nowrap; flex-shrink: 0; }
+.calc-row__value { font-family: var(--font-display); font-size: var(--fs-table); font-weight: 600; letter-spacing: 0; color: var(--ink); white-space: nowrap; flex-shrink: 0; }
 .calc-row__value--neg { color: var(--danger); }
 .calc-row__value--positive { color: var(--sb-bg); }
 .calc-row--final .calc-row__value { font-size: var(--fs-lg); color: var(--sb-bg); }
@@ -225,13 +225,23 @@
   .partner-card { padding: 14px; border-radius: 12px; }
   .partner-card__head { gap: 10px; margin-bottom: 8px; }
   .partner-card__avatar { width: 36px; height: 36px; font-size: var(--fs-sm); }
-  .partner-card__name { font-size: var(--fs-sm); }
+  .partner-card__name { font-size: var(--fs-table); }
   .partner-card__role { font-size: var(--fs-xs); }
   .partner-card__pct { font-size: var(--fs-sm); }
   .partner-card__amount-label { font-size: var(--fs-xs); margin-bottom: 4px; letter-spacing: 0.04em; }
   .partner-card__amount { font-size: var(--fs-xl); letter-spacing: 0; word-break: break-word; }
   .calc-row { padding: 10px 12px; gap: 8px; }
   .calc-row__label { font-size: var(--fs-sm); }
-  .calc-row__value { font-size: var(--fs-sm); }
+  .calc-row__value { font-size: var(--fs-table); }
   .calc-row--final .calc-row__value { font-size: var(--fs-lg); }
 } /* end 640px */
+
+/* The enclosing section supplies the surface; these are report rows. */
+.profit-page :is(.calc-breakdown, .partner-card, .profit-history-item) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.profit-page .partner-card { border-top: 1px solid var(--line); }
+.profit-page .profit-history-item + .profit-history-item { border-top: 1px solid var(--line); }

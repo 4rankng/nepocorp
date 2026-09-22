@@ -188,7 +188,7 @@ Kế toán duyệt phiếu yêu cầu hoàn ứng từ giao nhận; Giám đốc
 1. Truy cập `/admin/advance-settlements` (**Duyệt hoàn ứng**) → danh sách phiếu yêu cầu hoàn ứng.
 2. Mỗi phiếu hiển thị: giao nhận, số tiền, container/lô liên quan, ngày yêu cầu, lý do. Danh sách kế toán đồng thời tổng hợp tiến độ kê khai Ops theo từng chuyến và từng nhóm container/chi phí chung, kể cả nhóm chưa có khoản chi, để kế toán biết phạm vi nào **Đã kê xong** và phạm vi nào **Đang kê** trước khi xử lý.
 3. Nếu Ops kê sai và chuyến chưa khóa/hủy, kế toán mở khoản chi, nhập số đúng và **lý do điều chỉnh**; hệ thống tự tính lại tổng phiếu. Phiếu hiển thị số Ops gửi và số chốt gần nhất; toàn bộ lần sửa vẫn được ghi trong Nhật ký hệ thống.
-4. Bấm **Duyệt** một lần → phiếu và toàn bộ khoản bên trong chuyển sang **Đã duyệt**. Hệ thống ghi đúng một dòng `FORWARDER_SETTLEMENT` bằng tổng tạm ứng gốc của các khoản đã liên kết; chiều tiền mặt được đọc từ `refundAmount` (giao nhận hoàn lại) hoặc `reimbursementAmount` (công ty hoàn thêm).
+4. Bấm **Duyệt** một lần → phiếu và toàn bộ khoản bên trong chuyển sang **Đã duyệt**. Hệ thống ghi đúng một dòng `FORWARDER_SETTLEMENT` bằng tổng tạm ứng gốc của các khoản đã liên kết. `refundAmount` là phần dư Ops giữ để dùng tiếp: hệ thống tạo một tạm ứng **Đã duyệt** và dòng `FORWARDER_ADVANCE` tương ứng để phần dư vẫn nằm trong tồn tạm ứng, có thể chọn cho phiếu sau. `reimbursementAmount` là khoản công ty hoàn thêm khi chi phí vượt tạm ứng.
 5. Ops nhận thông báo số tiền được hoàn chính thức; không cần xác nhận lại.
 6. Nếu toàn bộ hồ sơ không hợp lệ, kế toán có thể từ chối phiếu; các khoản được mở để lập phiếu mới nhưng phiếu cũ vẫn giữ lịch sử.
 

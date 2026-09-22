@@ -46,8 +46,8 @@ function Txt({ value }: { value: string | null | undefined }) {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '7px 0', borderBottom: '1px solid var(--border-2, #ECEFF1)' }}>
-      <span style={{ color: 'var(--text-2, #6B7280)', fontSize: 13 }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 500, textAlign: 'right' }}>{children}</span>
+      <span style={{ color: 'var(--text-2, #6B7280)', fontSize: 'var(--fs-body)' }}>{label}</span>
+      <span style={{ fontSize: 'var(--fs-body)', fontWeight: 500, textAlign: 'right' }}>{children}</span>
     </div>
   );
 }
@@ -55,7 +55,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '14px 0 2px', color: 'var(--text-3, #9CA3AF)', fontSize: 12, lineHeight: 1.35, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '14px 0 2px', color: 'var(--text-3, #9CA3AF)', fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {icon} {title}
       </div>
       <div>{children}</div>
@@ -130,15 +130,15 @@ export function LiveTrackingCard({ vehicle }: LiveTrackingCardProps) {
     <section className="card" style={{ padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <h2 style={{ margin: 0, fontSize: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h2 style={{ margin: 0, fontSize: 'var(--fs-section)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className="hicon" style={{ width: 22, height: 22 }}><MapPin size={14} /></span>
             Giám sát hành trình
           </h2>
-          <span style={{ background: `${color}22`, color, padding: '3px 9px', borderRadius: 999, fontSize: 12, lineHeight: 1.35, fontWeight: 700 }}>
+          <span style={{ background: `${color}22`, color, padding: '3px 9px', borderRadius: 999, fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700 }}>
             {LIVE_STATUS_LABEL[vehicle.status]}
           </span>
         </div>
-        <span title="Cập nhật tự động mỗi 25 giây" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, lineHeight: 1.35, color: 'var(--text-3, #9CA3AF)' }}>
+        <span title="Cập nhật tự động mỗi 25 giây" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--text-3, #9CA3AF)' }}>
           <RefreshCw size={11} /> {updated}
         </span>
       </div>
@@ -202,7 +202,7 @@ export function LiveTrackingCard({ vehicle }: LiveTrackingCardProps) {
       </div>
 
       {!d && (
-        <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--surface-2, #F5F7F6)', borderRadius: 8, fontSize: 12, color: 'var(--text-2, #6B7280)' }}>
+        <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--surface-2, #F5F7F6)', borderRadius: 8, fontSize: 'var(--fs-body)', color: 'var(--text-2, #6B7280)' }}>
           Chi tiết mở rộng (camera, đồng hồ, thời gian lái…) chỉ khả dụng khi nguồn dữ liệu là cổng portal.
         </div>
       )}

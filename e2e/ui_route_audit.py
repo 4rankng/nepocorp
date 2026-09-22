@@ -38,13 +38,14 @@ def routes(role, fixtures):
         if '/expenses/' in path: key = 'expense'
         if '/debit-note-templates/' in path: key = 'template'
         if 'settlements/' in path: key = 'settlement'
-        actual = re.sub(r':\w+', str(fixtures.get(key, 1)), path)
+        value = fixtures.get(role, {}).get(key, fixtures.get(key, 1))
+        actual = re.sub(r':\w+', str(value), path)
         result.append((path, actual))
     return list(dict.fromkeys(result))
 
 async def audit_role(browser, role, width, args, fixtures, semaphore):
     async with semaphore:
-        context = await browser.new_context(viewport={'width': width, 'height': args.height or (900 if width > 600 else 844)}, reduced_motion='reduce', service_workers='block')
+        context = await browser.new_context(viewport={'width': width, 'height': args.height or (900 if width > 600 else 844)}, reduced_motion=args.motion, service_workers='block')
         response = await context.request.post(args.url + '/api/auth/login', data={'identifier': ACCOUNTS[role], 'password': args.password})
         if response.status != 200: raise RuntimeError(f'{role}: login returned {response.status}')
         token = (await response.json())['token']
@@ -67,6 +68,7 @@ async def audit_role(browser, role, width, args, fixtures, semaphore):
                   headings: [...document.querySelectorAll('h1,h2')].map(x => x.textContent.trim()).filter(Boolean),
                   textLength: document.body.innerText.trim().length,
                   errorBoundary: document.body.innerText.includes('Đã xảy ra lỗi'),
+                  authenticatedShell: !!document.querySelector('.app-body'),
                   onboardingVisible: !!document.querySelector('.ob-checklist, .tutorial-library'),
                   controls: document.querySelectorAll('button,input,select,textarea,a').length
                 })''')
@@ -74,8 +76,8 @@ async def audit_role(browser, role, width, args, fixtures, semaphore):
                 row['controlTypography'] = await page.evaluate('''() => [...document.querySelectorAll('.input, .ds-field__input, .ui-select-trigger, .searchable-select__trigger')]
                   .filter(e => { const r = e.getBoundingClientRect(); return r.width > 1 && r.height > 1; })
                   .map(e => ({ classes: e.className, fontSize: getComputedStyle(e).fontSize, fontFamily: getComputedStyle(e).fontFamily }))''')
-                row['passed'] = (row['url'] == path and not errors and not api_errors and not row['layout']['errorBoundary'] and not row['layout']['onboardingVisible'] and row['layout']['textLength'] > 40 and row['layout']['documentWidth'] <= width + 1)
-                if role == 'ADMIN' or role in HOMES or not row['passed']:
+                row['passed'] = (row['url'] == path and row['layout']['authenticatedShell'] and not errors and not api_errors and not row['layout']['errorBoundary'] and not row['layout']['onboardingVisible'] and row['layout']['textLength'] > 40 and row['layout']['documentWidth'] <= width + 1)
+                if args.capture_all_roles or role == 'ADMIN' or role in HOMES or not row['passed']:
                     filename = f'{role.lower()}-{width}-{path.strip("/").replace("/", "_")}.png'
                     await page.screenshot(path=str(args.output / filename), full_page=True, timeout=15000)
                     row['screenshot'] = filename
@@ -122,7 +124,7 @@ async def main(args):
         options = {'headless': True}
         if args.chrome: options['executable_path'] = args.chrome
         browser = await p.chromium.launch(**options)
-        sem = asyncio.Semaphore(2)
+        sem = asyncio.Semaphore(args.concurrency)
         groups = await asyncio.gather(*(audit_role(browser, role, width, args, fixtures, sem) for role in args.roles for width in args.widths))
         rows = [row for group in groups for row in group]
         report = {'checks': len(rows), 'passed': sum(row['passed'] for row in rows), 'failed': sum(not row['passed'] for row in rows), 'results': rows}
@@ -142,4 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--widths', nargs='+', type=int, default=[1440, 390])
     parser.add_argument('--height', type=int, help='Override viewport height for short phone/landscape checks')
     parser.add_argument('--capture-sections', action='store_true', help='Also capture the middle and bottom of the app scroll area')
+    parser.add_argument('--capture-all-roles', action='store_true', help='Capture successful office-role routes as well as admin and portal routes')
+    parser.add_argument('--motion', choices=['reduce', 'no-preference'], default='reduce')
+    parser.add_argument('--concurrency', type=int, choices=[1, 2], default=1, help='Keep browser memory bounded during broad local audits')
     raise SystemExit(asyncio.run(main(parser.parse_args())))

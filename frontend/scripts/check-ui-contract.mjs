@@ -43,6 +43,25 @@ async function visit(directoryUrl) {
 await visit(sourceRoot);
 
 const tokenCss = await readFile(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
+// Resolve aliases so the contract checks the effective typography, including
+// future changes to the underlying scale rather than only token spelling.
+const typeTokens = new Map([...tokenCss.matchAll(/(--fs-[\w-]+):\s*([^;]+);/g)]
+  .map((match) => [match[1], match[2].trim()]));
+function typeSize(token, seen = new Set()) {
+  if (seen.has(token)) return NaN;
+  seen.add(token);
+  const value = typeTokens.get(token) ?? '';
+  const alias = value.match(/^var\((--fs-[\w-]+)\)$/);
+  return alias ? typeSize(alias[1], seen) : Number(value.replace(/px$/, ''));
+}
+for (const [role, expected] of Object.entries({
+  body: 12, control: 12, table: 12, label: 11, caption: 11,
+  section: 14, dialog: 16, 'page-title': 18,
+})) {
+  if (typeSize(`--fs-${role}`) !== expected) {
+    failures.push(`styles/tokens.css: ${role} typography must resolve to ${expected}px`);
+  }
+}
 if (!tokenCss.includes('--status-strip-width: 3px;')
   || !tokenCss.includes('--status-strip-height: 20px;')) {
   failures.push('styles/tokens.css: canonical status strip must remain 3x20px');
@@ -70,6 +89,17 @@ if (!/:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--accent-2\)/i.test(
 }
 
 const inputCss = await readFile(new URL('../src/components/Input.css', import.meta.url), 'utf8');
+const buttonCss = await readFile(new URL('../src/components/Button.css', import.meta.url), 'utf8');
+const smallButtonRules = [...buttonCss.matchAll(/(?<![\w.-])\.btn--sm\s*\{([^}]+)\}/g)];
+if (smallButtonRules.length < 2 || smallButtonRules.some((match) =>
+  !/font-size:\s*var\(--fs-control\)/.test(match[1]))) {
+  failures.push('components/Button.css: small buttons must retain control-sized text on desktop and phone');
+}
+const dataTableCss = await readFile(new URL('../src/design-system/DataTable.css', import.meta.url), 'utf8');
+if (!/\.ds-table\s*\{[^}]*font-size:\s*var\(--fs-table\)/.test(dataTableCss)
+  || !/\.ds-table thead th\s*\{[^}]*font-size:\s*var\(--fs-label\)/.test(dataTableCss)) {
+  failures.push('design-system/DataTable.css: distinguish data text from column labels');
+}
 if (!/\.input:focus-visible(?:\s*,\s*\.[\w-]+:focus-visible)*\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--accent-2\)/i
   .test(inputCss)) {
   failures.push('components/Input.css: inputs must retain the high-contrast focus outline');
@@ -79,7 +109,7 @@ const pillCss = await readFile(new URL('../src/components/Pill.css', import.meta
 if (!/\.pill\s*\{[^}]*font-size:\s*var\(--fs-status-pill\)/i.test(pillCss)) {
   failures.push('components/Pill.css: default status pills must use the compact typography token');
 }
-if (!/\.pill--md\s*\{[^}]*font-size:\s*var\(--fs-xs\)/i.test(pillCss)) {
+if (!/\.pill--md\s*\{[^}]*font-size:\s*var\(--fs-body\)/i.test(pillCss)) {
   failures.push('components/Pill.css: medium status pills must remain larger than the compact default');
 }
 
@@ -112,22 +142,15 @@ for (const selector of ['.wf-link', '.wf-btn', '.stab-pill']) {
   }
 }
 
-const customerPageCss = await readFile(
-  new URL('../src/pages/CustomersPage.css', import.meta.url),
-  'utf8',
-);
-const customerMobileCss = customerPageCss.match(
-  /@media\s*\(max-width:\s*820px\)\s*\{([\s\S]*)\}\s*$/i,
-)?.[1] ?? '';
-const customerToolbarRule = customerMobileCss.match(
-  /\.customers-page\s*>\s*\.toolbar\s*\{[^}]*\}/i,
-)?.[0] ?? '';
-if (!/background:\s*transparent/i.test(customerToolbarRule)
-  || !/border-bottom:\s*0\b/i.test(customerToolbarRule)
-  || !/margin-bottom:\s*8px\b/i.test(customerToolbarRule)) {
-  failures.push(
-    'pages/CustomersPage.css: customer filters must share the mobile page background and stay separated from the card list through 820px',
-  );
+// Customer routes use the shared, unframed filter row at every viewport.
+for (const page of ['pages/CustomersPage.tsx', 'pages/config/CustomersConfigPage.tsx']) {
+  const source = await readFile(new URL(`../src/${page}`, import.meta.url), 'utf8');
+  if (!source.includes('<ListFilterBar')) failures.push(`${page}: use the shared ListFilterBar`);
+}
+const listFilterCss = await readFile(new URL('../src/components/shared/ListFilterBar.css', import.meta.url), 'utf8');
+const listFilterRule = listFilterCss.match(/\.list-filter-bar\s*\{[^}]*\}/)?.[0] ?? '';
+if (!/background:\s*transparent/.test(listFilterRule) || !/border:\s*0\b/.test(listFilterRule)) {
+  failures.push('components/shared/ListFilterBar.css: list filters must share their surrounding surface');
 }
 
 const driverPenaltyCss = await readFile(

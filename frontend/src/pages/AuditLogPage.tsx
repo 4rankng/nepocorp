@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { downloadCSV } from '../lib/csv';
 import {
-  Search, Activity, Users, Clock, TrendingUp, Download, FileText,
+  Activity, Users, Clock, TrendingUp, Download, FileText,
   Truck, Settings, DollarSign, LogIn,
   Globe, Terminal, Copy, Check, Info, Eye, X,
 } from 'lucide-react';
@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
 import { ACTION_LABELS, resolveCategory, formatTimeShort } from '../lib/audit-helpers';
 import './AuditLogPage.css';
+import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -173,39 +174,39 @@ export default function AuditLogPage() {
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }} className="fade-up">
         <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-            <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 42, height: 42, fontSize: 14 }}>
+            <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 42, height: 42, fontSize: 'var(--fs-body)' }}>
               <Users size={18} aria-hidden="true" />
             </div>
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>
+              <h3 style={{ fontSize: 'var(--fs-section)', fontWeight: 700, margin: 0, color: 'var(--ink)' }}>
                 {entry.userName}
               </h3>
-              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span className={`audit-dot ${categoryDotClass(entry.category)}`} style={{ width: 8, height: 8 }} />
                 {ACTION_LABELS[entry.action] || entry.action}
               </div>
             </div>
           </div>
-          <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
+          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-2)', lineHeight: 1.5, margin: 0 }}>
             {entry.message}
           </p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: 12, background: 'var(--surface-2)', padding: 12, borderRadius: 8 }}>
           <div>
-            <div style={{ fontSize: 12, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
+            <div style={{ fontSize: 'var(--fs-body)', textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
               Thời gian
             </div>
-            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)' }}>
+            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 500, color: 'var(--ink)' }}>
               {formatExactTime(entry.timestamp)}
             </div>
           </div>
           {isAdmin && (
             <div>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
+              <div style={{ fontSize: 'var(--fs-body)', textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 600, marginBottom: 4 }}>
                 Địa chỉ IP
               </div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ fontSize: 'var(--fs-body)', fontWeight: 500, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Globe size={12} style={{ color: 'var(--info)' }} />
                 {entry.ipAddress || 'Mạng nội bộ'}
               </div>
@@ -216,7 +217,7 @@ export default function AuditLogPage() {
               <span className={`audit-method audit-method--${entry.method}`}>
                 {entry.method}
               </span>
-              <span style={{ fontSize: 12, lineHeight: 1.5, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', overflowWrap: 'anywhere' }}>
+              <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.5, fontFamily: 'var(--font-mono)', color: 'var(--ink-2)', overflowWrap: 'anywhere' }}>
                 {entry.path}
               </span>
             </div>
@@ -227,13 +228,13 @@ export default function AuditLogPage() {
           entry.payload && Object.keys(entry.payload).length > 0 ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 180 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <div style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Terminal size={12} />
                   Chi tiết tham số (JSON)
                 </div>
                 <button
                   className="btn btn--secondary btn--sm"
-                  style={{ padding: '6px 10px', fontSize: 12, lineHeight: 1.35 }}
+                  style={{ padding: '6px 10px', fontSize: 'var(--fs-body)', lineHeight: 1.35 }}
                   onClick={() => handleCopyPayload(entry.payload)}
                 >
                   {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -247,7 +248,7 @@ export default function AuditLogPage() {
                   border: '1px solid var(--line-2)',
                   borderRadius: 6,
                   padding: 10,
-fontSize: 13,
+fontSize: 'var(--fs-body)',
                   color: 'var(--ink)',
                   fontFamily: 'var(--font-mono)',
                   overflow: 'auto',
@@ -259,7 +260,7 @@ fontSize: 13,
               </pre>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--ink-3)', fontSize: 12, padding: 20 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--ink-3)', fontSize: 'var(--fs-body)', padding: 20 }}>
               <Info size={24} style={{ marginBottom: 6, color: 'var(--line-2)' }} />
               Không có tham số chi tiết đi kèm sự kiện này
             </div>
@@ -365,43 +366,14 @@ fontSize: 13,
         />
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div data-tour-id="audit-filters" style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        {CATEGORIES.map(cat => {
-          const Icon = cat.icon;
-          const isActive = filter === cat.key;
-          return (
-            <button
-              key={cat.key}
-              className={`filter-pill${isActive ? ' is-active' : ''}`}
-              onClick={() => {
-                setFilter(cat.key);
-              }}
-            >
-              <Icon size={14} />
-              {cat.label}
-              {filter === cat.key && (
-                <span className="filter-pill__count">{total}</span>
-              )}
-            </button>
-          );
-        })}
-
-        <div style={{ flex: 1 }} />
-
-        <div className="toolbar__search" style={{ minWidth: 280 }}>
-          <Search size={14} />
-          <input
-            type="text"
-            name="auditSearch"
-            aria-label="Tìm trong nhật ký người dùng"
-            placeholder="Tìm tên, nội dung, hành động…"
-            value={search}
-            onChange={e => {
-              setSearch(e.target.value);
-            }}
-          />
-        </div>
+      <div data-tour-id="audit-filters">
+        <ListFilterBar
+          label="Lọc loại hoạt động"
+          options={CATEGORIES.map(cat => ({ value: cat.key, label: cat.label, count: filter === cat.key ? total : undefined }))}
+          value={filter}
+          onChange={setFilter}
+          search={{ value: search, onChange: setSearch, label: 'Tìm trong nhật ký người dùng', placeholder: 'Tìm tên, nội dung, hành động…' }}
+        />
       </div>
 
       {/* ── Full-width activity list ── */}
@@ -459,20 +431,20 @@ fontSize: 13,
                       >
                         <td className="num">{idx + 1}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
-                          <div style={{ fontSize: 12, color: 'var(--ink)', fontWeight: 500 }}>
+                          <div style={{ fontSize: 'var(--fs-body)', color: 'var(--ink)', fontWeight: 500 }}>
                             {formatTimeShort(entry.timestamp)}
                           </div>
-                          <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                          <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-2)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                             {formatExactTime(entry.timestamp).split(' ')[0]}
                           </div>
                         </td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 26, height: 26, fontSize: 12 }}>
+                            <div className={`avatar-ring ${avatarColor(entry.userName)}`} style={{ width: 26, height: 26, fontSize: 'var(--fs-body)' }}>
                               <Users size={13} aria-hidden="true" />
                             </div>
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', overflowWrap: 'anywhere' }}>
+                              <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink)', overflowWrap: 'anywhere' }}>
                                 {entry.userName}
                               </div>
                             </div>
@@ -484,7 +456,7 @@ fontSize: 13,
                               <div className="audit-event-tag">
                                 <span className={`audit-dot ${categoryDotClass(entry.category)}`} />
                                 {categoryIcon(entry.category)}
-                                <span style={{ fontWeight: 600, fontSize: 12, lineHeight: 1.35, color: 'var(--ink-2)' }}>
+                                <span style={{ fontWeight: 600, fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-2)' }}>
                                   {ACTION_LABELS[entry.action] || entry.action}
                                 </span>
                               </div>
@@ -523,7 +495,7 @@ fontSize: 13,
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 background: 'var(--surface-2)',
-                fontSize: 12,
+                fontSize: 'var(--fs-body)',
                 color: 'var(--ink-3)',
               }}
             >

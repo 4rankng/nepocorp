@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
 import { Pagination } from '../design-system';
+import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { useDriverTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import './DriverTripsPage.css';
@@ -93,34 +94,17 @@ export default function DriverTripsPage() {
     <div ref={rootRef} className="driver-trips-page">
       <PageHeader title="Hành trình" description={`Danh sách lệnh vận chuyển đã nhận (${total} lệnh)`} />
 
-      <div className="driver-trips-filter-bar">
-        <div className="fwd-filter-pills fade-up">
-          <button
-            className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
-            aria-pressed={activeFilter === ''}
-            onClick={() => setActiveFilter('')}
-          >
-            Tất cả
-            <span className="fwd-filter-pill__count">{allTripsCount}</span>
-          </button>
-          {(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][]).map(([status, label]) => {
-            const count = statusCounts[status] ?? 0;
-            if (count === 0 && activeFilter !== status) return null;
-            return (
-              <button
-                key={status}
-                className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
-                aria-pressed={activeFilter === status}
-                onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
-              >
-                <span className="fwd-filter-pill__dot" style={{ background: TRIP_STATUS_COLORS[status] }} />
-                {label}
-                <span className="fwd-filter-pill__count">{count}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <ListFilterBar<TripStatus | ''>
+        label="Lọc trạng thái lệnh"
+        value={activeFilter}
+        onChange={status => setActiveFilter(prev => prev === status ? '' : status)}
+        options={[
+          { value: '', label: 'Tất cả', count: allTripsCount },
+          ...(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][])
+            .filter(([status]) => (statusCounts[status] ?? 0) > 0 || activeFilter === status)
+            .map(([value, label]) => ({ value, label, count: statusCounts[value] ?? 0 })),
+        ]}
+      />
 
       {trips.length === 0 && (
         <div className="empty-state" role="status">

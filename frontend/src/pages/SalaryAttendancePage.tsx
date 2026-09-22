@@ -29,13 +29,16 @@ export default function SalaryAttendancePage() {
   });
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: salaryList, isLoading: listLoading } = useSalaryList(year, month);
+  const listQuery = useSalaryList(year, month);
+  const { data: salaryList, isLoading: listLoading } = listQuery;
   const { rootRef } = usePageAnimations({ ready: !listLoading });
 
   const handleBack = () => setSelectedDriverId(null);
   useBackShortcut(handleBack);
-  const { data: workDayData, isLoading: wdLoading } = useDriverWorkDays(selectedDriverId, year, month);
-  const { data: salary, isLoading: salaryLoading } = useDriverSalary(selectedDriverId, year, month);
+  const workDaysQuery = useDriverWorkDays(selectedDriverId, year, month);
+  const salaryQuery = useDriverSalary(selectedDriverId, year, month);
+  const { data: workDayData, isLoading: wdLoading } = workDaysQuery;
+  const { data: salary, isLoading: salaryLoading } = salaryQuery;
   const updateMutation = useUpdateWorkDays(selectedDriverId ?? 0, year, month);
   const confirmMutation = useConfirmSalary(selectedDriverId ?? 0, year, month);
   const unconfirmMutation = useUnconfirmSalary(selectedDriverId ?? 0, year, month);
@@ -61,7 +64,10 @@ export default function SalaryAttendancePage() {
     const totalStandbyDays = drivers.reduce((s, d) => s + (d.salary?.standbyDays ?? 0), 0);
     return { total, confirmed, totalNet, totalTripDays, totalStandbyDays };
   }, [drivers]);
-  const { data: salaryPeriod } = useSalaryPeriod(month, year);
+  const periodQuery = useSalaryPeriod(month, year);
+  const { data: salaryPeriod } = periodQuery;
+  const attendanceLoading = wdLoading || salaryLoading || periodQuery.isLoading;
+  const dataError = listQuery.error || periodQuery.error || (selectedDriverId && (workDaysQuery.error || salaryQuery.error));
 
   // Auto-select a driver once the list loads — but ONLY when nothing valid is
   // selected. A driver that still exists in the new month's list is never
@@ -122,7 +128,7 @@ export default function SalaryAttendancePage() {
   };
 
   const handleCellClick = useCallback(async (dateStr: string, current: WorkDayRecord | undefined) => {
-    if (!selectedDriverId || isConfirmed) return;
+    if (!selectedDriverId || isConfirmed || attendanceLoading || dataError) return;
     const newStatus = cycleStatus(dateStr, current);
     if (newStatus === 'TRIP_DAY') return;
 
@@ -132,7 +138,7 @@ export default function SalaryAttendancePage() {
     } catch {
       // Error is surfaced via mutation.error state; suppress unhandled rejection
     }
-  }, [selectedDriverId, updateMutation, isConfirmed]);
+  }, [selectedDriverId, updateMutation, isConfirmed, attendanceLoading, dataError]);
 
   // Parse a YYYY-MM-DD string using local timezone (avoids UTC midnight parsing issue)
   const parseLocalDate = useCallback((s: string): Date => {
@@ -178,6 +184,24 @@ export default function SalaryAttendancePage() {
   }, [dates, firstDow]);
 
   const isUpdating = updateMutation.isPending;
+
+  if (dataError) {
+    return (
+      <div className="salary-page">
+        <h1>Lương &amp; Chấm công</h1>
+        <div className="empty-state" role="alert">
+          <h2>Không thể tải dữ liệu kỳ lương</h2>
+          <p>Vui lòng tải lại trước khi xem hoặc cập nhật lương và chấm công.</p>
+          <button type="button" className="btn btn--secondary" onClick={() => {
+            void listQuery.refetch();
+            void periodQuery.refetch();
+            if (selectedDriverId) { void workDaysQuery.refetch(); void salaryQuery.refetch(); }
+          }}>Thử lại</button>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div ref={rootRef} className="salary-page">
@@ -266,7 +290,7 @@ export default function SalaryAttendancePage() {
         {listLoading ? (
           <div style={{ display: 'flex', alignItems: 'center', padding: '16px 24px' }}>
             <Loader2 size={20} className="spin" style={{ color: 'var(--fg-3)', marginRight: 8 }} />
-            <span style={{ fontSize: 13, color: 'var(--fg-3)' }}>Đang tải danh sách lái xe…</span>
+            <span style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)' }}>Đang tải danh sách lái xe…</span>
           </div>
         ) : (
           <div className="driver-select-row__list">
@@ -274,22 +298,24 @@ export default function SalaryAttendancePage() {
               const isSelected = d.id === selectedDriverId;
               const net = d.salary?.netSalary ?? 0;
               return (
-                <div
+                <button
+                  type="button"
                   key={d.id}
+                  aria-pressed={isSelected}
                   onClick={() => setSelectedDriverId(d.id)}
                   className={`driver-select-card ${isSelected ? 'is-active' : ''}`}
                 >
                   {isSelected && <span className="driver-select-card__dot" />}
-                  <div className="driver-select-card__name">{d.name}</div>
+                  <span className="driver-select-card__name">{d.name}</span>
                   {d.salary && (
-                    <div
+                    <span
                       className="driver-select-card__salary"
                       style={{ color: net >= 0 ? 'var(--success)' : 'var(--danger)' }}
                     >
                       {net >= 0 ? '' : '-'}{formatCurrency(Math.abs(net))}
-                    </div>
+                    </span>
                   )}
-                </div>
+                </button>
               );
             })}
             {filteredDrivers.length === 0 && (
@@ -311,7 +337,7 @@ export default function SalaryAttendancePage() {
             <Panel>
               <div className="salary-empty-panel">
                 <EmptyIllustration name="empty-salary" />
-                <p style={{ margin: 0, fontSize: 14 }}>Chọn lái xe ở trên để xem lịch chấm công</p>
+                <p style={{ margin: 0, fontSize: 'var(--fs-body)' }}>Chọn lái xe ở trên để xem lịch chấm công</p>
               </div>
             </Panel>
           ) : (
@@ -331,7 +357,7 @@ export default function SalaryAttendancePage() {
                   </div>
 
                   {/* Calendar cells */}
-                  {wdLoading ? (
+                  {attendanceLoading ? (
                     <div style={{ textAlign: 'center', padding: 32, color: 'var(--fg-3)' }}>
                       <Loader2 size={20} className="spin" />
                     </div>
@@ -400,7 +426,7 @@ export default function SalaryAttendancePage() {
         {/* ── Mobile Day List (hidden on desktop, shown on mobile via CSS) ── */}
         {selectedDriverId && (
           <div className="mobile-day-list-wrapper">
-            {wdLoading ? (
+            {attendanceLoading ? (
               <div style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                 <Loader2 size={20} className="spin" />
               </div>
@@ -436,14 +462,14 @@ export default function SalaryAttendancePage() {
                         <CheckCircle2 size={16} />
                         <span>Đã xác nhận</span>
                         {salary.confirmedAt && (
-                          <span style={{ fontSize: 12, lineHeight: 1.35, opacity: 0.7, marginLeft: 'auto' }}>
+                          <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, opacity: 0.7, marginLeft: 'auto' }}>
                             {new Date(salary.confirmedAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
                           </span>
                         )}
                       </div>
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
-                        borderRadius: 8, background: 'var(--surface-2)', fontSize: 12, color: 'var(--ink-3)',
+                        borderRadius: 8, background: 'var(--surface-2)', fontSize: 'var(--fs-body)', color: 'var(--ink-3)',
                       }}>
                         <Lock size={14} style={{ flexShrink: 0 }} />
                         <span>Kỳ lương đã khóa — không thể chỉnh sửa ngày công</span>
@@ -452,7 +478,7 @@ export default function SalaryAttendancePage() {
                   )}
                 </>
               ) : (
-                <div className="salary-summary-dark" style={{ textAlign: 'center', padding: 24, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
+                <div className="salary-summary-dark" style={{ textAlign: 'center', padding: 24, fontSize: 'var(--fs-body)', color: 'rgba(255,255,255,0.6)' }}>
                   Không thể tải dữ liệu lương
                 </div>
               )}

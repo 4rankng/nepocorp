@@ -218,7 +218,7 @@
     flex: 0 0 auto;
     margin-left: auto;
   }
-  .topbar-date { padding: 5px 8px; font-size: var(--fs-xs); gap: 5px; }
+  .topbar-date { padding: 5px 8px; font-size: var(--fs-control); gap: 5px; }
   .topbar-date__sep { display: none; }
   .topbar-date__trigger {
     min-height: 44px;
@@ -484,7 +484,7 @@
 
   /* ── Tap targets (Apple/Material want ≥44px) ── */
   .btn--sm,
-  .btn-sm { min-height: 44px; padding: 9px 12px; font-size: var(--fs-sm); }
+  .btn-sm { min-height: 44px; padding: 9px 12px; font-size: var(--fs-control); }
   .btn--icon,
   .btn-icon { min-width: 44px; min-height: 44px; padding: 10px; }
   .btn--icon.btn--sm,
@@ -526,7 +526,7 @@
     color: var(--ink-3);
   }
   .info-row__value {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-body);
     text-align: right;
     overflow-wrap: anywhere;
     word-break: normal;
@@ -549,7 +549,7 @@
     max-width: 55%;
   }
   .info-row--feature .info-row__value {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-body);
     text-align: right;
   }
 
@@ -626,10 +626,10 @@
   .driver-trip-card__icon { width: 32px; height: 32px; }
   .driver-trip-card__main { flex: 1 1 calc(100% - 50px); }
   .driver-trip-card__head { margin-bottom: 2px; gap: 6px; }
-  .driver-trip-card__route { font-size: var(--fs-sm); }
+  .driver-trip-card__route { font-size: var(--fs-body); }
   .driver-trip-card__meta { gap: 12px; font-size: var(--fs-xs); }
   .driver-trip-card__salary { order: 99; flex: 1 1 100%; text-align: left; padding-left: 42px; margin-top: -2px; }
-  .driver-trip-card__salary-value { font-size: var(--fs-sm); }
+  .driver-trip-card__salary-value { font-size: var(--fs-body); }
   .driver-trip-card__arrow { display: none; }
 
   /* ── Misc layout helpers ── */

@@ -124,3 +124,29 @@
   .fwd-expense-group__header { align-items: flex-start; }
   .fwd-expense-group__header .btn { min-height: 44px; }
 }
+
+.forwarder-trip-detail-page .fwd-cont-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.fwd-expense-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+.fwd-expense-row__icon { color: var(--brand); }
+.fwd-expense-row__content { min-width: 0; overflow-wrap: anywhere; }
+.fwd-expense-row__status { display: inline-block; white-space: nowrap; }
+.fwd-expense-row__note { color: var(--fg-3); font-size: var(--fs-caption); margin-top: 4px; }
+.fwd-expense-row__amount { text-align: right; white-space: nowrap; }
+.fwd-expense-row__actions { display: flex; align-items: center; gap: 2px; }
+
+@media (max-width: 560px) {
+  .fwd-expense-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .fwd-expense-row__icon { display: none; }
+  .fwd-expense-row__content { grid-column: 1 / -1; }
+  .fwd-expense-row__amount { text-align: left; }
+  .fwd-expense-row__actions { justify-self: end; }
+}

@@ -79,6 +79,7 @@ export interface UseTripFormDispatchReturn {
   uploading: UploadingState;
   ocrResult: OcrSignal | null;
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
+  createdTripId: number | null;
   selectedRouteData: RouteOption | null;
   driverBaseSalary: number;
   roadAllowanceBaseApplied?: number;
@@ -528,7 +529,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     ],
   );
 
-  const handleSubmit = useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, requiredFieldsFilled, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos });
+  const { handleSubmit, createdTripId } = useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, requiredFieldsFilled, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos });
 
   return {
     legs, addLeg, removeLeg, updateLeg,
@@ -544,6 +545,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     requiredFieldsFilled,
     totalRequiredFields,
     handleSubmit,
+    createdTripId,
     selectedRouteData,
     driverBaseSalary,
     roadAllowanceBaseApplied: isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : undefined,

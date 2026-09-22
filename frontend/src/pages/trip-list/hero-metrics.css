@@ -64,13 +64,6 @@
   overflow: hidden;
   container-type: inline-size;
 }
-.trip-list-page .hero.hero--route-network {
-  background-image: url("/assets/illustrations/hero-route-network.svg");
-  background-color: var(--surface);
-  background-repeat: no-repeat;
-  background-position: right 24px bottom 10px;
-  background-size: min(260px, 24vw) auto;
-}
 .trip-list-page .hero::before {
   content: none;
 }
@@ -110,11 +103,11 @@
    system (components/Button.css). The page-scoped .btn-d* recipes were
    retired during CTA unification. */
 
-/* ── Metric bento grid ─────────────────────────────────────────────────
-   Layout: featured card spans 2 rows on the left, 4 tiles in 2×2 on the right.
-   gap: 1px with rgba background creates hairline dividers (same pattern as before). */
+/* ── Inline summary — grouped by space and one section divider. ─────── */
 .trip-list-page .metrics {
   margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
   display: grid;
   grid-template-columns: minmax(260px, 1.35fr) repeat(4, minmax(0, 1fr));
   gap: 10px;
@@ -125,21 +118,14 @@
 }
 .trip-list-page .metric {
   min-width: 0;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  padding: 14px 16px;
-  transition: background 160ms var(--ease), border-color 160ms var(--ease);
-}
-.trip-list-page .metric:hover {
-  border-color: color-mix(in srgb, var(--accent) 18%, var(--line-2));
-  background: var(--surface-2);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 14px 0;
 }
 .trip-list-page .metric.featured {
   grid-row: auto;
   grid-column: auto;
-  background: var(--brand-soft);
-  border-color: rgba(0, 177, 79, 0.18);
 }
 .trip-list-page .metric.featured .metric-label { color: var(--accent-ink); }
 .trip-list-page .metric-label {

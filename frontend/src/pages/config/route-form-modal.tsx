@@ -7,6 +7,7 @@ import { calculateRoute } from '../../lib/maps';
 import { LeafletMap } from '../../components/shared/LeafletMap';
 import type { Route as RouteType } from '@tingting/shared';
 import { LoadingType } from '@tingting/shared';
+import './route-form-modal.css';
 
 /**
  * RouteFormModal — replaces the tr-based inline add form, which was visually
@@ -123,9 +124,9 @@ export function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
     setDefaultLegs(defaultLegs.filter(l => l.id !== id));
   };
 
-  const hintStyle = { fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 } as const;
+  const hintStyle = { fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 } as const;
   const sectionLabelStyle = {
-    fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase' as const,
+    fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase' as const,
     letterSpacing: '0.08em', marginBottom: 8, marginTop: 4,
   };
 
@@ -194,7 +195,7 @@ export function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
                     style={{ width: 16, height: 16, cursor: 'pointer' }}
                   />
                   <Mountain size={14} />
-                  <span style={{ fontSize: 13 }}>Tuyến leo núi</span>
+                  <span style={{ fontSize: 'var(--fs-body)' }}>Tuyến leo núi</span>
                 </label>
               </div>
             </div>
@@ -203,7 +204,7 @@ export function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
           {/* Fuel & Salary */}
           <div style={{ borderTop: '1px solid var(--line)', paddingTop: 20 }}>
             <div style={sectionLabelStyle}>Định mức nhiên liệu & Tiền lương</div>
-            <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '0 0 12px' }}>
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', margin: '0 0 12px' }}>
               Các giá trị này sẽ được dùng để gợi ý khi tạo / sửa lệnh trên tuyến này.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -250,45 +251,47 @@ export function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
 
         {/* COLUMN 2: Default Legs */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div className="route-form__legs-heading">
             <div>
               <div style={{ ...sectionLabelStyle, margin: 0 }}>Hành trình chi tiết (Mặc định)</div>
-              <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '4px 0 0' }}>
+              <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', margin: '4px 0 0' }}>
                 Khai báo sẵn các chặng để tự động điền khi tạo lệnh.
               </p>
             </div>
-            <button type="button" className="btn btn--secondary btn--sm" onClick={addLeg} style={{ padding: '0 12px' }}>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={addLeg}>
               <Plus size={14} /> Thêm chặng
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div>
             {defaultLegs.length === 0 ? (
-              <div style={{ padding: '16px', textAlign: 'center', background: 'var(--bg-2)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--line)' }}>
-                <span style={{ color: 'var(--fg-3)', fontSize: 13 }}>Chưa có chặng mặc định</span>
-              </div>
-            ) : defaultLegs.map((leg) => (
-              <div key={leg.id} className="flex flex-wrap lg:grid lg:grid-cols-[1fr_1fr_70px_100px_30px] gap-2 items-center p-2 rounded-md" style={{ background: 'var(--bg-2)' }}>
-                <div className="flex-1 min-w-[140px]">
-                  <LocationAutocomplete className="input input--sm w-full" placeholder="Điểm đi" value={leg.origin} onChange={val => updateLeg(leg.id, 'origin', val)} />
+              <p className="route-form__empty">Chưa có chặng mặc định</p>
+            ) : defaultLegs.map((leg, index) => (
+              <div key={leg.id} className="route-form__leg">
+                <div className="field">
+                  <label htmlFor={`route-origin-${leg.id}`}>Điểm đi · chặng {index + 1}</label>
+                  <LocationAutocomplete id={`route-origin-${leg.id}`} className="input input--sm w-full" placeholder="Điểm đi" value={leg.origin} onChange={val => updateLeg(leg.id, 'origin', val)} />
                 </div>
-                <div className="flex-1 min-w-[140px]">
-                  <LocationAutocomplete className="input input--sm w-full" placeholder="Điểm đến" value={leg.destination} onChange={val => updateLeg(leg.id, 'destination', val)} />
+                <div className="field">
+                  <label htmlFor={`route-destination-${leg.id}`}>Điểm đến · chặng {index + 1}</label>
+                  <LocationAutocomplete id={`route-destination-${leg.id}`} className="input input--sm w-full" placeholder="Điểm đến" value={leg.destination} onChange={val => updateLeg(leg.id, 'destination', val)} />
                 </div>
-                <div className="w-[70px] shrink-0">
-                  <input className="input input--sm w-full" type="number" placeholder="Km" value={leg.km} onChange={e => updateLeg(leg.id, 'km', e.target.value)} />
-                </div>
-                <div className="w-[100px] shrink-0">
-                  <select className="input input--sm w-full" value={leg.loadingType} onChange={e => updateLeg(leg.id, 'loadingType', e.target.value)}>
-                    <option value={LoadingType.HANG}>Có hàng</option>
-                    <option value={LoadingType.VO}>Vỏ rỗng</option>
-                  </select>
-                </div>
-                <div className="w-[40px] shrink-0 flex justify-center">
+                <div className="route-form__leg-options">
+                  <div className="field">
+                    <label htmlFor={`route-km-${leg.id}`}>Số km</label>
+                    <input id={`route-km-${leg.id}`} className="input input--sm w-full" type="number" placeholder="Km" value={leg.km} onChange={e => updateLeg(leg.id, 'km', e.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor={`route-loading-${leg.id}`}>Trạng thái hàng</label>
+                    <select id={`route-loading-${leg.id}`} className="input input--sm w-full" value={leg.loadingType} onChange={e => updateLeg(leg.id, 'loadingType', e.target.value)}>
+                      <option value={LoadingType.HANG}>Có hàng</option>
+                      <option value={LoadingType.VO}>Vỏ rỗng</option>
+                    </select>
+                  </div>
                   <button
                     type="button"
                     className="btn btn--ghost btn--icon btn--sm"
-                    aria-label={`Xóa chặng ${leg.origin || leg.destination || ''}`.trim()}
+                    aria-label={`Xóa chặng ${index + 1}${leg.origin || leg.destination ? `: ${leg.origin || leg.destination}` : ''}`}
                     onClick={() => removeLeg(leg.id)}
                     style={{ color: 'var(--danger)', minWidth: 36 }}
                   >
@@ -305,19 +308,9 @@ export function RouteFormModal({ isOpen, saving, item, onsave, oncancel }: {
             {defaultLegs.some(l => l.polylinePath) ? (
               <LeafletMap legs={defaultLegs} height="240px" />
             ) : (
-              <div style={{
-                height: '240px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'var(--bg-2)',
-                borderRadius: 'var(--radius-lg, 12px)',
-                border: '1px dashed var(--line)',
-                color: 'var(--fg-3)',
-                fontSize: '13px'
-              }}>
+              <p className="route-form__empty">
                 Nhập địa điểm cho các chặng để trực quan hóa lộ trình trên bản đồ
-              </div>
+              </p>
             )}
           </div>
         </div>

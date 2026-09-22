@@ -162,7 +162,7 @@ export default function RoutesConfigPage() {
         </div>
         <div className="kpi">
           <div className="kpi__top"><span className="kpi__label">Phổ biến nhất</span></div>
-          <div className="kpi__value" style={{ fontSize: 16, lineHeight: 1.3 }}>{popularRoute ? popularRoute.name.split(' - ')[0] : '—'}</div>
+          <div className="kpi__value" style={{ fontSize: 'var(--fs-section)', lineHeight: 1.3 }}>{popularRoute ? popularRoute.name.split(' - ')[0] : '—'}</div>
           <div className="kpi__meta">{popularCount > 0 ? `${popularCount} chuyến ${monthLabel}` : 'Chưa có dữ liệu'}</div>
           <div className="kpi__watermark" aria-hidden="true"><Route size={72} /></div>
         </div>
@@ -184,13 +184,7 @@ export default function RoutesConfigPage() {
         oncancel={crud.cancelForm}
       />
 
-      <div className="routes-config-grid" style={{
-        display: 'grid',
-        gridTemplateColumns: selectedRoute ? '1fr 380px' : '1fr',
-        gap: '20px',
-        alignItems: 'start',
-        transition: 'grid-template-columns 0.3s ease'
-      }}>
+      <div className={`routes-config-grid${selectedRoute ? ' routes-config-grid--selected' : ''}`}>
         <div className="table-wrap" style={{ margin: 0 }}>
           <div className="toolbar">
             {(['all', 'plain', 'mountain'] as const).map(f => {
@@ -210,7 +204,7 @@ export default function RoutesConfigPage() {
               />
             </div>
           </div>
-          <div style={{ padding: '6px 12px 8px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 12 }}>
+          <div style={{ padding: '6px 12px 8px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
             Nhấn vào một hàng để xem chi tiết và chỉnh sửa tuyến đường
           </div>
@@ -269,27 +263,16 @@ export default function RoutesConfigPage() {
         </div>
 
         {selectedRoute && (
-          <div className="card sticky-card" style={{
-            position: 'sticky',
-            top: '20px',
-            background: 'var(--bg-1)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            boxShadow: 'var(--shadow-md)',
-            animation: 'slide-left 0.3s ease-out'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--fg-1)', margin: 0 }}>
+          <div className="routes-config-detail">
+            <div className="routes-config-detail__heading">
+              <h3 style={{ fontSize: 'var(--fs-section)', fontWeight: 600, color: 'var(--fg-1)', margin: 0 }}>
                 Chi tiết tuyến đường
               </h3>
               <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                 <button
                   className="btn btn--ghost btn--icon btn--sm"
                   title="Sửa tuyến"
+                  aria-label={`Sửa tuyến ${selectedRoute.name}`}
                   onClick={() => { crud.setEditingId(selectedRoute.id); setSelectedRouteId(null); }}
                   style={{ color: 'var(--primary)' }}
                 >
@@ -298,6 +281,7 @@ export default function RoutesConfigPage() {
                 <button
                   className="btn btn--ghost btn--icon btn--sm"
                   title="Xóa tuyến"
+                  aria-label={`Xóa tuyến ${selectedRoute.name}`}
                   disabled={crud.deleting === selectedRoute.id}
                   onClick={async () => {
                     const ok = await confirm(`Xóa tuyến "${selectedRoute.name}"?`, { confirmLabel: 'Xóa', variant: 'danger' });
@@ -311,6 +295,7 @@ export default function RoutesConfigPage() {
                 <button
                   className="btn btn--ghost btn--icon btn--sm"
                   title="Đóng"
+                  aria-label="Đóng chi tiết tuyến"
                   onClick={() => setSelectedRouteId(null)}
                   style={{ color: 'var(--fg-3)' }}
                 >
@@ -320,7 +305,7 @@ export default function RoutesConfigPage() {
             </div>
 
             <div style={{ borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>
+              <div style={{ fontSize: 'var(--fs-section)', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>
                 {selectedRoute.name}
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -337,7 +322,7 @@ export default function RoutesConfigPage() {
 
             {/* Map Visualization */}
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--fg-3)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--fg-3)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Bản đồ tuyến đường
               </div>
               {selectedRouteLegs.length > 0 ? (
@@ -352,7 +337,7 @@ export default function RoutesConfigPage() {
                   borderRadius: 'var(--radius-lg)',
                   border: '1px dashed var(--line)',
                   color: 'var(--fg-3)',
-                  fontSize: '13px'
+                  fontSize: 'var(--fs-body)'
                 }}>
                   Chưa khai báo chặng để hiển thị bản đồ
                 </div>
@@ -361,19 +346,19 @@ export default function RoutesConfigPage() {
 
             {/* Configuration default values */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--bg-2)', padding: '12px', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-body)' }}>
                 <span style={{ color: 'var(--fg-3)' }}>Định mức dầu:</span>
                 <strong style={{ color: 'var(--fg-1)' }}>
                   {selectedRoute.fixedFuelAllowance ? `${selectedRoute.fixedFuelAllowance} L` : 'Theo công thức'}
                 </strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-body)' }}>
                 <span style={{ color: 'var(--fg-3)' }}>Trạm thu phí:</span>
                 <strong style={{ color: 'var(--fg-1)' }}>
                   {selectedRoute.tollsStations != null ? `${selectedRoute.tollsStations} trạm` : '—'}
                 </strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--fs-body)' }}>
                 <span style={{ color: 'var(--fg-3)' }}>Tiền kết hợp:</span>
                 <strong style={{ color: 'var(--fg-1)' }}>
                   {selectedRoute.driverSalary ? formatCurrency(Number(selectedRoute.driverSalary)) : 'Theo công thức'}
@@ -383,12 +368,12 @@ export default function RoutesConfigPage() {
 
             {/* Default legs itinerary */}
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--fg-3)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--fg-3)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Lộ trình chi tiết ({selectedRouteLegs.length})
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
                 {selectedRouteLegs.length === 0 ? (
-                  <div style={{ fontSize: '13px', color: 'var(--fg-3)', fontStyle: 'italic' }}>Chưa cấu hình chặng mặc định.</div>
+                  <div style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', fontStyle: 'italic' }}>Chưa cấu hình chặng mặc định.</div>
                 ) : (
                   selectedRouteLegs.map((leg, i) => (
                     <div key={i} style={{
@@ -400,15 +385,15 @@ export default function RoutesConfigPage() {
                       borderRadius: 'var(--radius-sm)'
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--fg-2)' }}>Chặng {i + 1}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--fg-3)' }}>
+                        <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)' }}>Chặng {i + 1}</span>
+                        <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--fg-3)' }}>
                           {leg.km} km · {leg.loadingType === 'HANG' ? 'Có hàng' : 'Vỏ rỗng'}
                         </span>
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--fg-1)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-1)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{ color: 'var(--success)' }}>●</span> {leg.origin}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--fg-1)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-1)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{ color: 'var(--danger)' }}>●</span> {leg.destination}
                       </div>
                     </div>

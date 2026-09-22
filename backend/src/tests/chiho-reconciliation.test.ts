@@ -459,15 +459,15 @@ describe('US-007 aging: SERVICE_FEE AR surfaces in customer aging', () => {
     assert.ok(found!.maxOverdueDays <= 1,
       `freshly-posted SERVICE_FEE → days ≈ 0 (≤1); got ${found!.maxOverdueDays}`);
 
-    // getTopOverdueCustomer returns the single highest-balance CUSTOMER across
-    // the whole ledger (no txnType filter) — so SERVICE_FEE-only AR is eligible.
-    // Assert it does not throw and returns a valid shape (the seeded customer
-    // may not be the global top if the dev DB has larger debtors, but the call
-    // must succeed and reflect chi hộ AR among the population).
+    // A fresh SERVICE_FEE belongs to the current (0–30 day) bucket. It must
+    // appear in customer aging without being mislabeled as overdue. Other
+    // fixtures may have overdue debt; when present that result must be >30d.
     const top = await getTopOverdueCustomer();
-    assert.ok(top, 'getTopOverdueCustomer returns a result');
-    assert.ok(top!.balance > 0, 'top-overdue balance is positive');
-    assert.ok(top!.days >= 0, 'top-overdue days is non-negative');
+    assert.notEqual(top?.name, customerName, 'new service-fee debt is not overdue');
+    if (top) {
+      assert.ok(top.balance > 0, 'top-overdue balance is positive');
+      assert.ok(top.days > 30, 'top-overdue debt is outside the current bucket');
+    }
 
     // Reference expenseRows for provenance.
     assert.ok(expenseRows.length > 0);

@@ -310,7 +310,10 @@ export async function getTopOverdueCustomer(): Promise<{ name: string; balance: 
     { entityType: 'CUSTOMER', invertSigns: false },
     { excludeCarrierPayables: true },
   );
-  const top = results.sort((a, b) => b.totalOutstanding - a.totalOutstanding)[0];
+  // The first 30 days belong to the current bucket, just as in the summary.
+  // A large current balance must not displace a genuinely overdue customer.
+  const top = results.filter(result => result.maxOverdueDays > 30)
+    .sort((a, b) => b.totalOutstanding - a.totalOutstanding)[0];
   if (!top) return null;
 
   const [customer] = await db.select({ name: s.customers.name })

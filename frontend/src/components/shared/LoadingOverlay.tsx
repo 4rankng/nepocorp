@@ -4,7 +4,7 @@ export function LoadingOverlay({ message = 'Đang tải dữ liệu…' }: { mes
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80, gap: 10, color: 'var(--fg-3)' }}>
       <Spinner size={20} />
-      <span style={{ fontSize: 14 }}>{message}</span>
+      <span style={{ fontSize: 'var(--fs-body)' }}>{message}</span>
     </div>
   );
 }

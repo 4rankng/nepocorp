@@ -121,10 +121,11 @@
 }
 .tc-hero-widgets .tc-summary-card,
 .tc-hero-widgets .tc-checklist {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 16px 20px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 16px 0;
   margin-bottom: 0;
 }
 

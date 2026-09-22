@@ -11,7 +11,8 @@ import type { UserRow, CreateData, EditData } from '../utils';
 
 // ── Icon Input ─────────────────────────────────────────────────────────────
 
-function IconInput({ icon, value, onChange, placeholder, type = 'text', autoComplete, valid, error, rightElement, disabled }: {
+function IconInput({ id, icon, value, onChange, placeholder, type = 'text', autoComplete, valid, error, rightElement, disabled }: {
+  id?: string;
   icon: React.ReactNode;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -27,6 +28,7 @@ function IconInput({ icon, value, onChange, placeholder, type = 'text', autoComp
     <div className={`icon-input${valid ? ' icon-input--valid' : ''}${error ? ' icon-input--error' : ''}`}>
       <span className="icon-input__icon">{icon}</span>
       <input
+        id={id}
         className="icon-input__field"
         type={type}
         value={value}
@@ -34,6 +36,7 @@ function IconInput({ icon, value, onChange, placeholder, type = 'text', autoComp
         placeholder={placeholder}
         autoComplete={autoComplete}
         disabled={disabled}
+        aria-invalid={error || undefined}
       />
       {valid && !rightElement && (
         <span className="icon-input__check"><Check size={14} /></span>

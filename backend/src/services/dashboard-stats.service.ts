@@ -76,9 +76,12 @@ export async function getDashboardStats() {
         sql`${s.trips.status} IN ('CREATED', 'IN_TRANSIT', 'COMPLETED')`,
         sql`(
           coalesce(${s.trips.revenue}, 0) <= 0
-          OR coalesce(${s.trips.fuelLiters}, 0) <= 0
-          OR coalesce(${s.trips.totalRoadAllowance}, 0) <= 0
-          OR coalesce(${s.trips.driverSalary}, 0) <= 0
+          OR CASE WHEN ${s.trips.carrierType} = 'EXTERNAL'
+            THEN coalesce(${s.trips.externalFreightCost}, 0) <= 0
+            ELSE coalesce(${s.trips.fuelLiters}, 0) <= 0
+              OR coalesce(${s.trips.totalRoadAllowance}, 0) <= 0
+              OR coalesce(${s.trips.driverSalary}, 0) <= 0
+          END
         )`,
       )),
       db.select({
@@ -272,7 +275,7 @@ function buildDecisionItems(input: {
       kind: 'trip-data',
       severity: 'warning',
       title: `${input.missingFinancialTrips} chuyến thiếu số liệu`,
-      subtitle: 'Cần đủ doanh thu, dầu, tiền đường và lương lái xe',
+      subtitle: 'Kiểm tra doanh thu, chi phí xe nhà hoặc cước thuê xe ngoài',
       actionLabel: 'Bổ sung',
       route: '/trips',
       priority: 74,

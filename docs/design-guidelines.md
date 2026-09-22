@@ -13,16 +13,18 @@ Two self-hosted fonts, zero Google CDN:
 
 Do not add new fonts. Do not reference Google Fonts CDN.
 
-Use the shared tokens in `frontend/src/styles/tokens.css` for UI typography:
+The app is a dense data workspace: use 12px for reading and editing data, 11px
+for labels and supporting text. Use the shared tokens in `frontend/src/styles/tokens.css` for UI typography:
 
 | Role | Token | Size |
 | --- | --- | --- |
-| Body, fields, dropdown triggers/options, standard buttons | `--fs-body` / `--fs-control` | 14px |
-| Field labels, compact rows/buttons | `--fs-label` / `--fs-sm` | 13px |
-| Supporting text | `--fs-caption` | 12px |
-| Section heading | `--fs-section` | 16px |
-| Dialog heading | `--fs-xl` | 18px |
-| Page heading | `--fs-page-title` | 20px |
+| Body, fields, dropdown triggers/options, standard buttons | `--fs-body` / `--fs-control` | 12px |
+| Field labels and supporting metadata | `--fs-label` / `--fs-sm` | 11px |
+| Table values and compact action buttons | `--fs-table` / `--fs-control` | 12px |
+| Supporting text | `--fs-caption` | 11px |
+| Section heading | `--fs-section` | 14px |
+| Dialog heading | `--fs-dialog` | 16px |
+| Page heading | `--fs-page-title` | 18px |
 
 Touch targets grow to at least 44px independently of their font size. Do not
 add page-specific input/dropdown font-size overrides. Native editable fields
@@ -144,10 +146,13 @@ All empty-state illustrations route through `frontend/src/lib/emptyIllustrations
 - **KPI strip:** `variant="rail"` for the right rail placement.
 - **Mobile:** Columns stack vertically with reorder via `tdp-r/m` CSS order classes.
 
-### Card System (Bento Layout)
+### Section Surfaces
 
-- **Edit page:** 6-card bento layout with single-column form.
-- **Finance card:** Stacked vertically within the bento.
+- Use one main surface for each section. Inside it, group fields, records, metrics, and summaries with spacing, headings, and thin dividers. Do not nest decorative cards.
+- Keep input borders, selectable options, and focus rings clear. Dialogs and drawers provide the form surface; their internal groups share it.
+- Use `components/shared/ListFilterBar` for list status/role filters: one flat option row with an underline for selection, counts in plain text, and a separate full-width search row on phones. Longer option sets scroll horizontally and remain keyboard accessible.
+- Use `DocumentZoomControls` for document views. Open at fit width, support explicit zoom and 100%, and keep export/print content independent of viewing scale. `PrintPreviewDialog` displays continuous HTML with browser-native print/PDF pagination; the template editor uses the same controls for its editable paper canvas.
+- **Edit page:** Single-column form with separated sections; finance fields stack vertically.
 - **Color scheme:** deep emerald shell and primary CTAs, with a white route-T mark and signal green accents.
 
 ### Buttons

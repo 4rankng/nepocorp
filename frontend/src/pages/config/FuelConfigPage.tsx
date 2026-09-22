@@ -108,7 +108,7 @@ export default function FuelConfigPage() {
             {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
             Lưu cấu hình
           </button>
-          {error && <span style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</span>}
+          {error && <span style={{ color: 'var(--danger)', fontSize: 'var(--fs-body)' }}>{error}</span>}
         </div>
       </Panel>
       <Panel title="Lịch sử giá nhiên liệu" subtitle="Theo dõi các lần thay đổi đơn giá nhiên liệu" style={{ marginTop: 20 }}>
@@ -137,7 +137,7 @@ export default function FuelConfigPage() {
                     <td style={{ whiteSpace: 'nowrap' }}>{new Date(row.effectiveDate).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
                     <td className="num" style={{ fontWeight: 600 }}>{Number(row.unitPrice).toLocaleString('vi-VN')}</td>
                     <td style={{ color: 'var(--ink-3)' }}>—</td>
-                    <td style={{ color: 'var(--ink-3)', fontSize: 12 }}>{row.note || '—'}</td>
+                    <td style={{ color: 'var(--ink-3)', fontSize: 'var(--fs-body)' }}>{row.note || '—'}</td>
                   </tr>
                 ))}
               </tbody>

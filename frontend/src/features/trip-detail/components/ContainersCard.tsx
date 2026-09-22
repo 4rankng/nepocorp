@@ -75,7 +75,7 @@ export function ContainersCard({ tripId }: Props) {
           <span className="hicon"><Package size={15} /></span>
           Container &amp; Seal
           {items.length > 0 && (
-            <span className="sub" style={{ margin: 0, marginLeft: 4, fontSize: 13, fontWeight: 500, color: 'var(--ink-3)' }}>
+            <span className="sub" style={{ margin: 0, marginLeft: 4, fontSize: 'var(--fs-body)', fontWeight: 500, color: 'var(--ink-3)' }}>
               • {items.length} cont
             </span>
           )}
@@ -83,11 +83,11 @@ export function ContainersCard({ tripId }: Props) {
       </div>
       <div className="card-body">
         {isLoading ? (
-          <div style={{ padding: 16, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+          <div style={{ padding: 16, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-body)' }}>
             <Loader2 size={14} className="spin" /> Đang tải…
           </div>
         ) : items.length === 0 && gallery.length === 0 ? (
-          <div style={{ padding: 16, color: 'var(--ink-4)', fontSize: 13 }}>Chưa có container.</div>
+          <div style={{ padding: 16, color: 'var(--ink-4)', fontSize: 'var(--fs-body)' }}>Chưa có container.</div>
         ) : (
           <>
             {/* Trip-level photo galleries. Photos are stored at trip level in

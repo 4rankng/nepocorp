@@ -62,6 +62,7 @@
 .setting-card__status { color: var(--ink-3); font-family: var(--font-body); display: flex; align-items: center; gap: 6px; }
 .setting-card__status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .setting-card__action { color: var(--accent-2); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.setting-card[data-button-label-wrap="true"] .setting-card__icon { display: none; }
 
 /* ── Responsive overrides (from responsive.css decomposition) ── */
 @media (max-width: 640px) {

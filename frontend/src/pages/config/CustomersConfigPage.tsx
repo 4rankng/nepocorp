@@ -16,6 +16,7 @@ import type { Customer, DebitNoteTemplate } from '@tingting/shared';
 import type { TripUsageStats } from '../../api/tripClient';
 import { CustomerStatus } from '@tingting/shared';
 import './config-page.css';
+import { ListFilterBar } from '../../components/shared/ListFilterBar';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="field"><label>{label} {children}</label></div>;
@@ -260,26 +261,20 @@ export default function CustomersConfigPage() {
         </div>
       </div>
 
+      <ListFilterBar
+        label="Lọc khách hàng"
+        value={customerFilter}
+        onChange={setCustomerFilter}
+        options={[
+          { value: 'all', label: 'Tất cả', count: totalCount },
+          { value: 'high-risk', label: 'Rủi ro cao' },
+          { value: 'active', label: 'Hoạt động', count: activeCount },
+          { value: 'locked', label: 'Tạm khoá', count: lockedCount },
+        ]}
+        search={{ value: search, onChange: setSearch, label: 'Tìm khách hàng theo tên hoặc mã số thuế', placeholder: 'Tìm theo tên, MST…' }}
+      />
       <div className="table-wrap">
-        <div className="toolbar">
-          {(['all', 'high-risk', 'active', 'locked'] as const).map(f => {
-            const labels = { all: `Tất cả · ${totalCount}`, 'high-risk': 'Rủi ro cao', active: `Hoạt động · ${activeCount}`, locked: `Tạm khoá · ${lockedCount}` };
-            return <button key={f} className={`filter-pill${customerFilter === f ? ' is-active' : ''}`} onClick={() => setCustomerFilter(f)}>{labels[f]}</button>;
-          })}
-          <div className="toolbar__spacer" />
-          <div className="toolbar__search">
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input
-              type="text"
-              name="customerSearch"
-              aria-label="Tìm khách hàng theo tên hoặc mã số thuế"
-              placeholder="Tìm theo tên, MST…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-        <div style={{ padding: '6px 12px 8px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 12 }}>
+        <div style={{ padding: '6px 12px 8px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
           Nhấn vào một hàng để xem chi tiết và chỉnh sửa khách hàng
         </div>

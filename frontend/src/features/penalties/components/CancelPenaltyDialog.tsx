@@ -29,11 +29,11 @@ export function CancelPenaltyDialog({
             <XCircle size={18} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>Xác nhận hủy kỷ luật?</div>
-            <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>Hành động này sẽ hoàn tiền vào tài khoản lái xe</div>
+            <div style={{ fontWeight: 700, fontSize: 'var(--fs-section)' }}>Xác nhận hủy kỷ luật?</div>
+            <div style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)' }}>Hành động này sẽ hoàn tiền vào tài khoản lái xe</div>
           </div>
         </div>
-        <div style={{ fontSize: 13, marginBottom: 12, padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 8 }}>
+        <div style={{ fontSize: 'var(--fs-body)', marginBottom: 12, padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 8 }}>
           <div><strong>Lái xe:</strong> {penalty.driverName || 'Lái xe'}</div>
           <div><strong>Số tiền:</strong> <span style={{ color: 'var(--danger)' }}>{formatCurrency(Number(penalty.amount))}đ</span></div>
           <div><strong>Lý do:</strong> {penalty.reasonText || penalty.customReason || '—'}</div>

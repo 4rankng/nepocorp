@@ -4,7 +4,6 @@ import { formatCurrency, moneyParts } from '../lib/format';
 import { api } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
 import {
-  Search,
   Users,
   Clock,
   CalendarCheck2,
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
@@ -395,38 +395,14 @@ export default function DebtListPage() {
       {/* ══════════════════════════════════════════════════════════════════════
         *  ZONE 3 — Data Section (full-width card with filters + table/cards)
         * ══════════════════════════════════════════════════════════════════════ */}
+      <ListFilterBar<BucketFilterMode>
+        label="Lọc công nợ khách hàng"
+        value={filterMode}
+        onChange={setFilterMode}
+        options={[{ value: 'all', label: 'Tất cả', count: customerDebts.length }]}
+        search={{ value: search, onChange: setSearch, label: 'Tìm công nợ theo khách hàng', placeholder: 'Tìm khách hàng…' }}
+      />
       <div className="debt-data-card" data-tour-id="debt-customer-list">
-        {/* Filter pill bar */}
-        <div className="debt-filter-bar">
-          <div className="debt-filter-pills">
-            <button
-              type="button"
-              className={`filter-pill${filterMode === 'all' ? ' is-active' : ''}`}
-              onClick={() => setFilterMode('all')}
-            >
-              <Users size={14} />
-              <span>Tất cả</span>
-              <span className="filter-pill__count">{customerDebts.length}</span>
-            </button>
-            {/* Cross-bucket "Quá hạn" / "Rủi ro cao" pills removed — per-bucket
-                filtering now lives on the 4 aging cards above, and mixing the
-                two models caused the bug where 'overdue' grouped d30+d60 and
-                'high-risk' used an amount-based criterion unrelated to aging. */}
-          </div>
-          <div className="debt-filter-spacer" />
-          <div className="debt-filter-search">
-            <Search size={14} />
-            <input
-              type="text"
-              name="customerDebtSearch"
-              aria-label="Tìm công nợ theo khách hàng"
-              placeholder="Tìm khách hàng..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
         {error && (
           <div style={{ padding: 16, color: 'var(--danger)', marginBottom: 20 }}>
             {error}
@@ -458,7 +434,7 @@ export default function DebtListPage() {
                             <Building2 size={15} aria-hidden="true" style={{ color: 'var(--ink-3)', flex: '0 0 auto' }} />
                             {d.customerName}
                             {d.linkedSupplierId != null && (
-                              <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
+                              <span style={{ marginLeft: 6, fontSize: 'var(--fs-body)', fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.02em', verticalAlign: 'middle' }}>
                                 2 chiều
                               </span>
                             )}
@@ -479,9 +455,9 @@ export default function DebtListPage() {
                               <div className="m-card__row">
                                 <span className="m-card__row-label">
                                   <Clock size={12} aria-hidden="true" style={{ marginRight: 5, verticalAlign: '-1px' }} />
-                                  Quá hạn
+                                  Tuổi nợ
                                 </span>
-                                <span style={{ fontSize: 12, fontWeight: 600, color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
+                                <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: d.maxOverdueDays > 60 ? 'var(--danger)' : d.maxOverdueDays > 30 ? 'var(--warning)' : 'var(--ink-2)' }}>
                                   {d.maxOverdueDays} ngày
                                 </span>
                               </div>
@@ -504,7 +480,7 @@ export default function DebtListPage() {
                         <th>Khách hàng</th>
                         <th className="num">Tổng nợ</th>
                         <th className="num">Net công nợ</th>
-                        <th className="num" style={{ textAlign: 'center' }}>Quá hạn</th>
+                        <th className="num" style={{ textAlign: 'center' }}>Tuổi nợ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -529,12 +505,12 @@ export default function DebtListPage() {
                               <Building2 size={14} aria-hidden="true" style={{ color: 'var(--fg-3)', flex: '0 0 auto' }} />
                               <span className="debt-list-table__customer-name">{d.customerName}</span>
                               {d.linkedSupplierId != null && (
-                                <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em' }}>
+                                <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em' }}>
                                   2 chiều
                                 </span>
                               )}
                             </div>
-                            <div style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginLeft: 16 }}>
+                            <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginLeft: 16 }}>
                               {d.totalOutstanding > 0
                                 ? (d.maxOverdueDays > 30 ? "Nợ quá hạn" : "Trong hạn")
                                 : (d.totalOutstanding < 0 ? "Trả trước" : "Cân bằng")}
@@ -561,7 +537,7 @@ export default function DebtListPage() {
 
                           <td className="num" style={{ textAlign: 'center', fontWeight: 600 }}>
                             {d.maxOverdueDays > 0 ? (
-                              <span style={{ color: d.maxOverdueDays > 60 ? 'var(--danger)' : 'var(--warning)' }}>
+                              <span style={{ color: d.maxOverdueDays > 60 ? 'var(--danger)' : d.maxOverdueDays > 30 ? 'var(--warning)' : 'var(--ink-2)' }}>
                                 {d.maxOverdueDays} ngày
                               </span>
                             ) : (

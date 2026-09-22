@@ -47,8 +47,8 @@
 .ancillary-fees__table tbody tr:hover {
   background: color-mix(in srgb, var(--accent-soft) 38%, white);
 }
-.ancillary-fees__table tbody td { padding: 8px 6px; font-size: var(--fs-xs); vertical-align: top; }
-.ancillary-fees__table tbody td.num { font-size: var(--fs-xs); }
+.ancillary-fees__table tbody td { padding: 8px 6px; font-size: var(--fs-table); vertical-align: top; }
+.ancillary-fees__table tbody td.num { font-size: var(--fs-table); }
 .ancillary-fees__table thead th:nth-child(1) { width: 30%; }   /* Loại phí */
 .ancillary-fees__table thead th:nth-child(2) { width: 14%; }   /* Gốc */
 .ancillary-fees__table thead th:nth-child(3) { width: 14%; }   /* Báo khách */
@@ -150,7 +150,7 @@
   background: transparent;
   cursor: pointer;
   font-family: var(--font-display);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-control);
   line-height: 1.35;
   color: var(--fg-1);
   text-align: left;
@@ -173,7 +173,7 @@
 .ancillary-fees__table tfoot td {
   padding: 10px 5px;
   font-weight: 700;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-table);
   /* Match body .num cells: clip long totals so they
      never bleed into the next column on narrow viewports. */
   white-space: normal;
@@ -187,7 +187,7 @@
   border-radius: 6px;
   padding: 8px 12px;
   color: var(--ink-3);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-control);
   cursor: pointer;
   text-align: center;
   transition: border-color 120ms ease, color 120ms ease;
@@ -254,7 +254,7 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   font-weight: 600;
   color: var(--ink);
   line-height: 1.3;
@@ -293,7 +293,7 @@
   letter-spacing: 0.04em;
 }
 .ancillary-fee-card__value {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   color: var(--ink);
 }
 .ancillary-fee-card__value--margin {
@@ -367,7 +367,7 @@
   gap: 16px;
   flex: 1;
   justify-content: flex-end;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-table);
   color: var(--ink);
 }
 .ancillary-fees__mobile-totals-nums > div {
@@ -390,7 +390,7 @@
   border-radius: 10px;
   background: transparent;
   color: var(--ink-3);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-control);
   font-weight: 500;
   cursor: pointer;
   transition: border-color 0.12s ease, color 0.12s ease;
@@ -406,7 +406,7 @@
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-table);
   min-width: 900px;
 }
 thead th,
@@ -469,7 +469,7 @@ tbody tr:last-child td { border-bottom: none; }
   padding: 6px 8px;
   border-radius: 8px;
   color: var(--ink-2);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-control);
   font-weight: 500;
   font-family: var(--font-mono);
   line-height: 1.35;
@@ -481,7 +481,7 @@ tbody tr:last-child td { border-bottom: none; }
 .page-btn.is-active { background: var(--ink); color: var(--fg-on-brand); }
 
 /* Premium .tt-table */
-.tt-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: var(--fs-sm); table-layout: fixed; }
+.tt-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: var(--fs-table); table-layout: fixed; }
 .tt-table thead th {
   text-align: left;
   font-family: var(--font-body);
@@ -517,7 +517,7 @@ thead th.num,
 }
 
 /* Misc table helpers */
-.row-strong { font-weight: 600; color: var(--ink); font-size: var(--fs-sm); }
+.row-strong { font-weight: 600; color: var(--ink); font-size: var(--fs-table); }
 .row-meta { font-size: var(--fs-xs); color: var(--ink-3); margin-top: 2px; line-height: 1.35; }
 
 .row-actions { display: flex; gap: 6px; justify-content: flex-end; }

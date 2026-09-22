@@ -1,3 +1,4 @@
+import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { useState, useRef, useEffect } from 'react';
 import { Truck, Calendar, ArrowRight, Loader2, Package, Search } from 'lucide-react';
 import { formatDate } from '../lib/format';
@@ -174,34 +175,17 @@ export default function ForwarderTripsPage() {
         </div>
       </div>
 
-      {/* ── Clickable status filter pills ── */}
-      <div className="fwd-filter-pills">
-        <button
-          className={`fwd-filter-pill ${activeFilter === '' ? 'fwd-filter-pill--active' : ''}`}
-          aria-pressed={activeFilter === ''}
-          onClick={() => setActiveFilter('')}
-        >
-          Tất cả
-          {!loading && <span className="fwd-filter-pill__count">{totalTrips}</span>}
-        </button>
-        {(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][]).map(([status, label]) => {
-          const count = counts[status] ?? 0;
-          if (count === 0 && activeFilter !== status) return null;
-          return (
-            <button
-              key={status}
-              className={`fwd-filter-pill ${activeFilter === status ? 'fwd-filter-pill--active' : ''}`}
-              data-status={status}
-              aria-pressed={activeFilter === status}
-              onClick={() => setActiveFilter(prev => prev === status ? '' : status)}
-            >
-              <span className="fwd-filter-pill__dot" style={{ background: FORWARDER_STATUS_COLORS[status] }} />
-              {label}
-              <span className="fwd-filter-pill__count">{count}</span>
-            </button>
-          );
-        })}
-      </div>
+      <ListFilterBar<TripStatus | ''>
+        label="Lọc trạng thái chuyến đi"
+        value={activeFilter}
+        onChange={status => setActiveFilter(prev => prev === status ? '' : status)}
+        options={[
+          { value: '', label: 'Tất cả', count: loading ? undefined : totalTrips },
+          ...(Object.entries(TRIP_STATUS_LABELS) as [TripStatus, string][])
+            .filter(([status]) => (counts[status] ?? 0) > 0 || activeFilter === status)
+            .map(([value, label]) => ({ value, label, count: counts[value] ?? 0 })),
+        ]}
+      />
 
       {loading ? (
         <div className="empty-state" role="status">

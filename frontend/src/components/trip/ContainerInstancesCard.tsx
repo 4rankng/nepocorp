@@ -417,7 +417,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     return (
       <div className="ci-seal-section">
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--fg-2)" }}>Số seal {index + 1}</span>
+          <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: "var(--fg-2)" }}>Số seal {index + 1}</span>
         </div>
         <div className="ci-seal-row">
           <input className="input ci-input-sm" style={{ width: 180 }} placeholder={`Số seal ${index + 1}`} value={seal?.sealNumber ?? ""} onChange={(e) => updateSeal(row._key, index, "sealNumber", e.target.value.toUpperCase())} />
@@ -440,7 +440,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
             color: "var(--warning-text, #b7791f)",
             border: "1px solid rgba(217, 119, 6, 0.18)",
             borderRadius: "var(--radius-md, 10px)",
-            fontSize: 13,
+            fontSize: 'var(--fs-body)',
             marginBottom: 12,
             fontWeight: 600,
             lineHeight: 1.4,
@@ -459,15 +459,10 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
           {rows.map((row, idx) => (
             <div
               key={row._key}
-              style={{
-                border: "1px solid var(--line)",
-                borderRadius: 12,
-                padding: 12,
-                background: "var(--bg-2, #fafafa)",
-              }}
+              className="ci-container-section"
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--fg-2)" }}>Cont #{idx + 1}</div>
+                <div style={{ fontSize: 'var(--fs-section)', fontWeight: 600, color: "var(--fg-2)" }}>Cont #{idx + 1}</div>
                 <button type="button" className="btn btn--ghost btn--icon btn--sm" style={{ width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeRow(row._key)} aria-label="Xoá dòng" title="Xoá cont">
                   <Trash2 size={15} style={{ color: "var(--danger)" }} />
                 </button>
@@ -493,12 +488,12 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                         background: "var(--warn-soft, #fff7e6)",
                         color: "var(--warn, #b7791f)",
                         borderRadius: 6,
-                        fontSize: 13,
+                        fontSize: 'var(--fs-body)',
                       }}
                     >
                       <span>⚠ {st.warning}</span>
                       {st.suggestion && (
-                        <button type="button" className="btn btn--ghost btn--sm" style={{ padding: "0 10px", fontSize: 12 }} onClick={() => updateRow(row._key, "containerNumber", st.suggestion!)}>
+                        <button type="button" className="btn btn--ghost btn--sm" style={{ padding: "0 10px", fontSize: 'var(--fs-control)' }} onClick={() => updateRow(row._key, "containerNumber", st.suggestion!)}>
                           Đổi thành {st.suggestion}
                         </button>
                       )}
@@ -536,7 +531,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
         <button type="button" className="btn btn--secondary btn--sm" onClick={addRow}>
           <Plus size={14} /> Thêm cont
         </button>
-        <span style={{ fontSize: 13, color: "var(--fg-3)" }}>Container lưu cùng nút "Lưu cập nhật" ở dưới.</span>
+        <span style={{ fontSize: 'var(--fs-body)', color: "var(--fg-3)" }}>Container lưu cùng nút "Lưu cập nhật" ở dưới.</span>
       </div>
 
       {scanner && <ContainerScanner onCapture={handleCapture} onClose={() => setScanner(null)} />}

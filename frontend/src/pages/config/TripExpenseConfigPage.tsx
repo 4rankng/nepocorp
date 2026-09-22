@@ -99,7 +99,7 @@ export default function TripExpenseConfigPage() {
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Lưu cấu hình
           </button>
-          {error && <span style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</span>}
+          {error && <span style={{ color: 'var(--danger)', fontSize: 'var(--fs-body)' }}>{error}</span>}
         </div>
       </Panel>
     </div>

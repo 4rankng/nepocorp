@@ -110,7 +110,23 @@ export interface SettlementExportData {
 export async function buildSettlementExportData(id: number): Promise<SettlementExportData | null> {
   const settlement = await getAdvanceSettlement(id);
   if (!settlement) return null;
-  return settlement as unknown as SettlementExportData;
+  return {
+    id: settlement.id,
+    code: settlement.code,
+    createdAt: settlement.createdAt.toISOString(),
+    forwarderName: 'forwarderName' in settlement && typeof settlement.forwarderName === 'string'
+      ? settlement.forwarderName : null,
+    refundAmount: settlement.refundAmount,
+    reimbursementAmount: settlement.reimbursementAmount,
+    note: settlement.note,
+    linkedRequests: settlement.linkedRequests,
+    // The detail service has already applied the settlement's accepted snapshot.
+    // Both renderers consume `amount`, while the domain API exposes `buyAmount`.
+    linkedExpenses: settlement.linkedExpenses.map(({ buyAmount, ...expense }) => ({
+      ...expense,
+      amount: buyAmount,
+    })),
+  };
 }
 
 // ── HTML rendering ──

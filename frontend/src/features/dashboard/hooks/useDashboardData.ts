@@ -16,7 +16,7 @@ import {
   useRenewalReminders,
   type PnlReport,
 } from '../../../hooks/useQueries';
-import { CATEGORY_COLORS, FALLBACK_COLORS, buildPieSlices } from '../utils';
+import { buildPieSlices } from '../utils';
 
 const EMPTY_TRIPS: TripDetail[] = [];
 const EMPTY_CREATED: TripDetail[] = [];
@@ -47,6 +47,7 @@ export interface DerivedData {
   prevRevenue: number;
   prevCosts: number;
   prevGross: number;
+  prevNet: number;
 }
 
 export interface ReceivablesSummary {
@@ -69,7 +70,9 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
 
   const { data: stats, isLoading: loading } = useDashboardStats();
   const { data: pnlReport } = usePnlReport(currentMonth, currentYear);
-  const { data: prevPnlReport } = usePnlReport(currentMonth, currentYear - 1);
+  const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+  const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+  const { data: prevPnlReport } = usePnlReport(previousMonth, previousYear);
   const { data: allTrips = EMPTY_TRIPS } = useMonthlyTrips(currentYear, currentMonth);
   const { data: createdTrips = EMPTY_CREATED } = useCreatedTrips();
   const { data: fuelConfig } = useFuelConfig();
@@ -197,30 +200,38 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
         : `${r.trips} chuyến`,
     }));
 
-    const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
-    const realFuelCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.totalFuelCost || '0'), 0);
-    const realRoadCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.totalRoadAllowance || '0'), 0);
-    const realDriverCost = activeTrips.reduce((s: number, t: TripDetail) => s + parseFloat(t.driverSalary || '0'), 0);
-    const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
-    const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(costs * 0.55);
-    const roadCost   = hasRealCosts ? realRoadCost   : Math.round(costs * 0.25);
-    const driverCost = hasRealCosts ? realDriverCost  : Math.round(costs * 0.20);
+    // Match the P&L KPI snapshot: completed/locked OWN trips plus their
+    // vehicle expenses. External hire is netted from revenue; company
+    // overhead is deducted separately when calculating net profit.
+    const ownDetails = pnlReport?.tripDetails?.filter(trip => !trip.isExternal);
+    const maintenanceCost = Number(pnlReport?.maintenanceExpensesTotal ?? 0);
+    const tripCost = costs - maintenanceCost;
+    const fuelCost = ownDetails?.reduce((sum, trip) => sum + trip.fuelOrHireCost, 0) ?? 0;
+    const roadCost = ownDetails?.reduce((sum, trip) => sum + trip.roadAllowance + trip.tollAndCompanyTickets, 0) ?? 0;
+    const driverCost = ownDetails?.reduce((sum, trip) => sum + trip.driverAndAllowances, 0) ?? 0;
+    const componentCost = fuelCost + roadCost + driverCost;
+    const detailTotal = ownDetails?.reduce((sum, trip) => sum + trip.totalCost, 0) ?? 0;
+    const hasMatchingDetails = ownDetails !== undefined
+      && Math.abs(detailTotal - tripCost) <= 1
+      && componentCost <= tripCost;
 
-    let fallbackIdx = 0;
-
-    const pieSlices: Array<{ label: string; value: number; color: string }> = [
-      { label: 'Nhiên liệu', value: fuelCost, color: 'var(--brand)' },
-      { label: 'Lương lái xe', value: driverCost, color: 'var(--info)' },
-      { label: 'Tiền đi đường', value: roadCost, color: 'var(--warning)' },
-    ];
-
-    const categoryBreakdown = pnlReport?.categoryBreakdown ?? [];
-    for (const cat of categoryBreakdown) {
-      const amount = parseFloat(cat.total) || 0;
-      if (amount > 0.5) {
-        const color = CATEGORY_COLORS[cat.categoryName] ?? FALLBACK_COLORS[fallbackIdx++ % FALLBACK_COLORS.length];
-        pieSlices.push({ label: cat.categoryName, value: amount, color });
+    const pieSlices: Array<{ label: string; value: number; color: string }> = [];
+    if (tripCost < 0 || maintenanceCost < 0) {
+      pieSlices.push({ label: 'Chi phí đã ghi nhận', value: costs, color: 'var(--brand)' });
+    } else {
+      if (hasMatchingDetails) {
+        pieSlices.push(
+          { label: 'Nhiên liệu', value: fuelCost, color: 'var(--brand)' },
+          { label: 'Lương & phụ cấp lái xe', value: driverCost, color: 'var(--info)' },
+          { label: 'Tiền đi đường & vé', value: roadCost, color: 'var(--warning)' },
+          { label: 'Chi phí chuyến khác', value: tripCost - componentCost, color: 'var(--fg-3)' },
+        );
+      } else {
+        // Older cached responses may omit details. Show the recorded total
+        // without inventing percentages or mixing newer operational trip data.
+        pieSlices.push({ label: 'Chi phí chuyến', value: tripCost, color: 'var(--brand)' });
       }
+      pieSlices.push({ label: 'Chi phí phương tiện', value: maintenanceCost, color: 'var(--accent)' });
     }
 
     const { slicesWithPct, conicGradient, totalPie } = buildPieSlices(pieSlices);
@@ -228,13 +239,15 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     const prevRevenue = prevPnlReport?.totalRevenue ?? 0;
     const prevCosts = prevPnlReport?.totalCosts ?? 0;
     const prevGross = prevPnlReport?.grossProfit ?? 0;
+    const prevNet = prevPnlReport?.netProfit
+      ?? (prevGross - (prevPnlReport?.companyExpenses ?? 0) + (prevPnlReport?.otherIncome ?? 0));
 
     return {
       revenue, costs, grossProfit, netProfit,
       displayTrucks, maxTruckProfit, displayRoutes,
       fuelCost, roadCost, driverCost,
       slicesWithPct, conicGradient, totalPie,
-      prevRevenue, prevCosts, prevGross,
+      prevRevenue, prevCosts, prevGross, prevNet,
     };
   }, [stats, pnlReport, prevPnlReport, allTrips]);
 

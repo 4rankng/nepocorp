@@ -109,7 +109,7 @@ export default function SalaryPeriodConfigPage() {
                 value="calendar"
                 checked={mode === 'calendar'}
                 onChange={() => setMode('calendar')}
-                className="sr-only"
+                className="sp-mode-card__radio"
               />
               <span className="sp-mode-card__title">Cuối tháng</span>
               <span className="sp-mode-card__desc">
@@ -131,7 +131,7 @@ export default function SalaryPeriodConfigPage() {
                     setEndDay(25);
                   }
                 }}
-                className="sr-only"
+                className="sp-mode-card__radio"
               />
               <span className="sp-mode-card__title">Khác (Tùy chỉnh)</span>
               <span className="sp-mode-card__desc">

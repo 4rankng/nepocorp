@@ -39,7 +39,7 @@
   background: transparent;
   color: var(--ink-2);
   font-family: inherit;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-control);
   font-weight: var(--fw-medium);
   line-height: 1;
   padding: 8px 14px;

@@ -193,37 +193,11 @@ export default function CompanyInfoConfigPage() {
                         src={logoSrc}
                         alt="Logo công ty"
                         onError={() => setLogoError(true)}
-                        style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', borderRadius: 6, border: '1px solid #dde3ea' }}
+                        className="company-info-logo"
                       />
                     ) : (
-                      <div
-                        style={{
-                          height: 80,
-                          width: 200,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          justifyContent: 'center',
-                          borderRadius: 6,
-                          border: '1px dashed #dde3ea',
-                          color: 'var(--ink-3)',
-                          fontSize: 13,
-                        }}
-                      >
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 40,
-                            height: 40,
-                            borderRadius: 12,
-                            background: 'var(--surface-2)',
-                            flex: 'none',
-                          }}
-                        >
-                          <Building2 size={20} aria-hidden="true" />
-                        </span>
+                      <div className="company-info-logo-empty">
+                        <Building2 size={20} aria-hidden="true" />
                         <span>{logoSrc ? 'Không tải được logo' : 'Chưa có logo'}</span>
                       </div>
                     )}
@@ -363,6 +337,7 @@ export default function CompanyInfoConfigPage() {
               </div>
 
               <div className="company-info-preview" aria-label="Bảng thông tin công ty">
+                <h3 className="company-info-preview__title">Xem trước thông tin</h3>
                 {FIELD_LABELS.map(({ key, label }) => (
                   <div key={key} className="company-info-preview-row">
                     <span className="company-info-preview-row__label">{label}</span>
@@ -381,7 +356,7 @@ export default function CompanyInfoConfigPage() {
                 {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
                 Lưu thông tin
               </button>
-              {error && <span role="alert" style={{ color: 'var(--danger)', fontSize: 13 }}>{error}</span>}
+              {error && <span role="alert" style={{ color: 'var(--danger)', fontSize: 'var(--fs-body)' }}>{error}</span>}
             </div>
           </>
         )}

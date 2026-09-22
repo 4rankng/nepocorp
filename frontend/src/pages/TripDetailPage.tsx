@@ -63,7 +63,7 @@ export default function TripDetailPage() {
     return (
       <div className="fade-up">
         <div className="card" style={{ padding: 24 }}>
-          <p style={{ color: 'var(--danger)', fontSize: 14 }}>{page.error}</p>
+          <p style={{ color: 'var(--danger)', fontSize: 'var(--fs-body)' }}>{page.error}</p>
           <button className="btn btn--secondary btn--sm" style={{ marginTop: 12 }} onClick={() => page.refetchTrip()}>
             Thử lại
           </button>
@@ -258,7 +258,7 @@ export default function TripDetailPage() {
             type="button"
             onClick={() => page.setReassignCarrierType('OWN')}
             aria-pressed={ui.reassignCarrierType === 'OWN'}
-            style={{ flex: 1, padding: '6px', fontSize: 13, borderRadius: 4, border: '1px solid var(--border)', background: ui.reassignCarrierType === 'OWN' ? 'var(--brand-soft)' : '#fff', color: ui.reassignCarrierType === 'OWN' ? 'var(--brand-dark)' : 'var(--text-2)' }}
+            style={{ flex: 1, padding: '6px', fontSize: 'var(--fs-body)', borderRadius: 4, border: '1px solid var(--border)', background: ui.reassignCarrierType === 'OWN' ? 'var(--brand-soft)' : '#fff', color: ui.reassignCarrierType === 'OWN' ? 'var(--brand-dark)' : 'var(--text-2)' }}
           >
             Xe nhà
           </button>
@@ -266,7 +266,7 @@ export default function TripDetailPage() {
             type="button"
             onClick={() => page.setReassignCarrierType('EXTERNAL')}
             aria-pressed={ui.reassignCarrierType === 'EXTERNAL'}
-            style={{ flex: 1, padding: '6px', fontSize: 13, borderRadius: 4, border: '1px solid var(--border)', background: ui.reassignCarrierType === 'EXTERNAL' ? 'var(--brand-soft)' : '#fff', color: ui.reassignCarrierType === 'EXTERNAL' ? 'var(--brand-dark)' : 'var(--text-2)' }}
+            style={{ flex: 1, padding: '6px', fontSize: 'var(--fs-body)', borderRadius: 4, border: '1px solid var(--border)', background: ui.reassignCarrierType === 'EXTERNAL' ? 'var(--brand-soft)' : '#fff', color: ui.reassignCarrierType === 'EXTERNAL' ? 'var(--brand-dark)' : 'var(--text-2)' }}
           >
             Xe ngoài
           </button>

@@ -77,7 +77,7 @@ it('renders actual settlement money and counts without animations', () => {
 
 it('keeps the all-status count independent of the driver status filter', () => {
   render(<MemoryRouter><DriverTripsPage /></MemoryRouter>);
-  expect(screen.getByRole('button', { name: /Tất cả/ }).textContent).toBe('Tất cả5');
+  expect(screen.getByRole('button', { name: /Tất cả/ }).textContent).toMatch(/^Tất cả\s*5$/);
 });
 
 it('keeps driver status filters reachable when the selected status becomes empty', () => {

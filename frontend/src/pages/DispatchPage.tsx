@@ -84,7 +84,7 @@ export default function DispatchPage() {
     <div ref={rootRef} className="dispatch-page" style={{ paddingBottom: 40 }}>
       {toasts.length > 0 && createPortal(
         <div style={{ position: 'fixed', right: 24, bottom: 24, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {toasts.map(t => (<div key={t.id} role="status" style={{ minWidth: 280, maxWidth: 480, padding: '12px 16px', borderRadius: 8, background: t.kind === 'success' ? 'var(--accent)' : 'var(--danger)', color: '#fff', fontSize: 13, fontWeight: 600, boxShadow: '0 10px 28px rgba(0,0,0,0.18)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}><span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} /><span style={{ flex: 1 }}>{t.text}</span></div>))}
+          {toasts.map(t => (<div key={t.id} role="status" style={{ minWidth: 280, maxWidth: 480, padding: '12px 16px', borderRadius: 8, background: t.kind === 'success' ? 'var(--accent)' : 'var(--danger)', color: '#fff', fontSize: 'var(--fs-body)', fontWeight: 600, boxShadow: '0 10px 28px rgba(0,0,0,0.18)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}><span style={{ width: 8, height: 8, background: '#fff', borderRadius: '50%', opacity: 0.9 }} /><span style={{ flex: 1 }}>{t.text}</span></div>))}
         </div>, document.body)}
       <Breadcrumbs
         className="dispatch-page__crumbs"
@@ -132,7 +132,7 @@ export default function DispatchPage() {
 
       <div className="section-head">
         <div className="section-title"><h2>Vị trí thời gian thực</h2><span className="count">{live?.vehicles.length ?? 0} xe</span></div>
-        <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--text-2, #6B7280)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 14, fontSize: 'var(--fs-body)', color: 'var(--text-2, #6B7280)', flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#00B14F', borderRadius: '50%', display: 'inline-block' }} />Đang chạy</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#F59E0B', borderRadius: '50%', display: 'inline-block' }} />Dừng</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#94A3B8', borderRadius: '50%', display: 'inline-block' }} />Mất tín hiệu</span>
@@ -140,13 +140,13 @@ export default function DispatchPage() {
         </div>
       </div>
       {live?.error ? (
-        <div style={{ padding: '14px 16px', background: 'rgba(245,166,35,0.12)', color: '#B45309', borderRadius: 10, border: '1px solid rgba(245,166,35,0.35)', fontSize: 13, marginBottom: 20 }}>
+        <div style={{ padding: '14px 16px', background: 'rgba(245,166,35,0.12)', color: '#B45309', borderRadius: 10, border: '1px solid rgba(245,166,35,0.35)', fontSize: 'var(--fs-body)', marginBottom: 20 }}>
           Dữ liệu GPS tạm thời không khả dụng. {live.error === 'GPS provider not configured' ? 'Chưa cấu hình nhà cung cấp GPS.' : 'Vui lòng thử lại sau.'}
         </div>
       ) : live && live.vehicles.length > 0 ? (
         <LiveFleetMap vehicles={live.vehicles} />
       ) : (
-        <div style={{ padding: '14px 16px', background: 'var(--surface-2, #F5F7F6)', color: 'var(--text-2, #6B7280)', borderRadius: 10, fontSize: 13, marginBottom: 20 }}>
+        <div style={{ padding: '14px 16px', background: 'var(--surface-2, #F5F7F6)', color: 'var(--text-2, #6B7280)', borderRadius: 10, fontSize: 'var(--fs-body)', marginBottom: 20 }}>
           Chưa có xe nào đang chạy để theo dõi.
         </div>
       )}

@@ -16,8 +16,9 @@ body {
   overscroll-behavior-y: contain;
 }
 @layer base {
-  button { font: inherit; cursor: pointer; }
-  input, select, textarea { font: inherit; }
+  button { font: inherit; font-size: var(--fs-control); cursor: pointer; }
+  input, select, textarea { font: inherit; font-size: var(--fs-control); }
+  small { font-size: var(--fs-caption); }
 }
 img { display: block; }
 ::selection { background: var(--accent-soft); color: var(--accent-ink); }
@@ -54,10 +55,6 @@ img { display: block; }
 
 #root .app img {
   filter: none;
-}
-
-#root .app :where(button, a, [role='button']):hover {
-  transform: none;
 }
 
 /* ============================================================================

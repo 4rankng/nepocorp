@@ -278,3 +278,13 @@
   gap: 8px;
   flex: 0 0 auto;
 }
+
+/* Metrics belong to the hero section; dividers replace nested card shells. */
+.salary-page .metric,
+.salary-page .metric.featured {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}

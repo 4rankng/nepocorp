@@ -26,7 +26,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
       defaultCollapsed={defaultCollapsed}
     >
       <div className="field" style={{ marginBottom: 8 }}>
-        <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--fg-2)' }}>Chế độ tính dầu</label>
+        <label style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)' }}>Chế độ tính dầu</label>
       </div>
       <FuelModeToggle value={form.fuelMode} onChange={form.setFuelMode} />
 
@@ -61,7 +61,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           />
         </div>
         <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
-          <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0 }}>
+          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', margin: 0 }}>
             Nhập giá thực tế tại trạm nếu khác giá cấu hình. Để trống để dùng giá cấu hình hiện hành.
           </p>
         </div>
@@ -91,7 +91,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </div>
       </div>
 
-      <div style={{ fontSize: 12, color: 'var(--fg-2)', marginTop: 8, fontWeight: 600, display: "flex", gap: 6 }}>
+      <div style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-2)', marginTop: 8, fontWeight: 600, display: "flex", gap: 6 }}>
         <span>Lái xe thực lĩnh:</span>
         <span className="mono" style={{ color: 'var(--brand, #10B981)' }}>
           {(() => {
@@ -154,7 +154,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <label>Doanh thu đóng/ trả hàng</label>
           <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4.200.000" prefix="đ" mono type="money" />
           {form.suggestedPrice !== null && (
-            <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
+            <div style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', marginTop: 4 }}>
               Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} đ{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} đ` : ''}
             </div>
           )}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   animate,
   stagger,
@@ -6,6 +6,7 @@ import {
   utils,
 } from 'animejs';
 import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
+import { useCounterAnimation } from '../../../hooks/animations/useCounterAnimation';
 
 /**
  * Orchestrates dashboard entrance animations via anime.js v4.
@@ -22,6 +23,7 @@ export function useDashboardAnimations(ready: boolean) {
   const scopeRef = useRef<ReturnType<typeof createScope> | null>(null);
   const hasAnimated = useRef(false);
   const prefersReduced = usePrefersReducedMotion();
+  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400, stagger: 100 });
 
   useEffect(() => {
     if (!ready || hasAnimated.current) return;
@@ -183,35 +185,6 @@ export function useDashboardAnimations(ready: boolean) {
       scopeRef.current = null;
     };
   }, [ready, prefersReduced]);
-
-  /**
-   * Animate KPI number counters from 0 → final value.
-   * Staggered delay so counters cascade naturally.
-   */
-  const animateCounters = useCallback(
-    (
-      targets: {
-        el: HTMLElement;
-        value: number;
-        prefix?: string;
-        suffix?: string;
-      }[],
-    ) => {
-      targets.forEach(({ el, value }, i) => {
-        const obj = { val: 0 };
-        animate(obj, {
-          val: value,
-          duration: 1200,
-          delay: 400 + i * 100,
-          ease: 'outExpo',
-          onUpdate: () => {
-            el.textContent = Math.round(obj.val).toLocaleString('vi-VN');
-          },
-        });
-      });
-    },
-    [],
-  );
 
   return { rootRef, animateCounters };
 }

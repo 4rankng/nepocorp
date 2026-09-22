@@ -1,7 +1,8 @@
 import { Check, Loader2, Plus, Upload, X } from 'lucide-react';
 import { formatDate } from '../lib/format';
 import type { ExpenseWithRefs } from '@tingting/shared';
-import type { FormState } from './expense-entry-utils';
+import { EXPENSE_PHOTO_MAX_BYTES, type FormState } from './expense-entry-utils';
+import { getAuthenticatedPhotoUrl } from '../lib/api';
 
 interface BasicFieldsProps { form: FormState; errors: Record<string, string>; isEdit: boolean; existingExpense?: ExpenseWithRefs; set: <K extends keyof FormState>(key: K, value: FormState[K]) => void }
 export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set }: BasicFieldsProps) {
@@ -16,7 +17,7 @@ export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set 
                       value={form.expenseDate}
                       onChange={e => set('expenseDate', e.target.value)}
                     />
-                    {errors.expenseDate && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.expenseDate}</p>}
+                    {errors.expenseDate && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.expenseDate}</p>}
                   </div>
 
                   {/* A4 / A10 — system-stamped entry date, read-only. Distinct from the
@@ -47,7 +48,7 @@ export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set 
                       <option value="UNPAID">Ghi nợ</option>
                       <option value="PAID">Trả ngay</option>
                     </select>
-                    {errors.paymentStatus && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{errors.paymentStatus}</p>}
+                    {errors.paymentStatus && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.paymentStatus}</p>}
                   </div>
   </>;
 }
@@ -58,15 +59,15 @@ export function ExpensePhotoAside({ photos, uploading, isEdit, submitting, handl
                 <div className="expense-layout__aside">
                   <div className="expense-panel expense-panel--photo">
                     <div className="expense-panel__header">
-                      <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)' }}>Ảnh hóa đơn</h3>
-                      <p style={{ fontSize: 14, color: 'var(--ink-3)', marginTop: 4 }}>Đính kèm biên lai / chứng từ nếu có</p>
+                      <h3 style={{ fontSize: 'var(--fs-section)', fontWeight: 700, color: 'var(--ink)' }}>Ảnh hóa đơn</h3>
+                      <p style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-3)', marginTop: 4 }}>Đính kèm biên lai / chứng từ nếu có</p>
                     </div>
                     <div className="expense-panel__body expense-photo-body">
                       {photos.length > 0 && (
                         <div className="expense-photo-grid">
                           {photos.map((p, idx) => (
                             <div key={p.id} className="expense-photo-thumb">
-                              <img src={p.url} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <img src={getAuthenticatedPhotoUrl(p.url)} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               <button
                                 type="button"
                                 aria-label={`Xóa ảnh hóa đơn ${idx + 1}`}
@@ -83,12 +84,12 @@ export function ExpensePhotoAside({ photos, uploading, isEdit, submitting, handl
                       {isEdit ? (
                         <label className="expense-upload-zone" style={{ pointerEvents: uploading ? 'none' : 'auto', opacity: uploading ? 0.7 : 1 }}>
                           {uploading ? (
-                            <><Loader2 size={28} className="spin" style={{ color: 'var(--accent)' }} /> <span style={{ fontSize: 14, marginTop: 8 }}>Đang tải ảnh lên…</span></>
+                            <><Loader2 size={28} className="spin" style={{ color: 'var(--accent)' }} /> <span style={{ fontSize: 'var(--fs-body)', marginTop: 8 }}>Đang tải ảnh lên…</span></>
                           ) : (
                             <>
                               <Upload size={28} style={{ color: 'var(--accent)', marginBottom: 6 }} />
-                              <span style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>Nhấn để tải lên ảnh hóa đơn</span>
-                              <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 400 }}>JPG, PNG · tối đa 5MB</span>
+                              <span style={{ fontSize: 'var(--fs-body)', color: 'var(--ink)', fontWeight: 500 }}>Nhấn để tải lên ảnh hóa đơn</span>
+                              <span style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-3)', fontWeight: 400 }}>JPG, PNG · tối đa {EXPENSE_PHOTO_MAX_BYTES / (1024 * 1024)}MB</span>
                             </>
                           )}
                           <input
@@ -102,8 +103,8 @@ export function ExpensePhotoAside({ photos, uploading, isEdit, submitting, handl
                       ) : (
                         <div className="expense-upload-zone" style={{ cursor: 'default', opacity: 0.7 }}>
                           <Upload size={28} style={{ color: 'var(--ink-3)', marginBottom: 6 }} />
-                          <span style={{ fontSize: 14, color: 'var(--ink-3)', fontWeight: 500 }}>Lưu phiếu chi để đính kèm ảnh hóa đơn</span>
-                          <span style={{ fontSize: 12, color: 'var(--ink-4)', fontWeight: 400 }}>Ảnh được thêm sau khi tạo phiếu</span>
+                          <span style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-3)', fontWeight: 500 }}>Lưu phiếu chi để đính kèm ảnh hóa đơn</span>
+                          <span style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-4)', fontWeight: 400 }}>Ảnh được thêm sau khi tạo phiếu</span>
                         </div>
                       )}
                     </div>

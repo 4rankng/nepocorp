@@ -93,47 +93,54 @@ const pageStyles = `
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
 
-  /* ── Form inputs ── */
-  .faq-page .faq-input,
-  .faq-page .faq-textarea {
+  /* Modal contents render in a portal outside .faq-page. */
+  .faq-form .faq-input,
+  .faq-form .faq-textarea {
     width: 100%;
+    min-width: 0;
     border: 1px solid var(--line);
     border-radius: var(--r);
     padding: 10px 12px;
-    font-size: 13.5px;
+    font-size: var(--fs-control);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     outline: none;
     background: #fff;
     font-family: inherit;
   }
-  .faq-page .faq-textarea { resize: vertical; min-height: 96px; line-height: 1.5; }
-  .faq-page .faq-input:focus,
-  .faq-page .faq-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .faq-form .faq-textarea { resize: vertical; min-height: 96px; line-height: 1.5; }
+  .faq-form .faq-input:focus,
+  .faq-form .faq-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
   /* ── Tag array editor (variants / required / forbidden terms) ── */
-  .faq-page .tag-input {
+  .faq-form .tag-input {
     display: flex; flex-wrap: wrap; gap: 6px;
     padding: 8px; min-height: 42px;
     border: 1px solid var(--line); border-radius: var(--r);
     background: #fff;
   }
-  .faq-page .tag-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .faq-page .tag-chip {
+  .faq-form .tag-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .faq-form .tag-chip {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 3px 8px; border-radius: 999px;
     font-size: 12px; font-weight: 500;
     background: var(--surface-3); color: var(--ink);
+    max-width: 100%; overflow-wrap: anywhere;
   }
-  .faq-page .tag-chip button {
+  .faq-form .tag-chip button {
     border: none; background: none; cursor: pointer;
     color: var(--ink-3); padding: 0; line-height: 1;
     font-size: 14px;
   }
-  .faq-page .tag-chip button:hover { color: var(--danger); }
-  .faq-page .tag-input input {
+  .faq-form .tag-chip button:hover { color: var(--danger); }
+  .faq-form .tag-input input {
     border: none; outline: none; background: transparent;
-    font-size: 13px; font-family: inherit;
-    flex: 1; min-width: 120px; padding: 3px 0;
+    font-size: var(--fs-control); font-family: inherit;
+    flex: 1; min-width: 0; width: 100%; padding: 3px 0;
+  }
+  .faq-form__terms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .faq-form__terms > div { min-width: 0; }
+  @media (max-width: 480px) {
+    .faq-form__terms { grid-template-columns: minmax(0, 1fr); }
   }
 
   .faq-page .faq-loading {
@@ -228,9 +235,9 @@ function FaqEntryForm({
   const canSave = question.trim().length > 0 && answer.trim().length > 0 && !saving;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '6px 4px' }}>
+    <div className="faq-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '6px 4px' }}>
       <div>
-        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
+        <label style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
           Câu hỏi <span style={{ color: 'var(--danger)' }}>*</span>
         </label>
         <input
@@ -243,7 +250,7 @@ function FaqEntryForm({
       </div>
 
       <div>
-        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
+        <label style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
           Câu trả lời <span style={{ color: 'var(--danger)' }}>*</span>
         </label>
         <textarea
@@ -255,38 +262,38 @@ function FaqEntryForm({
       </div>
 
       <div>
-        <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
+        <label style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
           Biến thể câu hỏi
         </label>
         <TagArrayInput values={variants} onChange={setVariants} placeholder="Các cách diễn đạt khác của cùng câu hỏi…" />
-        <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>
+        <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--ink-3)', marginTop: 4 }}>
           Các câu hỏi tương đương giúp khớp chính xác (giữ dấu tiếng Việt).
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="faq-form__terms">
         <div>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
+          <label style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
             Từ khóa bắt buộc
           </label>
           <TagArrayInput values={requiredTerms} onChange={setRequiredTerms} tone="stripped" placeholder="phat, dau,…" />
-          <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>
+          <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--ink-3)', marginTop: 4 }}>
             Tất cả phải xuất hiện. Hệ thống tự bỏ dấu khi lưu.
           </p>
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
+          <label style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6 }}>
             Từ khóa cấm
           </label>
           <TagArrayInput values={forbiddenTerms} onChange={setForbiddenTerms} tone="stripped" placeholder="duong,…" />
-          <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 4 }}>
+          <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--ink-3)', marginTop: 4 }}>
             Có bất kỳ từ nào → loại câu này. Tự bỏ dấu khi lưu.
           </p>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', cursor: 'pointer' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={isActive}
@@ -296,7 +303,7 @@ function FaqEntryForm({
           Đang hoạt động
         </label>
         <div style={{ flex: 1 }} />
-        <label style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <label style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
           Thứ tự
           <input
             type="number"
@@ -437,7 +444,7 @@ export default function FaqEntriesConfigPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink-2)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
           <input
             type="checkbox"
             checked={showInactive}

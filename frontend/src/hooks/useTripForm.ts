@@ -22,6 +22,7 @@ export interface UseTripFormParams {
 }
 
 export interface UseTripFormReturn {
+  createdTripId: number | null;
   customerId: string;
   setCustomerId: (v: string) => void;
   routeId: string;
@@ -226,7 +227,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     completedSections: d.completedSections,
     requiredFieldsFilled: d.requiredFieldsFilled,
     totalRequiredFields: d.totalRequiredFields,
-    submitting: s.submitting, uploading: d.uploading, ocrResult: d.ocrResult, error: s.error, setError: s.setError, handleSubmit: d.handleSubmit,
+    submitting: s.submitting, uploading: d.uploading, ocrResult: d.ocrResult, error: s.error, setError: s.setError, handleSubmit: d.handleSubmit, createdTripId: d.createdTripId,
     tripId: isEditMode ? existingTrip?.id : undefined,
     tripStatus: isEditMode ? existingTrip?.status : undefined,
     version: isEditMode && existingTrip ? String(existingTrip.version) : undefined,

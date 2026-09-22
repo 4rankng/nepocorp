@@ -118,6 +118,16 @@ export default function TripCreatePage() {
           onSubmit={handleSubmit}
         />
 
+        {form.createdTripId && !form.submitting && (
+          <p role="status">
+            Chuyến đã có trong sổ chuyến đi.{' '}
+            <a href={`/trips/${form.createdTripId}/edit`} target="_blank" rel="noopener noreferrer">
+              Mở lệnh đã tạo để chỉnh sửa (tab mới)
+            </a>
+            {' '}— dữ liệu chưa lưu vẫn được giữ ở trang này.
+          </p>
+        )}
+
         {dialog}
       </div>
     </TripFormProvider>

@@ -242,7 +242,7 @@ export default function DebtDetailPage() {
           </div>
         </div>
         <div className="dd-summary">
-          <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error || 'Không tìm thấy dữ liệu'}</p>
+          <p style={{ color: 'var(--danger)', fontSize: 'var(--fs-body)' }}>{error || 'Không tìm thấy dữ liệu'}</p>
         </div>
       </div>
     );
@@ -356,7 +356,7 @@ export default function DebtDetailPage() {
           <div className="dd-name-row" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <h1>{customer.name}</h1>
             {customer.isCarrier && (
-              <span style={{ fontSize: 12, lineHeight: 1.35, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                 <Truck size={12} aria-hidden="true" /> Xe ngoài
               </span>
             )}
@@ -698,20 +698,20 @@ export default function DebtDetailPage() {
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {payError && (
-            <div style={{ padding: '10px 12px', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8, fontSize: 13 }}>
+            <div style={{ padding: '10px 12px', background: 'var(--danger-soft)', color: 'var(--danger)', borderRadius: 8, fontSize: 'var(--fs-body)' }}>
               {payError}
             </div>
           )}
           <div style={{
             padding: '10px 12px', background: 'var(--bg-2)', borderRadius: 8,
-            fontSize: 13, color: 'var(--fg-2)',
+            fontSize: 'var(--fs-body)', color: 'var(--fg-2)',
           }}>
             Còn nợ: <strong style={{ color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>
               {formatCurrency(totalOutstanding)}
             </strong> ({unpaidTrips.length} chuyến chưa thu)
           </div>
           <div className="field">
-            <label htmlFor="pay-amount" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            <label htmlFor="pay-amount" style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
               Số tiền nhận (đ) <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <input
@@ -723,12 +723,12 @@ export default function DebtDetailPage() {
               placeholder="VD: 5000000"
               autoFocus
             />
-            <p style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
+            <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
               Sẽ phân bổ FIFO vào {unpaidTrips.length} chuyến chưa thu, bắt đầu từ chuyến cũ nhất.
             </p>
           </div>
           <div className="field">
-            <label htmlFor="pay-receipt" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            <label htmlFor="pay-receipt" style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
               Mã biên lai / phiếu thu <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
             <input
@@ -738,7 +738,7 @@ export default function DebtDetailPage() {
               onChange={e => setPayReceipt(e.target.value)}
               placeholder="VD: PT-20260601-01"
             />
-            <p style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
+            <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
               Bắt buộc để đối chiếu với sao kê ngân hàng / sổ quỹ.
             </p>
           </div>

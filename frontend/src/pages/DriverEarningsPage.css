@@ -527,3 +527,22 @@
   color: var(--ink-2);
   font-weight: 600;
 }
+
+/* One summary surface, with an open row/column layout inside it. */
+.driver-earnings-page .earnings-equation__item {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 12px 0;
+  box-shadow: none;
+}
+.driver-earnings-page .earnings-equation__item--total {
+  border-top: 2px solid var(--accent);
+}
+@media (max-width: 640px) {
+  .driver-earnings-page .earnings-equation { gap: 0; }
+  .driver-earnings-page .earnings-equation__item + .earnings-equation__item {
+    border-top: 1px solid var(--line);
+  }
+  .driver-earnings-page .earnings-equation__item--total { border-top: 2px solid var(--accent); }
+}
