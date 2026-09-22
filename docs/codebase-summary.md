@@ -5,12 +5,14 @@
 ## Repository Map
 
 ```
-backend/     40,265 LOC / 179 files  Express v5 + TypeScript API
-frontend/    92,707 LOC / 302 files  React + Vite + TypeScript SPA
-shared/       5,985 LOC /  24 files  Types, schemas, calculations, navigation
-deploy/       1,102 LOC /    2 files  nginx config, server setup scripts
+backend/     53,376 LOC / 267 files  Express v5 + TypeScript API
+frontend/    71,746 LOC / 507 files  React 19 + Vite + TypeScript SPA
+shared/       6,957 LOC /  29 files  Types, schemas, calculations, navigation
+deploy/       1,867 LOC /  11 files  nginx config, server setup scripts
 docs/         Specs, flows, ADRs, plans, company documents
 ```
+
+Counts are `**/*.{ts,tsx}` under each package's `src/` (tests included), measured 2026-09-22.
 
 pnpm monorepo. Build order: shared -> backend -> frontend (backend reads shared from `dist/`).
 
@@ -112,7 +114,7 @@ Config tables (~24): `customers`, `trucks`, `trailers`, `routes`, `drivers`, `su
 
 ### `frontend/` -- `@tingting/frontend`
 
-React 18 SPA on port 7173. Path alias `@` -> `./src`.
+React 19 SPA on port 7173. Path alias `@` -> `./src`.
 
 #### Entry Point
 
@@ -122,7 +124,7 @@ React 18 SPA on port 7173. Path alias `@` -> `./src`.
 
 | Directory | Purpose |
 |-----------|---------|
-| `pages/` | 37 route pages (Dashboard, TripList/Create/Detail/Edit, Finance, Debt, etc.) |
+| `pages/` | 64 `.tsx` files — the route table (`shared/src/navigation/pageCatalog.ts`) defines 60 pages (Dashboard, TripList/Create/Detail/Edit, Finance, Debt, etc.) |
 | `hooks/` | Custom hooks: `useAuth`, `useCRUD`, `useCatalogs`, `useTripForm`, `useObservedWidth` |
 | `api/` | API client (`tripClient.ts`, `ApiClient` class in `lib/api.ts`) |
 | `components/` | Layout, UI primitives, TripForm, LocationAutocomplete, agent/, billing/, charts/, config/, trip/ |
@@ -133,7 +135,7 @@ React 18 SPA on port 7173. Path alias `@` -> `./src`.
 
 #### Page Routing
 
-Routes derive from `shared/src/navigation/pageCatalog.ts` (the single source of truth). `frontend/src/lib/routes.ts` is a 1:1 projection. All 37 pages live in `frontend/src/pages/`.
+Routes derive from `shared/src/navigation/pageCatalog.ts` (the single source of truth). `frontend/src/lib/routes.ts` is a 1:1 projection. `App.tsx` mounts 78 `<Route>` entries over those pages, whose components live in `frontend/src/pages/`.
 
 #### Key Hooks
 

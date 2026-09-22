@@ -4,13 +4,16 @@
 
 ## Environments
 
-| Environment | Domain | Path | CI/CD |
-|-------------|--------|------|-------|
+| Environment | Domain | Path | Deploy |
+|-------------|--------|------|--------|
 | **Local dev** | `localhost` | Local machine | Manual (`make dev`) |
-| **Production** | `nepo.tingting.vip` | `/opt/nepocorp/` | GitHub Actions (auto-deploy on main push) |
-| **Demo** | `vantai.tingting.vip` | `/opt/vantai/` | GitHub Actions matrix (same pipeline, same trigger) |
+| **Demo staging** | `demo.tingting.vip` | `/opt/demo/` | Manual (`make demo`) |
+| **Production** | `nepo.tingting.vip` | `/opt/nepocorp/` | Manual (`make deploy`) — user go-ahead required |
+| **Vantai (separate)** | `vantai.tingting.vip` | `/opt/vantai/` | Own stack, reserved for the silversea build |
 
-All three environments use Docker containers for backend and frontend, with PostgreSQL and Redis.
+There is **no deploy workflow in CI** — `.github/workflows/` only holds the OpenWiki docs job. Deploys are the `make` targets below, cut from a clean detached worktree so uncommitted work never reaches an image.
+
+Every environment runs backend + frontend as Docker containers alongside PostgreSQL and Redis.
 
 ## Local Development
 
@@ -78,33 +81,29 @@ Production uses Docker containers deployed on a single DigitalOcean droplet at `
 - **Docker images:** `tingting-backend`, `tingting-frontend` (Docker Hub)
 - **Reverse proxy:** Nginx on the host, configured via `deploy/nginx-host.conf`
 
-### Normal Deploy (GitHub Actions)
+### Deploy (manual, from a clean worktree)
 
-On push to `main`, GitHub Actions automatically:
-
-1. Builds Docker images for backend and frontend
-2. Pushes to Docker Hub (`tingting-backend`, `tingting-frontend`)
-3. SSHs to droplet, pulls images, restarts containers
-4. Runs Drizzle migrations
-
-### Manual Deploy (when CI is blocked)
-
-If GitHub Actions is billing-blocked (happened ~2026-06-16), use:
+Always cut from a **detached worktree of the freeze commit**, never the working tree — both `push` targets run `docker buildx build` with the checkout as build context, so a shared-tree cut would bake uncommitted work into the images:
 
 ```bash
-make deploy         # Builds + pushes images + deploys to prod
-                    # Equivalent to: make push && make deploy-backend && make deploy-frontend
+git worktree add --detach /tmp/cut-<sha> <freeze-sha>
+cp backend/.env /tmp/cut-<sha>/backend/.env     # the Makefiles `include .env` for Docker Hub creds
+cd /tmp/cut-<sha>
+make demo            # staging first: push images + recreate demo backend/frontend + migrate
+make deploy          # production: push images + recreate nepocorp backend/frontend + migrate
+git worktree remove --force /tmp/cut-<sha>
 ```
 
-Or step by step:
+Images are tagged `:latest` and `:<short-sha>` of the worktree's HEAD (`tingting-backend`, `tingting-frontend` on Docker Hub). `make deploy` == `make push && make deploy-backend && make deploy-frontend`; step by step:
 
 ```bash
-make push-backend   # Build & push backend image to Docker Hub
-make push-frontend  # Build & push frontend image to Docker Hub
-# Then SSH to deploy:
-make deploy-backend # Pull & restart backend + run migrations
+make push-backend    # Build & push backend image to Docker Hub
+make push-frontend   # Build & push frontend image to Docker Hub
+make deploy-backend  # Pull & restart backend + run migrations
 make deploy-frontend # Pull & restart frontend
 ```
+
+Release order is local → demo → prod; prod requires explicit user go-ahead every time, and agents never log into prod (credential-free checks only).
 
 ### Applying Migrations to Production
 
@@ -126,26 +125,27 @@ This SCPs the SQL file into the Postgres container and runs it in a single trans
 4. Check frontend: `curl -s -o /dev/null -w "%{http_code}" https://nepo.tingting.vip`
 5. Check API health: `curl -s https://nepo.tingting.vip/api/health`
 
-## Demo Deployment
+## Demo Staging
 
-The demo server (`vantai.tingting.vip`) uses the same Docker Hub images but deploys to `/opt/vantai/` with its own database.
+Staging is `demo.tingting.vip` (`/opt/demo/`, `deploy/docker-compose.demo.yml`) — a second stack on the vantai droplet, next to the separate `/opt/vantai` stack reserved for the silversea build.
 
 ```bash
-make demo           # Build + push + deploy backend + frontend to vantai
+make demo           # Build + push + deploy backend + frontend to demo.tingting.vip
 ```
 
 ### Demo Details
 
 | Property | Value |
 |----------|-------|
-| Domain | `vantai.tingting.vip` |
-| Path | `/opt/vantai/` |
-| DB user | `vantai` (not `postgres`) |
-| DB container | `vantai-postgres-1` |
-| Seed data | `deploy/seed-vantai.sql` (30 trips, 10 customers, 12 routes) |
-| Users | 9 accounts: admin, giamdoc, ketoan, laixe, giaonhan, thu, nam, tuan, duc |
-| Password | `123456` (all accounts) |
-| Nginx config | `deploy/nginx-host-vantai.conf` |
+| Domain | `demo.tingting.vip` |
+| Path | `/opt/demo/` |
+| Containers | `demo-backend-1`, `demo-frontend-1`, `demo-postgres-1`, `demo-redis-1` |
+| Compose file | `deploy/docker-compose.demo.yml` |
+| Data | one-time anonymized prod snapshot — **code-only deploys: never re-seed, never wipe** |
+| Account | `admin` / `Abc123` (all demo accounts share it) |
+| Nginx config | `deploy/nginx-host-demo.conf` |
+
+`vantai.tingting.vip` (`/opt/vantai/`, DB user `vantai`, seed `deploy/seed-vantai.sql`, accounts `123456`) is a **separate** stack, reserved for the silversea build — not the current demo.
 
 ## Nginx Configuration
 

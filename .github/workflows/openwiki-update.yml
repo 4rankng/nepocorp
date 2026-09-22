@@ -26,15 +26,39 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Check OpenWiki credentials
+        id: creds
+        # The scheduled run failed every day with "ANTHROPIC_API_KEY is required for
+        # non-interactive runs" because the secret was never set. Skip cleanly instead of
+        # failing, and say exactly what to configure. Gateway users (e.g. z.ai) must also
+        # set ANTHROPIC_BASE_URL to their endpoint — the model id below is a GLM one, so
+        # the official api.anthropic.com will 404 it.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "::notice title=OpenWiki skipped::ANTHROPIC_API_KEY is not set for this repository. Add it with 'gh secret set ANTHROPIC_API_KEY' (plus ANTHROPIC_BASE_URL for a gateway) to enable the wiki refresh."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install OpenWiki
+        if: ${{ steps.creds.outputs.configured == 'true' }}
         # mermaid + jsdom are optional; they add high-fidelity validation of Mermaid diagrams. Remove if your wiki has none.
         run: npm install --global openwiki@0.5.2 mermaid@11.17.2 jsdom@29.1.1
 
       - name: Run OpenWiki
         id: openwiki
+        if: ${{ steps.creds.outputs.configured == 'true' }}
         continue-on-error: true
-        run: openwiki code --update --print
+        # ANTHROPIC_BASE_URL is exported only when set — the Anthropic SDK treats an
+        # empty string as a real base URL, so an unset variable must not be passed through.
+        run: |
+          if [ -n "$BASE_URL" ]; then export ANTHROPIC_BASE_URL="$BASE_URL"; fi
+          openwiki code --update --print
         env:
+          BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}
           OPENWIKI_PROVIDER: anthropic
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENWIKI_MODEL_ID: "glm-5.3-flash"
@@ -52,7 +76,7 @@ jobs:
         run: rm -f -- openwiki/.run.json
 
       - name: Create OpenWiki update pull request
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.creds.outputs.configured == 'true' }}
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           add-paths: |

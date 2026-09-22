@@ -73,3 +73,6 @@ kilo.json
 
 # Kanban board (local agent state; cards + evidence live in the working tree only)
 kanban/
+
+# npm lockfile — this is a pnpm workspace (pnpm-lock.yaml is authoritative)
+package-lock.json

@@ -40,7 +40,7 @@ Backend `.env` required (see `backend/.env.example`): `PORT`, `DATABASE_URL`, `J
 
 Ports: PostgreSQL **5440**, Redis **6390**, Backend **3090**, Frontend **7173**.
 
-No linter or CI pipeline configured.
+Lint with `pnpm lint` (ESLint 10, root `eslint.config.mjs`). There is no build/test CI: the only workflow is `.github/workflows/openwiki-update.yml`, which opens a docs PR for the generated `openwiki/` wiki. Gates are manual — see the kanban-work skill's Git discipline block.
 
 ## Architecture
 
@@ -49,7 +49,7 @@ tingting/
 ├── shared/            # @tingting/shared — types, Zod schemas, enums, calculations
 ├── backend/           # @tingting/backend — Express 5 + Drizzle ORM + PostgreSQL
 ├── frontend/          # @tingting/frontend — React 19 + Vite + Tailwind 4
-├── docs/              # product-spec.md, high-level-design.md, company PDFs
+├── docs/              # specs, ADRs, flows, guides, plans, company documents
 ├── wireframe/         # HTML wireframes for accountant/director/driver views
 └── CONTEXT.md         # Domain glossary & business rules (authoritative)
 ```
@@ -100,7 +100,7 @@ tingting/
 | `components/TripForm/` | Trip form components |
 | `components/config/` | Config/CRUD components |
 | `components/LocationAutocomplete.tsx` | Location autocomplete widget |
-| `pages/` | 36 files — fully implemented (Dashboard, TripList, TripCreate, TripDetail, TripEdit, Finance, DebtList, DebtDetail, Penalty, Profit, Fleet, Dispatch, Config, AuditLog, Users, Customers, DriverViews, etc.) |
+| `pages/` | 64 `.tsx` files — fully implemented (Dashboard, TripList, TripCreate, TripDetail, TripEdit, Finance, DebtList, DebtDetail, Penalty, Profit, Fleet, Dispatch, Config, AuditLog, Users, Customers, DriverViews, etc.); the ten largest delegate to `features/*` |
 
 ### Shared (`shared/src/`)
 
@@ -158,14 +158,14 @@ This is a Vietnamese logistics domain with specific business rules. Read `CONTEX
 ## Current State (as of writing)
 
 - **Backend**: Fully implemented — auth, CRUD, trip lifecycle, fuel/allowance calculations, ledger, payments, P&L, audit logging, file uploads, maps.
-- **Frontend**: Fully implemented — all pages built (36 files), organized component library, custom hooks for data fetching and forms.
+- **Frontend**: Fully implemented — all pages built (64 `.tsx` under `pages/`), organized component library, custom hooks for data fetching and forms; the ten largest pages delegate their sub-components to `features/*` (size guard: 600 non-blank lines/file).
 - **Shared**: Complete — all types, enums, Zod schemas, and shared calculations.
-- **Tests**: Backend has `cd backend && pnpm test` → `npx tsx --test src/tests/integration.test.ts`.
-- **Linting**: None configured.
+- **Tests**: `cd backend && pnpm test` (tsx `--test`, `src/tests/*.test.ts`) and `pnpm --dir frontend test` (vitest). Backend suites need the local DB migrated first.
+- **Linting**: `pnpm lint` (ESLint 10, root config). No pre-commit hook and no CI gate — run the gates manually.
 
 ## Knowledge Base (OpenWiki)
 
-This project maintains a generated agent wiki in `openwiki/` via [langchain-ai/openwiki](https://github.com/langchain-ai/openwiki) — an Open Knowledge Format (OKF) bundle of Markdown pages with versioned, evidence-backed Claims, refreshed from repository changes. It replaces the previous local knowledge-graph plugin (Understand Anything / `.ua/`), which is no longer installed.
+This project maintains a generated agent wiki in `openwiki/` via [langchain-ai/openwiki](https://github.com/langchain-ai/openwiki) — an Open Knowledge Format (OKF) bundle of Markdown pages with versioned, evidence-backed Claims, refreshed from repository changes. It replaces the previous local knowledge-graph plugin and its `.ua/` data, which are no longer installed anywhere (repo hooks and machine-level install both removed).
 
 **Reading it:** `openwiki/` is just-in-time context, not required startup reading. Source code and tests stay authoritative; a brief's unknowns and review items are verification gaps, not automatic requirements. Prefer the narrowest quiet validation that proves the changed behavior, and preserve complete failure output.
 

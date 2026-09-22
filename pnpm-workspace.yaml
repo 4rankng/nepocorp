@@ -2,11 +2,33 @@ packages:
   - "frontend"
   - "backend"
   - "shared"
-allowBuilds:
-  esbuild: set this to true or false
-  protobufjs: set this to true or false
-  puppeteer: set this to true or false
-  sharp: set this to true or false
+
+# Dependency overrides live HERE in pnpm 10 — the `pnpm.overrides` block that used
+# to sit in the root package.json was silently ignored ("The pnpm field in
+# package.json is no longer read by pnpm"), so none of these pins were applied.
+# Keep this list in sync with `pnpm audit`.
+overrides:
+  # Advisories patched at the time of writing (see `pnpm audit`).
+  csv-parse: ">=7.0.2"
+  esbuild: "~0.25.5"
+  uuid: ">=11.1.1"
+  undici: "~7.29.0"
+  "@babel/core": ">=7.29.6"
+  brace-expansion@<1.1.18: ">=1.1.18 <2"
+  brace-expansion@>=2.0.0 <2.1.4: ">=2.1.4 <3"
+  brace-expansion@>=3.0.0 <5.0.9: ">=5.0.9 <6"
+  js-yaml@>=4.0.0 <4.3.1: ">=4.3.1 <5"
+  protobufjs@>=7.5.0 <=7.6.4: ">=7.6.5 <8"
+  body-parser@>=2.0.0 <2.3.0: ">=2.3.0 <3"
+  "@opentelemetry/propagator-jaeger@<2.9.0": ">=2.9.0 <3"
+  react-router@>=6.0.0 <7.18.2: ">=7.18.2 <8"
+  postcss@<=8.5.22: ">=8.5.23 <9"
+  socket.io-parser@>=4.0.0 <4.2.7: ">=4.2.7 <5"
+  nanoid@<3.3.18: ">=3.3.18 <4"
+  browserslist@<=4.28.6: ">=4.28.7 <5"
+  qs@<6.16.0: ">=6.16.0 <7"
+
+# Native/postinstall builds that are allowed to run (pnpm 10 blocks the rest).
 onlyBuiltDependencies:
   - esbuild
   - protobufjs
