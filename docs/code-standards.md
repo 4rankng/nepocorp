@@ -121,11 +121,12 @@ Every mutation request (POST/PUT/PATCH/DELETE) is auto-logged by `backend/src/mi
 
 ## Testing
 
-- **Vitest** for all tests.
-- Backend: `cd backend && npm test`
-- Shared: test files run via `tsx`, excluded from `tsc` (intentional -- see [architecture-refactor-consensus-plan](plans/architecture-refactor-consensus-plan.md)).
-- Integration tests require Postgres + Redis running and a fresh migration applied.
-- No E2E test framework (manual `make e2etest` script exists for specific flows).
+- **Frontend**: Vitest — `pnpm --dir frontend test` (111 files / 470 tests). `cd frontend && npx tsc -b` type-checks; vitest does not.
+- **Backend**: node's built-in runner via tsx — `cd backend && pnpm test` (`tsx --test --test-concurrency=1 src/tests/*.test.ts`). Type-check with `cd backend && npx tsc --noEmit`.
+- **Shared**: `pnpm --dir shared typecheck`; its test files run via `tsx` and are excluded from `tsc` (intentional — see [architecture-refactor-consensus-plan](plans/architecture-refactor-consensus-plan.md)).
+- Integration tests require Postgres + Redis running and a fresh migration applied (`docker compose -f docker-compose.dev.yml up -d db redis && cd backend && pnpm db:migrate`).
+- **E2E**: the `e2e/` Playwright (Python) suite, driven by `make e2etest` (needs `make dev` up); `e2e/ui_route_audit.py` walks every route.
+- **Gates**: `pnpm lint` (ESLint 10), `pnpm --dir frontend check:ui` + `check:brand`, `pnpm --dir frontend build:strict` (600 non-blank-line file budget). No CI and no pre-commit hook — the manual gates are the only guard.
 
 ## Code Patterns
 
