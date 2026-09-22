@@ -33,7 +33,7 @@
 ## Chạy tự động (mỗi PR/deploy)
 
 - Frontend unit: `cd frontend && npx vitest run`
-- Backend: `cd backend && npm test` (integration cần PG+Redis; lưu ý `--test-force-exit`)
+- Backend: `cd backend && pnpm test` (integration cần PG+Redis; lưu ý `--test-force-exit`)
 - Shared calc: chạy qua backend tests + frontend vitest
 
 ## Liên quan

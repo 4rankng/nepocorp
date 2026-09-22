@@ -182,7 +182,7 @@ A full AI assistant built with Socket.io, connecting to MiniMax-M3 (LLM) with to
 ## Testing
 
 - **Runner:** Vitest. No `make test` target.
-- **Backend:** `cd backend && npm test`
+- **Backend:** `cd backend && pnpm test`
 - **Shared:** test files run via `tsx`, excluded from `tsc` (intentional -- see `docs/plans/architecture-refactor-consensus-plan.md`)
 - **Integration tests:** require Postgres + Redis running + fresh migration applied
 
@@ -195,5 +195,5 @@ pnpm install          # Install all dependencies
 make setup            # First-time: infra + migrate + seed
 make dev              # Backend :3090 + Frontend :7173
 make build            # shared tsc + backend tsc + frontend vite build
-cd backend && npm test  # Run backend tests
+cd backend && pnpm test  # Run backend tests
 ```

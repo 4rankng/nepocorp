@@ -4,7 +4,7 @@
 ```
 tingting/
 ├── backend/        Express 5 + Drizzle ORM + PostgreSQL (port 3090)
-├── frontend/       React 18 + Vite + TanStack (port 5173)
+├── frontend/       React 19 + Vite + TanStack (port 7173)
 ├── shared/         Types, Zod schemas, enums, calculations
 ├── docs/           Product specs, company files, flow docs
 ├── wireframe/      HTML wireframes for all role views

@@ -8,7 +8,7 @@ Logistics/fleet management platform for a Vietnamese trucking company. Manages t
 
 ```
 backend/     Express v5 + TypeScript API (port 3090)
-frontend/    React 18 + Vite + TypeScript (port 5173)
+frontend/    React 19 + Vite + TypeScript (port 7173)
 shared/      Shared types, schemas, constants, calculations
 ```
 
@@ -16,7 +16,7 @@ shared/      Shared types, schemas, constants, calculations
 
 - **Backend:** Node.js, Express v5, TypeScript, Drizzle ORM, PostgreSQL
 - **Auth:** JWT + Casbin RBAC
-- **Frontend:** React 18, Vite, TanStack Query, React Router, Recharts
+- **Frontend:** React 19, Vite, TanStack Query, React Router, Recharts
 - **Testing:** Vitest (unit + integration)
 - **Config:** `backend/src/config/index.ts`
 

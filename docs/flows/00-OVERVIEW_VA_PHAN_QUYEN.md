@@ -25,14 +25,14 @@
 
 | Layer | Công nghệ |
 |-------|-----------|
-| Frontend | React 18 + Vite + TypeScript + Tailwind CSS |
+| Frontend | React 19 + Vite + TypeScript + Tailwind CSS |
 | Backend | Express v5 + TypeScript |
 | Database | PostgreSQL + Drizzle ORM |
 | Auth | JWT + Casbin RBAC |
 | Testing | Vitest |
 
 **URL truy cập:**
-- Frontend: `http://localhost:5173`
+- Frontend: `http://localhost:7173`
 - Backend API: `http://localhost:3090`
 
 ### 1.2 Vai trò người dùng
@@ -77,7 +77,7 @@
 
 ![Đăng nhập](./screenshots/login.png)
 
-1. Mở trình duyệt và truy cập `http://localhost:5173`
+1. Mở trình duyệt và truy cập `http://localhost:7173`
 2. Trang đăng nhập hiển thị với logo TingTing
 3. Nhập **Tên đăng nhập, email, hoặc số điện thoại** vào trường `identifier`
 4. Nhập **Mật khẩu** vào trường `password`

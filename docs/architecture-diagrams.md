@@ -15,7 +15,7 @@ flowchart TB
     NGINX["Nginx :80 / :443<br/>reverse proxy<br/>+ /socket.io/ upgrade"]
     subgraph Docker["Docker compose"]
       direction TB
-      FE["Frontend<br/>React 18 SPA (static build)<br/>Vite dev :7173"]
+      FE["Frontend<br/>React 19 SPA (static build)<br/>Vite dev :7173"]
       BE["Backend :3090<br/>Express v5 + TypeScript<br/>Drizzle ORM · Socket.io"]
       PG[("PostgreSQL :5440")]
       REDIS[("Redis :6390<br/>GPS cache + sessions")]
@@ -54,7 +54,7 @@ Two deploy targets share one pipeline: **nepo** (production) and **vantai** (dem
 flowchart LR
   SHARED["@tingting/shared<br/>types · Zod schemas<br/>calculations · constants<br/>navigation · tours"]
   BE["@tingting/backend<br/>Express v5 · Drizzle · Casbin"]
-  FE["@tingting/frontend<br/>React 18 · Vite · TanStack"]
+  FE["@tingting/frontend<br/>React 19 · Vite · TanStack"]
 
   SHARED ==>|"compiled dist/"| BE
   SHARED ==>|"source src"| FE
