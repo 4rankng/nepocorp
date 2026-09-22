@@ -85,7 +85,7 @@
   --stat-ink: var(--danger);
 }
 .as-page .as-kpi:hover {
-  background: var(--surface-2);
+  background: var(--surface-hover);
 }
 /* Summary-only stat (no filter): neutral cursor, no hover affordance. */
 .as-page .as-kpi.as-kpi--static {
@@ -158,7 +158,7 @@
   outline-offset: -2px;
 }
 .as-page .as-ledger {
-  min-width: 1096px;
+  min-width: 1015px;
 }
 .as-page .as-grid-head,
 .as-page .as-grid-row {
@@ -170,8 +170,7 @@
     130px
     minmax(230px, 1fr)
     90px
-    100px
-    100px;
+    150px;
   gap: 8px;
 }
 .as-page .as-grid-head {
@@ -427,6 +426,20 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+}
+
+/* Status and its action share one column: the pill sits on top, the action
+   sits directly underneath it, so the ledger stops reserving a whole column
+   for a single link. */
+.as-page .as-status-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.as-page .as-status-actions .as-actions {
+  justify-content: flex-start;
 }
 .as-page .as-actions--history {
   align-items: flex-end;

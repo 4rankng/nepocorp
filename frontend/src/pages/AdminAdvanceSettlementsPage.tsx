@@ -171,7 +171,7 @@ export function SettlementGridRow({
               aria-label={`Duyệt cả phiếu ${s.code}`}
             >
               {isApproving ? <Loader2 size={15} className="spin" /> : <CheckCircle2 size={15} aria-hidden="true" />}
-              Duyệt cả phiếu
+              Duyệt
             </button>
             <button
               type="button"
@@ -181,7 +181,7 @@ export function SettlementGridRow({
               aria-label={`Từ chối cả phiếu ${s.code}`}
             >
               {isRejecting ? <Loader2 size={15} className="spin" /> : <XCircle size={15} aria-hidden="true" />}
-              Từ chối cả phiếu
+              Từ chối
             </button>
           </div>
         )}
@@ -246,36 +246,36 @@ export function SettlementGridRow({
             <Money value={plan?.totalExpense ?? Number(s.totalExpenseAmount)} />
           </div>
 
-          <div>
+          <div className="as-status-actions">
             <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
               {settlementStatusLabel(s.status)}
             </StatusPill>
-          </div>
 
-          <div className={`as-actions${canAct ? '' : ' as-actions--history'}`}>
-            {canAct ? (
-              <>
-                <Link
-                  className="as-row-action"
-                  to={`/settlements/${s.id}`}
-                  aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
-                >
-                  {canApproveReject && <Pencil size={15} aria-hidden="true" />}
-                  {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link className="as-row-action as-row-action--quiet" to={`/settlements/${s.id}`}>
-                  Xem phiếu
-                </Link>
-                {(s.approverName || s.checkerName) && (
-                  <div className="as-approver">
-                    {s.approverName ? <>Duyệt bởi <strong>{s.approverName}</strong></> : <>KT <strong>{s.checkerName}</strong></>}
-                  </div>
-                )}
-              </>
-            )}
+            <div className={`as-actions${canAct ? '' : ' as-actions--history'}`}>
+              {canAct ? (
+                <>
+                  <Link
+                    className="as-row-action"
+                    to={`/settlements/${s.id}`}
+                    aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
+                  >
+                    {canApproveReject && <Pencil size={15} aria-hidden="true" />}
+                    {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link className="as-row-action as-row-action--quiet" to={`/settlements/${s.id}`}>
+                    Xem phiếu
+                  </Link>
+                  {(s.approverName || s.checkerName) && (
+                    <div className="as-approver">
+                      {s.approverName ? <>Duyệt bởi <strong>{s.approverName}</strong></> : <>KT <strong>{s.checkerName}</strong></>}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       ))}
@@ -408,7 +408,7 @@ export function SettlementMobileCard({
               aria-label={`Duyệt cả phiếu ${s.code}`}
             >
               {isApproving ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} aria-hidden="true" />}
-              Duyệt cả phiếu
+              Duyệt
             </button>
           )}
           {canApproveReject && (
@@ -420,7 +420,7 @@ export function SettlementMobileCard({
               aria-label={`Từ chối cả phiếu ${s.code}`}
             >
               {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
-              Từ chối cả phiếu
+              Từ chối
             </button>
           )}
         </div>
@@ -609,7 +609,6 @@ export default function AdminAdvanceSettlementsPage() {
                   <div>Chi phí theo hạng mục</div>
                   <div className="col-right">Tổng chi</div>
                   <div>Trạng thái</div>
-                  <div className="col-right">Thao tác</div>
                 </div>
 
                 <div>
