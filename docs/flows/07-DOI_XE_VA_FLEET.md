@@ -80,13 +80,14 @@ Module **Đội xe & Điều vận** gồm hai trang:
 
 | Thành phần | Mô tả |
 |-----------|-------|
-| Tỷ lệ sử dụng | % xe đang chạy / tổng xe |
+| Tỷ lệ sử dụng | % chuyến đang chạy trên XE NỘI BỘ / (tổng xe đầu kéo − xe bảo dưỡng). Chuyến thuê xe đối tác ngoài KHÔNG tính vào tử số (nếu tính, tỷ lệ vượt 100% một cách vô nghĩa) mà hiển thị riêng bằng nhãn "Thuê ngoài: N chuyến". Thanh tiến trình đổi màu theo ngưỡng: ≤85% xanh lá, 85–100% xanh dương, >100% cam kèm nhãn "Vượt công suất" (kanban 20260922_32) |
 | Tổng đội xe | Tổng số xe đầu kéo |
 | Đang chạy | Số xe status=IN_TRANSIT |
-| Sẵn sàng | Số xe status=CREATED, sẵn sàng xuất phát |
-| Cần chú ý | Số xe cần xử lý (maintenance, no driver) |
+| Sẵn sàng | Số xe còn trống VÀ tài xế mặc định của xe đó đang rảnh |
+| Chờ tài xế | Số xe còn trống NHƯNG tài xế mặc định đang chạy chuyến trên xe khác — cột Lái xe ghi "(Đang chạy xe <biển số>)", dải trạng thái màu cam (kanban 20260922_33) |
+| Cần chú ý | Số xe cần xử lý (bảo dưỡng + chờ tài xế + chưa giao lái xe) |
 
-**Lưới xe (Fleet Vehicle Grid):** Thẻ cho mỗi xe hiển thị biển số, trạng thái (Running/Ready/Maintenance/No driver), avatar lái xe, tuyến đường, ngày khởi hành.
+**Lưới xe (Fleet Vehicle Grid):** Thẻ cho mỗi xe hiển thị biển số, trạng thái (Đang chạy / Sẵn sàng / Chờ tài xế / Bảo dưỡng / Chưa giao), tên lái xe, tuyến đường, ngày khởi hành.
 
 **Hàng đợi lệnh (Orders Queue):** Danh sách chuyến chờ xuất phát với tuyến, khách hàng, xe + lái xe được phân, ngày khởi hành.
 
@@ -95,7 +96,7 @@ Module **Đội xe & Điều vận** gồm hai trang:
 2. **Phân xe lại:** Nhấn nút "Đổi xe" → chọn xe + lái xe → `PATCH /api/trips/:id/reassign`
 3. **Tạo chuyến mới:** Nhấn nút → chuyển đến `/trips/new`
 4. **Xem chuyến đang chạy:** Nhấn vào thẻ xe → chuyển đến `/trips/:id`
-5. **Lọc:** Tab all/running/ready/noassign/maintenance
+5. **Lọc:** Tab all/running/ready/waiting/noassign/maintenance (waiting = Chờ tài xế, kanban 20260922_33)
 
 ### 2.2 Trang Đội xe (/fleet)
 
