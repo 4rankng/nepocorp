@@ -33,8 +33,11 @@
     left: 0;
     right: 0;
     height: calc(56px + env(safe-area-inset-bottom, 12px));
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(14px);
+    /* Fully opaque surface: the old rgba(…, 0.95) + blur let scrolling card text
+       ghost through the bar and its safe-area strip (kanban 20260922_27). The
+       opaque background paints the padding box too, so the env() safe-area strip
+       below the 56px content row is covered. */
+    background: var(--surface);
     border-top: 1px solid var(--line);
     z-index: var(--z-sticky, 100);
     justify-content: space-around;
@@ -61,19 +64,27 @@
   }
 
   /* The active indicator sits INSIDE the nav: at top: 0 a 6px bar overhung the
-     1px top border and read as a broken edge (kanban 20260921_11). */
+     1px top border and read as a broken edge (kanban 20260921_11).
+     Centering MUST NOT use transform: useBottomNavAnimations grows the bar with
+     anime.js, which writes inline `transform: scaleX()` here and clobbered a
+     translateX(-50%) centering transform — the 40px bar landed 20px right of
+     the icon (kanban 20260922_27). Offset the left edge by half the width
+     instead, so scaleX grows around the bar's own center (transform-origin)
+     which is pinned to the item/icon center at every frame. */
   .bottom-nav-indicator {
     position: absolute;
     top: 1px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: calc(50% - 20px); /* half of width below — keep in sync */
     width: 40px;
     height: 4px;
     background: var(--accent);
     border-radius: 0 0 4px 4px;
     box-shadow: 0 2px 6px rgba(0, 177, 79, 0.25);
     opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform-origin: center;
+    /* opacity only — a transform transition would re-smooth anime.js's
+       per-frame inline writes and damp the grow-in spring. */
+    transition: opacity 0.3s ease;
   }
   
   .bottom-nav-item.active .bottom-nav-indicator {
