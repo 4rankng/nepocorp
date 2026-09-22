@@ -116,10 +116,81 @@
   background: var(--surface);
   position: relative;
 }
+/* Quick-edit grid — a FIGURES grid: 10 tracks (select · chuyến · xe · tiêu hao ·
+   tiền đi đường · doanh thu · lương chuyến · tổng CP · LN gộp · trạng thái).
+   Tuyến and Container are not tracks here — their data rides in the identity
+   cell as one compact line (see .trip-quick-meta) so the money columns get real
+   width instead of every track sitting at its floor.
+   Sized to fit the ~1131px table area of a 1440×900 desktop with no horizontal
+   overflow: the old 1280px min-width forced a 347px overflow, so at rest the
+   pinned Trạng thái column covered the tracks before it and the header beside it
+   read as a cut fragment ("LN gộp" → "L") (kanban 20260922_28).
+   `min-width: min-content` keeps the head background spanning every track on
+   narrower desktops (where the table still scrolls) without hard-coding a magic
+   pixel floor that could drift from the track list. */
 .trip-list-page.quick-edit-mode .table-head,
 .trip-list-page.quick-edit-mode .table-row {
-  grid-template-columns: 38px minmax(190px, 1.25fr) 90px minmax(160px, 1.35fr) minmax(80px, 0.6fr) 110px 118px 118px 118px 110px 110px 110px;
-  min-width: 1280px;
+  grid-template-columns: 24px minmax(248px, 1.4fr) 94px 84px minmax(98px, 1fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(96px, 1fr) minmax(96px, 1fr) 104px;
+  min-width: min-content;
+  gap: 6px;
+  padding: 12px 8px;
+}
+/* table-extras.css gives these cells a min-width to size the NORMAL grid's
+   tracks; in quick-edit the tracks are declared above and must not be inflated. */
+.trip-list-page.quick-edit-mode .col-consumption,
+.trip-list-page.quick-edit-mode .col-revenue { min-width: 0; }
+
+/* 1366-class laptops (the other desktop width the card names): the identity
+   track gives back the ~60px that keep the row inside the ~1057px table area,
+   so the figures grid still never scrolls under the pinned Trạng thái column.
+   The trip code line wraps to two rows here — on a 1366 screen that is the
+   honest trade against a cut header. Below 1180 the card layout takes over
+   (kanban 20260921_7). */
+@media (max-width: 1439px) {
+  .trip-list-page.quick-edit-mode .table-head,
+  .trip-list-page.quick-edit-mode .table-row {
+    grid-template-columns: 24px minmax(208px, 1.4fr) 92px 78px minmax(94px, 1fr) minmax(96px, 1fr) minmax(96px, 1fr) minmax(96px, 1fr) minmax(96px, 1fr) 100px;
+  }
+}
+
+/* Compact identity lines: every sub-line is clamped to ONE row, so the row
+   height is the same for every trip instead of being driven by whichever
+   "Thiếu: …" badge list wraps the most (was 130–207px rows beside single-line
+   money cells — the wasted-space complaint on kanban 20260922_28). The full
+   text stays in the element title. */
+.trip-list-page.quick-edit-mode .trip-customer { min-width: 0; }
+.trip-list-page.quick-edit-mode .trip-customer > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trip-list-page.quick-edit-mode .trip-quick-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 3px;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+.trip-list-page.quick-edit-mode .trip-quick-meta__route {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trip-list-page.quick-edit-mode .trip-quick-meta__container {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.trip-list-page.quick-edit-mode .trip-missing-flag { min-width: 0; }
+.trip-list-page.quick-edit-mode .trip-missing-flag > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .trip-list-page .table-row::before {
   content: '';

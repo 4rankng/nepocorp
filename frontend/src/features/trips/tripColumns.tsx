@@ -94,6 +94,29 @@ function QuickMoneyInput({
  * .route-cell-flex, etc.) defined in TripListPage.css. The page wires
  * up the `<table>` via `useReactTable({ data, columns })`.
  */
+/**
+ * One-line route label ("Nam Đình Vũ → Cẩm Khê, Phú Thọ · 240km") used by the
+ * compact quick-edit identity cell, where the standalone Tuyến track is dropped.
+ */
+function compactRouteLabel(trip: TripDetail): string {
+  const route = splitRoute(trip.route?.name);
+  const km = getTripDistance(trip);
+  if (!route) return trip.route?.name ?? '';
+  return `${route.from} → ${route.to}${km > 0 ? ` · ${km.toLocaleString('vi-VN')}km` : ''}`;
+}
+
+/**
+ * One-line container label ("20DC · MSKU9876543") for the same compact cell.
+ */
+function compactContainerLabel(trip: TripDetail): string {
+  const containers: TripListContainer[] = (trip as TripListRow).containers ?? [];
+  const codes = Array.from(new Set(
+    containers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean),
+  ));
+  const numbers = containers.map((c) => c.containerNumber).filter(Boolean);
+  return [codes.join(' '), numbers.join(', ')].filter(Boolean).join(' · ');
+}
+
 export function buildTripColumns(
   warnThreshold: number,
   quickEdit?: TripQuickEditOptions,
@@ -151,10 +174,26 @@ export function buildTripColumns(
                   <span className="trip-today-chip" title="Kế hoạch của ngày hôm nay">Hôm nay</span>
                 )}
               </div>
-              <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: quickEdit?.enabled ? 'nowrap' : 'wrap' }}>
                 <span>{customerName}</span>
                 {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
               </div>
+              {/* Quick-edit drops the standalone Tuyến / Container tracks so the
+                  figures grid fits a 1440 laptop; the same data rides here as one
+                  compact line (kanban 20260922_28). */}
+              {quickEdit?.enabled && (
+                <div
+                  className="trip-quick-meta"
+                  title={[compactRouteLabel(trip), compactContainerLabel(trip)].filter(Boolean).join(' · ')}
+                >
+                  {compactRouteLabel(trip) && (
+                    <span className="trip-quick-meta__route">{compactRouteLabel(trip)}</span>
+                  )}
+                  {compactContainerLabel(trip) && (
+                    <span className="container-tag trip-quick-meta__container">{compactContainerLabel(trip)}</span>
+                  )}
+                </div>
+              )}
               {missingFields.length > 0 && (
                 <div className="trip-missing-flag" title={`Còn thiếu: ${missingFields.join(', ')}`}>
                   <TriangleAlert size={11} aria-hidden="true" />
@@ -211,11 +250,15 @@ export function buildTripColumns(
         );
       },
     },
-    {
+    // Quick-edit renders Tuyến + Container inside the identity cell (see
+    // .trip-quick-meta) and drops their tracks, so the figures grid fits the
+    // table area of a 1440 laptop with no horizontal scroll and no column
+    // hidden under the pinned Trạng thái column (kanban 20260922_28).
+    ...(quickEdit?.enabled ? [] : [{
       id: 'route',
       header: 'Tuyến',
-      accessorFn: (row) => row.route?.name ?? '',
-      cell: ({ row }) => {
+      accessorFn: (row: TripDetail) => row.route?.name ?? '',
+      cell: ({ row }: { row: { original: TripDetail } }) => {
         const trip = row.original;
         const route = splitRoute(trip.route?.name);
         const fullRoute = trip.route?.name ?? '';
@@ -244,12 +287,11 @@ export function buildTripColumns(
           </div>
         );
       },
-    },
-    {
+    } satisfies ColumnDef<TripDetail>, {
       id: 'container',
       header: 'Container',
       enableSorting: false,
-      cell: ({ row }) => {
+      cell: ({ row }: { row: { original: TripDetail } }) => {
         const trip = row.original;
         const containers: TripListContainer[] = (trip as TripListRow).containers ?? [];
         const codes = Array.from(new Set(containers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean)));
@@ -280,7 +322,7 @@ export function buildTripColumns(
           </div>
         );
       },
-    },
+    } satisfies ColumnDef<TripDetail>]),
     {
       id: 'consumption',
       header: 'Tiêu hao',
