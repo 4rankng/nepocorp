@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useQuery, type QueryKey, type UseQueryResult } from '@tanstack/react-query';
 import { useDebouncedValue } from './useDebouncedValue';
+import { accumulatePage, type PageAccumulator } from './useInfiniteScroll';
 
 export interface TableQueryEndpoint<TItem, TParams extends Record<string, unknown>> {
   (params: TParams & { search?: string; page?: number; limit?: number }): Promise<{ items: TItem[]; total: number }>;
@@ -17,10 +18,15 @@ export interface TableQueryState<TItem, TParams extends Record<string, unknown>>
   page: number;
   setPage: (p: number) => void;
   pageSize: number;
+  /** Changing the batch size restarts the list at page 1. */
   setPageSize: (n: number) => void;
   rows: TItem[];
   total: number;
   totalPages: number;
+  /** Another page exists beyond the current one. */
+  hasMore: boolean;
+  /** Fetch the next page (no-op at the end of the list). */
+  loadMore: () => void;
   isLoading: boolean;
   isFetching: boolean;
   error: unknown;
@@ -39,6 +45,12 @@ export interface UseTableQueryStateOpts<TItem, TParams extends Record<string, un
   initialFilters?: TParams;
   initialSearch?: string;
   enabled?: boolean;
+  /**
+   * Infinite-scroll mode: `rows` keeps every page loaded so far instead of
+   * replacing them. Pair with `hasMore` + `loadMore` and render the sentinel
+   * through `useInfiniteScroll`.
+   */
+  accumulate?: boolean;
 }
 
 /**
@@ -123,9 +135,40 @@ export function useTableQueryState<
     enabled: opts.enabled ?? true,
   });
 
-  const rows = query.data?.items ?? [];
+  // Infinite-scroll accumulation. The ref is a render-time cache keyed by the
+  // filter/search signature, so a filter change restarts the list while a page
+  // change appends.
+  const listKey = useMemo(
+    () => JSON.stringify({ ...appliedParams, page: undefined }),
+    [appliedParams],
+  );
+  const accRef = useRef<PageAccumulator<TItem>>({ key: '', page: 0, items: [] });
+  const fetched = query.data?.items ?? [];
+
+  const rows = useMemo(() => {
+    if (!opts.accumulate) return fetched;
+    // `keepPreviousData` serves the previous page as a placeholder while the
+    // next one loads. Folding that in would duplicate a page; the rows already
+    // on screen are the accumulated ones, so just keep rendering those.
+    if (!query.data || query.isPlaceholderData) return accRef.current.items;
+    accRef.current = accumulatePage(accRef.current, listKey, page, pageSize, fetched);
+    return accRef.current.items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.data, query.isPlaceholderData, listKey, page, pageSize, opts.accumulate]);
+
   const total = query.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const hasMore = page < totalPages;
+
+  const loadMore = useCallback(() => {
+    if (query.isFetching) return;
+    setPage((current) => (current < totalPages ? current + 1 : current));
+  }, [query.isFetching, totalPages]);
+
+  const setPageSizeAndReset = useCallback((size: number) => {
+    setPage(1);
+    setPageSize(size);
+  }, []);
 
   const reset = useCallback(() => {
     setSearch(opts.initialSearch ?? '');
@@ -143,10 +186,12 @@ export function useTableQueryState<
     page,
     setPage,
     pageSize,
-    setPageSize,
+    setPageSize: setPageSizeAndReset,
     rows,
     total,
     totalPages,
+    hasMore,
+    loadMore,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     error: query.error,

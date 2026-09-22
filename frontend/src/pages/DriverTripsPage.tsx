@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Truck, Calendar, ArrowRight, Loader2, AlertTriangle, Building2, Package } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
 import { PageHeader, Panel } from '../components/UI';
-import { Pagination } from '../design-system';
+import { Pagination, accumulatePage, type PageAccumulator } from '../design-system';
 import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { useDriverTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations } from '../hooks/animations';
@@ -32,29 +32,42 @@ function formatContainerList(nums: string[] | null | undefined): string {
 }
 
 export default function DriverTripsPage() {
-  // Status tabs and pagination are resolved server-side; statusCounts powers
+  // Status tabs and page size are resolved server-side; statusCounts powers
   // the tab pills across ALL statuses.
   const [activeFilter, setActiveFilter] = useState<TripStatus | ''>('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
-  useEffect(() => { setPage(1); }, [activeFilter]);
+  useEffect(() => { setPage(1); }, [activeFilter, pageSize]);
 
-  const { data, isLoading: loading, error: queryError, refetch } = useDriverTrips({
+  const { data, isLoading: loading, isFetching, error: queryError, refetch } = useDriverTrips({
     page,
-    limit: PAGE_SIZE,
+    limit: pageSize,
     status: activeFilter || undefined,
   });
-  const trips = useMemo(() => (data?.items ?? []) as TripSummary[], [data?.items]);
+
+  const fetchedTrips = useMemo(() => (data?.items ?? []) as TripSummary[], [data?.items]);
   const total = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const hasMore = page < totalPages;
   const statusCounts = (data?.statusCounts ?? {}) as Partial<Record<TripStatus, number>>;
   const allTripsCount = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
   const error = queryError ? 'Không thể tải danh sách lệnh' : null;
   const { rootRef } = usePageAnimations({ ready: !loading });
 
-  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [trips] });
+  // Scrolling appends instead of replacing, so the reader never loses their
+  // place. A filter or page-size change restarts the list (listKey changes).
+  const listKey = `${activeFilter}|${pageSize}`;
+  const accRef = useRef<PageAccumulator<TripSummary>>({ key: '', page: 0, items: [] });
+  const trips = useMemo(() => {
+    if (!data) return accRef.current.items;
+    accRef.current = accumulatePage(accRef.current, listKey, page, pageSize, fetchedTrips);
+    return accRef.current.items;
+  }, [data, listKey, page, pageSize, fetchedTrips]);
 
-  if (loading) return (
+  const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [listKey] });
+
+  if (loading && trips.length === 0) return (
     <Panel>
       <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>
         <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
@@ -158,11 +171,16 @@ export default function DriverTripsPage() {
       </div>
 
       <Pagination
+        mode="infinite"
         page={page}
         totalPages={totalPages}
         totalItems={total}
-        pageSize={PAGE_SIZE}
+        pageSize={pageSize}
+        onPageSizeChange={setPageSize}
         onChange={setPage}
+        hasMore={hasMore}
+        isLoadingMore={isFetching}
+        onLoadMore={() => setPage(current => (current < totalPages ? current + 1 : current))}
       />
     </div>
   );

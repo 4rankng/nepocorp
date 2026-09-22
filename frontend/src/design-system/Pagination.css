@@ -24,6 +24,54 @@
   gap: 8px;
 }
 
+/* ── "Số dòng" selector — offered on every breakpoint ─────────────────── */
+.ds-pagination__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 4px;
+}
+.ds-pagination__size-label {
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.ds-pagination__size-select {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 6px;
+  border: 1px solid var(--control-border);
+  border-radius: 9px;
+  background: var(--control-bg);
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+/* ── Infinite mode ────────────────────────────────────────────────────── */
+.ds-pagination--infinite {
+  padding: 10px 2px;
+}
+.ds-pagination__sentinel {
+  width: 1px;
+  height: 1px;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+.ds-pagination__loading,
+.ds-pagination__end {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
 .ds-pagination__btn {
   display: inline-flex;
   align-items: center;

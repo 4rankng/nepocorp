@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, UserCheck, BarChart3, Lock, Plus, Download,
@@ -222,7 +222,7 @@ export default function CustomersPage() {
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const navigate = useNavigate();
 
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const { data: customersData, isLoading: loading, error: queryError, refetch: refetchCustomers } = useAllCustomers();
   const { rootRef } = usePageAnimations({ ready: !loading });
@@ -257,7 +257,7 @@ export default function CustomersPage() {
     return { customers: customerRevenues, total: totalRevenue };
   }, [customers, revenueMap]);
 
-  useEffect(() => { setPage(1); }, [search, filter]);
+  useEffect(() => { setPage(1); }, [search, filter, pageSize]);
 
   const { activeCount, lockedCount, filtered } = useMemo(() => {
     const activeCount = customers.filter(c => c.status === CustomerStatus.ACTIVE).length;
@@ -282,7 +282,12 @@ export default function CustomersPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const visibleCustomers = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  // Infinite scroll: everything loaded so far stays on screen and the sentinel
+  // pulls the next batch.
+  const visibleCustomers = filtered.slice(0, currentPage * pageSize);
+  const loadMoreCustomers = useCallback(() => {
+    setPage((current) => (current < totalPages ? current + 1 : current));
+  }, [totalPages]);
 
   async function doCreate(body: Record<string, unknown>) {
     setSaving(true);
@@ -609,10 +614,16 @@ export default function CustomersPage() {
 
       </div>
       <Pagination
+        mode="infinite"
         page={currentPage}
         totalPages={totalPages}
+        totalItems={filtered.length}
+        pageSize={pageSize}
+        onPageSizeChange={setPageSize}
         onChange={setPage}
-        summary={<span>Hiển thị <strong>{filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filtered.length)}</strong> trên <strong>{filtered.length}</strong> khách hàng</span>}
+        hasMore={currentPage < totalPages}
+        onLoadMore={loadMoreCustomers}
+        summary={<span>Hiển thị <strong>{visibleCustomers.length}</strong> trên <strong>{filtered.length}</strong> khách hàng</span>}
       />
 
       {/* Customer add/edit modal */}

@@ -13,7 +13,7 @@ import { useMonth } from '../hooks/useMonth';
 import { getCalendarMonthRange } from '../lib/calendar-month';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
-import { useDebouncedValue, useTableQueryState, EmptyState } from '../design-system';
+import { useDebouncedValue, useTableQueryState, EmptyState, Pagination } from '../design-system';
 import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, formatMoney, STATUS_PILL_CLASS, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, buildTripCode, getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit, getMissingPlanFields, isTripToday } from '../features/trips';
 import { columnClass, draftChanged, figuresPayloadFromDraft, invalidQuickField, isEditableInQuickMode, quickDraftFromTrip, QUICK_DRAFT_FIELD_LABELS } from './trip-list-helpers';
 import { TripListHero } from './trip-list-hero';
@@ -178,6 +178,7 @@ export default function TripListPage() {
     queryKey: qk.trips.all,
     defaultPageSize: PAGE_SIZE,
     initialSearch: '',
+    accumulate: true,
   });
   // Apply the form-state filters and search into the table hook. We do
   // this via a one-way assignment so the table hook stays the source of
@@ -685,32 +686,18 @@ export default function TripListPage() {
 
         {table.rows.length > 0 && (
           <div className="table-foot">
-            <div className="page-info">
-              Hiển thị <b>{((table.page - 1) * table.pageSize) + 1}–{Math.min(table.page * table.pageSize, table.total)}</b> trên <b>{table.total}</b> chuyến
-            </div>
-            <div className="pagination">
-              <button className="page-btn" disabled={table.page <= 1} onClick={() => table.setPage(table.page - 1)}>‹</button>
-              {(() => {
-                const pages: (number | string)[] = [];
-                if (table.totalPages <= 7) {
-                  for (let i = 1; i <= table.totalPages; i++) pages.push(i);
-                } else {
-                  pages.push(1);
-                  const start = Math.max(2, table.page - 2);
-                  const end = Math.min(table.totalPages - 1, table.page + 2);
-                  if (start > 2) pages.push('…');
-                  for (let i = start; i <= end; i++) pages.push(i);
-                  if (end < table.totalPages - 1) pages.push('…');
-                  pages.push(table.totalPages);
-                }
-                return pages.map((p, i) =>
-                  typeof p === 'string'
-                    ? <span key={`e${i}`} className="page-ellipsis">…</span>
-                    : <button key={p} className={`page-btn${p === table.page ? ' active' : ''}`} onClick={() => table.setPage(p)}>{p}</button>
-                );
-              })()}
-              <button className="page-btn" disabled={table.page >= table.totalPages} onClick={() => table.setPage(table.page + 1)}>›</button>
-            </div>
+            <Pagination
+              mode="infinite"
+              page={table.page}
+              totalPages={table.totalPages}
+              totalItems={table.total}
+              pageSize={table.pageSize}
+              onPageSizeChange={table.setPageSize}
+              onChange={table.setPage}
+              hasMore={table.hasMore}
+              isLoadingMore={table.isFetching}
+              onLoadMore={table.loadMore}
+            />
           </div>
         )}
       </div>
