@@ -23,7 +23,7 @@ export interface ReassignState {
   error: string;
 }
 
-export type FleetFilter = 'all' | 'running' | 'ready' | 'noassign' | 'maint';
+export type FleetFilter = 'all' | 'running' | 'ready' | 'waiting' | 'noassign' | 'maint';
 
 export interface Toast {
   id: number;

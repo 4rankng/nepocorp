@@ -40,20 +40,43 @@ export default function DispatchPage() {
 
   const getActive = useCallback((id: number) => activeTrips.find((t) => t.truckId === id), [activeTrips]);
   const getDefault = useCallback((id: number) => drivers.find((d) => d.assignedTruckId === id), [drivers]);
+  // A free truck whose default driver is already hauling elsewhere is NOT available —
+  // it needs a reassignment, so it counts as "chờ tài xế", not "sẵn sàng"
+  // (kanban 20260922_33).
+  const getBusyElsewhere = useCallback((id: number) => {
+    const def = drivers.find((d) => d.assignedTruckId === id);
+    if (!def) return undefined;
+    return activeTrips.find((t) => t.driverId === def.id && t.truckId !== id);
+  }, [drivers, activeTrips]);
 
   const fleetCounts = useMemo(() => {
-    let running = 0, ready = 0, noassign = 0, maint = 0;
-    for (const t of trucks) { if (t.status === 'MAINTENANCE') { maint++; continue; } if (getActive(t.id)) running++; else if (getDefault(t.id)) ready++; else noassign++; }
-    return { running, ready, noassign, maint, all: trucks.length };
-  }, [trucks, getActive, getDefault]);
+    let running = 0, ready = 0, waiting = 0, noassign = 0, maint = 0;
+    for (const t of trucks) {
+      if (t.status === 'MAINTENANCE') { maint++; continue; }
+      if (getActive(t.id)) { running++; continue; }
+      if (getDefault(t.id)) { if (getBusyElsewhere(t.id)) waiting++; else ready++; continue; }
+      noassign++;
+    }
+    return { running, ready, waiting, noassign, maint, all: trucks.length };
+  }, [trucks, getActive, getDefault, getBusyElsewhere]);
 
   const utilizationPct = useMemo(() => { const a = fleetCounts.all - fleetCounts.maint; return a <= 0 ? 0 : Math.round((fleetCounts.running / a) * 100); }, [fleetCounts]);
-  const noteCount = fleetCounts.maint + fleetCounts.noassign;
+  const noteCount = fleetCounts.maint + fleetCounts.noassign + fleetCounts.waiting;
 
   const filteredTrucks = useMemo(() => {
     if (fleetFilter === 'all') return trucks;
-    return trucks.filter((t) => { if (fleetFilter === 'maint') return t.status === 'MAINTENANCE'; if (t.status === 'MAINTENANCE') return false; const ha = !!getActive(t.id); if (fleetFilter === 'running') return ha; const hd = !!getDefault(t.id); if (fleetFilter === 'ready') return !ha && hd; if (fleetFilter === 'noassign') return !ha && !hd; return true; });
-  }, [trucks, fleetFilter, getActive, getDefault]);
+    return trucks.filter((t) => {
+      if (fleetFilter === 'maint') return t.status === 'MAINTENANCE';
+      if (t.status === 'MAINTENANCE') return false;
+      const ha = !!getActive(t.id);
+      if (fleetFilter === 'running') return ha;
+      const hd = !!getDefault(t.id);
+      if (fleetFilter === 'waiting') return !ha && hd && !!getBusyElsewhere(t.id);
+      if (fleetFilter === 'ready') return !ha && hd && !getBusyElsewhere(t.id);
+      if (fleetFilter === 'noassign') return !ha && !hd;
+      return true;
+    });
+  }, [trucks, fleetFilter, getActive, getDefault, getBusyElsewhere]);
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><div className="spin" style={{ width: 32, height: 32, border: '4px solid var(--border-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }} /></div>;
 
@@ -103,7 +126,7 @@ export default function DispatchPage() {
           <div className="metric"><div className="metric-label">Tổng đội xe</div><div className="metric-value d-mono">{fleetCounts.all}</div><div className="metric-delta delta-flat">— xe đăng ký</div></div>
           <div className="metric"><div className="metric-label">Xe đang chạy</div><div className="metric-value d-mono">{fleetCounts.running}<span className="metric-value-unit">/{fleetCounts.all}</span></div><div className="metric-delta delta-up"><TrendingUp size={10} strokeWidth={2.5} /> hoạt động</div></div>
           <div className="metric"><div className="metric-label">Sẵn sàng</div><div className="metric-value d-mono">{fleetCounts.ready}</div><div className="metric-delta delta-up"><TrendingUp size={10} strokeWidth={2.5} /> khả dụng</div></div>
-          <div className="metric"><div className="metric-label">Cần lưu ý</div><div className="metric-value d-mono">{noteCount}</div><div className="metric-delta delta-down"><TrendingDown size={10} strokeWidth={2.5} /> {fleetCounts.maint} bảo dưỡng · {fleetCounts.noassign} chờ giao</div></div>
+          <div className="metric"><div className="metric-label">Cần lưu ý</div><div className="metric-value d-mono">{noteCount}</div><div className="metric-delta delta-down"><TrendingDown size={10} strokeWidth={2.5} /> {fleetCounts.maint} bảo dưỡng · {fleetCounts.waiting} chờ tài xế · {fleetCounts.noassign} chờ giao</div></div>
         </div>
       </section>
 

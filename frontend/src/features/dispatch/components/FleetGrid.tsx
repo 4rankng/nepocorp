@@ -23,13 +23,20 @@ function getDefaultDriverForTruck(truckId: number, drivers: Driver[]) {
 const STATUS_STRIP: Record<string, { color: string; label: string }> = {
   running:  { color: '#22C55E', label: 'Đang chạy' },   /* green — active */
   ready:    { color: '#3B82F6', label: 'Sẵn sàng' },    /* blue — available */
+  waiting:  { color: '#C2410C', label: 'Chờ tài xế' },   /* orange — driver is hauling elsewhere */
   maint:    { color: '#F59E0B', label: 'Bảo dưỡng' },    /* amber — warning */
   noassign: { color: '#94A3B8', label: 'Chưa giao' },    /* slate — neutral */
 };
 
-function getStatusKey(isMaint: boolean, isRunning: boolean, defDriver: Driver | undefined) {
+function getStatusKey(
+  isMaint: boolean,
+  isRunning: boolean,
+  defDriver: Driver | undefined,
+  busyElsewhere: NormalizedTrip | undefined,
+) {
   if (isMaint) return 'maint';
   if (isRunning) return 'running';
+  if (busyElsewhere) return 'waiting';
   if (defDriver) return 'ready';
   return 'noassign';
 }
@@ -59,8 +66,14 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGr
         const defDriver = getDefaultDriverForTruck(truck.id, drivers);
         const isMaint = truck.status === 'MAINTENANCE';
         const isRunning = !!activeTrip;
+        // A truck can be free while its default driver is hauling on ANOTHER truck.
+        // Showing that driver as plain "Sẵn sàng" here made dispatch assign a driver
+        // who is already on the road (kanban 20260922_33).
+        const busyElsewhere = !isRunning && defDriver
+          ? activeTrips.find((t) => t.driverId === defDriver.id && t.truckId !== truck.id)
+          : undefined;
         const onClickRow = activeTrip ? () => onTripClick(activeTrip.id) : undefined;
-        const statusKey = getStatusKey(isMaint, isRunning, defDriver);
+        const statusKey = getStatusKey(isMaint, isRunning, defDriver, busyElsewhere);
         const status = STATUS_STRIP[statusKey];
 
         return (
@@ -79,6 +92,14 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGr
             <div className="fleet-cell fleet-driver">
               {isMaint ? <span className="no-driver"><Wrench size={13} /> Bảo dưỡng</span>
               : isRunning ? <span className="driver-name">{activeTrip.driverName}</span>
+              : busyElsewhere ? (
+                <span
+                  className="driver-name driver-name--busy"
+                  title={`Đang chạy chuyến ${busyElsewhere.tripCode ?? ''} trên xe ${busyElsewhere.truckPlate}`.trim()}
+                >
+                  {defDriver!.name} <span className="driver-busy-note">(Đang chạy xe {busyElsewhere.truckPlate})</span>
+                </span>
+              )
               : defDriver ? <span className="driver-name">{defDriver.name}</span>
               : <span className="no-driver"><UserX size={13} /> Chưa giao</span>}
             </div>

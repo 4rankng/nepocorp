@@ -4,6 +4,7 @@ interface FleetCounts {
   all: number;
   running: number;
   ready: number;
+  waiting: number;
   noassign: number;
   maint: number;
 }
@@ -18,6 +19,7 @@ interface DispatchFiltersProps {
 const FILTER_COLORS: Partial<Record<FleetFilter, string>> = {
   running:  '#22C55E',
   ready:    '#3B82F6',
+  waiting:  '#C2410C',
   maint:    '#F59E0B',
   noassign: '#94A3B8',
 };
@@ -26,6 +28,7 @@ const FILTER_TABS: { key: FleetFilter; label: string }[] = [
   { key: 'all', label: 'Tất cả' },
   { key: 'running', label: 'Đang chạy' },
   { key: 'ready', label: 'Sẵn sàng' },
+  { key: 'waiting', label: 'Chờ tài xế' },
   { key: 'noassign', label: 'Chưa giao lái xe' },
   { key: 'maint', label: 'Bảo dưỡng' },
 ];

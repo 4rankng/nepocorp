@@ -315,6 +315,10 @@
 
 
 .dispatch-page .driver-name { font-size: var(--fs-sm); font-weight: 600; line-height: 1.35; color: var(--ink); }
+/* Default driver is hauling on another truck — the row must not read as available
+   (kanban 20260922_33). Plain inline text in the warning tone, no badge/pill. */
+.dispatch-page .driver-name--busy { color: var(--ink-2, #4B5563); }
+.dispatch-page .driver-busy-note { color: #C2410C; font-weight: 600; white-space: nowrap; }
 .dispatch-page .driver-meta { font-size: var(--fs-xs); color: var(--ink-3); }
 .dispatch-page .no-driver {
   color: var(--ink-3);
