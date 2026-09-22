@@ -104,6 +104,18 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
+/* Error state — mirrors the house pattern in design-system/forms/TextField.css
+   (.ds-field--error): --danger border + color-mix(--danger 20%) focus ring.
+   Compound selectors (not !important) make the override order-independent;
+   background-color longhand keeps select.expense-input's caret image. */
+.expense-input.expense-input--error {
+  border-color: var(--danger);
+  background-color: var(--danger-soft);
+}
+.expense-input.expense-input--error:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 20%, transparent);
+}
 .expense-input::placeholder {
   color: var(--ink-4);
 }

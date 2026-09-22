@@ -12,7 +12,7 @@ export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set 
                       type="date"
                       name="expenseDate"
                       id="expenseDate"
-                      className="expense-input"
+                      className={`expense-input${errors.expenseDate ? ' expense-input--error' : ''}`}
                       value={form.expenseDate}
                       onChange={e => set('expenseDate', e.target.value)}
                     />
@@ -40,7 +40,7 @@ export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set 
                     <select
                       name="paymentStatus"
                       id="paymentStatus"
-                      className="expense-input"
+                      className={`expense-input${errors.paymentStatus ? ' expense-input--error' : ''}`}
                       value={form.paymentStatus}
                       onChange={e => set('paymentStatus', e.target.value as 'PAID' | 'UNPAID')}
                     >

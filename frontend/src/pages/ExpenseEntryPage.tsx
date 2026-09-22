@@ -425,7 +425,7 @@ export default function ExpenseEntryPage() {
                       type="text"
                       name="newSupplierName"
                       id="newSupplierName"
-                      className="expense-input"
+                      className={`expense-input${errors.supplierId ? ' expense-input--error' : ''}`}
                       style={{ flex: 1 }}
                       placeholder="Tên nhà cung cấp…"
                       value={newSupplierName}
@@ -444,7 +444,7 @@ export default function ExpenseEntryPage() {
                   <select
                     name="supplierId"
                     id="supplierId"
-                    className="expense-input"
+                    className={`expense-input${errors.supplierId ? ' expense-input--error' : ''}`}
                     value={form.supplierId}
                     disabled={loadingExpenseCatalogs}
                     onChange={e => set('supplierId', e.target.value ? Number(e.target.value) : '')}
@@ -475,7 +475,7 @@ export default function ExpenseEntryPage() {
                       type="text"
                       name="newCategoryName"
                       id="newCategoryName"
-                      className="expense-input"
+                      className={`expense-input${errors.categoryId ? ' expense-input--error' : ''}`}
                       style={{ flex: 1 }}
                       placeholder="Tên hạng mục…"
                       value={newCategoryName}
@@ -494,7 +494,7 @@ export default function ExpenseEntryPage() {
                   <select
                     name="categoryId"
                     id="categoryId"
-                    className="expense-input"
+                    className={`expense-input${errors.categoryId ? ' expense-input--error' : ''}`}
                     value={form.categoryId}
                     disabled={loadingExpenseCatalogs}
                     onChange={e => set('categoryId', e.target.value ? Number(e.target.value) : '')}
@@ -540,7 +540,7 @@ export default function ExpenseEntryPage() {
                   <select
                     name="truckId"
                     id="truckId"
-                    className="expense-input"
+                    className={`expense-input${errors.truckId ? ' expense-input--error' : ''}`}
                     value={form.truckId}
                     onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
                   >
@@ -559,7 +559,7 @@ export default function ExpenseEntryPage() {
                   <select
                     name="truckId"
                     id="truckId"
-                    className="expense-input"
+                    className={`expense-input${errors.truckId ? ' expense-input--error' : ''}`}
                     value={form.truckId}
                     onChange={e => set('truckId', e.target.value ? Number(e.target.value) : '')}
                   >
@@ -581,7 +581,7 @@ export default function ExpenseEntryPage() {
                     name="amount"
                     id="amount"
                     inputMode="numeric"
-                    className="expense-input"
+                    className={`expense-input${errors.amount ? ' expense-input--error' : ''}`}
                     value={form.amount ? formatAmountDisplay(form.amount) : ''}
                     onChange={e => set('amount', parseAmountInput(e.target.value))}
                     placeholder="0"
@@ -602,7 +602,7 @@ export default function ExpenseEntryPage() {
                       type="date"
                       name="validFrom"
                       id="validFrom"
-                      className="expense-input"
+                      className={`expense-input${errors.validFrom ? ' expense-input--error' : ''}`}
                       value={form.validFrom}
                       onChange={e => set('validFrom', e.target.value)}
                     />
@@ -614,7 +614,7 @@ export default function ExpenseEntryPage() {
                       type="date"
                       name="validTo"
                       id="validTo"
-                      className="expense-input"
+                      className={`expense-input${errors.validTo ? ' expense-input--error' : ''}`}
                       value={form.validTo}
                       onChange={e => set('validTo', e.target.value)}
                     />
