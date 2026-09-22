@@ -163,23 +163,20 @@ This is a Vietnamese logistics domain with specific business rules. Read `CONTEX
 - **Tests**: Backend has `cd backend && pnpm test` → `npx tsx --test src/tests/integration.test.ts`.
 - **Linting**: None configured.
 
-## Knowledge Base (Understand Anything)
+## Knowledge Base (OpenWiki)
 
-This project maintains a local codebase knowledge graph in `.ua/` (gitignored — rebuilt per machine) via the [Understand Anything](https://github.com/Egonex-AI/Understand-Anything) plugin. The graph powers the `/understand`, `/understand-dashboard`, `/understand-explain`, and `/understand-diff` skills for fast architectural lookups and onboarding.
+This project maintains a generated agent wiki in `openwiki/` via [langchain-ai/openwiki](https://github.com/langchain-ai/openwiki) — an Open Knowledge Format (OKF) bundle of Markdown pages with versioned, evidence-backed Claims, refreshed from repository changes. It replaces the previous local knowledge-graph plugin (Understand Anything / `.ua/`), which is no longer installed.
 
-**Setup (one-time per machine):** the plugin is installed globally (`~/.understand-anything/repo`, skills symlinked into `~/.agents/skills/understand*`, plugin root at `~/.understand-anything-plugin`). If `.ua/knowledge-graph.json` is missing on a fresh checkout, run `/understand` to build it.
+**Reading it:** `openwiki/` is just-in-time context, not required startup reading. Source code and tests stay authoritative; a brief's unknowns and review items are verification gaps, not automatic requirements. Prefer the narrowest quiet validation that proves the changed behavior, and preserve complete failure output.
 
-**Agent maintenance contract — keep the KB fresh:**
+**Setup (one-time per machine):** the CLI is installed globally with `npm install -g openwiki` (requires Node.js ≥ 22.22.0). Host integrations are user-level and reusable from any repo: `openwiki integrations install omp` (Oh My Pi, under `~/.omp/agent`), `openwiki integrations install claude`, `openwiki integrations install opencode`. Check status with `openwiki integrations list`. Host-driven runs use the coding agent's own model session, so no OpenWiki provider key is needed; the CLI-launched path (used by CI) needs `OPENWIKI_PROVIDER` + the provider key.
 
-- **After finishing any task that changed source code** (`.ts`/`.tsx`/`.js`/`.jsx` in `shared/`, `backend/`, `frontend/`), run `/understand` so the knowledge graph picks up the structural changes. It is incremental by default — unchanged files cost zero tokens. Only new/changed files are re-analyzed.
-- **How the automatic trigger actually works.** `.ua/config.json` → `autoUpdate: true` is only a flag; something has to read it. The plugin ships its trigger as a Claude Code `PostToolUse`/`SessionStart` hook pair, and it is a *prompt injector* — it cannot rebuild anything, it only tells the agent to run `~/.understand-anything-plugin/hooks/auto-update-prompt.md`. It is now wired for **both** harnesses in this repo:
-  - **OMP:** `.omp/hooks/post/graph-autoupdate.ts` (project hooks are discovered from `.omp/hooks/{pre,post}/*.ts`). It appends the nudge to the `git commit` tool result, and raises it once per session via `before_agent_start`.
-  - **Claude Code:** the plugin's own commands, added to `.claude/settings.json` alongside the existing code-review-graph hooks.
-  Before this was wired, the flag was set but nothing consumed it, so `.ua/` silently drifted — verify with `meta.json:gitCommitHash` vs `git rev-parse HEAD`. If a task changed code without a commit (e.g. edits left in the working tree), invoke `/understand` explicitly before reporting done.
-- Rebuilds are structural (tree-sitter fingerprints) — cosmetic changes (formatting, comments, internal logic) do **not** trigger a re-analysis, so running it is cheap and safe.
-- The graph is local only (gitignored). Do not commit `.ua/` — each developer/agent maintains their own.
+**Agent maintenance contract:**
 
-**Exclusions:** the analysis already skips `node_modules/`, `dist/`, build artifacts, and migrations. If a generated/vendored path is noisy, add it to `.ua/.understandignore`.
+- **Do not hand-edit generated OpenWiki pages** (`openwiki/`, including `openwiki/.claims/`). Update source code and docs instead, then let OpenWiki regenerate: `openwiki code --update --print` locally, or the scheduled GitHub Actions workflow (`.github/workflows/openwiki-update.yml`, daily 08:00 UTC) which opens a docs PR.
+- `openwiki --init` regenerates the wiki from scratch and **replaces** the existing generated pages; it preserves the user-authored `openwiki/INSTRUCTIONS.md` brief. Prefer `--update` unless a full regeneration is intended.
+- `openwiki/.run.json` is transient run state (resumable page queue); it is removed by CI after each run and should not be committed.
+- Generated docs land via PR, never by pushing straight to `main`; the wiki is a docs artifact, not a code landing.
 
 <skills_system priority="1">
 
