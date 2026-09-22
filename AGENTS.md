@@ -50,7 +50,6 @@ tingting/
 ├── backend/           # @tingting/backend — Express 5 + Drizzle ORM + PostgreSQL
 ├── frontend/          # @tingting/frontend — React 19 + Vite + Tailwind 4
 ├── docs/              # specs, ADRs, flows, guides, plans, company documents
-├── wireframe/         # HTML wireframes for accountant/director/driver views
 └── CONTEXT.md         # Domain glossary & business rules (authoritative)
 ```
 
