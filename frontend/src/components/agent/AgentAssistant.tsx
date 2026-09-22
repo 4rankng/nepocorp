@@ -121,7 +121,7 @@ export function AgentAssistant() {
         aria-label="Mở trợ lý"
         onClick={() => setOpen(true)}
       >
-        <AssetIcon name="assistant" size={24} className="agent-launcher__icon" />
+        <AssetIcon name="assistant" size={32} className="agent-launcher__icon" />
       </button>
 
       <Drawer

@@ -361,12 +361,20 @@
    `#root button { min-height: 44px }` touch rule at ≤640px. */
 #root .topbar .icon-btn,
 #root .topbar .topbar__icon-btn,
-#root .topbar .topbar__toggle,
-#root .topbar .agent-launcher {
+#root .topbar .topbar__toggle {
   width: calc(var(--topbar-h) - 8px);
   height: calc(var(--topbar-h) - 8px);
   min-width: calc(var(--topbar-h) - 8px);
   min-height: calc(var(--topbar-h) - 8px);
+}
+
+/* The assistant launcher is a bare icon, so it takes the full row height
+   rather than leaving room for the tile the others draw. */
+#root .topbar .agent-launcher {
+  width: calc(var(--topbar-h) - 4px);
+  height: calc(var(--topbar-h) - 4px);
+  min-width: calc(var(--topbar-h) - 4px);
+  min-height: calc(var(--topbar-h) - 4px);
 }
 
 .topbar__toggle {

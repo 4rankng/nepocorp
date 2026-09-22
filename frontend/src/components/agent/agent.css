@@ -2,29 +2,30 @@
    Namespaced `agent-*` to avoid collisions. Uses design tokens (--accent,
    --surface, --ink, --bg, radii, fonts). No !important (page/component-scoped). */
 
+/* Bare hit area: the assistant artwork IS the control. No card, no border, no
+   fill - the icon is sized straight from the header bar so it reads as the
+   largest element in the row instead of a small glyph inside a white tile. */
 .agent-launcher {
   width: 44px;
   height: 44px;
   padding: 0;
   color: var(--ink, #101513);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(236, 248, 241, 0.82) 100%);
-  border: 1px solid rgba(0, 90, 45, 0.18);
-  border-radius: 12px;
-  box-shadow: 0 9px 20px rgba(16, 24, 20, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 160ms var(--ease), border-color 160ms var(--ease), box-shadow 160ms var(--ease), transform 160ms var(--ease);
+  transition: transform 160ms var(--ease);
 }
 .agent-launcher:hover {
-  background: #ffffff;
-  border-color: rgba(0, 177, 79, 0.4);
-  box-shadow: 0 12px 26px rgba(0, 90, 45, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  transform: translateY(-1px);
+  transform: scale(1.08);
 }
 .agent-launcher__icon {
-  filter: drop-shadow(0 2px 2px rgba(0, 77, 34, 0.12));
+  width: calc(var(--topbar-h) - 8px);
+  height: calc(var(--topbar-h) - 8px);
+  object-fit: contain;
 }
 
 /* ── Drawer shell ───────────────────────────────────────────────────────── */
@@ -780,13 +781,12 @@
 }
 
 /* Flat finish shared across every page. The assistant remains distinct through
-   borders, spacing, and solid color rather than simulated elevation. */
+   its artwork alone - no tile, fill or border rides along with it. */
 .agent-launcher,
 .agent-launcher:hover {
-  background: var(--surface, #fff);
-  border-color: var(--line, #cbd3ce);
+  background: transparent;
+  border-color: transparent;
   box-shadow: none;
-  transform: none;
 }
 
 .agent-launcher__icon,
