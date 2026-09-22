@@ -532,11 +532,26 @@
 .dash-wf .wf-fstat .v { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700; line-height: 1.35; display: flex; align-items: center; gap: 6px; }
 .dash-wf .wf-fstat .v .pip { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
 .dash-wf .wf-fstat .k { font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-xs); font-weight: 600; color: var(--wf-ink-3); margin-top: 6px; }
-.dash-wf .wf-util { display: flex; align-items: center; gap: 11px; margin-top: 13px; }
+.dash-wf .wf-util { display: flex; align-items: center; gap: 11px; margin-top: 13px; flex-wrap: wrap; }
 .dash-wf .wf-util .track { flex: 1; height: 8px; border-radius: 5px; background: var(--wf-bg); overflow: hidden; }
 .dash-wf .wf-util .track i { display: block; height: 100%; border-radius: 5px; background: var(--wf-green); }
 .dash-wf .wf-util .pct { font-family: var(--font-mono); font-size: var(--fs-sm); font-weight: 700; color: var(--wf-green-700); }
-.dash-wf .wf-util .cap { font-size: var(--fs-xs); color: var(--wf-ink-3); }
+/* Utilization tone: green under 85%, blue to 100%, amber past capacity
+   (kanban 20260922_32). Flags are plain inline text, not pills — the design
+   system renders status through the statusStrip, and forbids badge shapes. */
+.dash-wf .wf-util .pct--high { color: var(--wf-blue); }
+.dash-wf .wf-util .pct--over { color: var(--wf-amber); }
+.dash-wf .wf-util__flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-2xs, 11px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.dash-wf .wf-util__flag--over { color: var(--wf-amber); }
+.dash-wf .wf-util__flag--external { color: var(--wf-ink-3); font-weight: 600; }
+.dash-wf .wf-util .cap { font-size: var(--fs-xs); color: var(--wf-ink-3); white-space: nowrap; }
 
 .dash-wf .wf-cost { min-height: 216px; }
 .dash-wf .wf-cost .body { padding: 14px 16px 16px; }

@@ -244,12 +244,19 @@ export default function DashboardPage() {
     // Subtract inTransit to get the mutually exclusive count of trucks that are ready/idle.
     const ready = Math.max(0, totalActive - inTransit);
     
-    // Utilization: percentage of the available fleet (total - maintenance) that is currently running (inTransit)
-    // This matches the logic in DispatchPage.tsx
+    // Utilization compares OUR running trips against OUR usable trucks. Counting
+    // subcontracted trips here made the ratio exceed 100% whenever a partner truck
+    // was hauling, so the bar (clamped at 100) disagreed with the printed number
+    // (kanban 20260922_32). Partner trips are reported separately instead.
+    const internalInTransit = stats?.inTransitInternalTrips ?? inTransit;
+    const externalInTransit = stats?.inTransitExternalTrips ?? Math.max(0, inTransit - internalInTransit);
     const utilizable = total - maintenance;
-    const utilization = utilizable > 0 ? (inTransit / utilizable) * 100 : null;
+    const utilization = utilizable > 0 ? (internalInTransit / utilizable) * 100 : null;
+    const utilTone: 'ok' | 'high' | 'over' = utilization == null
+      ? 'ok'
+      : utilization > 100 ? 'over' : utilization > 85 ? 'high' : 'ok';
     
-    return { ready, inTransit, maintenance, idle, total, drivers, utilization };
+    return { ready, inTransit, internalInTransit, externalInTransit, maintenance, idle, total, drivers, utilizable, utilization, utilTone };
   }, [stats]);
 
   // ── Attention items (compose from real data) ────────────────────────────
@@ -623,10 +630,26 @@ export default function DashboardPage() {
                 <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-ink-3)' }} />{fleet.idle}</div><div className="k">Ngừng</div></div>
               </div>
               {fleet.utilization != null && (
-                <div className="wf-util">
+                <div
+                  className="wf-util"
+                  title={`Đội xe nội bộ: ${fleet.internalInTransit}/${fleet.utilizable} (${Math.round(fleet.utilization)}%) · Thuê xe ngoài: ${fleet.externalInTransit} chuyến`}
+                >
                   <span className="cap">Tỷ lệ sử dụng</span>
-                  <progress className="d-progress d-progress-success track" value={Math.min(100, fleet.utilization)} max="100" aria-label="Tỷ lệ sử dụng đội xe" />
-                  <span className="pct">{Math.round(fleet.utilization)}%</span>
+                  <progress
+                    className={`d-progress track ${fleet.utilTone === 'over' ? 'd-progress-warning' : fleet.utilTone === 'high' ? 'd-progress-info' : 'd-progress-success'}`}
+                    value={Math.min(100, fleet.utilization)}
+                    max="100"
+                    aria-label="Tỷ lệ sử dụng đội xe"
+                  />
+                  <span className={`pct pct--${fleet.utilTone}`}>{Math.round(fleet.utilization)}%</span>
+                  {fleet.utilTone === 'over' && (
+                    <span className="wf-util__flag wf-util__flag--over">
+                      <AlertTriangle size={12} aria-hidden="true" /> Vượt công suất
+                    </span>
+                  )}
+                  {fleet.externalInTransit > 0 && (
+                    <span className="wf-util__flag wf-util__flag--external">Thuê ngoài: {fleet.externalInTransit} chuyến</span>
+                  )}
                 </div>
               )}
             </div>

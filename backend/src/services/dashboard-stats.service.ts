@@ -56,6 +56,8 @@ export async function getDashboardStats() {
         .orderBy(desc(s.capTableHistory.effectiveDate)),
       db.select({
         count: sql<number>`count(*)`,
+        internal: sql<number>`count(*) filter (where ${s.trips.carrierType} <> 'EXTERNAL')`,
+        external: sql<number>`count(*) filter (where ${s.trips.carrierType} = 'EXTERNAL')`,
       }).from(s.trips).where(and(
         isNull(s.trips.deletedAt),
         eq(s.trips.status, TripStatus.IN_TRANSIT),
@@ -140,6 +142,11 @@ export async function getDashboardStats() {
       lockedTrips: Number(stats?.lockedTrips || 0),
       completedTrips: Number(stats?.completedTrips || 0),
       inTransitTrips: Number(inTransitResult?.count || 0),
+      // Split of inTransitTrips by carrier: the utilization widget must compare
+      // OUR trucks against OUR trips, otherwise renting a partner truck reads as
+      // >100% fleet utilization (kanban 20260922_32).
+      inTransitInternalTrips: Number(inTransitResult?.internal || 0),
+      inTransitExternalTrips: Number(inTransitResult?.external || 0),
       totalTrucks: truckStatusCounts.reduce((sum, row) => sum + Number(row.count), 0),
       totalDrivers: Number(driverCount?.count || 0),
       fleetStatus: Object.fromEntries(

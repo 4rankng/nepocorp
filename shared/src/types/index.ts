@@ -1063,6 +1063,10 @@ export interface DashboardStats {
   lockedTrips?: number;
   completedTrips: number;
   inTransitTrips: number;
+  /** In-transit trips on our own trucks (the utilization numerator). */
+  inTransitInternalTrips?: number;
+  /** In-transit trips subcontracted to partner carriers. */
+  inTransitExternalTrips?: number;
   totalTrucks?: number;
   totalDrivers?: number;
   fleetStatus?: Record<string, number>;
