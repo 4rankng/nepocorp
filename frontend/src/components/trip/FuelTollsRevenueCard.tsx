@@ -37,6 +37,9 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </div>
       )}
 
+      {/* One grid for the supplement block: litres, reason and the actual unit
+          price share a row. The placeholder already says what an empty price
+          means, so the sentence that repeated it is gone. */}
       <div className="tc-form-row">
         <div className="field">
           <label>Số lít bổ sung</label>
@@ -46,9 +49,6 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <label>Lý do bổ sung</label>
           <input className="input" type="text" placeholder="VD: Chạy máy lạnh kéo dài" value={form.fuelSupplementReason} onChange={(e) => form.setFuelSupplementReason(e.target.value)} />
         </div>
-      </div>
-
-      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Đơn giá nhiên liệu thực tế (₫/lít)</label>
           <InputWithPrefix
@@ -59,11 +59,6 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
             type="money"
             mono
           />
-        </div>
-        <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
-          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', margin: 0 }}>
-            Nhập giá thực tế tại trạm nếu khác giá cấu hình. Để trống để dùng giá cấu hình hiện hành.
-          </p>
         </div>
       </div>
 
