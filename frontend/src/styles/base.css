@@ -2,7 +2,10 @@
  * Base
  * ========================================================================== */
 *, *::before, *::after { box-sizing: border-box; }
-html, body, #root { height: 100%; }
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
 body {
   margin: 0;
   font-family: var(--font-body);
@@ -14,6 +17,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   /* Disable iOS Safari pull-to-refresh bounce inside the app shell. */
   overscroll-behavior-y: contain;
+}
+@media print {
+  html, body, #root {
+    overflow: visible !important;
+    height: auto !important;
+  }
 }
 @layer base {
   button { font: inherit; font-size: var(--fs-control); cursor: pointer; }

@@ -1,6 +1,7 @@
 /* FuelModeToggle — AUTO / FLAT_RATE radio toggle */
 
 .tc-fuel-mode {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
@@ -11,8 +12,16 @@
 }
 .tc-fuel-mode input {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
   opacity: 0;
   pointer-events: none;
 }
