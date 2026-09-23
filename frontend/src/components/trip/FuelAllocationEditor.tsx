@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo } from 'react';
+import { Plus, X } from 'lucide-react';
 import type { Supplier } from '@tingting/shared';
 import { useCatalogs } from '../../hooks/useCatalogs';
 import { useFuelConfig } from '../../hooks/useQueries';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
 import { Money } from '../shared/Money';
 import { formatCurrency } from '../../lib/format';
-import { normalizeFuelAllocationRows, fuelSupplierLabel, activeFuelSuppliers, isStandardFuelRowKey } from './fuelAllocationRows';
+import { normalizeFuelAllocationRows, fuelSupplierLabel, activeFuelSuppliers, isStandardFuelRowKey, groupFuelAllocationRows } from './fuelAllocationRows';
 import type { FuelAllocationFormRow } from '../../hooks/useTripFormState';
 import './FuelAllocationEditor.css';
 
@@ -106,6 +107,18 @@ export function FuelAllocationEditor() {
     form.setFuelAllocations(form.fuelAllocations.filter(r => r._key !== key));
   };
 
+  // Rows of one counterparty form one group: its label and subtotal sit on the
+  // group's first line, repeat purchases follow with a "↳ lần N" marker, and the
+  // group carries a single "+" so a new purchase lands inside its own group.
+  const lineInfo = new Map<string, { index: number; size: number; inUse: boolean; liters: number }>();
+  for (const group of groupFuelAllocationRows(form.fuelAllocations)) {
+    const inUse = group.rows.some(entry => entry.enabled || (Number(entry.liters) || 0) > 0);
+    const liters = group.rows.reduce((total, entry) => total + (Number(entry.liters) || 0), 0);
+    group.rows.forEach((entry, index) => {
+      lineInfo.set(entry._key, { index, size: group.rows.length, inUse, liters });
+    });
+  }
+
   return (
     <div className="fuel-allocation-editor">
       <div className="fuel-allocation-heading">
@@ -129,6 +142,8 @@ export function FuelAllocationEditor() {
           <span role="columnheader" aria-hidden="true" />
         </div>
         {form.fuelAllocations.map((allocation) => {
+          const info = lineInfo.get(allocation._key) ?? { index: 0, size: 1, inUse: false, liters: 0 };
+          const isContinuation = info.index > 0;
           const supplier = allocation.supplierId == null
             ? undefined
             : fuelSuppliers.find(item => item.id === allocation.supplierId);
@@ -138,12 +153,28 @@ export function FuelAllocationEditor() {
             : fuelSupplierLabel(supplier);
 
           return (
-            <div className="fuel-allocation-row" key={allocation._key} role="row">
+            <div
+              className={`fuel-allocation-row${isContinuation ? ' fuel-allocation-row--continuation' : ''}`}
+              key={allocation._key}
+              role="row"
+              aria-label={info.size > 1 ? `${pointLabel} — lần ${info.index + 1}/${info.size}` : undefined}
+            >
               <div className="fuel-allocation-point" role="cell">
-                <span className="fuel-allocation-label">{pointLabel}</span>
-                {isCreditPointWithoutSupplier ? (
-                  <p className="fuel-allocation-warning">Nhà cung cấp nơi đổ đã không còn hoạt động trong Danh mục.</p>
-                ) : null}
+                {isContinuation ? (
+                  <span className="fuel-allocation-continuation">↳ lần {info.index + 1}</span>
+                ) : (
+                  <>
+                    <span className="fuel-allocation-label">{pointLabel}</span>
+                    {info.size > 1 ? (
+                      <span className="fuel-allocation-group-meta">
+                        {info.size} lần đổ · {info.liters.toLocaleString('vi-VN')} lít
+                      </span>
+                    ) : null}
+                    {isCreditPointWithoutSupplier ? (
+                      <p className="fuel-allocation-warning">Nhà cung cấp nơi đổ đã không còn hoạt động trong Danh mục.</p>
+                    ) : null}
+                  </>
+                )}
               </div>
 
               <div className="fuel-allocation-liters" role="cell">
@@ -206,27 +237,27 @@ export function FuelAllocationEditor() {
               </div>
 
               <div className="fuel-allocation-actions" role="cell">
-                {allocation.enabled ? (
+                {info.index === info.size - 1 && info.inUse ? (
                   <button
                     type="button"
-                    className="btn btn--secondary btn--sm fuel-allocation-add"
+                    className="btn btn--ghost btn--icon btn--sm fuel-allocation-add"
                     aria-label={`Thêm lần đổ tại ${pointLabel}`}
                     title={form.fuelAllocations.length >= 10 ? 'Tối đa 10 lần đổ mỗi chuyến' : `Thêm lần đổ tại ${pointLabel}`}
                     disabled={form.fuelAllocations.length >= 10}
                     onClick={() => addExtraRow(allocation)}
                   >
-                    +
+                    <Plus size={16} />
                   </button>
                 ) : null}
                 {!isStandardFuelRowKey(allocation._key) ? (
                   <button
                     type="button"
-                    className="btn btn--secondary btn--sm fuel-allocation-remove"
+                    className="btn btn--ghost btn--icon btn--sm fuel-allocation-remove"
                     aria-label={`Xóa lần đổ tại ${pointLabel}`}
                     title={`Xóa lần đổ tại ${pointLabel}`}
                     onClick={() => removeExtraRow(allocation._key)}
                   >
-                    ×
+                    <X size={16} />
                   </button>
                 ) : null}
               </div>

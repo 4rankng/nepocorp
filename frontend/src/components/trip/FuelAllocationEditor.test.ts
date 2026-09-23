@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Supplier } from '@tingting/shared';
 import type { FuelAllocationFormRow } from '../../hooks/useTripFormState';
 import { activeFuelSuppliers, fuelSupplierLabel, normalizeFuelAllocationRows } from './FuelAllocationEditor';
+import { groupFuelAllocationRows } from './fuelAllocationRows';
 
 const suppliers = [
   { id: 1, name: 'Petrolimex Mộc Châu', shortName: 'Petrolimex', status: 'ACTIVE', isFuelSupplier: true },
@@ -143,5 +144,37 @@ describe('multi-row (per-purchase) allocation merge', () => {
     const draft = [saved[0], row({ _key: 'extra-1', supplierId: 1, liters: '' })];
     const out = normalizeFuelAllocationRows(draft, suppliers);
     expect(out.filter(r => r._key === 'extra-1')).toHaveLength(1);
+  });
+
+  it('keeps an added purchase directly below the line it was added to', () => {
+    const draft = [
+      row({ _key: 'fuel-supplier-1', supplierId: 1, liters: '21212' }),
+      row({ _key: 'extra-1', supplierId: 1, liters: '' }),
+      row({ _key: 'fuel-supplier-2', supplierId: 2, liters: '' }),
+      row({ _key: 'fuel-outside', supplierId: null, paymentMethod: 'CASH', liters: '' }),
+    ];
+    const keys = normalizeFuelAllocationRows(draft, suppliers).map(entry => entry._key);
+
+    // Rebuilding the list as [...standardRows, ...extras] used to push every row
+    // the + button added to the bottom of the table, under unrelated suppliers.
+    expect(keys.indexOf('extra-1')).toBe(keys.indexOf('fuel-supplier-1') + 1);
+  });
+});
+
+describe('per-counterparty grouping', () => {
+  const row = (over: Partial<FuelAllocationFormRow>): FuelAllocationFormRow => ({
+    _key: 'x', point: 'CUSTOM', enabled: true, supplierId: 1, paymentMethod: 'CREDIT', liters: '', unitPrice: '', ...over,
+  });
+
+  it('renders every purchase of one counterparty as one group, in first-appearance order', () => {
+    const groups = groupFuelAllocationRows([
+      row({ _key: 'fuel-supplier-1', supplierId: 1, liters: '60' }),
+      row({ _key: 'extra-1', supplierId: 1, liters: '40' }),
+      row({ _key: 'fuel-supplier-2', supplierId: 2, liters: '0' }),
+      row({ _key: 'fuel-outside', supplierId: null, paymentMethod: 'CASH', liters: '0' }),
+    ]);
+
+    expect(groups.map(group => group.key)).toEqual(['CREDIT:1', 'CREDIT:2', 'CASH']);
+    expect(groups[0].rows.map(entry => entry._key)).toEqual(['fuel-supplier-1', 'extra-1']);
   });
 });

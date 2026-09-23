@@ -30,8 +30,8 @@
   grid-template-columns: minmax(0, 1fr) 144px;
   align-items: center;
   gap: var(--space-md);
-  min-height: 52px;
-  padding: 6px var(--space-md);
+  min-height: var(--control-h);
+  padding: 4px var(--space-md);
   border-top: 1px solid var(--border-1);
 }
 
@@ -73,7 +73,7 @@
 
 .fuel-allocation-input .input {
   width: 100%;
-  min-height: 36px;
+  min-height: var(--control-h);
   padding-right: 30px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -137,10 +137,6 @@
     grid-column: 2;
     grid-row: 1;
   }
-
-  .fuel-allocation-input .input {
-    min-height: 44px;
-  }
 }
 
 /* ── Per-purchase price column + add/remove actions ── */
@@ -183,15 +179,58 @@
 }
 .fuel-allocation-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   justify-content: flex-end;
   align-items: center;
 }
-.fuel-allocation-add,
-.fuel-allocation-remove {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 12px;
-  font-size: var(--fs-xl);
-  line-height: 1;
+/* Bare icon actions: no boxed square, just a larger glyph on a quiet hit target
+   that only shows a surface on hover (the box around +/× read as a control of
+   its own and doubled the row height). */
+.fuel-allocation-add.btn--ghost,
+.fuel-allocation-remove.btn--ghost {
+  width: var(--control-h);
+  min-width: var(--control-h);
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+}
+/* Affirmative action in brand emerald, destructive in red — the two glyphs are
+ * the only coloured affordances in the row, so they carry the meaning. */
+.fuel-allocation-add.btn--ghost {
+  color: var(--success-text);
+}
+.fuel-allocation-add.btn--ghost:hover {
+  background: var(--success-soft);
+  color: var(--accent-ink);
+}
+.fuel-allocation-remove.btn--ghost {
+  color: var(--danger-text);
+}
+.fuel-allocation-remove.btn--ghost:hover {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+/* ── Counterparty groups ── one block per place the truck refuelled. */
+.fuel-allocation-group-meta {
+  display: block;
+  margin-top: 1px;
+  color: var(--fg-3);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.fuel-allocation-continuation {
+  display: block;
+  padding-left: 14px;
+  color: var(--fg-3);
+  font-size: var(--fs-sm);
+}
+.fuel-allocation-row--continuation {
+  background: var(--surface-2);
+}
+.fuel-allocation-row--continuation .fuel-allocation-point {
+  padding-left: 8px;
 }

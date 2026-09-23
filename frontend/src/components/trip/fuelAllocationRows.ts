@@ -43,7 +43,11 @@ export function isStandardFuelRowKey(key: string): boolean {
  * - the first saved row per counterparty merges into the standard slot;
  * - the 2nd+ saved rows per counterparty are kept as per-purchase extra rows;
  * - unmatched rows survive only when they carry fuel (the legacy branch).
- * Idempotent: normalizing twice yields the same rows as once.
+ *
+ * Output keeps the canonical counterparty order (catalog suppliers, cash last)
+ * and every per-purchase row stays directly after its own counterparty's slot,
+ * so a row added with "+" never drifts to another supplier. Idempotent:
+ * normalizing twice yields the same rows as once.
  */
 export function normalizeFuelAllocationRows(
   rows: FuelAllocationFormRow[],
@@ -63,7 +67,8 @@ export function normalizeFuelAllocationRows(
   ];
   const slotByCounterparty = new Map(standardRows.map(row => [counterpartyKey(row.paymentMethod, row.supplierId), row]));
   const consumed = new Set<string>();
-  const extras: FuelAllocationFormRow[] = [];
+  const extrasByCounterparty = new Map<string, FuelAllocationFormRow[]>();
+  const unmatched: FuelAllocationFormRow[] = [];
 
   for (const row of rows) {
     const key = counterpartyKey(row.paymentMethod, row.supplierId);
@@ -71,13 +76,15 @@ export function normalizeFuelAllocationRows(
     if (!slot) {
       // Unmatched rows (e.g. a supplier no longer active) survive only when
       // they still carry fuel.
-      if (row.enabled || (Number(row.liters) || 0) > 0) extras.push(row);
+      if (row.enabled || (Number(row.liters) || 0) > 0) unmatched.push(row);
       continue;
     }
     if (consumed.has(key)) {
       // 2nd+ purchase rows per counterparty are always kept — including empty
       // drafts the + button just added (the submit payload filters them).
-      extras.push(row);
+      const extras = extrasByCounterparty.get(key);
+      if (extras) extras.push(row);
+      else extrasByCounterparty.set(key, [row]);
       continue;
     }
     consumed.add(key);
@@ -86,5 +93,35 @@ export function normalizeFuelAllocationRows(
     slot.enabled = row.enabled || (Number(row.liters) || 0) > 0;
   }
 
-  return [...standardRows, ...extras];
+  const out: FuelAllocationFormRow[] = [];
+  for (const slot of standardRows) {
+    out.push(slot);
+    const extras = extrasByCounterparty.get(counterpartyKey(slot.paymentMethod, slot.supplierId));
+    if (extras) out.push(...extras);
+  }
+
+  return [...out, ...unmatched];
+}
+
+/** One counterparty with every purchase line recorded against it. */
+export interface FuelAllocationGroup {
+  /** counterpartyKey — `CREDIT:<supplierId>` or `CASH`. */
+  key: string;
+  rows: FuelAllocationFormRow[];
+}
+
+/**
+ * Groups allocation rows by counterparty in first-appearance order, so the
+ * editor renders one block per place the truck refuelled instead of scattering
+ * repeat purchases.
+ */
+export function groupFuelAllocationRows(rows: FuelAllocationFormRow[]): FuelAllocationGroup[] {
+  const groups = new Map<string, FuelAllocationGroup>();
+  for (const row of rows) {
+    const key = counterpartyKey(row.paymentMethod, row.supplierId);
+    const group = groups.get(key);
+    if (group) group.rows.push(row);
+    else groups.set(key, { key, rows: [row] });
+  }
+  return [...groups.values()];
 }
