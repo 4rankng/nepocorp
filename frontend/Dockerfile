@@ -32,6 +32,11 @@ COPY frontend/tsconfig.json frontend/tsconfig.json
 COPY frontend/public frontend/public
 COPY frontend/src frontend/src
 
+# Build marker surfaced in the app (kanban 20260923_18): frontend/Makefile passes the
+# same short sha it tags the image with. Defaults keep a plain `docker build` working.
+ARG BUILD_SHA=dev
+ENV BUILD_SHA=${BUILD_SHA}
+
 # Build frontend (vite build → frontend/dist)
 RUN cd frontend && pnpm build
 

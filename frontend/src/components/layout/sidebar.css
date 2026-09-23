@@ -272,6 +272,14 @@
   flex-shrink: 0;
   position: relative;
 }
+/* Build marker in the user dropdown: tells which bundle is on screen
+   (kanban 20260923_18). */
+.sidebar-user-dropdown-version {
+  padding: 6px 12px 0;
+  color: var(--sb-text-muted);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
 .sidebar-user {
   display: flex;
   align-items: center;

@@ -23,6 +23,7 @@ push:
 		--tag $(IMAGE_NAME):$(GIT_SHA) \
 		--cache-from type=registry,ref=$(IMAGE_NAME):latest \
 		--build-arg BUILDKIT_INLINE_CACHE=1 \
+		--build-arg BUILD_SHA=$(GIT_SHA) \
 		--provenance=false \
 		--push \
 		-f frontend/Dockerfile \

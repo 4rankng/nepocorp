@@ -1,9 +1,34 @@
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
+/**
+ * The bundle reports which build it is. The image build passes BUILD_SHA (the same
+ * short sha the image is tagged with), local dev falls back to the checkout's HEAD,
+ * and a build with no git metadata reports 'dev'. Surfaced in the user menu so a
+ * stale bundle is obvious at a glance (kanban 20260923_18).
+ */
+function resolveBuildSha(): string {
+  const fromEnv = process.env.BUILD_SHA?.trim();
+  if (fromEnv) return fromEnv;
+  try {
+    return execSync('git rev-parse --short HEAD', {
+      cwd: __dirname,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim();
+  } catch {
+    return 'dev';
+  }
+}
+
 export default defineConfig({
+  define: {
+    __BUILD_SHA__: JSON.stringify(resolveBuildSha()),
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

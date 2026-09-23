@@ -259,6 +259,7 @@ function Sidebar({
                 <LogOut size={16} />
                 Đăng xuất
               </button>
+              <div className="sidebar-user-dropdown-version">Bản dựng {__BUILD_SHA__}</div>
             </div>
           )}
         </div>
