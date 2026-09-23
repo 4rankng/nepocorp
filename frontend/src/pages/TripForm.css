@@ -131,27 +131,29 @@
 .tc-card-chev.is-open { transform: rotate(180deg); color: var(--fg-2); }
 .tc-card.is-collapsible .tc-card-head-btn:hover .tc-card-chev { color: var(--fg-1); }
 
-/* Badges */
-.tc-badge-required {
-  background: var(--danger-soft);
-  color: var(--danger-text);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-bold);
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
+/* Badges — a compact label with a status dot instead of a filled pill: the
+ * section marker must read quieter than the section it labels. */
+.tc-badge-required,
 .tc-badge-optional {
-  background: var(--bg-3);
-  color: var(--fg-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  color: var(--fg-3);
+  white-space: nowrap;
 }
+.tc-badge-required { color: var(--fg-2); }
+.tc-badge-required::before,
+.tc-badge-optional::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-4);
+  flex: none;
+}
+.tc-badge-required::before { background: var(--danger); }
 
 /* ── Form layout primitives (shared across trip card components) ── */
 .tc-form-col {
@@ -192,5 +194,5 @@
   .tc-card-title { font-size: var(--fs-lg); }
   .tc-card-sub { font-size: var(--fs-xs); }
   .tc-card-body { padding: 0; }
-  .tc-badge-required, .tc-badge-optional { font-size: var(--fs-xs); padding: 2px 6px; }
+  .tc-badge-required, .tc-badge-optional { font-size: var(--fs-xs); }
 }

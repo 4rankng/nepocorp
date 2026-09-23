@@ -13,27 +13,29 @@ export function RouteChips({ routes, onSelect }: RouteChipsProps) {
 
   return (
     <div className="tc-route-suggest">
-      {visible.map((route) => {
-        const parts = route.name.split('→');
-        return (
-          <span
-            key={route.id}
-            className="tc-route-chip"
-            role="button"
-            tabIndex={0}
-            onClick={() => onSelect(route.id)}
-            onKeyDown={(e) => { if (e.key === 'Enter') onSelect(route.id); }}
-          >
-            {parts[0]?.trim()}
-            {parts.length > 1 && (
-              <>
-                <span className="tc-route-chip__arrow">→</span>
-                {parts[1]?.trim()}
-              </>
-            )}
-          </span>
-        );
-      })}
+      <span className="tc-route-suggest__label">Chọn nhanh</span>
+      <div className="tc-route-suggest__strip">
+        {visible.map((route) => {
+          const parts = route.name.split('→');
+          return (
+            <button
+              key={route.id}
+              type="button"
+              className="tc-route-chip"
+              title={route.name}
+              onClick={() => onSelect(route.id)}
+            >
+              {parts[0]?.trim()}
+              {parts.length > 1 && (
+                <>
+                  <span className="tc-route-chip__arrow">→</span>
+                  {parts[1]?.trim()}
+                </>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

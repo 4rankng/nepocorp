@@ -101,8 +101,9 @@ export function TripInfoCard(props: TripInfoCardProps) {
 
   return (
     <CardSection number={1} title="Thông tin chuyến đi" subtitle="Khách hàng, tuyến, hàng hóa và phương tiện" badge="required">
-      <div className="tc-form-row trip-info-card__layout">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="trip-info-card__grid">
+        <div className="trip-info-card__col">
+          <div className="trip-info-card__group">Khách hàng & tuyến</div>
           <Field label="Khách hàng" required controlId="customerId">
             {sel(form.customerId, form.setCustomerId, props.customers, 'Chọn khách hàng', 'customerId', true)}
           </Field>
@@ -130,7 +131,8 @@ export function TripInfoCard(props: TripInfoCardProps) {
           </Field>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="trip-info-card__col">
+          <div className="trip-info-card__group">Phương tiện & lịch</div>
           {/* Carrier type toggle */}
           <Field label="Loại xe" required>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -169,7 +171,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
 
           {form.carrierType === 'EXTERNAL' && (
             <>
-              <Field label="Đối tác vận chuyển" controlId="externalCarrierId">
+              <Field label="Đối tác vận chuyển" required controlId="externalCarrierId">
                 <select
                   id="externalCarrierId"
                   name="externalCarrierId"
@@ -185,7 +187,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
                   ))}
                 </select>
               </Field>
-              <Field label="Giá cước thuê ngoài (gồm VAT)" controlId="externalFreightCost">
+              <Field label="Giá cước thuê ngoài (gồm VAT)" required controlId="externalFreightCost">
                 <InputWithPrefix
                   id="externalFreightCost"
                   value={form.externalFreightCost}
@@ -196,6 +198,46 @@ export function TripInfoCard(props: TripInfoCardProps) {
                   mono
                 />
               </Field>
+            </>
+          )}
+
+          <Field label="Ngày khởi hành" required controlId="departureDate">
+            <input id="departureDate" name="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
+          </Field>
+        </div>
+
+        <div className="trip-info-card__col">
+          <div className="trip-info-card__group">Container & thuế</div>
+          <Field label="Số lượng cont" required controlId="containerCount">
+            <input id="containerCount" name="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} required />
+            <span className="tc-field-hint">Mặc định: 1</span>
+          </Field>
+          <Field label="Loại container" required controlId="plannedContainerTypeId">
+            {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId', true)}
+            <span className="tc-field-hint">Số container/seal cập nhật sau</span>
+          </Field>
+
+          {/* VAT rate */}
+          <Field label="Thuế VAT" controlId="vatRate">
+            <select
+              id="vatRate"
+              name="vatRate"
+              className="input"
+              style={selectStyle}
+              value={form.vatRate}
+              onChange={(e) => form.setVatRate(Number(e.target.value))}
+            >
+              <option value={0.08}>8%</option>
+              <option value={0.10}>10%</option>
+              <option value={0}>Không VAT</option>
+            </select>
+          </Field>
+
+          {form.carrierType === 'EXTERNAL' && (
+            <>
+              {/* The partner assigns the truck after planning, so these three are
+                  filled in later — they never gate creation. */}
+              <div className="trip-info-card__group">Xe & lái xe thuê ngoài (cập nhật sau)</div>
               <Field label="Biển số xe" controlId="externalPlateNumber">
                 <input
                   id="externalPlateNumber"
@@ -231,50 +273,12 @@ export function TripInfoCard(props: TripInfoCardProps) {
                 />
               </Field>
               {marginPreview !== null && (
-                <div style={{
-                  padding: '8px 12px',
-                  background: 'var(--bg-3)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: 'var(--fs-body)',
-                  color: marginPreview >= 0 ? 'var(--success)' : 'var(--danger)',
-                  fontWeight: 600,
-                }}>
+                <div className={`trip-info-card__margin${marginPreview >= 0 ? ' trip-info-card__margin--pos' : ' trip-info-card__margin--neg'}`}>
                   Lãi điều xe ngoài (dự kiến): {formatCurrency(marginPreview)}
                 </div>
               )}
             </>
           )}
-
-          <Field label="Ngày khởi hành" required controlId="departureDate">
-            <input id="departureDate" name="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
-          </Field>
-        </div>
-
-        <div className="trip-info-card__container-grid">
-          <Field label="Số lượng cont" required controlId="containerCount">
-            <input id="containerCount" name="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} required />
-            <span className="tc-field-hint">Mặc định: 1</span>
-          </Field>
-          <Field label="Loại container" required className="trip-info-card__container-type" controlId="plannedContainerTypeId">
-            {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId', true)}
-            <span className="tc-field-hint">Số container/seal cập nhật sau</span>
-          </Field>
-
-          {/* VAT rate */}
-          <Field label="Thuế VAT" controlId="vatRate">
-            <select
-              id="vatRate"
-              name="vatRate"
-              className="input"
-              style={selectStyle}
-              value={form.vatRate}
-              onChange={(e) => form.setVatRate(Number(e.target.value))}
-            >
-              <option value={0.08}>8%</option>
-              <option value={0.10}>10%</option>
-              <option value={0}>Không VAT</option>
-            </select>
-          </Field>
         </div>
       </div>
     </CardSection>
