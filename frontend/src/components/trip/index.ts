@@ -3,7 +3,6 @@ export { InputWithPrefix } from './InputWithPrefix';
 export { CheckboxCard } from './CheckboxCard';
 export { SectionDivider } from './SectionDivider';
 export { ProgressPills } from './ProgressPills';
-export { RouteChips } from './RouteChips';
 export { TripInfoCard } from './TripInfoCard';
 export { JourneyLegsCard } from './JourneyLegsCard';
 export { JourneyLegRow } from './JourneyLegRow';

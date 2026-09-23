@@ -7,7 +7,7 @@
 
    Component-scoped styles live next to each component in components/trip/
    (JourneyLegRow, JourneyLegsCard, ImagesNotesCard, TripSummaryCard,
-   TripChecklistPanel, TipCard, CheckboxCard, FuelModeToggle, RouteChips,
+   TripChecklistPanel, TipCard, CheckboxCard, FuelModeToggle,
    SectionDivider, ActionBar, ProgressPills). Page-specific layout lives in
    TripCreatePage.css (bento) and TripEditPage.css (content + rail).
    ========================================================================== */

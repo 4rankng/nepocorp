@@ -92,11 +92,21 @@
   list-style: none;
 }
 
+/* Heading for the suggestion group that leads the list before a search starts. */
+.searchable-select__group {
+  padding: 4px 10px 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold, 600);
+}
+
 .searchable-select__option {
   display: flex;
   align-items: flex-start;
-  min-height: 42px;
-  padding: 10px 10px 10px 6px;
+  min-height: 34px;
+  padding: 7px 10px 7px 6px;
   color: var(--ink-2);
   font-size: var(--fs-control);
   line-height: 1.4;

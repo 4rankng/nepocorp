@@ -55,6 +55,32 @@ describe('SearchableSelect', () => {
     expect(screen.queryByRole('combobox')).toBeNull();
   });
 
+  it('leads the list with the suggestion group and drops it once a search starts', () => {
+    render(
+      <SearchableSelect
+        id="route"
+        value=""
+        onChange={() => {}}
+        options={ROUTES}
+        suggestedOptions={[ROUTES[2]]}
+        suggestedLabel="Chọn nhanh"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByText('Chọn nhanh')).toBeTruthy();
+    const options = screen.getAllByRole('option').map((element) => element.textContent);
+    // The suggestion is the first row and is not duplicated in the full list.
+    expect(options[0]).toContain('Nam Đình Vũ');
+    expect(options).toHaveLength(ROUTES.length);
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'ban bo' } });
+
+    expect(screen.queryByText('Chọn nhanh')).toBeNull();
+    expect(screen.getAllByRole('option')).toHaveLength(1);
+  });
+
   it('supports arrow-key and Enter selection', () => {
     const onChange = vi.fn();
     render(

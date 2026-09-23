@@ -23,6 +23,9 @@ export interface SearchableSelectProps {
   value: string;
   onChange: (value: string) => void;
   options: SearchableSelectOption[];
+  /** Offered as the first group of the list (before any search) to shorten the common picks. */
+  suggestedOptions?: SearchableSelectOption[];
+  suggestedLabel?: string;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
@@ -30,6 +33,9 @@ export interface SearchableSelectProps {
   required?: boolean;
   className?: string;
 }
+
+const EMPTY_SUGGESTIONS: SearchableSelectOption[] = [];
+const EMPTY_RESULTS: SearchableSelectOption[] = [];
 
 function normalizeSearchText(value: string): string {
   return value
@@ -47,6 +53,8 @@ export function SearchableSelect({
   value,
   onChange,
   options,
+  suggestedOptions = EMPTY_SUGGESTIONS,
+  suggestedLabel = 'Chọn nhanh',
   placeholder = 'Chọn một mục',
   searchPlaceholder = 'Nhập để tìm kiếm…',
   emptyMessage = 'Không tìm thấy kết quả phù hợp.',
@@ -76,6 +84,27 @@ export function SearchableSelect({
     });
   }, [normalizedQuery, options]);
 
+  // Suggestions lead the list only until a search starts: once the user filters,
+  // the list is just the matches. They are ordinary options, so picking one runs
+  // exactly the same selection path as picking it from the full list.
+  const suggestionValues = useMemo(
+    () => new Set((normalizedQuery.length === 0 ? suggestedOptions : []).map((option) => option.value)),
+    [normalizedQuery, suggestedOptions],
+  );
+  const suggestedList = useMemo(
+    () => (suggestionValues.size === 0
+      ? EMPTY_RESULTS
+      : options.filter((option) => suggestionValues.has(option.value))),
+    [options, suggestionValues],
+  );
+  const listOptions = useMemo(
+    () => (suggestionValues.size === 0
+      ? filteredOptions
+      : filteredOptions.filter((option) => !suggestionValues.has(option.value))),
+    [filteredOptions, suggestionValues],
+  );
+  const visibleOptions = useMemo(() => [...suggestedList, ...listOptions], [suggestedList, listOptions]);
+
   const close = useCallback(() => {
     setIsOpen(false);
     setQuery('');
@@ -94,14 +123,14 @@ export function SearchableSelect({
   }, [isOpen]);
 
   useEffect(() => {
-    if (activeIndex >= filteredOptions.length) {
-      setActiveIndex(Math.max(0, filteredOptions.length - 1));
+    if (activeIndex >= visibleOptions.length) {
+      setActiveIndex(Math.max(0, visibleOptions.length - 1));
     }
-  }, [activeIndex, filteredOptions.length]);
+  }, [activeIndex, visibleOptions.length]);
 
   useEffect(() => {
     if (isOpen) activeOptionRef.current?.scrollIntoView?.({ block: 'nearest' });
-  }, [isOpen, activeIndex, filteredOptions]);
+  }, [isOpen, activeIndex, visibleOptions]);
 
   useEffect(() => {
     if (disabled) close();
@@ -124,7 +153,7 @@ export function SearchableSelect({
     if (event.nativeEvent.isComposing) return;
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      setActiveIndex((current) => Math.max(0, Math.min(current + 1, filteredOptions.length - 1)));
+      setActiveIndex((current) => Math.max(0, Math.min(current + 1, visibleOptions.length - 1)));
       return;
     }
     if (event.key === 'ArrowUp') {
@@ -135,7 +164,7 @@ export function SearchableSelect({
     if (event.key === 'Enter') {
       event.preventDefault();
       event.stopPropagation();
-      const option = filteredOptions[activeIndex];
+      const option = visibleOptions[activeIndex];
       if (option) selectOption(option);
       return;
     }
@@ -208,8 +237,8 @@ export function SearchableSelect({
               aria-expanded="true"
               aria-controls={listboxId}
               aria-activedescendant={
-                filteredOptions[activeIndex]
-                  ? `${listboxId}-option-${filteredOptions[activeIndex].value}`
+                visibleOptions[activeIndex]
+                  ? `${listboxId}-option-${visibleOptions[activeIndex].value}`
                   : undefined
               }
               autoComplete="off"
@@ -218,8 +247,11 @@ export function SearchableSelect({
           </div>
 
           <ul id={listboxId} className="searchable-select__list" role="listbox" aria-labelledby={id}>
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option, index) => {
+            {suggestedList.length > 0 ? (
+              <li className="searchable-select__group" role="presentation">{suggestedLabel}</li>
+            ) : null}
+            {visibleOptions.length > 0 ? (
+              visibleOptions.map((option, index) => {
                 const isSelected = option.value === value;
                 const isActive = index === activeIndex;
                 return (

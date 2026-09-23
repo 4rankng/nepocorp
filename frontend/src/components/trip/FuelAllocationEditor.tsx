@@ -246,7 +246,7 @@ export function FuelAllocationEditor() {
                     disabled={form.fuelAllocations.length >= 10}
                     onClick={() => addExtraRow(allocation)}
                   >
-                    <Plus size={16} />
+                    <Plus size={18} />
                   </button>
                 ) : null}
                 {!isStandardFuelRowKey(allocation._key) ? (
@@ -257,7 +257,7 @@ export function FuelAllocationEditor() {
                     title={`Xóa lần đổ tại ${pointLabel}`}
                     onClick={() => removeExtraRow(allocation._key)}
                   >
-                    <X size={16} />
+                    <X size={18} />
                   </button>
                 ) : null}
               </div>
