@@ -141,7 +141,15 @@ demo: demo-backend demo-frontend
 demo-backend: push-backend
 	@echo "Deploying backend on demo staging..."
 	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) pull backend"
-	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) up -d --force-recreate --no-deps backend"
+	# The recreate is retried: a second deploy racing this one (or a removal left
+	# half-finished by an interrupted run) makes compose fail with "removal of
+	# container … is already in progress". That is transient — once the other run
+	# finishes, the next attempt converges.
+	@ok=0; for i in 1 2 3 4 5; do \
+		if ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) up -d --force-recreate --no-deps backend"; then ok=1; break; fi; \
+		echo "  backend recreate busy, retrying ($$i)..."; \
+		sleep 5; \
+	done; test $$ok -eq 1
 	@echo "Waiting for backend container to be ready..."
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
 		if ssh root@$(DEMO_SERVER) "docker exec demo-backend-1 echo ok" >/dev/null 2>&1; then \
@@ -160,7 +168,11 @@ demo-backend: push-backend
 demo-frontend: push-frontend
 	@echo "Deploying frontend on demo staging..."
 	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) pull frontend"
-	@ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) up -d --force-recreate --no-deps frontend"
+	@ok=0; for i in 1 2 3 4 5; do \
+		if ssh root@$(DEMO_SERVER) "cd $(DEMO_PATH) && docker compose -f $(DEMO_COMPOSE) up -d --force-recreate --no-deps frontend"; then ok=1; break; fi; \
+		echo "  frontend recreate busy, retrying ($$i)..."; \
+		sleep 5; \
+	done; test $$ok -eq 1
 	@echo "Reclaiming disk (unused images older than 72h)..."
 	@ssh root@$(DEMO_SERVER) "docker image prune -af --filter 'until=72h' || true"
 	@echo "Demo frontend deployed! App: https://$(DEMO_SERVER)"

@@ -35,7 +35,14 @@ deploy:
 	@echo "Pulling latest image..."
 	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml pull backend"
 	@echo "Restarting backend service (new image for migrations)..."
-	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate --no-deps backend"
+	# Retried for the same reason as the demo stack: a concurrent deploy or an
+	# interrupted removal makes compose report "removal of container … is already
+	# in progress", which clears once the other run finishes.
+	@ok=0; for i in 1 2 3 4 5; do \
+		if ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate --no-deps backend"; then ok=1; break; fi; \
+		echo "  backend recreate busy, retrying ($$i)..."; \
+		sleep 5; \
+	done; test $$ok -eq 1
 	@echo "Waiting for backend container to be ready..."
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
 		if ssh root@$(PROD_SERVER) "docker exec nepocorp-backend-1 echo ok" >/dev/null 2>&1; then \
