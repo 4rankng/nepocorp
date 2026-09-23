@@ -73,6 +73,8 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
 
       <SectionDivider label="Vé đường bộ & doanh thu" />
 
+      {/* The whole road-fee block is one grid: the three fields share a row
+          instead of leaving "Số trạm thu phí" alone beside empty space. */}
       <div className="tc-form-row">
         <div className="field">
           <label>Tổng tiền đi đường</label>
@@ -82,12 +84,9 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <label>Tiền vé (công ty) đã thanh toán</label>
           <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="400.000" prefix="đ" mono type="money" />
         </div>
-      </div>
-
-      <div className="tc-form-row" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Số trạm thu phí</label>
-          <input className="input mono" type="number" placeholder="4" value={form.tollsStations} onChange={(e) => form.setTollsStations(e.target.value)} style={{ maxWidth: '200px' }} />
+          <input className="input mono" type="number" placeholder="4" value={form.tollsStations} onChange={(e) => form.setTollsStations(e.target.value)} />
         </div>
       </div>
 
@@ -138,7 +137,9 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         />
       </div>
 
-      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
+      {/* Payment and revenue fields flow in one grid: a wide screen shows three
+          per row, and no field ever sits alone with empty space beside it. */}
+      <div className="tc-form-row" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Trả hàng 2 điểm (đ)</label>
           <InputWithPrefix value={form.twoPointDeliveryBonus} onChange={form.setTwoPointDeliveryBonus} placeholder="200.000" prefix="đ" mono type="money" />
@@ -147,9 +148,6 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <label>Lưu ca xe (đ)</label>
           <InputWithPrefix value={form.vehicleShiftAllowance} onChange={form.setVehicleShiftAllowance} placeholder="200.000" prefix="đ" mono type="money" />
         </div>
-      </div>
-
-      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Doanh thu đóng/ trả hàng</label>
           <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4.200.000" prefix="đ" mono type="money" />
@@ -163,9 +161,6 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <label>Doanh thu kết hợp</label>
           <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2.000.000" prefix="đ" mono type="money" />
         </div>
-      </div>
-
-      <div className="tc-form-row tc-form-row--two" style={{ marginTop: 16 }}>
         <div className="field">
           <label>Hoa hồng khách hàng (đ)</label>
           <InputWithPrefix value={form.customerCommission} onChange={form.setCustomerCommission} placeholder="0" prefix="đ" mono type="money" />
