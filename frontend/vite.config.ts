@@ -13,6 +13,10 @@ export default defineConfig({
   },
   server: {
     port: 7173,
+    // Fail fast when another dev server already holds the port: silently moving to
+    // 7174 left a second Vite serving the same tree, and a tab opened against the
+    // first one kept an old HMR bundle (kanban 20260923_17).
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3090',
