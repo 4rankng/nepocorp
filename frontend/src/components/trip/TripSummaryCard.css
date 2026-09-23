@@ -14,7 +14,6 @@
  * ========================================================================== */
 
 .tc-summary-card {
-  --stat-rail: var(--accent);
   background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--line);
@@ -23,17 +22,12 @@
   position: relative;
   overflow: hidden;
 }
+/* The 3px status-strip rail that used to sit at the card's vertical middle was
+ * decoration without a status: it landed next to whichever row happened to be
+ * halfway down (the fuel row) and read as a rendering glitch. Status strips stay
+ * for actual status displays. */
 .tc-summary-card::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: var(--status-strip-width);
-  height: var(--status-strip-height);
-  border-radius: var(--status-strip-radius);
-  background: var(--stat-rail);
-  transform: translateY(-50%);
-  pointer-events: none;
+  content: none;
 }
 .tc-summary-card::before {
   content: none;
