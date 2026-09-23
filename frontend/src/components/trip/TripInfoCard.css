@@ -1,38 +1,48 @@
-/* TripInfoCard — three balanced columns inside one card body.
- * The body sets `container-type: inline-size`, so the columns collapse on the
- * card's own width rather than the viewport. Before this, two auto-fit columns
- * left a tall right column and half a card of empty space. */
+/* TripInfoCard — one dense field grid.
+ * Three fixed columns wasted the card's width: as soon as the card narrowed,
+ * the third column wrapped onto a new row and left a hole beside it, and every
+ * `.field` kept its global 16px bottom margin on top of the grid gap — pure air
+ * in the app's densest form. Fields now flow into as many tracks as fit and each
+ * group heading spans the full row as a divider. The card body sets
+ * `container-type: inline-size`, so this responds to the card, not the viewport. */
 .trip-info-card__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px 20px;
+  /* auto-fill keeps every track at the field width, so a group with three fields
+     puts all three on one row when they fit instead of wrapping one onto its own
+     row, and a lone trailing field never stretches across the card. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 12px 18px;
   align-items: start;
 }
 
-.trip-info-card__col {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.trip-info-card__grid > .field {
+  margin-bottom: 0;
   min-width: 0;
 }
 
-/* One heading per column, so a twelve-field card stays scannable. */
 .trip-info-card__group {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
   font-size: var(--fs-label);
   font-weight: var(--fw-semibold);
   color: var(--fg-3);
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
+}
+.trip-info-card__group:first-child {
+  margin-top: 0;
 }
 
-.trip-info-card__col .input,
-.trip-info-card__col select.input {
+.trip-info-card__grid .input,
+.trip-info-card__grid select.input {
   width: 100%;
   min-width: 0;
 }
 
 /* External-partner margin preview — a soft inset well inside the white card. */
 .trip-info-card__margin {
+  grid-column: 1 / -1;
+  align-self: center;
   padding: 8px 12px;
   background: var(--surface-2);
   border: 1px solid var(--border-1);
@@ -42,15 +52,3 @@
 }
 .trip-info-card__margin--pos { color: var(--success); }
 .trip-info-card__margin--neg { color: var(--danger); }
-
-@container (max-width: 900px) {
-  .trip-info-card__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@container (max-width: 560px) {
-  .trip-info-card__grid {
-    grid-template-columns: 1fr;
-  }
-}

@@ -1,36 +1,31 @@
-/* RouteChips — one-line quick-pick strip under the route select.
- * Was a wrap-grid of 45px full-round pills, which stacked three tall grey
- * blocks under the field; now a compact single row that scrolls instead of
- * wrapping, so the field never pushes the rest of the card down. */
+/* Vertical quick-pick list: the routes stack under the field and wrap their
+ * names, so every suggestion is visible at once (kanban: the horizontal strip
+ * forced a sideways scroll and hid two of three routes). */
 .tc-route-suggest {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-/* Only the chips scroll — the label stays put instead of sliding out of the
- * column when a long route name pushes the strip sideways. */
-.tc-route-suggest__strip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin-top: 6px;
 }
 .tc-route-suggest__label {
-  flex: none;
   font-size: var(--fs-xs);
   color: var(--fg-3);
   line-height: 1.35;
 }
+.tc-route-suggest__strip {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+}
 .tc-route-chip {
-  flex: none;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  width: 100%;
+  padding: 5px 10px;
   background: var(--surface-2);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -38,7 +33,7 @@
   font-size: var(--fs-xs);
   line-height: 1.35;
   color: var(--fg-2);
-  white-space: nowrap;
+  text-align: left;
   cursor: pointer;
   transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
 }
@@ -52,7 +47,3 @@
   outline-offset: 1px;
 }
 .tc-route-chip__arrow { color: var(--fg-3); }
-
-@media (max-width: 640px) {
-  .tc-route-chip { min-height: 44px; }
-}

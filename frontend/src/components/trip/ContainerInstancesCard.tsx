@@ -416,13 +416,11 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     const hasSealValue = !!(seal?.sealNumber.trim() || seal?.notes.trim());
     return (
       <div className="ci-seal-section">
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: "var(--fg-2)" }}>Số seal {index + 1}</span>
-        </div>
+        <span className="ci-label ci-seal-section__label">Số seal {index + 1}</span>
         <div className="ci-seal-row">
-          <input className="input ci-input-sm" style={{ width: 180 }} placeholder={`Số seal ${index + 1}`} value={seal?.sealNumber ?? ""} onChange={(e) => updateSeal(row._key, index, "sealNumber", e.target.value.toUpperCase())} />
-          <input className="input ci-input-sm" style={{ width: 180, flex: 1, minWidth: 120 }} placeholder="Ghi chú seal (tuỳ chọn)" value={seal?.notes ?? ""} onChange={(e) => updateSeal(row._key, index, "notes", e.target.value)} />
-          <button type="button" className="btn btn--ghost btn--icon btn--sm" style={{ minWidth: 40, visibility: hasSealValue ? "visible" : "hidden" }} onClick={() => clearSeal(row._key, index)} aria-label={`Xoá seal ${index + 1}`} title={`Xoá seal ${index + 1}`}>
+          <input className="input ci-input-sm" placeholder={`Số seal ${index + 1}`} value={seal?.sealNumber ?? ""} onChange={(e) => updateSeal(row._key, index, "sealNumber", e.target.value.toUpperCase())} />
+          <input className="input ci-input-sm" placeholder="Ghi chú seal (tuỳ chọn)" value={seal?.notes ?? ""} onChange={(e) => updateSeal(row._key, index, "notes", e.target.value)} />
+          <button type="button" className="btn btn--ghost btn--icon btn--sm ci-seal-row__clear" style={{ visibility: hasSealValue ? "visible" : "hidden" }} onClick={() => clearSeal(row._key, index)} aria-label={`Xoá seal ${index + 1}`} title={`Xoá seal ${index + 1}`}>
             <X size={13} />
           </button>
         </div>
@@ -450,8 +448,8 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
         </div>
       )}
       {rows.length === 0 ? (
-        <div style={{ padding: 48, textAlign: "center", color: "var(--fg-3)", display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <img src="/assets/illustrations/empty-matching.svg" alt="Empty" style={{ width: 120, height: 120, opacity: 0.8, marginBottom: 16 }} />
+        <div style={{ padding: 24, textAlign: "center", color: "var(--fg-3)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <img src="/assets/illustrations/empty-matching.svg" alt="Empty" style={{ width: 72, height: 72, opacity: 0.8, marginBottom: 10 }} />
           <p style={{ margin: 0, fontWeight: 500 }}>Chưa có cont nào. Bấm "Thêm cont" để bắt đầu.</p>
         </div>
       ) : (
@@ -461,18 +459,19 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
               key={row._key}
               className="ci-container-section"
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <div style={{ fontSize: 'var(--fs-section)', fontWeight: 600, color: "var(--fg-2)" }}>Cont #{idx + 1}</div>
-                <button type="button" className="btn btn--ghost btn--icon btn--sm" style={{ width: 32, height: 32, display: "inline-flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeRow(row._key)} aria-label="Xoá dòng" title="Xoá cont">
+              <div className="ci-container-head">
+                <div className="ci-container-head__title">Cont #{idx + 1}</div>
+                <button type="button" className="btn btn--ghost btn--icon btn--sm ci-container-head__remove" onClick={() => removeRow(row._key)} aria-label="Xoá dòng" title="Xoá cont">
                   <Trash2 size={15} style={{ color: "var(--danger)" }} />
                 </button>
               </div>
 
-              <div className="ci-row ci-row--identity">
-                <label className="ci-label">
-                  Số container <span style={{ color: "var(--fg-3)", fontWeight: 500 }}>(tuỳ chọn)</span>
-                </label>
-                <input id={`containerNumber-${row._key}`} className="input ci-input-sm" style={{ width: "100%" }} placeholder="VD: TCKU1234567" value={row.containerNumber} onChange={(e) => updateRow(row._key, "containerNumber", e.target.value.toUpperCase())} />
+              <div className="ci-grid">
+                <div className="ci-field">
+                  <label className="ci-label" htmlFor={`containerNumber-${row._key}`}>
+                    Số container <span className="ci-label__optional">(tuỳ chọn)</span>
+                  </label>
+                  <input id={`containerNumber-${row._key}`} className="input ci-input-sm" placeholder="VD: TCKU1234567" value={row.containerNumber} onChange={(e) => updateRow(row._key, "containerNumber", e.target.value.toUpperCase())} />
                 {(() => {
                   const st = checkContainerNumber(row.containerNumber);
                   if (!st.warning) return null;
@@ -500,6 +499,15 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                     </div>
                   );
                 })()}
+                </div>
+                <div className="ci-field">
+                  <label className="ci-label">Trọng lượng (kg)</label>
+                  <input type="number" className="input ci-input-sm" placeholder="VD: 24500" value={row.cargoWeightKg} onChange={(e) => updateRow(row._key, "cargoWeightKg", e.target.value)} min={0} max={99999999.99} />
+                </div>
+                <div className="ci-field">
+                  <label className="ci-label">Ghi chú</label>
+                  <input className="input ci-input-sm" placeholder="Ghi chú cont (tuỳ chọn)" value={row.notes} onChange={(e) => updateRow(row._key, "notes", e.target.value)} />
+                </div>
               </div>
 
               <div className="ci-evidence-stack">
@@ -510,17 +518,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
 
                 {renderSealFields(row, 1)}
                 {renderPhotoLane(row, "SEAL", 1)}
-
-                <div className="ci-row ci-row--meta">
-                  <div>
-                    <label className="ci-label">Trọng lượng (kg)</label>
-                    <input type="number" className="input ci-input-sm" style={{ width: "100%" }} placeholder="VD: 24500" value={row.cargoWeightKg} onChange={(e) => updateRow(row._key, "cargoWeightKg", e.target.value)} min={0} max={99999999.99} />
-                  </div>
-                  <div>
-                    <label className="ci-label">Ghi chú</label>
-                    <input className="input ci-input-sm" style={{ width: "100%" }} placeholder="Ghi chú cont (tuỳ chọn)" value={row.notes} onChange={(e) => updateRow(row._key, "notes", e.target.value)} />
-                  </div>
-                </div>
               </div>
             </div>
           ))}

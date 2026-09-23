@@ -100,7 +100,7 @@
   margin: 0 4px;
   flex-shrink: 0;
 }
-.trip-hero__actions .btn--sm { min-height: 44px; }
+.trip-hero__actions .btn--sm { min-height: var(--control-h); }
 .trip-hero__warn {
   display: inline-flex;
   align-items: center;

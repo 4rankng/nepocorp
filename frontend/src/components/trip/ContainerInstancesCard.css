@@ -1,20 +1,47 @@
-/* ContainerInstancesCard — compact container editor styling */
-.ci-container-section { padding: 16px 0; border-top: 1px solid var(--line); }
+/* ContainerInstancesCard — compact container editor.
+ * Density matters here: one container carries three photo slots and up to two
+ * seals. The old layout gave every slot its own heading row plus a 128px dashed
+ * canvas underneath — roughly 700px of empty space for one empty container. Each
+ * unit is now a single compact row: label/content on the left, its photo tile on
+ * the right. Control heights keep the house 45px so this card still matches every
+ * other form control in the app. */
+.ci-container-section {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
 
-/* 4-col on wide desktop, gracefully degrading */
-.ci-row {
+.ci-container-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ci-container-head__title {
+  font-size: var(--fs-section);
+  font-weight: 600;
+  color: var(--fg-2);
+}
+
+.ci-container-head__remove {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Identity fields (container number, weight, notes) fill as many tracks as fit. */
+.ci-grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 10px 12px;
   align-items: start;
 }
 
-.ci-row--identity {
-  grid-template-columns: 1fr;
-}
-
-.ci-row--meta {
-  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
+.ci-field {
+  min-width: 0;
 }
 
 .ci-label {
@@ -25,12 +52,18 @@
   margin-bottom: 6px;
 }
 
+.ci-label__optional {
+  color: var(--fg-3);
+  font-weight: 500;
+}
+
 /* Higher-specificity selector overrides the global `.input` baseline without
-   `!important` (project rule). Inputs/selects sit inside `.ci-row` or the
-   photos grid, so we anchor specificity at the row parent. */
+   `!important` (project rule). Inputs/selects sit inside `.ci-grid`, `.ci-seal-row`
+   or the photo lane, so we anchor specificity at those parents. */
 .input.ci-input-sm {
-  min-height: 45px;
-  height: 45px;
+  width: 100%;
+  min-height: var(--control-h);
+  height: var(--control-h);
   padding: 0 12px;
   font-size: var(--fs-md);
   border-radius: 8px;
@@ -41,27 +74,29 @@ select.input.ci-input-sm {
   padding-right: 32px;
 }
 
-/* Stacked content/evidence flow: container content -> photo, seal content -> photo. */
+/* Evidence flow: each photo slot is one row beside its own label/capture button. */
 .ci-evidence-stack {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--line);
-  padding-top: 14px;
 }
 
 .ci-photo-lane {
   min-width: 0;
-  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: center;
 }
 
 .ci-photo-lane__head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
 }
 
 .ci-photo-lane__title {
@@ -75,8 +110,8 @@ select.input.ci-input-sm {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 45px;
-  padding: 7px 12px;
+  min-height: 34px;
+  padding: 5px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -95,18 +130,17 @@ select.input.ci-input-sm {
 }
 
 .ci-photo-lane__drop {
-  width: 100%;
-  min-height: 128px;
+  min-width: 0;
+  min-height: 0;
   border: 1px dashed var(--line-2);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.54);
   color: var(--fg-3);
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 8px;
-  text-align: left;
-  overflow: hidden;
+  gap: 8px;
+  padding: 6px 8px;
+  overflow-x: auto;
 }
 
 .ci-photo-lane__drop:hover {
@@ -114,28 +148,39 @@ select.input.ci-input-sm {
   background: rgba(0, 177, 79, 0.05);
 }
 
-.ci-seal-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-}
-
 .ci-seal-section {
   display: grid;
-  gap: 8px;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: center;
   padding: 0;
 }
 
-/* Empty-photos placeholder so the cell has a visible affordance before the
-   driver takes the first shot. Small footprint to match the compact chrome. */
+.ci-seal-section__label {
+  margin-bottom: 0;
+}
+
+.ci-seal-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(110px, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+}
+
+.ci-seal-row__clear {
+  min-width: 40px;
+}
+
+/* Empty-photos placeholder — a full-width affordance inside the compact tile. */
 .ci-photo-empty {
-  min-height: 45px;
-  min-width: 45px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
+  width: 100%;
+  min-height: 40px;
   color: var(--fg-3);
   background: transparent;
   border: 0;
@@ -153,8 +198,9 @@ select.input.ci-input-sm {
 .ci-photo-slot {
   position: relative;
   display: block;
-  width: 100%;
-  height: 128px;
+  flex: none;
+  width: 88px;
+  height: 62px;
 }
 
 .ci-photo-slot__view {
@@ -182,10 +228,10 @@ select.input.ci-input-sm {
 
 .ci-photo-slot__remove {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 44px;
-  height: 44px;
+  top: 3px;
+  right: 3px;
+  width: 24px;
+  height: 24px;
   border: 1px solid rgba(220, 38, 38, 0.42);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.94);
@@ -209,8 +255,8 @@ select.input.ci-input-sm {
 
 .ci-photo-slot__pending {
   position: absolute;
-  left: 8px;
-  bottom: 8px;
+  left: 3px;
+  bottom: 3px;
   background: var(--warning);
   color: #fff;
   font-size: var(--fs-xs);
@@ -220,27 +266,43 @@ select.input.ci-input-sm {
   line-height: 1.2;
 }
 
+/* Phones: the paired rows stack, and every tap target returns to 44px. */
 @container (max-width: 600px) {
-  .ci-row {
-    grid-template-columns: 1fr 1fr;
+  .ci-photo-lane,
+  .ci-seal-section {
+    grid-template-columns: 1fr;
   }
-  .ci-row--identity,
-  .ci-row--meta {
-    grid-template-columns: 1fr 1fr;
+
+  .ci-photo-lane__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .ci-photo-lane__capture,
+  .ci-container-head__remove {
+    min-height: 44px;
+  }
+
+  .ci-photo-slot {
+    width: 104px;
+    height: 74px;
+  }
+
+  .ci-photo-slot__remove {
+    width: 32px;
+    height: 32px;
   }
 }
 
 @container (max-width: 400px) {
-  .ci-row,
-  .ci-row--identity,
-  .ci-row--meta {
+  .ci-seal-row {
     grid-template-columns: 1fr;
   }
-  .ci-evidence-stack {
-    gap: 10px;
-  }
-  .ci-seal-row {
-    flex-wrap: wrap;
-    padding-bottom: 8px;
+
+  .ci-photo-slot {
+    width: 100%;
+    height: 96px;
   }
 }

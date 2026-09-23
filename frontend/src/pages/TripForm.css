@@ -161,12 +161,16 @@
   flex-direction: column;
   gap: 20px;
 }
+/* `auto-fill`, not `auto-fit`: auto-fit collapses the tracks a row does not use,
+ * which stretches a lone trailing field across the whole card (the revenue
+ * commission field) — and the 260px minimum is what decides fitting, so a group
+ * with room for three fields still gets them on one row. */
 .tc-form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: 16px;
 }
-.tc-form-row--three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.tc-form-row--three { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
 .tc-form-row--split-3-2 { grid-template-columns: 1.4fr 1fr; }
 
 /* ── Responsive (cross-cutting) ── */

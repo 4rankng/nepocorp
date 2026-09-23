@@ -243,7 +243,10 @@
   /* Desktop is a comparison workspace: use compact controls and reserve
      touch-sized targets for the tablet/phone overrides below. */
   --topbar-h: 40px;
-  --control-h: 36px;
+  /* Control height — sized against the dense 12px control type rather than a
+     fingertip. A 44px control around 12px text reads as a bloated widget in a
+     data workspace; touch surfaces get 44px back through the overrides below. */
+  --control-h: 32px;
   /* Controls sit on a distinct, quiet field layer so filters and inputs do
      not disappear into white workspace panels. The fill is WHITE on purpose:
      a grey field is indistinguishable from the grey canvas, which makes the
@@ -381,6 +384,12 @@
 
 /* Preserve 44px targets wherever a touch-first canvas is plausible. */
 @media (max-width: 900px) {
+  :root { --control-h: 44px; }
+}
+
+/* A coarse pointer needs the finger-sized target even on a wide viewport
+ * (touch laptops, tablets in landscape) — width alone is the wrong signal. */
+@media (pointer: coarse) {
   :root { --control-h: 44px; }
 }
 
