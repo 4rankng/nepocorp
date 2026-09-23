@@ -63,6 +63,10 @@
 }
 
 .field .as-return-cargo {
+  /* Anchor for the hidden checkbox below — same containment contract as
+     .tc-fuel-mode: an ICB-anchored focusable input lets the browser scroll
+     the document on focus. */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;

@@ -326,7 +326,9 @@ export default function ExpenseEntryPage() {
       if (firstErrorField) {
         setTimeout(() => document.getElementById(firstErrorField)?.focus(), 0);
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Document scroll is locked (base.css) — the pageError banner sits at
+        // the top of the shell scroller, not the window.
+        document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
       }
       return;
     }

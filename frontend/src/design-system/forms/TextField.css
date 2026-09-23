@@ -1,4 +1,8 @@
 .ds-field {
+  /* Positioned so abs-positioned children (notably .ds-select-native) stay
+     inside the shell scroller instead of anchoring to the ICB and inflating
+     the locked document's scroll height. */
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;

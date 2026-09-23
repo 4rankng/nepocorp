@@ -127,7 +127,9 @@ export default function TripEditPage() {
           navigate(`/trips/${result}`, { state: location.state });
         }
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // The document scroll is locked (base.css) — reveal the top of the
+        // form through the shell's own scroller instead.
+        document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 409) {
@@ -136,7 +138,7 @@ export default function TripEditPage() {
           form.resetForm?.();
         }
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
