@@ -2,6 +2,9 @@ import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
 export default defineConfig({
+  define: {
+    __BUILD_SHA__: JSON.stringify('test-sha'),
+  },
   test: {
     globals: true,
     environment: 'jsdom',

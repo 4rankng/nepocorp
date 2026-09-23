@@ -537,7 +537,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="mobile-user-sheet-footer">
-              <span className="app-version">{BRAND.productName} v1.2.0 · bản dựng {__BUILD_SHA__}</span>
+              <span className="app-version">{BRAND.productName} v1.2.0 · bản dựng {typeof __BUILD_SHA__ !== 'undefined' ? __BUILD_SHA__ : 'dev'}</span>
             </div>
           </div>
         </div>
