@@ -73,7 +73,6 @@ export interface UseTripFormDispatchReturn {
   estimatedTollCost: number;
   estimatedProfit: number;
   completionStatus: CompletionStatus;
-  completedSections: number;
   requiredFieldsFilled: number;
   totalRequiredFields: number;
   uploading: UploadingState;
@@ -460,30 +459,32 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   const totalRequiredFields = requiredProgress.total;
 
   const completionStatus = useMemo((): CompletionStatus => {
-    let fuelRevenue = 0;
-    if (s.fuelMode) fuelRevenue++;
-    if (s.fuelSupplementLiters) fuelRevenue++;
-    if (s.fuelSupplementReason) fuelRevenue++;
-    if (s.fuelAllocations.some(allocation => allocation.liters.trim())) fuelRevenue++;
-    if (s.tollsAddition) fuelRevenue++;
-    if (s.tollsDiscount) fuelRevenue++;
-    if (s.tollsStations) fuelRevenue++;
-    if (s.driverSalary) fuelRevenue++;
-    if (s.revenue) fuelRevenue++;
-
-    let images = 0;
-    if (s.notes.trim()) images++;
-    if (photoUrls.length > 0) images++;
+    const fuelRevenueChecks = [
+      !!s.fuelMode,
+      !!s.fuelSupplementLiters,
+      !!s.fuelSupplementReason,
+      s.fuelAllocations.some(allocation => allocation.liters.trim() !== ''),
+      !!s.tollsAddition,
+      !!s.tollsDiscount,
+      !!s.tollsStations,
+      !!s.driverSalary,
+      !!s.revenue,
+    ];
+    const imageChecks = [s.notes.trim() !== '', photoUrls.length > 0];
 
     return {
-      mainInfo: requiredFieldsFilled + (s.customerReference.trim() ? 1 : 0),
+      // Required fields only: the optional customer reference used to add a
+      // phantom point, so the row could read "8/7" and count as complete while a
+      // required field was still empty.
+      mainInfo: requiredFieldsFilled,
       journey: legs.length,
-      fuelRevenue,
-      images,
+      fuelRevenue: fuelRevenueChecks.filter(Boolean).length,
+      fuelRevenueTotal: fuelRevenueChecks.length,
+      images: imageChecks.filter(Boolean).length,
+      imagesTotal: imageChecks.length,
     };
   }, [
     requiredFieldsFilled,
-    s.customerReference,
     legs.length,
     s.fuelMode,
     s.fuelSupplementLiters,
@@ -497,15 +498,6 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     s.notes,
     photoUrls,
   ]);
-
-  const completedSections = useMemo(() => {
-    let count = 0;
-    if (completionStatus.mainInfo >= totalRequiredFields) count++;
-    if (completionStatus.journey >= 1) count++;
-    if (completionStatus.fuelRevenue >= 2) count++;
-    if (completionStatus.images >= 1) count++;
-    return count;
-  }, [completionStatus, totalRequiredFields]);
 
   const hasOptionalData = useMemo(
     () =>
@@ -529,7 +521,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     ],
   );
 
-  const { handleSubmit, createdTripId } = useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, requiredFieldsFilled, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos });
+  const { handleSubmit, createdTripId } = useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos });
 
   return {
     legs, addLeg, removeLeg, updateLeg,
@@ -541,7 +533,6 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     estimatedTollCost,
     estimatedProfit,
     completionStatus,
-    completedSections,
     requiredFieldsFilled,
     totalRequiredFields,
     handleSubmit,

@@ -17,7 +17,7 @@ function moneyOrUndefined(value: string): number | undefined { return moneyInput
 function moneyOrNull(value: string): number | null { return moneyInputToNumber(value) ?? null; }
 type ServerContainerAfterSave = { id: number; containerTypeId?: number | null; containerNumber?: string | null; sealNumber?: string | null; cargoWeightKg?: string | number | null; notes?: string | null; seals?: Array<{ id: number; sealNumber: string; sealType?: string | null; notes?: string | null }>; photos?: Array<{ id: number; type: 'CONTAINER' | 'SEAL'; storageKey: string; uploadedAt: string }> };
 
-interface Params { state: UseTripFormStateReturn; isEditMode: boolean; existingTrip: TripDetail | undefined; legs: FormLeg[]; requiredFieldsFilled: number; hasOptionalData: boolean; photoUrls: string[]; flushPendingPhotos: (tripId: number) => Promise<string[]>; flushPendingContainerPhotos: (tripId: number, rowKeyToContainerId: Map<string, number>) => Promise<Map<string, string>>; }
+interface Params { state: UseTripFormStateReturn; isEditMode: boolean; existingTrip: TripDetail | undefined; legs: FormLeg[]; hasOptionalData: boolean; photoUrls: string[]; flushPendingPhotos: (tripId: number) => Promise<string[]>; flushPendingContainerPhotos: (tripId: number, rowKeyToContainerId: Map<string, number>) => Promise<Map<string, string>>; }
 
 export async function saveTripFiguresOnce<T>(
   save: () => Promise<T>,
@@ -33,7 +33,7 @@ export async function saveTripFiguresOnce<T>(
   }
 }
 
-export function useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, requiredFieldsFilled, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos }: Params) {
+export function useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos }: Params) {
 const queryClient = useQueryClient();
 const { toast: showToast } = useToast();
 const createdTrip = useRef<{ id: number; plan: string } | null>(null);
@@ -55,14 +55,14 @@ const handleSubmit = useCallback(
 
     // Compulsory fields check
     if (!s.customerId) {
-      const msg = "Customer is required.";
+      const msg = "Khách hàng là bắt buộc.";
       s.setError(msg);
       showToast({ kind: 'error', message: msg });
       focusAndScroll("customerId");
       return;
     }
     if (!s.routeId) {
-      const msg = "Route is required.";
+      const msg = "Tuyến đường là bắt buộc.";
       s.setError(msg);
       showToast({ kind: 'error', message: msg });
       focusAndScroll("routeId");
@@ -109,6 +109,23 @@ const handleSubmit = useCallback(
         s.setError(msg);
         showToast({ kind: 'error', message: msg });
         focusAndScroll("driverId");
+        return;
+      }
+    } else {
+      // The counter requires both for an external plan, so the guard must too —
+      // otherwise the two disagree and a blocked form can still POST.
+      if (!s.externalCarrierId) {
+        const msg = "Đối tác điều xe là bắt buộc.";
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        focusAndScroll("externalCarrierId");
+        return;
+      }
+      if (!s.externalFreightCost.trim()) {
+        const msg = "Giá cước thuê ngoài là bắt buộc.";
+        s.setError(msg);
+        showToast({ kind: 'error', message: msg });
+        focusAndScroll("externalFreightCost");
         return;
       }
     }
@@ -554,7 +571,7 @@ const handleSubmit = useCallback(
   // granularity for this submit handler.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   [
-    isEditMode, existingTrip, requiredFieldsFilled, s.containerRows,
+    isEditMode, existingTrip, s.containerRows,
     s.customerId, s.routeId, s.truckId, s.trailerType,
     s.driverId, s.cargoTypeId, s.departureDate, s.customerReference, s.containerCount,
     s.plannedContainerTypeId,

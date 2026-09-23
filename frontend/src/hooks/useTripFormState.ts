@@ -16,7 +16,11 @@ export interface CompletionStatus {
   mainInfo: number;
   journey: number;
   fuelRevenue: number;
+  /** Size of the fuel & revenue check set — the badge denominator. */
+  fuelRevenueTotal: number;
   images: number;
+  /** Notes + photos, the size of the image check set. */
+  imagesTotal: number;
 }
 
 /** A seal sub-row within a container. Existing seals keep their server `id`;

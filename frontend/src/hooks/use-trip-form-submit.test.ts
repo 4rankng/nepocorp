@@ -54,7 +54,7 @@ describe('create trip recovery', () => {
       const submit = useTripFormSubmit({
         state: { ...state, ...baseState, ...overrides },
         isEditMode: false, existingTrip: undefined, legs: legs ?? validLegs,
-        requiredFieldsFilled: 8, hasOptionalData: true, photoUrls: [],
+        hasOptionalData: true, photoUrls: [],
         flushPendingPhotos: async () => [], flushPendingContainerPhotos: async () => new Map(),
       });
       return { ...submit, error: state.error };
@@ -76,6 +76,28 @@ describe('create trip recovery', () => {
     expect(result.current.error).not.toBe('');
     expect(api.post).not.toHaveBeenCalled();
     expect(api.put).not.toHaveBeenCalled();
+  });
+
+  it('blocks an external plan that has no carrier partner or freight cost', async () => {
+    const { result } = setup({ state: { carrierType: 'EXTERNAL', externalCarrierId: null, externalFreightCost: '' } });
+    await act(async () => { await result.current.handleSubmit(); });
+    expect(result.current.error).toBe('Đối tác điều xe là bắt buộc.');
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('creates the external plan while the partner still owes the plate and driver details', async () => {
+    // The partner assigns the truck after planning and the plate/driver details
+    // arrive later ("TBU"), so none of them may gate creation.
+    const { result } = setup({
+      state: {
+        carrierType: 'EXTERNAL', externalCarrierId: 7, externalFreightCost: '8640000',
+        externalPlateNumber: '', externalDriverName: '', externalDriverPhone: '',
+      },
+    });
+    await act(async () => { await result.current.handleSubmit(); });
+
+    expect(result.current.createdTripId).toBe(42);
+    expect(api.post).toHaveBeenCalledTimes(1);
   });
 
   it('retries rejected figures on the created ID with corrected data, without another POST', async () => {

@@ -134,7 +134,6 @@ export interface UseTripFormReturn {
   estimatedTollCost: number;
   estimatedProfit: number;
   completionStatus: CompletionStatus;
-  completedSections: number;
   requiredFieldsFilled: number;
   totalRequiredFields: number;
 
@@ -224,7 +223,6 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     estimatedTollCost: d.estimatedTollCost,
     estimatedProfit: d.estimatedProfit,
     completionStatus: d.completionStatus,
-    completedSections: d.completedSections,
     requiredFieldsFilled: d.requiredFieldsFilled,
     totalRequiredFields: d.totalRequiredFields,
     submitting: s.submitting, uploading: d.uploading, ocrResult: d.ocrResult, error: s.error, setError: s.setError, handleSubmit: d.handleSubmit, createdTripId: d.createdTripId,
