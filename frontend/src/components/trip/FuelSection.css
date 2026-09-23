@@ -10,3 +10,11 @@
   margin-bottom: 16px;
   align-items: start;
 }
+
+@media (max-width: 640px) {
+  /* Phone density (kanban 20260924_2): pair short fuel fields two-up. */
+  .fs-row {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    gap: 10px;
+  }
+}

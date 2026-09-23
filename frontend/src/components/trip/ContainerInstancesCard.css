@@ -40,6 +40,14 @@
   align-items: start;
 }
 
+@media (max-width: 640px) {
+  /* Phone density (kanban 20260924_2): pair container identity fields. */
+  .ci-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+    gap: 8px 10px;
+  }
+}
+
 .ci-field {
   min-width: 0;
 }

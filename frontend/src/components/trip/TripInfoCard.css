@@ -40,6 +40,38 @@
   min-width: 0;
 }
 
+/* ── Phone density (kanban 20260924_2, MooMoo/Shopee pattern) ──
+   150px tracks pair short fields two-up on 390–430px screens (group
+   headings and full-span elements already carry grid-column 1 / -1).
+   The field hint rides the label line instead of costing its own row:
+   it is absolutely pinned top-right, so focus order and DOM stay put
+   while the control row shrinks by one hint line. */
+@media (max-width: 640px) {
+  .trip-info-card__grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+    gap: 10px;
+  }
+  .trip-info-card__grid .field {
+    position: relative;
+  }
+  .trip-info-card__grid .field:has(> .tc-field-hint) > label,
+  .trip-info-card__grid .field:has(> .tc-field-hint) > .tc-field-label {
+    padding-right: 58%;
+    box-sizing: border-box;
+  }
+  .trip-info-card__grid .field > .tc-field-hint {
+    position: absolute;
+    top: 0;
+    right: 0;
+    max-width: 56%;
+    margin-top: 0;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 /* External-partner margin preview — a soft inset well inside the white card. */
 .trip-info-card__margin {
   grid-column: 1 / -1;

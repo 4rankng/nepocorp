@@ -243,7 +243,13 @@
 }
 
 @container (max-width: 620px) {
-  .tc-field-row--2,
+  /* Phone density (kanban 20260924_2): paired rows stay paired — two
+     166px tracks at 390px is the MooMoo-tight layout; only true 3-col
+     rows and the carrier/container split collapse. */
+  .tc-field-row--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .tc-field-row--3 {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -190,8 +190,13 @@
   .tc-page-title { font-size: var(--fs-2xl); line-height: 1.35; }
   .tc-page-sub { font-size: var(--fs-xs); }
   .tc-back-btn { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+  /* Phone density (kanban 20260924_2): 150px tracks pair short fields
+     two-up like MooMoo/Grab form rows; long controls ellipsize in place. */
   .tc-form-row,
-  .tc-form-row--three { grid-template-columns: 1fr; }
+  .tc-form-row--three {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+    gap: 10px;
+  }
   .tc-card { margin-bottom: 24px; padding-bottom: 24px; border-radius: 0; }
   .tc-card-head { padding: 0 0 12px 0; gap: 10px; }
   .tc-card-num { display: none; }

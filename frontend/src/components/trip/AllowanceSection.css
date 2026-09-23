@@ -21,6 +21,14 @@
   align-items: stretch; /* make columns equal height */
 }
 
+@media (max-width: 640px) {
+  /* Phone density (kanban 20260924_2): pair money/allowance fields two-up. */
+  .as-row {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    gap: 10px;
+  }
+}
+
 .as-row > .field {
   display: flex;
   flex-direction: column;
