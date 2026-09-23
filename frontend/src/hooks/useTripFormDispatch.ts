@@ -24,7 +24,7 @@ import { createDefaultFuelAllocations, type UseTripFormStateReturn, type Complet
 import { activeFuelSuppliers, normalizeFuelAllocationRows } from '../components/trip/fuelAllocationRows';
 import { useCatalogs } from './useCatalogs';
 import {
-  countRequiredTripFields,
+  requiredTripFieldProgress,
   createFallbackLegsFromRouteName,
   resolveContainerCount,
 } from './tripFormDispatchUtils';
@@ -433,8 +433,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     [s.revenue, estimatedFuelCost, estimatedTollCost, s.driverSalary, s.twoPointDeliveryBonus, s.vehicleShiftAllowance],
   );
 
-  const requiredFieldsFilled = useMemo(() => {
-    return countRequiredTripFields({
+  const requiredProgress = useMemo(() => {
+    return requiredTripFieldProgress({
       customerId: s.customerId,
       routeId: s.routeId,
       carrierType: s.carrierType,
@@ -456,6 +456,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     s.cargoTypeId, s.plannedContainerTypeId, s.containerRows, s.departureDate,
     s.externalCarrierId, s.externalFreightCost, s.externalPlateNumber,
   ]);
+  const requiredFieldsFilled = requiredProgress.filled;
+  const totalRequiredFields = requiredProgress.total;
 
   const completionStatus = useMemo((): CompletionStatus => {
     let fuelRevenue = 0;
@@ -496,8 +498,6 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     photoUrls,
   ]);
 
-  const totalRequiredFields = 8;
-
   const completedSections = useMemo(() => {
     let count = 0;
     if (completionStatus.mainInfo >= totalRequiredFields) count++;
@@ -505,7 +505,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     if (completionStatus.fuelRevenue >= 2) count++;
     if (completionStatus.images >= 1) count++;
     return count;
-  }, [completionStatus]);
+  }, [completionStatus, totalRequiredFields]);
 
   const hasOptionalData = useMemo(
     () =>

@@ -21,25 +21,28 @@ export interface RequiredTripFields {
   departureDate: string;
 }
 
-export function countRequiredTripFields(fields: RequiredTripFields): number {
-  let count = 0;
-  if (fields.customerId) count++;
-  if (fields.routeId) count++;
-  if (fields.carrierType === 'EXTERNAL') {
-    if (fields.externalCarrierId) count++;
-    if (fields.externalFreightCost.trim()) count++;
-    // externalPlateNumber is intentionally NOT counted: the partner assigns the
-    // truck after planning, so the plate is only required at completion
-    // (kanban 20260921_4).
-  } else {
-    if (fields.truckId) count++;
-    if (fields.trailerType) count++;
-    if (fields.driverId) count++;
-  }
-  if (fields.cargoTypeId) count++;
-  if (fields.plannedContainerTypeId || fields.containerRows.some(row => row.containerTypeId)) count++;
-  if (fields.departureDate) count++;
-  return count;
+export interface RequiredFieldProgress {
+  filled: number;
+  total: number;
+}
+
+export function requiredTripFieldProgress(fields: RequiredTripFields): RequiredFieldProgress {
+  const carrierChecks =
+    fields.carrierType === 'EXTERNAL'
+      ? // externalPlateNumber is intentionally NOT required here: the partner
+        // assigns the truck after planning, so the plate is only required at
+        // completion (kanban 20260921_4).
+        [!!fields.externalCarrierId, fields.externalFreightCost.trim() !== '']
+      : [!!fields.truckId, !!fields.trailerType, !!fields.driverId];
+  const checks = [
+    !!fields.customerId,
+    !!fields.routeId,
+    ...carrierChecks,
+    !!fields.cargoTypeId,
+    !!fields.plannedContainerTypeId || fields.containerRows.some(row => row.containerTypeId),
+    !!fields.departureDate,
+  ];
+  return { filled: checks.filter(Boolean).length, total: checks.length };
 }
 
 export function resolveContainerCount(raw: string): number {

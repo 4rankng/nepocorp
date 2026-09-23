@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LoadingType } from '@tingting/shared';
 import {
-  countRequiredTripFields,
+  requiredTripFieldProgress,
   createFallbackLegsFromRouteName,
   resolveCommonContainerTypeId,
   resolveContainerCount,
@@ -27,9 +27,52 @@ describe('tripFormDispatchUtils', () => {
 
     // The plate is only required at completion, so it never moves this counter
     // (kanban 20260921_4).
-    expect(countRequiredTripFields(fields)).toBe(7);
-    expect(countRequiredTripFields({ ...fields, externalPlateNumber: '   ' })).toBe(7);
-    expect(countRequiredTripFields({ ...fields, externalPlateNumber: '' })).toBe(7);
+    expect(requiredTripFieldProgress({ ...fields, externalPlateNumber: '   ' }))
+      .toEqual({ filled: 7, total: 7 });
+    expect(requiredTripFieldProgress({ ...fields, externalPlateNumber: '' }))
+      .toEqual({ filled: 7, total: 7 });
+  });
+
+  it('reports a complete external form without the optional plate (regression)', () => {
+    // The total used to be hardcoded to the OWN shape (8), so a fully-filled
+    // EXTERNAL form read "Còn 1 trường bắt buộc chưa điền" and never enabled
+    // "Tạo lệnh".
+    const progress = requiredTripFieldProgress({
+      customerId: '1',
+      routeId: '2',
+      carrierType: 'EXTERNAL',
+      externalCarrierId: 3,
+      externalFreightCost: '8640000',
+      externalPlateNumber: '',
+      truckId: '',
+      trailerType: '',
+      driverId: '',
+      cargoTypeId: '4',
+      plannedContainerTypeId: '5',
+      containerRows: [],
+      departureDate: '2026-09-24',
+    });
+    expect(progress.filled).toBe(progress.total);
+  });
+
+  it('totals own-carrier fields including truck, trailer and driver', () => {
+    const fields = {
+      customerId: '1',
+      routeId: '2',
+      carrierType: 'OWN' as const,
+      externalCarrierId: null,
+      externalFreightCost: '',
+      externalPlateNumber: '',
+      truckId: '6',
+      trailerType: 'MOOC',
+      driverId: '7',
+      cargoTypeId: '4',
+      plannedContainerTypeId: '5',
+      containerRows: [],
+      departureDate: '2026-09-24',
+    };
+    expect(requiredTripFieldProgress(fields)).toEqual({ filled: 8, total: 8 });
+    expect(requiredTripFieldProgress({ ...fields, driverId: '' })).toEqual({ filled: 7, total: 8 });
   });
 
   it('clamps container count to the supported trip-form range', () => {
