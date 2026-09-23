@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CardSection } from './CardSection';
 import { InputWithPrefix } from './InputWithPrefix';
 import { RouteChips } from './RouteChips';
@@ -47,6 +47,9 @@ function Field({ label, required, children, className, controlId }: {
 
 export function TripInfoCard(props: TripInfoCardProps) {
   const form = useTripFormContext();
+  // Quick-pick routes open on click and close when focus leaves the field: they
+  // are an overlay, never part of the card's flow.
+  const [routePicksOpen, setRoutePicksOpen] = useState(false);
   const filledContainerTypeIds = form.containerRows
     .map(row => row.containerTypeId)
     .filter(Boolean)
@@ -107,19 +110,30 @@ export function TripInfoCard(props: TripInfoCardProps) {
           {sel(form.customerId, form.setCustomerId, props.customers, 'Chọn khách hàng', 'customerId', true)}
         </Field>
         <Field label="Tuyến đường" required controlId="routeId">
-          <SearchableSelect
-            id="routeId"
-            name="routeId"
-            value={form.routeId}
-            onChange={form.setRouteId}
-            options={searchableRoutes}
-            placeholder={props.loading ? 'Đang tải…' : 'Chọn tuyến đường'}
-            searchPlaceholder="Tìm tuyến đường…"
-            emptyMessage="Không tìm thấy tuyến đường phù hợp."
-            disabled={props.loading}
-            required
-          />
-          <RouteChips routes={props.routes} onSelect={(id) => form.setRouteId(String(id))} />
+          <div
+            className={`trip-route-field${routePicksOpen ? ' is-open' : ''}`}
+            onClickCapture={() => setRoutePicksOpen(true)}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setRoutePicksOpen(false);
+            }}
+          >
+            <SearchableSelect
+              id="routeId"
+              name="routeId"
+              value={form.routeId}
+              onChange={form.setRouteId}
+              options={searchableRoutes}
+              placeholder={props.loading ? 'Đang tải…' : 'Chọn tuyến đường'}
+              searchPlaceholder="Tìm tuyến đường…"
+              emptyMessage="Không tìm thấy tuyến đường phù hợp."
+              disabled={props.loading}
+              required
+            />
+            <RouteChips
+              routes={props.routes}
+              onSelect={(id) => { form.setRouteId(String(id)); setRoutePicksOpen(false); }}
+            />
+          </div>
         </Field>
         <Field label="Loại hàng" required controlId="cargoTypeId">
           {sel(form.cargoTypeId, form.setCargoTypeId, props.cargoTypes, 'Chọn loại hàng', 'cargoTypeId', true)}

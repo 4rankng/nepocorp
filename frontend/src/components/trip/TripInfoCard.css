@@ -40,6 +40,32 @@
   min-width: 0;
 }
 
+/* Route quick-picks hang under their field as a click-opened overlay: in flow
+   they stretched the field's row and pushed every field below them down. */
+.trip-route-field {
+  position: relative;
+}
+.trip-route-field .tc-route-suggest {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 0;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.trip-route-field.is-open .tc-route-suggest {
+  display: flex;
+}
+
 /* External-partner margin preview — a soft inset well inside the white card. */
 .trip-info-card__margin {
   grid-column: 1 / -1;
