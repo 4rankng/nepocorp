@@ -17,7 +17,7 @@
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: clamp(28px, 7vh, 72px) 24px 64px;
+  padding: clamp(28px, 7vh, 72px) 24px 16px;
 }
 .login-page::before {
   content: none;
@@ -38,6 +38,11 @@
   z-index: 2;
   width: 100%;
   max-width: 432px;
+  /* flex-shrink: 0 — #root locks the document (base.css), so .login-page is
+     the only scroller. As a flex child the card would otherwise SHRINK to the
+     viewport (overflow: hidden kills its automatic min-height) and clip the
+     submit button away on short screens with no scrollbar to reach it. */
+  flex-shrink: 0;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   border-radius: var(--r-xl);
   border: 1px solid var(--line);
@@ -194,10 +199,13 @@
   border-color: var(--line);
 }
 .login-footer {
-  position: absolute;
-  bottom: 16px;
-  left: 0;
-  right: 0;
+  /* In-flow with margin-top: auto — .login-page is the scroller now, so an
+     absolute footer pins to the unscrolled padding box and lands ON the submit
+     button on short screens. In flow it pins to the bottom when content fits
+     and follows the card when it doesn't. */
+  position: static;
+  margin-top: auto;
+  flex-shrink: 0;
   text-align: center;
   font-family: var(--font-body);
   font-size: var(--fs-xs);
@@ -295,7 +303,7 @@
   .login-page {
     min-height: 100vh;
     min-height: 100dvh;
-    padding: clamp(18px, 4.5vh, 36px) 14px 54px;
+    padding: clamp(18px, 4.5vh, 36px) 14px 12px;
   }
   .login-card { max-width: 100%; border-radius: 22px; }
   .login-form { padding: 30px 24px 32px; }
@@ -308,7 +316,7 @@
   .login-form .sub { font-size: var(--fs-sm); }
   .login-form .input { min-height: 50px; height: 50px;}
   .login-submit { height: 50px; font-size: var(--fs-md); }
-  .login-footer { font-size: var(--fs-xs); bottom: 12px; padding: 0 16px; }
+  .login-footer { font-size: var(--fs-xs); padding: 0 16px; }
   /* Password toggle: keep the tap area comfortable on phones. */
   .password-toggle { padding: 10px; min-width: 45px; min-height: 45px; }
   /* Username placeholder was getting clipped — give the input the full row width */
