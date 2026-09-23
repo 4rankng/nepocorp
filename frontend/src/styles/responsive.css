@@ -179,19 +179,32 @@
 @media (max-width: 640px) {
 
   /* ── Universal touch-target floor (Vantai invariant) ──
-   * Every interactive control on phones must clear the 44px Apple/Material
-   * tap-target minimum. Text keeps the shared control scale independently
-   * of target size; the iOS editable-field exception lives below. */
+   * Every interactive control on phones is floored by --control-h (36px dense
+   * phone scale — kanban 20260924_1, MooMoo/Shopee-style density), so the floor
+   * moves with the token instead of pinning a second height over component
+   * rules. Commit surfaces re-raise via --cta-h with a #root prefix (ActionBar,
+   * Modal feet); icon-only squares keep their explicit 44px. WCAG 2.2 target
+   * size (24px) stays cleared with margin. */
   #root button,
   #root [role="button"],
   #root a[href],
   #root input:not([type="checkbox"]):not([type="radio"]),
   #root select {
+    min-height: var(--control-h);
+  }
+
+  /* Driver portal keeps the full 44px touch size (design-guidelines: DRIVER =
+     large touch targets); the dense floor is for staff surfaces. */
+  #root .is-driver button,
+  #root .is-driver [role="button"],
+  #root .is-driver a[href],
+  #root .is-driver input:not([type="checkbox"]):not([type="radio"]),
+  #root .is-driver select {
     min-height: 44px;
   }
 
   /* ── App shell ── */
-  .app-body, .content { padding: 6px 10px calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .app-body, .content { padding: 6px 8px calc(24px + env(safe-area-inset-bottom, 0px)); }
 
   /* ── Topbar ── */
   /* Mobile header is taller so the 44px-class touch controls fit inside it;

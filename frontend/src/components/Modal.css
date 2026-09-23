@@ -106,8 +106,8 @@
     gap: 8px;
   }
 
-  .modal__foot .btn {
-    min-height: 44px;
+  #root .modal__foot .btn {
+    min-height: var(--cta-h);
   }
 
   .modal__close {

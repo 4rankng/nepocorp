@@ -127,12 +127,40 @@ const phoneControlSelectors = [
   '#root select',
 ];
 const universalPhoneRule = phoneCss.match(
-  /#root button,[\s\S]*?#root select\s*\{[^}]*min-height:\s*44px\s*;/i,
+  /#root button,[\s\S]*?#root select\s*\{[^}]*min-height:\s*var\(--control-h\)\s*;/i,
 )?.[0] ?? '';
 for (const selector of phoneControlSelectors) {
   if (!universalPhoneRule.includes(selector)) {
     failures.push(`styles/responsive.css: missing universal phone selector ${selector}`);
   }
+}
+// Two-tier phone scale (kanban 20260924_1, MooMoo/Shopee/Grab density):
+// dense 36px floor through --control-h; 44px reserved for --cta-h commit
+// surfaces and the driver-portal floor.
+for (const [needle, minCount, where] of [
+  ['--control-h: 36px', 2, 'both the phone-width and coarse-pointer overrides'],
+  ['--cta-h: 44px', 2, 'both the phone-width and coarse-pointer overrides'],
+]) {
+  const count = tokenCss.split(needle).length - 1;
+  if (count < minCount) {
+    failures.push(`styles/tokens.css: expected ${needle} in ${where} (phone control scale)`);
+  }
+}
+if (!/--cta-h:\s*var\(--control-h\)/.test(tokenCss)) {
+  failures.push('styles/tokens.css: desktop --cta-h must follow the control scale');
+}
+for (const ctaCssPath of [
+  'components/trip/ActionBar.css',
+  'components/Modal.css',
+  'design-system/forms/CrudFormModal.css',
+]) {
+  const ctaSource = await readFile(new URL(`../src/${ctaCssPath}`, import.meta.url), 'utf8');
+  if (!ctaSource.includes('var(--cta-h)')) {
+    failures.push(`${ctaCssPath}: commit surfaces must size from --cta-h`);
+  }
+}
+if (!/#root \.is-driver button[\s\S]*?min-height:\s*44px/.test(phoneCss)) {
+  failures.push('styles/responsive.css: driver portal must keep the 44px touch floor');
 }
 for (const selector of ['.wf-link', '.wf-btn', '.stab-pill']) {
   const escapedSelector = selector.replace('.', '\\.');
@@ -232,11 +260,11 @@ async function checkInlineTouchTargets(directoryUrl) {
                 .replaceAll(/['"]/g, '')
                 .replace('px', '');
               const value = Number(valueText);
-              if (Number.isFinite(value) && value < 44) {
+              if (Number.isFinite(value) && value < 36) {
                 const line = sourceFile.getLineAndCharacterOfPosition(
                   minHeightProperty.getStart(sourceFile),
                 ).line + 1;
-                failures.push(`${displayPath}:${line}: inline interactive minHeight must be at least 44px`);
+                failures.push(`${displayPath}:${line}: inline interactive minHeight must be at least 36px`);
               }
             }
           }

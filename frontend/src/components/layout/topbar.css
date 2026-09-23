@@ -358,7 +358,7 @@
 /* Chrome controls are sized FROM the bar they live in. Hardcoding 44px inside a
    40px header made the notification bell and the assistant launcher spill past
    the top and bottom edges of the row. The `#root` prefix outranks the blanket
-   `#root button { min-height: 44px }` touch rule at ≤640px. */
+   `#root button { min-height: var(--control-h) }` touch rule at ≤640px. */
 #root .topbar .icon-btn,
 #root .topbar .topbar__icon-btn,
 #root .topbar .topbar__toggle {

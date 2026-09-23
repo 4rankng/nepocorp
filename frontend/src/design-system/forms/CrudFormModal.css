@@ -111,7 +111,7 @@
     padding: 12px 18px max(12px, env(safe-area-inset-bottom));
   }
 
-  .ds-crud-modal__foot .btn {
-    min-height: 44px;
+  #root .ds-crud-modal__foot .btn {
+    min-height: var(--cta-h);
   }
 }

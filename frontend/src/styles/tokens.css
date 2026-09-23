@@ -245,8 +245,12 @@
   --topbar-h: 40px;
   /* Control height — sized against the dense 12px control type rather than a
      fingertip. A 44px control around 12px text reads as a bloated widget in a
-     data workspace; touch surfaces get 44px back through the overrides below. */
+     data workspace; touch surfaces get their size through the overrides below. */
   --control-h: 32px;
+  /* Commit-surface height (bottom action bar, modal feet). Follows the control
+     scale on desktop; phones override to 44px — the Shopee/Grab rule: only the
+     thumb-zone CTA row is big, everything else stays dense. */
+  --cta-h: var(--control-h);
   /* Controls sit on a distinct, quiet field layer so filters and inputs do
      not disappear into white workspace panels. The fill is WHITE on purpose:
      a grey field is indistinguishable from the grey canvas, which makes the
@@ -382,15 +386,17 @@
   --slate-6: #E2E8F0;  /* slate-200 */
 }
 
-/* Preserve 44px targets wherever a touch-first canvas is plausible. */
+/* Dense phone scale (kanban 20260924_1): controls follow MooMoo/Shopee/Grab
+   density — 36px is exactly 3× --fs-control (12px). Commit surfaces (bottom
+   action bar, modal feet) keep --cta-h 44px: big ONLY where the thumb lands. */
 @media (max-width: 900px) {
-  :root { --control-h: 44px; }
+  :root { --control-h: 36px; --cta-h: 44px; }
 }
 
 /* A coarse pointer needs the finger-sized target even on a wide viewport
  * (touch laptops, tablets in landscape) — width alone is the wrong signal. */
 @media (pointer: coarse) {
-  :root { --control-h: 44px; }
+  :root { --control-h: 36px; --cta-h: 44px; }
 }
 
 @theme inline {

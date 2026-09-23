@@ -158,14 +158,14 @@
   }
   .filter-tab,
   .filter-bar .filter-tab {
-    min-height: 44px;
+    min-height: var(--control-h);
     padding: 0 11px;
     font-size: var(--fs-control);
   }
   .filter-bar__spacer { display: none; }
   .filter-bar__search {
     min-width: 0;
-    min-height: 44px;
+    min-height: var(--control-h);
     flex: 1 0 100%;
     width: 100%;
     max-width: none;

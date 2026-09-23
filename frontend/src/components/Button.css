@@ -82,7 +82,7 @@
 @media (max-width: 640px) {
   .btn {
     min-height: var(--control-h);
-    padding: 11px 14px;
+    padding: 8px 14px;
     font-size: var(--fs-control, var(--fs-md));
     white-space: normal;
   }

@@ -230,7 +230,7 @@
   .tc-create-bento > * { grid-column: span 1; }
 }
 @media (max-width: 640px) {
-  .tc-create-wrap { padding: 8px 12px 96px; }
+  .tc-create-wrap { padding: 8px 0 96px; }
   .tc-create-hero { padding: 16px; margin-bottom: 14px; }
   .tc-hero-top { gap: 12px; flex-wrap: wrap; }
   .tc-create-hero .tc-hero-h1 { font-size: var(--fs-2xl); line-height: 1.35; }

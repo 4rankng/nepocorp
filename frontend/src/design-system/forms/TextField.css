@@ -81,7 +81,10 @@
 
 @media (max-width: 640px) {
   .ds-field__input,
-  .ds-field select.ds-field__input,
+  .ds-field select.ds-field__input {
+    min-height: var(--control-h);
+  }
+  /* Multiline stays taller than a single control line. */
   .ds-field textarea.ds-field__input {
     min-height: 44px;
   }

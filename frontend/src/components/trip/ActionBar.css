@@ -73,8 +73,10 @@
   .tc-action-bar.tc-action-bar .tc-action-bar__status { font-size: var(--fs-xs); gap: 8px; }
   .tc-action-bar.tc-action-bar .tc-action-bar__status-icon { width: 28px; height: 28px; }
   .tc-action-bar.tc-action-bar .tc-action-bar__status-sub { display: none; }
-  .tc-action-bar.tc-action-bar .btn,
-  .tc-action-bar.tc-action-bar .btn-primary { min-height: 44px; padding: 0 14px; }
+  /* Commit row — the thumb-zone CTA keeps the full 44px (Shopee/Grab pattern);
+     the #root prefix outranks the dense #root phone floor. */
+  #root .tc-action-bar.tc-action-bar .btn,
+  #root .tc-action-bar.tc-action-bar .btn-primary { min-height: var(--cta-h); padding: 0 14px; }
 }
 
 @media (max-width: 420px) {

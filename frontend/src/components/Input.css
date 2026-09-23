@@ -7,6 +7,10 @@
 .ui-select-trigger {
   display: flex;
   width: 100%;
+  /* Intrinsic-width controls (input[type=date], number spinners) must never
+     outgrow their track — they outwidened the card on older bundles. */
+  min-width: 0;
+  max-width: 100%;
   min-height: var(--control-h);
   height: var(--control-h);
   padding: 7px 12px;

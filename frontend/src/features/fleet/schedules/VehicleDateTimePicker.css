@@ -228,12 +228,11 @@
   }
 
   .vehicle-date-time-picker__time-field input {
-    min-height: 44px;
-
+    min-height: var(--control-h);
   }
 
   .vehicle-date-time-picker__actions .btn {
-    min-height: 44px;
+    min-height: var(--control-h);
   }
 }
 
