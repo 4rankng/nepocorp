@@ -126,7 +126,6 @@ export function TripInfoCard(props: TripInfoCardProps) {
         </Field>
         <Field label="Mã tham chiếu khách hàng" controlId="customerReference">
           <input id="customerReference" name="customerReference" className="input mono" type="text" placeholder="VD: PO-12345" value={form.customerReference} onChange={(e) => form.setCustomerReference(e.target.value)} maxLength={50} />
-          <span className="tc-field-hint">(không bắt buộc)</span>
         </Field>
         <div className="trip-info-card__group">Phương tiện & lịch</div>
         {/* Carrier type toggle */}
@@ -203,7 +202,6 @@ export function TripInfoCard(props: TripInfoCardProps) {
         <div className="trip-info-card__group">Container & thuế</div>
         <Field label="Số lượng cont" required controlId="containerCount">
           <input id="containerCount" name="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} required />
-          <span className="tc-field-hint">Mặc định: 1</span>
         </Field>
         <Field label="Loại container" required controlId="plannedContainerTypeId">
           {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId', true)}
