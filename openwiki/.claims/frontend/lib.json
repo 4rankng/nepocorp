@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ac7790cc3375244565b7e8d6c90e124ac907875a8491878c57f14e0f70822911",
+  "pageVersion": "sha256:6ef80d525f3042a1d7945989dba3db6a225d7760a536de7400f8d5ec8eb6570d",
   "claims": [
     {
       "id": "claim_0a10e18609db45338058475bfd38fbac",
@@ -22,8 +22,12 @@
     },
     {
       "id": "claim_b6789f6930f34ae7b2f1faab2c8d020a",
-      "statement": "frontend/src/lib/format.ts provides Vietnamese-locale formatters: formatNumber (vi-VN with . thousands separator), formatCompact (abbreviates >=1M to tr / >=1B to ty / >=1K to k), formatCurrency (12.500.000 ₫, integer, ₫ suffix, no decimals), a VND splitter returning { num, unit } for the <Money> component, and money-input parsing in frontend/src/lib/moneyInput.ts.",
+      "statement": "frontend/src/lib/format.ts provides Vietnamese-locale formatters: formatNumber (vi-VN, . thousands separator), formatCompact (>=1B tỷ / >=1M tr / >=1K k), formatCurrency (\"12.500.000 ₫\"), moneyParts splitting a VND amount into { num, unit, format } so the unit renders at subtitle size (the basis of the shared <Money> component), and formatDateTimeVN which forces timeZone 'Asia/Ho_Chi_Minh' explicitly because a vi-VN locale argument alone does not set the zone. moneyInput.ts parses numeric fields treating Vietnamese dots as thousands separators, with blank input kept undefined.",
       "evidence": [
+        {
+          "resource": "repo://frontend/src/components/shared/Money.tsx",
+          "version": "repo-file-v1:sha256:84ae678891db7e2b60fdb78e8ab8d15b6fd69d8ad53fe7a3319363fa8c021561"
+        },
         {
           "resource": "repo://frontend/src/lib/format.ts",
           "version": "repo-file-v1:sha256:a2cbc547a19fe978c2960f9090f472ed6dc2d582c18d1d21970aa751683fb531"
@@ -36,7 +40,7 @@
     },
     {
       "id": "claim_c3408821d0794e05b6e752e694321b18",
-      "statement": "frontend/src/lib/date.ts provides Vietnamese-relative time helpers — formatDayMonth (DD/MM), formatRelativeTime (Vừa xong, X phút trước, X giờ trước, Hôm qua, X ngày trước) — plus month-name and week-start utilities.",
+      "statement": "frontend/src/lib/date.ts contains exactly two helpers: formatDayMonth (DD/MM) and formatRelativeTime (Vừa xong, N phút trước, N giờ trước, Hôm qua, N ngày trước, then a DD/MM date after a week); the former month-name and week-start utilities no longer exist in the file.",
       "evidence": [
         {
           "resource": "repo://frontend/src/lib/date.ts",
@@ -60,22 +64,30 @@
     },
     {
       "id": "claim_01418a02adeb405488fbfa1320003496",
-      "statement": "frontend/src/lib/route.ts exports splitRoute(name) which splits \"Hà Nội → Hải Phòng\" into { from, to } using one of `→ ⇒ -> - – >` as the separator (used by the dispatch map, trip cards, and search dropdowns); tests live in routes.test.ts.",
+      "statement": "frontend/src/lib/route.ts exports splitRoute(routeName), which splits \"Hà Nội → Hải Phòng\" into { from, to } by trying the separators →, ⇒, ->, ' - ', ' – ', > in order and returning null when none yields two non-empty halves; it is used by the dispatch trip card, trip mobile cards, and trip columns. routes.test.ts covers titleForPath and agent route keys, not splitRoute.",
       "evidence": [
+        {
+          "resource": "repo://frontend/src/features/dispatch/components/DispatchTripCard.tsx",
+          "version": "repo-file-v1:sha256:27920a56a9330e697f7e050f8b9f32a00f783dacc47e6dd6ddbb7d51cfa95d4a"
+        },
+        {
+          "resource": "repo://frontend/src/features/trips/tripColumns.tsx",
+          "version": "repo-file-v1:sha256:bb4b7a69ac7bde1de948e37b1e7fa15e7dfe2bf50d265781347af68f06d087d8"
+        },
         {
           "resource": "repo://frontend/src/lib/route.ts",
           "version": "repo-file-v1:sha256:42203ade384c42cd50512a2abb97bed09ff1e383ced6fe59761a7a79de70f84c"
-        },
-        {
-          "resource": "repo://frontend/src/lib/routes.test.ts",
-          "version": "repo-file-v1:sha256:8b2187ee0060106a18b956aa4be61c4a61474ff532eaffcd470a3d373ffdfe75"
         }
       ]
     },
     {
       "id": "claim_958475e6ebe543a0962267d79540eab9",
-      "statement": "frontend/src/lib/maps.ts wraps the /api/maps endpoints with typed PlaceSuggestion / RouteSuggestion / RouteResult shapes and an in-memory autocomplete cache (50 entries, 5-min TTL); the Map4D integration lives on the backend in backend/src/services/map4d.ts and maps.service.ts.",
+      "statement": "frontend/src/lib/maps.ts wraps the /maps endpoints with typed PlaceSuggestion / RouteSuggestion / RouteResult shapes and an in-memory autocomplete cache (50 entries, 5-minute TTL, oldest evicted). On the backend, maps.service.ts serves /maps/autocomplete and /maps/distance with distances drawn from GPS-captured route polylines, and the place-search module backend/src/services/map4d.ts is now Google Places Autocomplete (New) primary with a Geocoding fallback (Map4D is historical), fronted by Redis caching.",
       "evidence": [
+        {
+          "resource": "repo://backend/src/routes/maps.ts",
+          "version": "repo-file-v1:sha256:a36a7fdd4a0ae6f12a8f45b7c38703e002db61286e62e9cf956e51fad6c3fd4c"
+        },
         {
           "resource": "repo://backend/src/services/map4d.ts",
           "version": "repo-file-v1:sha256:7d9c54a6a4109cd1f534bc3743ec5486bcba4c24480effb9ad47cfc8b2367790"
@@ -92,7 +104,7 @@
     },
     {
       "id": "claim_3613a071a065462e915025e01c3b61ca",
-      "statement": "cap-table.ts implements activePartners(history) which picks the latest snapshot date reached today and dedupes to the most-recent entry per partner (percentages auto-calculated from contributionAmount, never stored); csv.ts uses exceljs to produce brand-aware XLSX reports with title/subtitle/columnTypes/totalsColumns/totalsLabel (TỔNG CỘNG).",
+      "statement": "frontend/src/lib/cap-table.ts exports getActiveCapTable(entries), which picks the latest effectiveDate reached today (falling back to all rows when none is reached), dedupes to the most-recent createdAt per partner name, and computes percentages from contributionAmount — falling back to the stored percentage field when contributions sum to zero. csv.ts downloadCSV uses exceljs to produce brand-styled XLSX reports with a title band, columnTypes metadata, and a totals row labeled TỔNG CỘNG.",
       "evidence": [
         {
           "resource": "repo://frontend/src/lib/cap-table.ts",
@@ -106,15 +118,23 @@
     },
     {
       "id": "claim_e57113a109604edb91ee8aa163e78f9a",
-      "statement": "Other lib utilities include liveFleet.ts / liveRoute.ts (typed wrappers for live-fleet and live-route endpoints), notificationClient.ts (web-push subscription + payload decoder), audit-helpers.ts (audit-log color/severity formatting), calendar-month.ts (calendar grid builder with tests), profit-preview.ts (cap-table preview), expense-breakdown.ts (per-trip expense aggregation), status-variants.ts (TripStatus/PenaltyStatus to Tailwind variant tokens), overlayState.ts (animated overlay lifecycle), agentHighlight.ts (agent-directive UI helpers), tourTarget.ts (retained onboarding selectors), and utils.ts (generic sleep/groupBy/uniqBy helpers).",
+      "statement": "Other lib utilities: audit-helpers.ts (ACTION_LABELS, resolveCategory, formatTimeShort for audit-log rendering), calendar-month.ts getCalendarMonthRange (inclusive Gregorian month bounds, with tests), profit-preview.ts getProfitPreviewEmptyMessage (Vietnamese empty-state selection for profit distribution), expense-breakdown.ts groupExpensesByType/groupExpensesByContainer (per-category and chronological per-container totals), status-variants.ts (AdvanceRequestStatus/AdvanceSettlementStatus → neutral/info/warn/success/danger tokens), notificationClient.ts (notifications list/unread/mark-read + web-push VAPID subscribe/unsubscribe), emptyIllustrations.ts (empty-state category → PNG illustration map), and utils.ts which contains only cn (class-name joining).",
       "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/audit-helpers.ts",
+          "version": "repo-file-v1:sha256:751017a22c85eca90d101968fc2b5fad5d622f01e73e58b208bb1c986fb6f1ec"
+        },
         {
           "resource": "repo://frontend/src/lib/calendar-month.ts",
           "version": "repo-file-v1:sha256:bb0cc7e7f5bdf8cb4de5c3be16276380a6d9e7160bdb6818c372829287c00e4a"
         },
         {
-          "resource": "repo://frontend/src/lib/liveFleet.ts",
-          "version": "repo-file-v1:sha256:7b18e73774987e515cf5b9a3b11b0ef933ef12ed0e71084858733e1e5c6b2d78"
+          "resource": "repo://frontend/src/lib/emptyIllustrations.ts",
+          "version": "repo-file-v1:sha256:a415039c1d50d46071e18c240634eac5e552bfe5e833fc98b8e75f240a4e78d0"
+        },
+        {
+          "resource": "repo://frontend/src/lib/expense-breakdown.ts",
+          "version": "repo-file-v1:sha256:295b2c4ce66831a8c5eff01ba2e483109874d212fc32b45206a578f5cc01a3db"
         },
         {
           "resource": "repo://frontend/src/lib/notificationClient.ts",
@@ -127,12 +147,262 @@
         {
           "resource": "repo://frontend/src/lib/status-variants.ts",
           "version": "repo-file-v1:sha256:b666bab6b235ba64ed19243273dd1b60aa8446f6f7113f30872c1cf5526013e7"
+        },
+        {
+          "resource": "repo://frontend/src/lib/utils.ts",
+          "version": "repo-file-v1:sha256:84ee51c7191bee5d3ca0ec88ee8cb2a080cdcd7179e1372dbb6778cef850667e"
+        }
+      ]
+    },
+    {
+      "id": "claim_342f70c0413442f2bd2c086fa06b3aeb",
+      "statement": "frontend/src/lib/http/paginate.ts fetchAllPaginated walks a server-paginated list endpoint: it fetches page 1 with limit=100, computes totalPages from total, fetches remaining pages in batches of 5 concurrent requests (default concurrency), concatenates items in page order, and drops the total count. The page size matches the backend's shared parsePagination maxLimit of 100, which is the server-side convention that makes the helper necessary. configClient uses it for nearly every catalog list.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/routes/utils/pagination.ts",
+          "version": "repo-file-v1:sha256:c9bf60e8e152db31f1ac081950ed6b581508f63d9b88ef8cbd06b4a2e92052f1"
+        },
+        {
+          "resource": "repo://frontend/src/lib/http/paginate.ts",
+          "version": "repo-file-v1:sha256:6162f4959275a87adecf95ffb35d76ebd0c693541d0dcc0925c75ed946557759"
+        }
+      ]
+    },
+    {
+      "id": "claim_76574c20e1e04d9c93bd5037b050b9ab",
+      "statement": "fetchAllPaginated fails atomically: because remaining pages are fetched with Promise.all, one failed page rejects the whole list so callers retry instead of displaying an incomplete catalog with incorrect totals; paginate.test.ts pins this failure semantics and order preservation under concurrent fetching.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/http/paginate.test.ts",
+          "version": "repo-file-v1:sha256:6fd4e1932d61f355a87a55e6c778b92b8358587c21e7b571c3b9f3a7ec22a937"
+        },
+        {
+          "resource": "repo://frontend/src/lib/http/paginate.ts",
+          "version": "repo-file-v1:sha256:6162f4959275a87adecf95ffb35d76ebd0c693541d0dcc0925c75ed946557759"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ac90d5fadb24b2b88c293fd2af082fb",
+      "statement": "frontend/src/lib/http/query.ts toQuery builds a query string from a record, skipping null, undefined, and empty-string values and stringifying numbers/booleans, returning '' when nothing remains; the api/*Client.ts modules compose request URLs from shared path constants plus toQuery.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api/tripClient.ts",
+          "version": "repo-file-v1:sha256:6fbc8f3f6f78f6cee224c043a7b32c12e1894e739d3b89917b1529583126a38c"
+        },
+        {
+          "resource": "repo://frontend/src/lib/http/query.ts",
+          "version": "repo-file-v1:sha256:4c5f6e862d8a851287884fe072bce10ae83117dfd6a6c5f2545ff782fdaab6fd"
+        }
+      ]
+    },
+    {
+      "id": "claim_67c7ca9206664b29bd112a9eb2b6aec5",
+      "statement": "The API client delegates token storage to design-system/hooks/useToken — the only module that touches localStorage['token'], with an in-memory cache invalidated by refreshTokenFromStorage; api.setToken/clearToken forward to it and the ApiClient constructor hydrates the cache eagerly so subsequent getToken() calls are O(1). Requests carry Authorization: Bearer when a token exists and Content-Type: application/json except for multipart uploads.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/design-system/hooks/useToken.ts",
+          "version": "repo-file-v1:sha256:21e976087eeee04143200f1efb3c32ca2f88e330fe2c6646d4a89ab96fe903ae"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/client.ts",
+          "version": "repo-file-v1:sha256:e6b05663f2213e386f35f843f50766203a165660460c4d162304dbced771a9c3"
+        }
+      ]
+    },
+    {
+      "id": "claim_f73f516ed3974784a001c24356bf86d3",
+      "statement": "api.post and api.put accept opts.expectedUpdatedAt, which the client sends as an If-Unmodified-Since header (transport plumbing for conditional writes); the trip-figure saves that motivated it (updateTripPreDeparture/updateTripActuals) enforce the actual conflict server-side through the request body's version field, with updateTripFigures rejecting stale writes with 409.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/trip-mutations.service.ts#L607-L610",
+          "version": "repo-lines-v1:sha256:30e13e179df0d7ca82ade579e402be18f4352abad16d2ff1de7224eccd6ca58b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmMxNjQ2ODM3YTRkN2RkY2NiYjg2ODU2YTM3YTg3NTg0YzgxZmFkYjM0ZDg3NmJhMzZhM2FhMjJjMDA0YTA4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjYzNDgwOWQ4YTI2ODk5NTQyZmUzZDA1ZTc4M2MyZmIyYjExYjU3MGNhZjA4YzU0YmE1ZmQ5ZmZmOWRlZWZjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQxMGEzNGY2MWJmZjJiM2VmZGYzMTY0NDk4ODBhYjkzZjkxNGMzYTJjN2Y1Y2E3MjFlNjVjZTQ3OTFmNzU1ZCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/api/tripClient.ts",
+          "version": "repo-file-v1:sha256:6fbc8f3f6f78f6cee224c043a7b32c12e1894e739d3b89917b1529583126a38c"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/client.ts",
+          "version": "repo-file-v1:sha256:e6b05663f2213e386f35f843f50766203a165660460c4d162304dbced771a9c3"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c85365e6e384d4f8f76b31b978b36f3",
+      "statement": "A 401 on a request that carried a token is treated as an application-state transition, not a form error: the client clears the token and calls notifySessionExpired (a framework-agnostic listener set in api/session.ts); AuthProvider subscribes via onSessionExpired and runs logout, which cancels/removes all non-auth TanStack Query caches so nothing from the dead session is reused. A 401 without a token (bad login credentials) stays an ordinary ApiError.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useAuth.tsx",
+          "version": "repo-file-v1:sha256:9e2cf82ec5ea72e0d4ec51d0d5fab621239fd9dfde1f2ee25c6227721d0add59"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api.test.ts",
+          "version": "repo-file-v1:sha256:d28a1775fc43b83a35113f4daf97ca6b4f04d56d9d0b4b92d8cdf99e900117f3"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/client.ts",
+          "version": "repo-file-v1:sha256:e6b05663f2213e386f35f843f50766203a165660460c4d162304dbced771a9c3"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/session.ts",
+          "version": "repo-file-v1:sha256:e6c4e36d27ba7fc890c826acb0f7359356962040b877cbf2bede311aa6be1304"
+        }
+      ]
+    },
+    {
+      "id": "claim_9179cbf227984adca19fd6c5e8226ab7",
+      "statement": "Before surfacing any response (success or error, JSON or text/blob) the client's assertCurrentSession compares the token the request used against the current token and throws 'Phiên đăng nhập đã thay đổi. Vui lòng tải lại dữ liệu.' on mismatch — a late response from a replaced session can never populate another account's query cache, and writes are never retried automatically because the server may already have applied them.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/api.test.ts",
+          "version": "repo-file-v1:sha256:d28a1775fc43b83a35113f4daf97ca6b4f04d56d9d0b4b92d8cdf99e900117f3"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/client.ts",
+          "version": "repo-file-v1:sha256:e6b05663f2213e386f35f843f50766203a165660460c4d162304dbced771a9c3"
+        }
+      ]
+    },
+    {
+      "id": "claim_3e5e5694755d45d8bd4e5ee2deeb051d",
+      "statement": "errors.ts translates backend error bodies into Vietnamese user-facing messages: ApiError carries status, raw body, and the translated message; formatErrorMessage reads a Zod issue array under details, a plain string, or a structured object; FIELD_VI maps field paths to Vietnamese labels and MSG_VI maps Zod messages, stripping numeric indices for the label lookup while prefixing 'Chặng N — ' so users see which trip leg failed.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/api/errors.ts",
+          "version": "repo-file-v1:sha256:bd288a418a51928fabdaed53aa68c23495928faada2886de32ce5c6d0fe63b8b"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c8b5bd4e6aa4203b97a8b793b81aa7d",
+      "statement": "photo.ts solves <img> authentication by appending the token as a query string to /api/photos/ URLs (getAuthenticatedPhotoUrl); photoSrc additionally accepts bare storage keys, encoding them into a single path segment for the wildcard photo route. The JWT-in-URL leak into nginx logs, browser history, and Referer headers is a documented known limitation, deliberately localized to this one file for a future migration to signed URLs or cookies.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/api/photo.ts",
+          "version": "repo-file-v1:sha256:440a8ce862b9bcc20dd8fb69130f2b2243e5e13f3dc323f3847c7e9629350627"
+        }
+      ]
+    },
+    {
+      "id": "claim_fee72000de284713ac9381a479867088",
+      "statement": "frontend/src/lib/routes.ts is the frontend projection of the shared PAGE_CATALOG: static paths stay string constants and parametric paths stay functions whose signature requires the param (compile error if omitted); titleForPath walks a hand-ordered titleRules array whose order is the precedence logic, with title strings sourced from the catalog and a BRAND.name fallback; homeForRole resolves the post-login/404 home per role; legacy redirect aliases stay outside the catalog and RBAC is deliberately left to App.tsx guards + Casbin.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/routes.ts",
+          "version": "repo-file-v1:sha256:ee6176040067536bbab93322f4603542aa3ee1bad0760234651374cb9132eb1f"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e13604f314742809ffc2169231bafec",
+      "statement": "routes.test.ts is the regression net for routes.ts: a golden table asserts representative pathnames resolve to the same Vietnamese titles as before the catalog refactor, and a runtime test mirrors the compile-time catalog ↔ AGENT_ROUTE_KEYS parity assertion (35 keys).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/routes.test.ts",
+          "version": "repo-file-v1:sha256:8b2187ee0060106a18b956aa4be61c4a61474ff532eaffcd470a3d373ffdfe75"
+        }
+      ]
+    },
+    {
+      "id": "claim_092af4f266ea4b499fd7d49588d160a8",
+      "statement": "frontend/src/lib/liveFleet.ts owns shared live-fleet marker rendering — LIVE_STATUS_COLOR/LIVE_STATUS_LABEL for moving/stopped/offline, liveMarkerIcon building a Leaflet DivIcon dot with a heading arrow when moving — and escapeHtml, which must wrap every GPS-sourced string interpolated into popup/tooltip HTML because Leaflet renders html via innerHTML and vendor address/driver fields arrive unescaped.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/features/dispatch/components/LiveFleetMap.tsx",
+          "version": "repo-file-v1:sha256:90b19ce93370ee7a0fe151054357f6679c8e75330afb1088a04db41734cf1222"
+        },
+        {
+          "resource": "repo://frontend/src/lib/liveFleet.ts",
+          "version": "repo-file-v1:sha256:7b18e73774987e515cf5b9a3b11b0ef933ef12ed0e71084858733e1e5c6b2d78"
+        }
+      ]
+    },
+    {
+      "id": "claim_9be2d2bb1e27482bae21226f39014a5d",
+      "statement": "liveRoute.ts computeRemainingRoute projects the truck position onto each leg polyline, keeps candidate legs within ~2x the nearest leg's distance (tolerating GPS jitter and merging roads), and breaks the đi/về tie — a round trip retraces the same road — using the GPS heading versus each closest segment's bearing; the chosen leg's loadingType labels đi (HANG) vs về (VO), and the result carries the destination point, remaining path from the projection, and a true haversine distanceKm.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/liveRoute.ts",
+          "version": "repo-file-v1:sha256:3261ab8c8cf665a0c3ce4e1daa9aed8c6933bdd38febf8f39e50d61f4d1cbbba"
+        }
+      ]
+    },
+    {
+      "id": "claim_b4e20f6f0dc24fd788072dac423935e9",
+      "statement": "Live fleet data is polled by the useLiveFleet hook (10-second refetchInterval, enabled-gated so completed trips stop polling) via tripClient.getLiveFleet → /trips/live-fleet; LiveFleetMap clears and redraws markers each refresh and refits map bounds only when the truck set changes.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api/tripClient.ts",
+          "version": "repo-file-v1:sha256:6fbc8f3f6f78f6cee224c043a7b32c12e1894e739d3b89917b1529583126a38c"
+        },
+        {
+          "resource": "repo://frontend/src/features/dispatch/components/LiveFleetMap.tsx",
+          "version": "repo-file-v1:sha256:90b19ce93370ee7a0fe151054357f6679c8e75330afb1088a04db41734cf1222"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useTripQueries.ts#L172-L182",
+          "version": "repo-lines-v1:sha256:22b24c98ab2405f3a6959c240829d1a75a56b00462d3a793e504ecd98d303215:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZGZkNWQwNjhkMWE5NmI2YjVkZWY4YmIzNGJhYTBlNTU5ZTQ2MDE4ZmQ2MGU3NDE3NjllOWEzNDFhYTY4OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3N2QwYThmOTAyMzNkZTI2ODIyZDg3NzgwZTk4MGE4MzVmNjE0ZTg4YWYzOTkyMmMyMDIyNjY0ZjEzYTQ3MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2NDIzNGYxYWQzZmZkODk4N2UxZTAxYmVmYTQ5OWE2ODgwY2ZiYjQzZWFiNjU5MWFlMTMwNzlkMGNjNjMzZjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5db53bf9e1bb46e1a0eec9f6f3022af1",
+      "statement": "overlayState.ts answers 'is any overlay open?' for the ESC go-back shortcut via two layers: a module-level count registered by useAnimatedOverlay (Modal/Drawer/ConfirmDialog), useClickOutside with escapeKey, and PhotoViewer, plus a DOM fallback for portal'd role=dialog/alertdialog elements that bypass those hooks. The count is clamped at 0 and decremented on next-tick effect cleanup, so the ESC press that closes an overlay still sees it open and the next press navigates back.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useAnimatedOverlay.ts#L132-L138",
+          "version": "repo-lines-v1:sha256:9d63742423442ca086d5c3bbf3ba00e4da8a5de88d84167ec2b24d3d16b094cc:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVlNWFiYjhkNjk1OWQwNzc0NGRiMDFlOWE2YmYyYjI3N2U0MzkyYjQ0ODFlNmJmNjJkYzQ0ZTg4YjNhZmJkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDc1YjgwN2RlNzVmODA3M2M3ZjM2MmQ0MTUwNTgyNGQ0NGEzZGY1ZTdmNDcxZmFiYTMyYjc1YmExM2Y0MGZjYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRjMWM2NzcyZGI1ZjQ4NWI0NWZjNWNhMTVlOTI5OTg3YTgwMWZlMmM5M2I3MTE2Y2Q4NGFlMjkxYmEyNmY0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWNiNTc1YTU0MGJlYjk3ZjE1NDAzMGYyOTI4Zjk4NzNiYjNjYzQwMTVkMTYzOWRlZWJjNDAyOGYxODQ2YWM1MiJ9"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useBackShortcut.ts",
+          "version": "repo-file-v1:sha256:185a1830e9be1dedcd8e348f45bbed85e0411b3ca0054790f039df2990f17833"
+        },
+        {
+          "resource": "repo://frontend/src/lib/overlayState.test.ts",
+          "version": "repo-file-v1:sha256:28dafc09a8d39f1d65bf6a1141bd5391ddfe15e61c8476af7a9685f81312649d"
+        },
+        {
+          "resource": "repo://frontend/src/lib/overlayState.ts",
+          "version": "repo-file-v1:sha256:a409dfb80cc1baa3bb2a01e07dd8b754ac50e18cd29e0a1d25efc3f53576498a"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e48662369cd48c0a716dd8d617433f9",
+      "statement": "chunk-error.ts self-heals stale-chunk load failures after deploys: installChunkErrorHandler (called in main.tsx before React mounts) detects chunk-failure messages on error/unhandledrejection, purges all service-worker caches, and reloads — capped at one reload per browser session via a sessionStorage counter, after which a Vietnamese fallback screen renders instead of looping. Route-level lazy chunks are normally caught by the App.tsx ErrorBoundary first; this is the safety net.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/chunk-error.ts",
+          "version": "repo-file-v1:sha256:4d4b3dc62e99a028907dc1631ed2f9634984abbfa12fd4f0313ecf8ed4ad0184"
+        },
+        {
+          "resource": "repo://frontend/src/main.tsx",
+          "version": "repo-file-v1:sha256:f6e85b2e70a9ba9a1361d3802c785781b7bb699fc138735eb320b37f854c2f42"
+        }
+      ]
+    },
+    {
+      "id": "claim_871cc7070735478db936d1d63e34452b",
+      "statement": "tourTarget.ts resolveTourTarget finds a spotlight anchor by data-tour-id first (via a CSS-escaped attribute selector) with a getElementById fallback, so legacy stable ids and new tour attributes both resolve; agentHighlight.ts highlightElement uses it to smooth-scroll and run a Driver.js spotlight for agent directives, returning false when no element matched so the agent can acknowledge honestly; tourTarget.test.ts pins precedence, escaping, and null cases.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/agentHighlight.ts",
+          "version": "repo-file-v1:sha256:532fde786f4c5a64a67b39904c386158ec20239f455b8853836e68a0771b36b9"
+        },
+        {
+          "resource": "repo://frontend/src/lib/tourTarget.test.ts",
+          "version": "repo-file-v1:sha256:829185958e14841f453454f28d9e6b7cfd969ef1bc1782a85901493d3508b7b1"
+        },
+        {
+          "resource": "repo://frontend/src/lib/tourTarget.ts",
+          "version": "repo-file-v1:sha256:708bb7428719f66bd46d5ab4c0850c8f266edb1f30181775150d5628fee86a80"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

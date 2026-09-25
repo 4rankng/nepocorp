@@ -1,106 +1,322 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:85e6d5a527925cd4a80b79c1f51b27e14f97a8dac7051611a83ecd3a504e6cd0",
+  "pageVersion": "sha256:fc205c3c644a1b19fd6c65465ec9a1a7be41af008c625753cdb37cbfa652790b",
   "claims": [
     {
       "id": "claim_fd56c6328fd74448ad4213b241535dd5",
-      "statement": "The Vietnamese domain glossary is authoritative in /CONTEXT.md and covers Trips (Chuyến xe), Financials (Tài chính — Sổ cái ledger, Công nợ phải thu/trả, Doanh thu, Hóa đơn điều chỉnh, Phí quản lý, Lợi nhuận gộp/ròng, Thu nhập khác, Giấy báo nợ, Phân bổ lợi nhuận), Fleet & Personnel (Lái xe, Khách hàng, Nhà cung cấp, Forwarder, Lương sản lượng, Kỷ luật), Fuel & allowance, Penalties & salary, and System Audit & Tracking.",
+      "statement": "The Vietnamese domain glossary maps Trips (Chuyến xe), Financials (Tài chính — sổ cái ledger, công nợ phải thu/trả, giấy báo nợ, phân bổ lợi nhuận), Fleet & Personnel (lái xe, khách hàng, nhà cung cấp, giao nhận/forwarder, lương sản lượng, kỷ luật), fuel & allowance, penalties & salary, and System Audit & Tracking; its authoritative term sources are the LABELS maps in shared/src/constants/index.ts and the per-feature Vietnamese manuals docs/flows/00–15 (indexed by docs/flows/README.md) — the former /CONTEXT.md glossary has been deleted.",
       "evidence": [
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://backend/src/db/schema.ts#L23-L48",
+          "version": "repo-lines-v1:sha256:b5428cc590861472a05ff2eaf519529f8441b989d40217b0bd95509b931f5486:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMzBlZDAwYWQ1NTdhNmRlNjc4OTliYTVjNDU2YWFhN2JjNThlZTJiYzNkNGIwMjhhNmM4NzkzMTdjNTJkNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ODBlMDQ3ODhmNWZjMjE3MjhjOTYzMGQ2Y2FhZjNiYjFlNzYwNTMwYjE3NWM3MjBmM2FhZDU5YTljMzE1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0ZDA0OTc1YjdhMTQxZjgwZGRjOTgwNTI2NDFmMmVlMWI4ZGIwYjhmMjNkNTZjZDg3NzkyNDRkODcwOTllYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwODg1MGZjMDQ3MGEzNTJhN2ZiNjU1NjBhNjE5ZWU2ZjhiM2M5ZGUwNDBhYzI2YWQ1MWRkZjk1MDcyNzM3Y2MifQ"
+        },
+        {
+          "resource": "repo://docs/flows/README.md#L17-L37",
+          "version": "repo-lines-v1:sha256:05341adf47318d0d49e63edbe489bbfeb4d3c02612b30331f354e15124baa845:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMjUyYWZlODc3ZWZhZmFjMzE1MDAyZjEzYjhlYmZmYTQ2MTY4Yjc5NDY0YWI0ZTYzNTBlYWZlNjk0YjRkZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxMTg1OWVjODNhMTJhY2IyMTRhNDFhMTc5MmMxNjVjM2U2NjY4OGQxMDUxNDc1NTcwYzJkMWQ1ZDY2OGQyMGMifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L144-L196",
+          "version": "repo-lines-v1:sha256:454c0e740413bbfdb603bb14056d53234d6023eee3c16c34e4bbc62eec4239a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwZjU2NDY2MzVkMDY2NmNhOTYwMjI4MjY0NmE3ZDdiZTk4NzRjZGYzOWViMDgyYTYzZTQzMDRmY2EzODc0MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwN2Y2OGYwOTk5MmRiODZhYzAxNThiZjMxYzk2MmU5M2EyOTI0MTE1NGU1ZTJiNWU0YzQ5NGE4MjFkODdhOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMGIwNzllOWJkZjA2MjQ4M2E1NTJmMjliODc2MTZjNjEzY2NkZmVkN2Q1MTMzY2YzOGQ2NWYzNDU1MDhlMjgifQ"
         }
       ]
     },
     {
       "id": "claim_27fea337dfc743d0a090f297251347e8",
-      "statement": "The trip lifecycle has 5 states: Mới tạo (CREATED) → Đang chạy (IN_TRANSIT) → Hoàn thành (COMPLETED) → Đã chốt (LOCKED) with ledger immutability, plus Đã hủy (CANCELED); transition enforcement lives in backend/src/services/trip-status-machine.service.ts.",
+      "statement": "The trip lifecycle has 5 states (pgEnum trip_status / TripStatus): Mới tạo (CREATED) → Đang chạy (IN_TRANSIT) → Hoàn thành (COMPLETED) → Đã khóa (LOCKED), plus Đã hủy (CANCELED); transitions are enforced by transitionTripStatus in backend/src/services/trip-status-machine.service.ts, which posts ledger entries when IN_TRANSIT→COMPLETED (LedgerService.postTripLock), leaves them untouched on LOCKED→COMPLETED unlock, and reverses them via postTripUnlock UNLOCK_REVERSAL rows when a COMPLETED trip is canceled.",
       "evidence": [
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts#L182-L232",
+          "version": "repo-lines-v1:sha256:24b7117556d1ed1623f4122f061674659c745a8c6a5e8e828995895108ac9112:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0ZjAzNzc0NTMzYTJlZGRkNTlmNmYwMjBjOTFlYTdlYmZlZGUzZjQwM2FlMzBjODM3MDMyOTBkMmIwMzBjMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwOWJlZTE3ZWNjNGNjOGZmZjc5NGE1NmNhODUzZjRhOWRmODBhZWY2Y2RkNTkzNzk4NjA5YmM2N2M1NWQyMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwN2ZhMjZjZDMyMmJmNTA2MThjMWI4ODg2NmI0YmRhNjE1MDIyZDRkMDNhOTYzNTRmZDcxMDI3NzQwMDU5OWUifQ"
         },
         {
-          "resource": "repo://backend/src/services/trip-status-machine.service.ts",
-          "version": "repo-file-v1:sha256:f1f701b202f42cbd1598f9a8a3ba620dfcd156097662ab16150b52ca42bdcbba"
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts#L249-L280",
+          "version": "repo-lines-v1:sha256:0bdda3b844afaa0d866e5900df950282b945ed8fd51fb63336b19bf00283c9b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxOWJmMWM1MGVkMTBjMTc4YmRkNzAyM2EyZmUzNTQzNTVlMmNmM2NkZDUzMzkxODZiMzNlYTNjMDljYmUyOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkODg1NmNmMDQ2Y2FkZWU4YWMyZGU5NDk5NWI3NWVmMmFmNmFmMTMxOTkxMmNmODUwNTU4NDkxZjRjNmU1ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4MjJiMWI0NzdjOWVjZDkzM2UwYzBhOGJmMjEyMjNkNGYxYWZmNDQ2ZmY5YzNiMGM5NjQ5MDRlYjc3ZmE2MzEifQ"
         },
         {
-          "resource": "repo://shared/src/constants/index.ts",
-          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts#L74-L92",
+          "version": "repo-lines-v1:sha256:1a42878272347f4a8af9e3e32b9e9458b74b8f62eba5eb03cb929e4b0bdd0ef7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlNjk3MWM5Njk4ZTUwZTFkYjBjM2M5NDFmMjcyOGQ0OGU0ODE1M2U5NmU3ZjgzN2IwZGIyNjY4N2ZjMzkwYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhY2QzODg5MmViYTlkNzQ5ZWYwOGQ4Y2RlOWVlOTI4MGUwZjhkOWFhNWVkMzRhMWMwMTNjM2Y0OGY5NWJlMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3N2YyY2RkMTcxODBiYmRiZmU4OGYwNDg4ZmRkZDJkZTVkYzNkYjI4NGM1NzU3NDZkOGYwYWRiNzMxYzVjNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyZDc1MzNjMzliZjQ4MGFiZmZmODc5MGRjZmE3ZmM2MmE2ZDBlMTRkYWE3YjMxNTEzMWVjZjUyZjhhZDM4MmEifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L1-L15",
+          "version": "repo-lines-v1:sha256:7fdaf7296eefce01e1f900cd3739b43ac2e26a8fdf33625a22a6f9348ffab34c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NWQxNWIwZjNiN2QzMGU2Y2NkNmRmNzg0MDg0MGVkMTA5NGQ3NmZhMGVlZTA0NTdiZTI3MmZjODg5Y2EzN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYTQwOTJkYmJmMjVmMjQxM2NiYTdmMDM0YmI1NDdlZTI0NTU2YWJhMmY2MjUyNzQzNjNkOWUzOTFmYWMxNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMWJiZGVmMGViOTJkZTEzOWM4NjUyYmRlZTBmZTFmYjIzMDQxY2JkZWVlZDNhNmI3MzE2NjA5ZWQ4N2I0OTgifQ"
         }
       ]
     },
     {
       "id": "claim_3b383f8d47424b8f9b6e1910376aa6ba",
-      "statement": "Penalties (Kỷ luật) are salary deductions from the driver, recorded as Other Income (Thu nhập khác) in P&L — they are NOT company expenses; P&L Net Profit = Total Gross Profit − Management Fee − trailer/unassigned Expenses + Other Income.",
+      "statement": "Penalties (Kỷ luật) are salary deductions from the driver — TxnType.PENALTY debit rows on the DRIVER ledger (note 'Kỷ luật chuyến <tripCode>'), not company expenses; pnl.service sums non-CANCELED penalties as otherIncome, and Net Profit = adjustedGrossProfit (revenue − trip costs − maintenance expenses) − unassigned company expenses + otherIncome (the managementFee line is currently reported as 0).",
       "evidence": [
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://backend/src/db/schema.ts#L527-L541",
+          "version": "repo-lines-v1:sha256:db2a00ec3bb117ff6a9674ff09719fbbe2c53c9531d0644f70b5a922f328f543:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ZTA3ZGJmMjgwMzNhYTI3NjQ3OGE1OThlNDdmOTU0MDMyNTZlMTE0YmNmMGVlYTdlZGZiZGFjZmJhNDYwZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNWY1YTYzZjkyOTM0MGM4Y2IzOTIxYzE5NGU3YTk0Y2FiZWVjODMyZGRmNzFiOWJjMGM3MzM0MTk5ZGI3YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlZTVhZDZlODliZjU1OGUxZDgyMGFiNTlkNTE0NTU3MWNmYTIwNjhiMGNkNTU2MTM5OTgyOTAzMDMyMmY0NTIifQ"
         },
         {
-          "resource": "repo://backend/src/db/schema.ts",
-          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+          "resource": "repo://backend/src/services/financial.service.ts#L186-L222",
+          "version": "repo-lines-v1:sha256:12c92e495589551aea5ad62c0f2fbe7dcc8b9c03676540986193f039f2b54c20:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZDAxMWE5ODNiN2E1YzU1NzY1MjYwMTk0OWVlNjc2NzQ1MmYyMWYzNDJmNjgzYjIzNTE5NDM2ZDc5NTllZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2NWEzOTgzNWRjN2I5N2YwYmEzYmZmMTdkODdhYTYwYzBhMjNjNTlkOWYzZWIxMjdlOTdhMjVmZjI1YjcyN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OWNlOTBhYmY5NWExNGY1ZmFhNGYwZWQ1YjBiNDgzNjI3NjMzZmE0NDdkNzY0MDUxOGEwZmFjNWU4NDFmOTYifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/pnl.service.ts#L239-L241",
+          "version": "repo-lines-v1:sha256:b4f6d2fb964633aa52e19fd8d3763965b6218de981b08a42010d44b3ae78e28f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjdjNmZkYWQwZmRhOTRkZTY4NzEzYTFkYjFlNDg0MTE2ZTc0MjViYmRkYzgxMzIyMWNjMGNmYzdhMGU4MzZkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjA2YzkwNmQzYWVhMjEzNTZlMzllZmFmMTM2NDEzNjk2MjkzZTJlYTYxMTk0M2ZlMzNhM2M4YTliMWRkMGQ5MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzU1MjdiYzIxNTM5OTdkOGJmMzU0NjRhYjUxZjQwNzdlNDdhMTcxMDIyZjkzMjJiMmEyM2VjZjRjOWUzODg5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzVlZDcyNjdjYTc4NzZlODQ1ZjhiZGRmOWU0Y2RkNDc1YWU1MzVhMjA3MWJiNmJiOTkyNTkxMjYxNTQ5ODM0ZSJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/pnl.service.ts#L73-L81",
+          "version": "repo-lines-v1:sha256:7e5918119fae70e43702a8f7ba51c4f070c2d8631ed8083f80a99b4f488d038f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTcwNDM2YmExNTBiNzQ5ZjljZWY3OTRkMjc4ODAyODczN2NhMGVjYzE2OWZiNzI0Nzg1ZjE0ZTQ0MzZkNTcwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI1YjdhZjNjNjk2YTBiZjlkZThjODkzOTU0MWU5OTcyMTE4OGQyNDdhZGNkOGI1MWMyYTFkNDViYTcyMDkxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzI5OTEzN2MwMTc1NDI5YWEwNTgyMjA2N2IxM2VmODc4NGVlZTEwODA4MzViMWRiZTVmMDMwMTBmNTg0ZTkwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTI0NDFlOGZkZDM4YzlkNjBhNGVmOWU2OGQ5NWIyMDk3NjkxZGExNDZlOTBjN2Y5YTA5ZDlmOTM2ZWFkNTNhMSJ9"
         }
       ]
     },
     {
       "id": "claim_1de3a8dfb344462da0990ea6bddc42f8",
-      "statement": "Fuel modes are AUTO (Σ leg × norm × unitPrice), FLAT_RATE / Khoán (manual liters override), and an additive Supplement (Bổ sung); norms come from route records (fuel_empty_norm, fuel_loaded_norm) plus a 3L/trip supplement for standard routes; price = fuelActualUnitPrice ?? fuelPriceApplied snapshot.",
+      "statement": "Fuel modes are AUTO (per-leg: Σ round(km × norm / 100) using fuel_config loaded/empty norms snapshotted per trip, plus fuelConfig.supplement (default 3 L/trip) and a manual fuelSupplementLiters; when routes.fixedFuelAllowance is set it takes precedence over per-leg norms) and FLAT_RATE / Khoán (manual fuelLitersOverride wins over every norm); supplements are additive in both modes; the effective price is fuelActualUnitPrice ?? fuelPriceApplied; all of this lives in shared/src/calculations/tripTotals.ts computeTripTotals.",
       "evidence": [
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://backend/src/db/schema.ts#L253-L264",
+          "version": "repo-lines-v1:sha256:974ad09e27bc2464b9e438a9ec10ac8498959551a22a65fbbaa90bbf6591621c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkY2ZmY2FlNjA1N2ExZGZjMDlkYTljZGY1ZTIwZjQzMzdhNWQzNGY0ZWVjOTIwMDhjZGMzZGU4MTEzMWFlOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3ZjgyYzgzNzA1MjI4ZmE4ZjFlY2UyMTBiYzQ2MGJmZjEyZDQyYTJlZTVlNDhkYWI2MzlhMDc0ODM2ZDUyMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkYmNiN2UwYzBhMWRmNjk5NTc5ZGE1OTI1NThjZmY2MDRjMzRiOTczMzUxYmFmZjllZDViZWZkYWU2YTVmOTYifQ"
         },
         {
-          "resource": "repo://backend/src/services/ledger.service.ts",
-          "version": "repo-file-v1:sha256:b2dd1b53ad470cfeafb2bbf0126125155305b36cb58209b2e379e052ce5a51fb"
+          "resource": "repo://backend/src/services/trip-mutations.service.ts#L380-L397",
+          "version": "repo-lines-v1:sha256:cd5a6e4dec1c8a88a83b45d7d485ec9a21e3385cce22853feb4b7c12a2537b24:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNmE3ZTFjMDQzOWIwMjhiZTkyZTVmZTg0YzY0YzBiYjY0M2MyODQ0YmY1MDdmYTA4NmZjMWQyYjU3YzYxMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNWYwNTZmMjJlYWEwYTBjOTc0NTEzZjBhMmIwOTgwMDE5Mjk2ZDI5MDRhN2QyODY1MTk4YzkzY2YyM2UyZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYzkwNjhkMzY3YjQyYTIyNTZlZDNjZjdmN2Q2ZDM2YzFjNzZlZDBlODAyOGY3ZjBkYzU5MDMwYjI1YTQxYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1YjRlOTU0Y2ZhY2RhYTMwNjRiNTBkNTdmMmZlOWJjYzlkMTg1ZWM4NWI1ZmZiNjMzZjZkMDBhYTJiNjc2NzkifQ"
         },
         {
-          "resource": "repo://shared/src/calculations/tripTotals.ts",
-          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+          "resource": "repo://shared/src/calculations/tripTotals.ts#L104-L147",
+          "version": "repo-lines-v1:sha256:67462e91b24e8f19056860c9189a5f578594f405d46e134b82cc4bd700996a6b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZjUzM2QwODA5OTZiNGRiZjhmNDZlMzQ2ZDZhNzJjNTEwNjZiYjhjNzQxNDI1NDgxZTY5N2UwYTUzM2JkZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5ZmUxMjVjYWY3NDA5NDBhYzM5MmQxZWIyYzlhN2ZjMmY4OWQ1Mjk2MzE1YTczOTdiMjlkOGI1MzBiMjVkY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0ODJhOTc2ZDE5MjA5YjdmNTRjZjhlMmU4Njg1NmQ5Njg3NTMzMjk4NWIyMGNjZmQ1MGQ5MjMyOTkzOWFhOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNjg2N2EwODFkZjA3MTlhOGMzZTlkNDE1ZTU1Njc2YjA1MzFkMDVlZTYzMGMyOWVlMWNlMGM4NjIxM2EwNWUifQ"
         }
       ]
     },
     {
       "id": "claim_dff4f92f1a224b69b5eacc008f39fb18",
-      "statement": "Road allowance (Tiền đi đường) is computed as Tiền chuẩn (lookup keyed by Route × TrailerType) − (Số trạm × 55,000) ± Tiền vé ± Trả hàng, while Phí đường bộ is a separate annual renewable Expense Item, NOT part of per-trip road allowance.",
+      "statement": "Road allowance (Tiền đi đường) = road_allowances.baseAmount (Tiền chuẩn, unique per Route × TrailerType) − tollsStations × road_config.tollPerStation + returnCargoBonus (when hasReturnCargo) − tollsDiscount, floored at 0; a positive tollsAddition replaces the computed base and twoPointDeliveryBonus is added for OWN trips (tollPerStation is configured road-config data, seeded at 150,000 ₫, not a fixed constant). Phí đường bộ is separate: a VehicleScheduleKind.ROAD_FEE reminder plus renewable expense categories (expense_categories.isRenewable), not part of per-trip road allowance.",
       "evidence": [
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://backend/src/db/schema.ts#L241-L251",
+          "version": "repo-lines-v1:sha256:43acbfbde7ac51a8d8dbcd4946bf643e8da5ac071631a45d43f1d0ab4ca11fc2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyOGM2NmNlMWYxZGQxMTlkMzMwMzBlMGMwMGE4NWY3OGFkZjMwMzYyODFiNzU2YTU1MWZjNDBkNDg2OGM4MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxOTUxYzExNTlhYTM1YWQwNzcwNTZiNDJlOWIwZDc3MjMxNDE5YzYwODBmNjMwMTZlNmJkZGQyNzhlYWIyMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1YzY4NmEwNjU5Njc5YTBjM2M2NDk2NDdjMjVlYmQ5MGIxYTBlNGUxMjFlZWVhOWQ1NzE0OGNiYzNiMTVlMGYifQ"
         },
         {
-          "resource": "repo://backend/src/db/schema.ts",
-          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+          "resource": "repo://backend/src/db/schema.ts#L657-L666",
+          "version": "repo-lines-v1:sha256:1652eb20248505b5e5678d1961ebfe7d316769fc892343bace3348a8274db6cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmZmQwOWU3OTM0NzM1Y2YxZWU5ZmNlZDI3NjlmNjE4NjAzNTU2MzdmOWMzNjZlNGJiOTNkNGEzYWFjN2U0ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2NmYzNTlkYTAyYjI1OGQwYmNiYTM4ZjAxMGU0OGU2NDM0OWI0OGQ5ZGQ4MjAyN2ZjNDhlZmJkYWRmZDk0Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYmExODM5OTExOWFhMGI0ZTkwZWY5Y2ViZDRlYzJkYjQ5NGNlNDU3YTJlMTBlYzk1Nzk0ZDk0YjNjMGEyMjcifQ"
         },
         {
-          "resource": "repo://shared/src/calculations/tripTotals.ts",
-          "version": "repo-file-v1:sha256:74e5a659d7d7c83b9b318669ae079a5af8702b2f8d326e83f532aeea7245508e"
+          "resource": "repo://backend/src/db/schema.ts#L989-L998",
+          "version": "repo-lines-v1:sha256:26df520f678cfc6e29f14942218304db51b19b6bd1f250d1345edb9ad4b3f140:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MDdmOWMwY2ExMjAyNDc1ODE0OGJmOWUyOWE0NWJkMTVhOGMxNjY3MDYxM2M3ZTA5Y2Y5MGYwYTM3ZjBkOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyMWJkYmVlNDY3ZWE3YTE2ZTRhZjUyY2M1MmU2MjY3YjE4YjJjNTJlYmViNDU2YjQyMmNhNTk3ZTVlNGE3MDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NDY4ODEyMjhkYzYxYzM1NjM5MTEzMGRjNTU2YTViMjIyODg1OTAzODQxY2U4M2E4YjAxOGQ5ZGE0MDZiOGQifQ"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.ts#L72-L86",
+          "version": "repo-lines-v1:sha256:a1b21f7eccaf8608f93f4bc06c5f9fe5c83d76f7f7d99cad5987dbc3a85e756e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMThkNjMzNmU2MmMxNTViMDAzODFlMGFlMmJjNDU5MTAzODAwNWJhYTg5YWUxNDQ3YmNmMjQzMWQwODhjZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxMjkxMDc0NzBkOGFhNWNhMmFkYTMyOTBjMzMxZjJhNmM0YTZlOGJlOTI4YWE0MWY5Y2M1YTJhNDA0MjYwZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3Zjg1NDk4MmZhOWNmMWIxN2FkNzAyNTU5YThlNGYyNTc5Zjg3MDM3MWI3ZjdiNzVhZTJmN2RhYWQ4YzYwYjMifQ"
         }
       ]
     },
     {
       "id": "claim_ee68694c759b44059f3a8be813ab7858",
-      "statement": "Five roles exist with Vietnamese labels: Quản trị viên (ADMIN — full access, not a business user), Giám đốc (MANAGER), Kế toán (ACCOUNTANT — financial-fields-only trip writes), Lái xe (DRIVER — mobile portal), and Forwarder (FORWARDER); each role maps to a Casbin policy row in backend/src/casbin/policy.csv.",
+      "statement": "Five roles exist with labels from ROLE_LABELS: Quản trị viên (ADMIN — policy row 'p, ADMIN, *, *', not a business user), Quản lý (MANAGER — the docs/flows manuals also call this role Giám đốc), Kế toán (ACCOUNTANT — trips/config/financial writes, but lifecycle transitions stay ADMIN/MANAGER-only in the status machine), Lái xe (DRIVER — driver_portal Casbin object, mobile portal), and Giao nhận (FORWARDER — forwarder_portal, with revenue/cost fields excluded from portal payloads); each role maps to Casbin rows in backend/src/casbin/policy.csv.",
       "evidence": [
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://backend/src/casbin/policy.csv#L1-L38",
+          "version": "repo-lines-v1:sha256:685b4951f98d548c9084da8f68a5780d69d7f1d564d65c4afa7aae892433ccad:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZTY1ZTJlNzZhNGNhMmM3NmE1NGQ4ZGEyNWRiYjU5NjRlYzViMmM2ZmUyZGE0MTZlZjE1YTYxYjNmZWM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMzc5OWZlNGUzNzM3YmUxYzQwMTZlNGY4NGFlZDBkY2YyZWY3NTg3MGJhOTBiNjQ0MjM4MmFiZGQyNjhlZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1YjdiZmY5MjY4ZDkzNDk3NDg4ZjAzOWE5MmRkNmYzMGI5MzY1MWIwZTJkOGMxMDI3MGVhNGJkNWRjZjViMTYifQ"
         },
         {
-          "resource": "repo://backend/src/casbin/policy.csv",
-          "version": "repo-file-v1:sha256:b5ae669700f08f1f632ef277f8df0f9e2f4ab1b2df96dea6e16a6a49f3a5cf79"
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts#L32-L41",
+          "version": "repo-lines-v1:sha256:e7404ad2788da949a94e3dfbdeef998dc48018f2a2789f852a133df1110e2e4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMWFmYzY1ZWM2MWM4ODIzZWE0M2U1MzU1ZmJhYzljMTlhMTEyMDgzMzFlMzBhNjJjMmY5ZTlmYTViMDY5MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmYzk0MTU5OGI0MjI0MzI3NjdiYzQyZDcyNzQ3YjQ4ZGIzMzdjY2JjZmNlMmNjNGUwMzMzN2I4ZTAwNWQ0NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmNTVkOTA2MTczMjMzYjZlMGIyYjAyMjY0NGYzYmUyM2FkMTEwZTFjYTViY2JjYjdjODJlNWMzY2MxNjhkMDQifQ"
         },
         {
-          "resource": "repo://shared/src/constants/index.ts",
-          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+          "resource": "repo://shared/src/constants/index.ts#L180-L186",
+          "version": "repo-lines-v1:sha256:dfe5859f6a2147edb9702c34e834cba00cf425ad33ff033d4fa190d3efb8e315:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhiMTZkOTk2MDVkZmIwNzEyOWIxNjhkMTc0ZGE1YmZiNDNlYmFkM2U0N2Q5ODhkMTE4M2I0YzViOTg2MzY1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzAwMGRmNjBlNTNiNGFmZGIyZjE3OGQwMzdkZGJmMjM4MTlhMGM1YjFmZTEwYjZkNDEwYmVmNWU3NWYwM2FhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTFjYWJmMjBkOWI3OTU0YmNmZTQwYTIwOGRmM2I4MDdlZWY1MGNkYTU0MjQwN2Y1MDQ5ODhkOTdlNzYzMTZkMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4b10a1bedf54339a5a22b01f2b49032",
+      "statement": "BILLABLE_TRIP_STATUSES = [COMPLETED, LOCKED] marks trips whose revenue has posted for debit notes and carrier payment statements (billingDocument.service.ts filters on it), while profit distribution reads LOCKED trips only (stored grossProfit, never recomputed); pnl.service currently selects COMPLETED + LOCKED trips even though the constant's comment still claims P&L is LOCKED-only — a documentation gap to recheck when touching either consumer.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/billingDocument.service.ts#L265-L271",
+          "version": "repo-lines-v1:sha256:dfb542602848e3dc3b8452372916cf77b246b76e1800ce21a837f44fac9de033:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwY2IwMzQ1OWIyNTc4ZTRmMDU1NmE4ZThlOWVhN2QwN2U0MWViNTYzNDAzMzUyNDBhYmZkYjBkYTAxOGQ1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQwMTkwYTMwNThkOWIxZTc2YjNjNTUzN2U3MjdiNWJjMzZkYjA1NTRiODcxZTUwZGJiOGRjOTViODY5ODI2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWJjMzNjNWE4NzdjNzc0YTkzZGQzYmE5OGIwNWM2YjllNmIwMWNlZTY4MzNkNWE4ODYzNzhmZWRiNTlhNzU3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmEwY2RhNDM4MjQ2MGUwNTRhMjg4NWI4ZmEzMWYxODhkMzU4MGM2Yjc5MjhmYjY5NzljM2RmNTUzZTJkMWJlYyJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/pnl.service.ts#L46-L54",
+          "version": "repo-lines-v1:sha256:6f36a17c7082e85117d52a7a8c7d5a16168b292fde21ba2091b4eb6e4909f266:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzE5MGY4Njc5NTBhOGEyYTUxZGNjNDcwMTIwMGE2M2Y5NTA4OTMwYmY0YTdjNzk5MWUzMjNkNWZiNTljNjQ1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlNDIwOGNkNmZmYjhjNGEzNTQ3YjJmNTRhZGExOTk3OGMzZjM2NWU3OGY5NTAyZWY1MTQ1Y2RkMmFhODU0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg3NmZlNzExZTMwYjExZDQ4NmEzM2ZmZWIxYTZhMDMyYTY4ODg1Nzg3NDhmOGJjMmIwZGJkYzQ2YzdjOTQ2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGYzNDU2OTVjNDNjYmVkZGVhMzM4ZTQ2MzAyMjFhNzFiMzUzMDdmNTJkZGY4Y2VlYjlhZjRkZWQ2NmYxNDIwZiJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/profit-distribution.service.ts#L179-L195",
+          "version": "repo-lines-v1:sha256:130e225558958d0dc5bc99734cf206057ee22caa87eb1a70b3c6f06b2b84eb4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlNmMwYWI2YTA5OWVlZGY2NTA4OTgwYzAyNmYyYjM0MDZmNjE3M2E1ZmQ0MjE2NTc2ODk0NDEwNGYxZTZmYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNzA0NmM2YjkxODIwNGE0MzZmN2ZkN2ZiMmNhMTY4Njc1MzY3YTFkM2FkMzc2NDQzOGE0ZWI1OTM5MDQ4NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhOWU1M2ZhMDg5NTdiNzFiZDRjZjZlZTVjNjVlYmM0ZjM5MDliNDUwNmVlMTQzNjRhMDk0NDEwYjFhYjM4M2IifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L9-L15",
+          "version": "repo-lines-v1:sha256:5633ff056694b11e4243d5093156d173bd8cb685e7aa278a7057ce3619a11bc8:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWY5NTBmNDdiMmJlZjY5OWUxNjUwMTgyZTUyMzNkYWM0YTE0YzRhMmRmNzdmNWViMDM1NDBkYmUyOWNkNjU5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVhNDA5MmRiYmYyNWYyNDEzY2JhN2YwMzRiYjU0N2VlMjQ1NTZhYmEyZjYyNTI3NDM2M2Q5ZTM5MWZhYzE0ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTdiYjQyMjY5ZjIwNWZiMjcwMjNhMjllZWVjZWY4ZTU4MTRhYjgwMTE0MWQwYzViNTBiOTg3YzA2NjkzNjNkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTExYmJkZWYwZWI5MmRlMTM5Yzg2NTJiZGVlMGZlMWZiMjMwNDFjYmRlZWVkM2E2YjczMTY2MDllZDg3YjQ5OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d58950205fc24d198c5544be95bb2a02",
+      "statement": "The ledger's sign convention: for CUSTOMER, debit increases the outstanding receivable and credit decreases it; for DRIVER, VENDOR, FORWARDER and CARRIER, credit increases the payable and debit decreases it; each post takes a pg_advisory_xact_lock keyed by (entityType, entityId), and multi-entity postings lock targets in globally sorted order to prevent deadlocks.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L126-L147",
+          "version": "repo-lines-v1:sha256:1e41a49cb786bc8e30cb2c842b2efbd03d4752c3c41b69952da0a6e305ea1bf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MGI3MTVhMjViYzZiOWVlNDNlZGQ0MTM2YjE5ODkzMjU0MzAyYzZlMGQ0MmViMjIxNmM0MTk4ZjkyMDRlYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1OTZjYmZlNzhhNzE2YTcxNDk3NTQ0YjkyYTg3OTViZTlhMDhjMmFlNzQ0ZTEwNjVjMDExYTA3MDRlNjRkMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1OTQyNzdkOWMxMTM0MjM3ZWE0MDUzMmM4ZGMwYWY2ZGQ0ZjA3ZmE0YjcyMDUwOTk1YjJiNzhiMWQyYzRiNWMifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L64-L87",
+          "version": "repo-lines-v1:sha256:f39d91ba07d554c4bed2506607943926850927821230b3f23fb62931f72e0fec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZmUzYzE1OTUxY2NiNmM3MTRjYWUxNDQ5OTk3NDNkM2E4Yzg1ODIwY2VkYjNiMzBiNDEwNzVmOWU5ODE5MDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjOWY2YTNmZjdhOTg4YjE4NjFhMDdiNTdiNGMxYmM0ZDRkYjI3NWM0ZTc2YWY2NWUyNmM4OWExMmU3ZTRlYTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_89f7bff6e2114772b368dd7f831353ce",
+      "statement": "All user-facing Vietnamese labels are single-sourced in shared/src/constants/index.ts LABELS maps — TRIP_STATUS_LABELS, TRIP_STATUS_COLORS, ROLE_LABELS, FUEL_MODE_LABELS, LOADING_TYPE_LABELS, PENALTY_STATUS_LABELS, CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, TRUCK_CAP_ROLE_LABELS, ADVANCE_*_STATUS_LABELS, VEHICLE_SCHEDULE_KIND/STATUS_LABELS, TIRE_STATUS_LABELS, NOTIFICATION_TYPE_LABELS (plus FORWARDER_EXPENSE_TYPE_DEFAULTS for phí chi hộ wording) — so a rename is a one-map change rendered through every UI surface.",
+      "evidence": [
+        {
+          "resource": "repo://shared/src/constants/index.ts#L144-L196",
+          "version": "repo-lines-v1:sha256:454c0e740413bbfdb603bb14056d53234d6023eee3c16c34e4bbc62eec4239a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwZjU2NDY2MzVkMDY2NmNhOTYwMjI4MjY0NmE3ZDdiZTk4NzRjZGYzOWViMDgyYTYzZTQzMDRmY2EzODc0MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwN2Y2OGYwOTk5MmRiODZhYzAxNThiZjMxYzk2MmU5M2EyOTI0MTE1NGU1ZTJiNWU0YzQ5NGE4MjFkODdhOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMGIwNzllOWJkZjA2MjQ4M2E1NTJmMjliODc2MTZjNjEzY2NkZmVkN2Q1MTMzY2YzOGQ2NWYzNDU1MDhlMjgifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L209-L218",
+          "version": "repo-lines-v1:sha256:a0d5470340e3d632db2cd41cbefb717a5cfb61121255b042a735647874a17fd3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhOGUyZmJlMjU2NmNiZDg5ZDhmZDM5NzVjMmJkYmIxMmM0YzNkYWVkYzBmYTA0MmI0YzU1YjU2N2E2Y2RiN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYzZiYzA2OWY3OTg4NTdkZTZlYmY0OWYzMmVjOTBmNjU1NjZhNmQ0N2E5OGE1ZTA2ODE3ODFhN2RlYzA4MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzNjA4MWRkZTlkY2M1OTliODk1YzQxMDY0ZWFmZGIzNDhhYjJlN2M3OWVjM2IxNmJjMDNiYzU4MmRjOTY3YTgifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L289-L358",
+          "version": "repo-lines-v1:sha256:4b93fc32d71adc85c139a8005f7a2c61294e9d7546fca586a295255cb02dad90:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmOWZiNjhjOTZjNTVlYzIxYjdlNmMyZDM2N2Q1OGRlMGE3ZWU4NWE1YzYyNjk1MGQ0MTU4ZjViZWUyYjcyODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0ODdjY2JiOWUwMDZjMDRjZjY1YTQ0YWMwNjA2NGQ4NzQyNDhjOGIyMDdhNjk2YWMwY2ZmZmI3MzExZWI3NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2Yzc5NDFmNjI0NjllNmUyYTg5M2M5NTY0YjgzOWE3ZDljNzIyY2FmNWE0MmE3YzIwNzk0NTY3MTJkNjNkODcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2456ea4a5174d85985d3056ee23babd",
+      "statement": "docs/flows/README.md indexes 16 per-feature Vietnamese QA/user-manual documents (00 Overview & RBAC through 15 tire management) plus DELIVERY_TRIP_LIFECYCLE.md, claiming coverage of all 43 routes, 109 API endpoints, and all 5 roles; these manuals are the authoritative Vietnamese business documentation.",
+      "evidence": [
+        {
+          "resource": "repo://docs/flows/README.md#L17-L37",
+          "version": "repo-lines-v1:sha256:05341adf47318d0d49e63edbe489bbfeb4d3c02612b30331f354e15124baa845:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMjUyYWZlODc3ZWZhZmFjMzE1MDAyZjEzYjhlYmZmYTQ2MTY4Yjc5NDY0YWI0ZTYzNTBlYWZlNjk0YjRkZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxMTg1OWVjODNhMTJhY2IyMTRhNDFhMTc5MmMxNjVjM2U2NjY4OGQxMDUxNDc1NTcwYzJkMWQ1ZDY2OGQyMGMifQ"
+        },
+        {
+          "resource": "repo://docs/flows/README.md#L42-L107",
+          "version": "repo-lines-v1:sha256:c4ae2d32ebd0f6610abdbe6f3c20482d7aff5a45645bbeb3ee85eb69dd11374b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmOTI4MTVkYzkyM2U5NzVlOGM3ZDNmMTA3ODQ5NzJhNDhhZDg1YTY2ODdkOGM0ZjU1MWYwNmU0YmRhZTJlYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1OGQ4N2YwZTM2ZTYzMGM2ZTIwZWZkZmRkMTQyMzUzMGRkNDk0YmMwZjI4MmRjMTZhNzdiMjBmZDE4ZmY5YTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlNGI4MzA4Nzk0ZmZiYzM3M2M4ZGYwZDUyODQ3ZmEwNjgzMTc2M2Y4MDJmNTY4NzQ3YmMxNDdmNTY5MzI4NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2744e4e1afab42deadf1ff892b9c164e",
+      "statement": "Advance settlement approval (accountant, one-shot) posts exactly one FORWARDER_SETTLEMENT debit on the FORWARDER ledger, materializes any refundAmount surplus as a new approved advance with its own FORWARDER_ADVANCE row so the remainder stays selectable for later settlements, and only trip expenses in a group the forwarder marked 'Đã kê xong' may enter a settlement.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/advance.service.ts#L796-L831",
+          "version": "repo-lines-v1:sha256:4e24f072a1c4340e09abc0a57218399a0c499e794ea84b8addc756d4b4b10427:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMDA4Y2Q0MWI4YmNhNzY1MjY0NmE4ZTg0ZmMxMzZkOTgwMTJkODA3MmJmMzNkZjQ3OTQ3YzlmYTZmZWQzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwNjNiZjJlNzlmMDBjMDliZmUwNGExMzVkZmRjNmY4NTk1ZjUyODU2MmIzMWFlNDIzY2ZkN2MxNGI2MDlhNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZDhkMzU3MWI3NDNjNTYwYWEyZTNkZGQxYjVlN2JlZmFlYzE1ZGU5NjE2Nzk3ZDgyYTI4NDFmNTZiNGE2NjgifQ"
+        },
+        {
+          "resource": "repo://docs/flows/13-GIAO_NHAN_VA_TAM_UNG.md#L156-L174",
+          "version": "repo-lines-v1:sha256:4fe5b7f448db5d3f3d36512528b3a150b7f6d55e1ad1cf03cc8a4463ba550b02:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNjA2OTJkODY5YTA0YWU1YmVmNzc4NzI2NTgzMzgxZTQ1YTIyZjZmMjY3ZGU5Zjg1MzY1NjJmMDJlZjVlNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NDMwMDRlNjMxMDBkYzhkZmQ1YmE0YWYxNDY4MDViZWY4NDFlYzliOWZhMTRiZDEyYjBlYjgxZDIwMTJjOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViZTBhMWMxMzcwNjQwYTEzMmZlOWRhMzkwZWI4MDA3Nzc0YWMyYjMyZmViMjkwMTI1M2U3MmQwYWEyMjEyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjZDFiODY0ZWQ4MjhjMjQ4MmVhMjU5YjM0OGYyMjZhMzM0ZTQyYTQ4NmU4OTZjNmZhNGM2NTZkZDA0NGJhZDcifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L220-L231",
+          "version": "repo-lines-v1:sha256:282a976ddd92d7713ad37a302a5aa84f470d2c85f255e7c8939ea39013fe5539:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjYmY4YWJlNWEwNmRiZDZlZjJhOWIxZDgxZWYyNGRhNDQ1MmJhM2E1ZmE2YzBkYWMzNDhkOTI1ZTRhYWRmNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4ZGFmMTk1MGVhMTBjMzcwMDE0M2MwZDhkYWM0ZjRmMDI1MDg1NWVmMDQ1YTUyNmQxODJkNjM5OTdkYWQ0MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYzYzOTVjYzc0NDQ5MWVkOWNmMGRhMmJhYTM5Y2VlZjViYTA1MWFjNzE2NmI0MmY0ZjEzMGFiM2RlNzAzNWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e028def030ab4e4f97c79d1f50d9212c",
+      "statement": "trip_fuel_allocations rows are either CREDIT with a supplier (posting FUEL_EXPENSE to that VENDOR's ledger at lock) or CASH with no supplier — the 'Cây dầu ngoài' cash pump, which never creates vendor debt; DB CHECK constraints enforce CREDIT⇔supplier NOT NULL and CASH⇔supplier NULL, and the backend rejects saves where Σ allocated liters differs from the trip's fuel total.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L364-L388",
+          "version": "repo-lines-v1:sha256:a9b50ced4f6540e69d9793a7f6d04e1eb358c66884f7978c0d386ad85e7580a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyNjA5NWZjMjBlY2QzYzAwYWQ2NTliY2E4N2I5YWM5Y2RiOTAxMTk0NDgxMTI0NWFiMjcxMTViZjdjMDYwOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZWQxZTlmNDcyMTY0NmM3ZmFlN2Y3ZjNkNDg3NTNiOGU5ZDBhZWE0MmM3MzRkMjQ4ODIyNWI2NDFjYWY1MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YmM3NDUzN2Q0ODMxNDkzZWRkMmM0OTc3ZTcyZTNhZDNlYTljOWQxYmFkYWRlNDY4ZTY3OTZlZTFlMGJiNDAifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L300-L331",
+          "version": "repo-lines-v1:sha256:b2548de144ddc8e71e0568e8d35c1363c1decf0344208f11942ecfbd6fa7e937:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NWFmMTQ0ODAzZGJjMTkwMmQzZDQzOTM3OTcyZWVkMGJmZDE2MWJjYTIzYzQ5NTUwN2RjZDEwMTcxMDUzZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwNjNiZjJlNzlmMDBjMDliZmUwNGExMzVkZmRjNmY4NTk1ZjUyODU2MmIzMWFlNDIzY2ZkN2MxNGI2MDlhNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNjU0YzlmMmYzNGI4OTFlNTQwOWU5MzFkYjg4YThkOWI5YTNjNzIzZTY1ZmZhZmRhNDhhOWE0YmNhYzkxZTYifQ"
+        },
+        {
+          "resource": "repo://docs/flows/01-TRIP_LIFECYCLE.md#L75-L88",
+          "version": "repo-lines-v1:sha256:a769aea9f6b8c27896a0ddbb37e7e66a63f24aba2fe1d5830cd753bb197e7ca1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMzAwNTNiODA4NGQ0MjcxOGFlOGQxOTIyY2JhOTQzYWMwYWQzYzkzZGRlMTIyMmQzMDY5OTFkMWJiYTk4MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MzkzYmE2ZWIxNWIyMDU0MzYxOWZlOWU1OTEyZDRlMTViOTQ1YWFmMmMwZjViNmVhZTNhMjY4OWI5OGI0YjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiOTMxZTMzYjBjMjE1MWEwZWQ4ZDA4Y2Q5NmVhNDA0N2E4ZGQ5ZGU5NGVkNjVkYTA4ZTg0OTc0ODFmNjk2YWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NGI4Yzg0ODhmN2E1MmMyNDU5MmM0YmJkNGE3M2MyMGNmNzdjMWFmNmIxMWI0N2Y2YzA5YjJlMGQwZmI2ODkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9d96bdd00dc45ef9b21c3d81130636b",
+      "statement": "Reports and salary logic resolve their date window through resolveSalaryPeriodDateRange with the order: per-month salary_periods override → global default row (default_start_day/default_end_day, seeded 25th → 24th) → calendar-month fallback; the P&L and profit distribution therefore report over salary-period windows, not calendar months.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/pnl.service.ts#L39-L45",
+          "version": "repo-lines-v1:sha256:d951d3be729525ff0165efc5f60d75a93a3b17db70fb23dc2ef42fc560a88c65:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY2YmExZmMzMzFlMTY3YTQzODc4MWM2ZmQyMTgwYjU4YWI1MzliMjg1MWU0ZDZhMWYwYTFjZDU1ZTQ0ZTBkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmVjOGMwNjlmYTkzNDIyMDZjYmJmNjY2ZTE3NGE5NWM5YzI3NjQzMWY4NzI4NmMwMGIwY2ViNTdjNmQ2NzZlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGJmMjdlNTFmMGUzY2NiZmZlYmQxMmQxMTEwNzQwMDAwZWU1ZmU3NDk2ZDJmMGY4NGZlMDllN2E4MzAxYWVhNyJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/salary-period.service.ts#L17-L83",
+          "version": "repo-lines-v1:sha256:03a67afd36c7d4493e5ea69e2e5797bf87211620521d9bbca079a92577b61cd6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0Zjc4YTE0ODEzYmZhZTBiYmY0ZDNjMTc3ZDVkOTRlYWQ5ZTMyZmM0YWI3OTg5NWNiOWVlMjQwN2MwYmUxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhMDZmOGFlYTg1YzRkY2YzNmY0ZGVhOGYwMjA4NDIxZjZlMDkyYTU5ZTEzY2U2MGM0M2RjOTViYTk0NTY1YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiZWIxNzRiN2U1OGMyOGRmYmY4YjMwNGNjYWIxNDlmZTY4ZWE1NzI1MmFiYmVlNTRkMjk2ZmExNDYwNjIyZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc06a0df1b3c4d079789465575fe3a21",
+      "statement": "transitionTripStatus guards: dispatch requires ADMIN/MANAGER and blocks a second IN_TRANSIT trip on the same truck (truck-scoped advisory lock against phantom-read races); completing an EXTERNAL trip requires externalPlateNumber; locking requires non-zero revenue (confirmZeroRevenue override) and the photo gate (≥1 photo, plus ≥1 CONTAINER and ≥1 SEAL when cargoTypes.requiresPhotos, confirmNoPhoto override); lost races surface as HTTP 409.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts#L100-L115",
+          "version": "repo-lines-v1:sha256:73a0d016656e8474fdd1e6576ce178f12c4d55d6c39c4fbb50f4348130a95fc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkZWE2MjMwZjA0YTc0MjRhZTE3NzZiN2QwZGNhZTEzNjExN2I1ZDJhMTZkNDgwNDU4YWQzNzUxYWViNjZkMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmNThjODAwZGY0NTk4ZmFhNTkzMDVhMGMxMTBlMDQ3MWFiODg2YmJmNzI3ZTEyNTdjNmM5ODVhMDhkZGE1MmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNmVmYjU0MGMyOTE0ODQyMDc3NzU4ZjVlNjAxNzg2Yzg0MzU4YWFjZTc0Y2ExZmMwYzdhOTczMzAzMzM3YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwNjM5NjlhMzkzZmQ2NmJhYzBiODBkNzkyMjExZmY3NTYwMDJiYjdlNDcxODM1YWUxODljOTQyYjA4ODc3YTAifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts#L116-L157",
+          "version": "repo-lines-v1:sha256:c42eceedebd932cd6c993801dbfb5170567cec7c5edd31382122b210dbc2f30c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiNzk2YjY1MGI3NjExYjE1NGQzZjMyNmJiYTAzNWYxYzU0MTc1NjkxZTI0OTExMzY5ZTlhOGY3YTY2ZmI5ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3MTAyYWVhOTI3OTVlMTYyNGNlN2YzNTBhODU0ZmEyODRiZTE0YTNkZDY1YTBmODY1ZTgwMzRhZGI0ZDYzOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1ZTE1NDhjZWU0NThlNzBjMDllNDZkNWNiY2RmNzVhZGJkYTZiN2NjOWQ0ZTViZjhjODg0MmJiZWRiMWMxM2MifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/trip-status-machine.service.ts#L32-L73",
+          "version": "repo-lines-v1:sha256:9b3b8ca61ce46de1acc9dffa594ee5879bf1244106dfe0643828567c256aada8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMWFmYzY1ZWM2MWM4ODIzZWE0M2U1MzU1ZmJhYzljMTlhMTEyMDgzMzFlMzBhNjJjMmY5ZTlmYTViMDY5MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmYzk0MTU5OGI0MjI0MzI3NjdiYzQyZDcyNzQ3YjQ4ZGIzMzdjY2JjZmNlMmNjNGUwMzMzN2I4ZTAwNWQ0NGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4MWQyZjRmMzg5OGYxNjNkMTc5ZTBkMWY1ZTJhZjAzODJkNjkyMzMyZmNhYzNiZmIyMGJhZGI2ZGJiN2E5MWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef510a1d5f1749df9c03724d7c4de6a1",
+      "statement": "Tires (lốp xe) are tracked by immutable serial and mount on either a truck or a trailer; lifecycle transitions are install (status IN_USE + installed_at), remove (back to IN_STOCK), dispose (DISPOSED with disposal_date/reason, never reinstallable), and transfer (new vehicle/position but installed_at preserved so tire age survives the move); labels are TIRE_STATUS_LABELS Dự phòng / Đang dùng / Đã thanh lý and a fixed disposal-reason list.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/tire.service.ts#L7-L24",
+          "version": "repo-lines-v1:sha256:1c6b6702c63a68b951c9b8cdba14359438c90b0ba2f45097eb1557223e556b7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiODEzMTRmMGEyNjY3YzliMGIxMGU0NDA0MjFkNWYyYWFmY2NlY2U5ZTE0YmJjNmU5ZjlmOWUxNGYzYmVmMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ZTU3MWY4YjE3YzZmZTJkMmMyY2Y5NzViODY3MzkzOTE4MThiMTM2ZDdhZjQwMTA1MTM3YmFhNmVmOTY5ODMifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L304-L323",
+          "version": "repo-lines-v1:sha256:ee873f10569319d0355106cd9ed1437f4eefb353afb18ba265034ed6f65466e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczMDljZDBhOTMwZTJlZWUxN2JkODMxYjBjNjJkMWIyODlmNTkxMWU3NWVjZGJiYTU4YmViNWQ3MzE3YTI4YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM3NmQxMmU1MzA0ZDMwNzllZGI1Zjg5MDAwN2VhMDVmMjI2ZTRkOTNiNjk1Njg0NjBjYWZhZjgwMDc0NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlYWMxMzVlNWQzMTkyY2RkZjFiOTc4NWNiOTFkYWQ1NjFjOThiODA5MWZjOGQ3NjkwYWY4YmY4YTRmYTA0NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlYTQ1OWVkMzhjN2M5YjFmMmNhMjU1ODdhYWQ1ZmI5MjNhNzc0MzMxZDIxZTQ0NjViOWQwNmZhNjdlMDM2NjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c826a999a1d4b62b377d4ed584f46c4",
+      "statement": "vehicle_schedules are per-vehicle (TRUCK or TRAILER) reminders with kinds labeled Bảo dưỡng / Đăng kiểm / Bảo hiểm / Phí đường bộ / Hồ sơ / Khác, a remindAt ≤ dueAt CHECK, and a lifecycle ACTIVE (Đang nhắc) → COMPLETED (Đã hoàn thành) or CANCELLED (Đã hủy); the Fleet page's 'Tạo lịch' form creates them and they surface as dashboard/Fleet reminder banners.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L708-L733",
+          "version": "repo-lines-v1:sha256:8404b945bc25c7462a1b9f3339c0f2d0224b9ad0d54a52c1516b96f0c47a627b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNTFhZjQxZmE4NzY0YmMzZjcyY2M3NWZiNTVjMzQ5MTJhYjAzNGRlNmMwN2ZiZjRlZWM1ODE3MmE5NmUwYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiZmIzNTVlOGVmMmUzMTdhMjBkNDA4OTQ1N2EwMjllNjUyYjIzOTA2ZmE4NWQ0NTNkZjRhZjUyMmViNjFhZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3ZTNlMTI3ZjI1ODRkMzQ0MDc0ODA4YmJiMjNlNjVhNjgxZjA1ODkwM2ZiYjFjODNmMDMyOWY4MDdmZWNmNzkifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L289-L302",
+          "version": "repo-lines-v1:sha256:1a245d634bb08d79a29774706baac0a1d9a948ba87dd4231df59ee84be81d761:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmOWZiNjhjOTZjNTVlYzIxYjdlNmMyZDM2N2Q1OGRlMGE3ZWU4NWE1YzYyNjk1MGQ0MTU4ZjViZWUyYjcyODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0ODdjY2JiOWUwMDZjMDRjZjY1YTQ0YWMwNjA2NGQ4NzQyNDhjOGIyMDdhNjk2YWMwY2ZmZmI3MzExZWI3NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmZjk3Yjg2MjQzNmFlMDNkZmY1ZWQ4NDc5YWRhN2Q5NjAxNzAyMDA5ZjQxMmE4MWVjNWM1NTQ3MzczMGU2ODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f393952627b4746900826d24fa74e04",
+      "statement": "billing_documents produce DEBIT_NOTE (Giấy báo nợ, rendered from debit_note_templates whose default title is 'GIẤY BÁO NỢ') and PAYMENT_STATEMENT (Bảng kê) per customer debitNoteMode (MONTHLY / PER_BATCH); lines come from billable trips (FREIGHT) and approved ancillary fees (SERVICE_FEE, sell side only — the buy side is intentionally outside the transport P&L), and a frozen debitNoteTemplateSnapshot keeps historical exports identical after template edits.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L440-L505",
+          "version": "repo-lines-v1:sha256:2bf7fd8708feea723c9b7e860cd575b9948dab641d63a4da493d9c352ed1a1d0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MDNiMTgyMzlkNDQ2ZTk0YzEwNWJiODcyY2I5ODA1MDAzZThhMjFiMjY1YTA4MzE1YjlkMWEwZGVmZTczNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1ODJkMzQ0NjQ5NmIxNmVmNGYzMzc1OTc3OGJhMjE0MTBiNzQ4Njc1ZTdjNDI1YTM0N2JlMjNmNTJlYjQ4ZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmNDNlMDY2ZTlmMGVjZDBmNDMyMTBjODJjMWRhNjBjNDQ2ZTZjYmJjYzZmZjcxMjkyZGI2NzMzN2UwZmI2YjEifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L346-L361",
+          "version": "repo-lines-v1:sha256:90d26c9c56130bcb0bdb0387f0dac389702db11b9052ef97a70c63824de0eac1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlZGFjZDhmNDA0YWY0Mjk0MjczNWIxODcxOWM0YTYxOTQ3YmZkYTIzYjcwZjY5MTllMWZmODlmMDRlMjkxODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZWRhMjU3YzdhMzBkZGZlMTM5MDMyOWU0MGExYjRlZTg5ZTFhOTI3NzM5MWFhMjU1OTQzOGM0ODMxMmRjNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwNjNiZjJlNzlmMDBjMDliZmUwNGExMzVkZmRjNmY4NTk1ZjUyODU2MmIzMWFlNDIzY2ZkN2MxNGI2MDlhNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwNjNiZjJlNzlmMDBjMDliZmUwNGExMzVkZmRjNmY4NTk1ZjUyODU2MmIzMWFlNDIzY2ZkN2MxNGI2MDlhNWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5baf38dc27b461ea2b7c506f9b9b1ff",
+      "statement": "The FAQ knowledge base (faq_entries + knowledge_chunks, pgvector 1536-dim embeddings) answers seeded Vietnamese domain questions with zero LLM calls via a 4-stage cascade in backend/src/services/agent/faq-fast-lane.ts (exact → rule → pgvector cosine → score/margin gate) with a fail-open contract that always falls through to the LLM agent.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L1251-L1299",
+          "version": "repo-lines-v1:sha256:339ca0c63d905d77a2ca194ebe5202e0e7361717e18b6c87462dbf9d45dc188e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMDE1YzU3YTdmMzI4MDZlMjU1ZWY3ZjM1ZGY4ZmI4NjUyNWUyNDRiMzA1Njk0NDMxZWFkODk5NTI4YTkxZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNmY5ZDM1NGExNjhkNzdjZDU2YjViMjNhYzMzZGMxMTg2YzM0MjI1ZWRkOGZlYjUyNzQxMTFmZjRkMDRlNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/agent/faq-fast-lane.ts#L1-L16",
+          "version": "repo-lines-v1:sha256:8de4f89cae20a99940796d6be4070acd932483b3f05e3174c8470767311d283d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZWEzOGVhZTA4NzY5MzE0NjRmNzFmMGY1MmJhYjdkNTEyZmY3ODMzOTM4MDhjOWM1YmE1ZTViOTNmODlkMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZDk1OGFjNzI5MmZmMGZhMjdhMTZiZGE4MjZjZjBhNDE0ZTlkNDBjOTcwN2FlYjRkYmNiOTExOWU0MzJkODgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhOTkzNDA4OTI1N2I5Mjc0OTE5ZTMyY2M0ZTQ1ZjczMmE3NTc2M2JlMzUzZTkyOGY5MzIyZjI3ZWY3MWUxOTMifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

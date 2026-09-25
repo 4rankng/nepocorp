@@ -3,9 +3,6 @@ type: service-layer
 title: Service Layer
 description: Business logic services — trip-lifecycle state machine, fuel/road allowance calculations, ledger, financial/reporting, storage, audit, RBAC/user, GPS/OCR/agent, and the createCrudRouter() factory for catalogs.
 tags: [services, trip-lifecycle, fuel, allowance, audit, crud, factory]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T11:26:37.739Z
 sources:
   - id: openwiki-source-2a2dfd1bcd8735843534fafd
     resource: repo://backend/src/index.ts

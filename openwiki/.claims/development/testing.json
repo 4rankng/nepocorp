@@ -1,36 +1,40 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:803b7fe0fda5c1a7cc193413d7967abfa68d5a2dbf8871adc481ee291ccf4af4",
+  "pageVersion": "sha256:33a62d3208b70943190f8ccee28999debb1aab86ccbc6f638bf30fcc7f0c8f80",
   "claims": [
     {
       "id": "claim_d031b522f28940b99c6a9d1e77f92123",
-      "statement": "Backend tests run as many `*.test.ts` files under backend/src/tests/ via `pnpm test` which executes `npx tsx --test --test-concurrency=1 src/tests/*.test.ts` with concurrency=1 to keep the shared dev DB deterministic across tests.",
+      "statement": "Backend tests run as 95 `*.test.ts` files under backend/src/tests/ via `pnpm test` which executes `npx tsx --test --test-concurrency=1 src/tests/*.test.ts`; concurrency=1 keeps the shared dev Postgres/Redis deterministic across tests (they intentionally introspect each other's rows), so the local DB must be migrated and running first. Suites mix pure data-driven tests (e.g. the trip-status transition matrix, golden-QA intent routing) with DB-backed integration tests (e.g. comprehensive.test.ts mounting real routes on an in-process Express server; photo-authz.test.ts seeding hardcoded storage keys).",
       "evidence": [
         {
           "resource": "repo://backend/package.json",
-          "version": "repo-file-v1:sha256:72ae663548d1dd9bfb487fd62267919805b68f53b86936f4c08600d729520fbd"
+          "version": "repo-file-v1:sha256:6484cd3fb4121348cbaeb92d5e715d2655b2a31ae39808fd781047439443cc41"
         },
         {
-          "resource": "repo://backend/src/tests/photo-authz.test.ts",
-          "version": "repo-file-v1:sha256:fe40187ca12a004853c0448fec24f20ea4298a6f7dfdb582ed69cb5e835264c8"
+          "resource": "repo://backend/src/tests/comprehensive.test.ts#L28-L67",
+          "version": "repo-lines-v1:sha256:7224dcb4eeb3d73d064ae0756a0020394935dbbd3fb0f65bf8daab56a9a08b33:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YzYwZTM5MWM0YzFkYzU4OTI2MjMzNDE0Y2EzZWVjNzY3Mzg4MGM3OGY4MzZlMWU0M2I3MmNiYzY1MDkwOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyM2U2MWUzZDk3YzM3ZGNkYTZmZTlkNjcyZGI4MTQxMWJmNTA3YzdkYWEyYWMyMmU2YmFiODYzZWY3YTk0NmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzNDU1ZTRmMmI3ZTkzZjViZjQ2ZDBhOWQxNDA3ZDUwYmUwYjU3OGM3NGE2Y2U2YjU5ODhmNmJmYjFkODBiNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMWYxYTk3YTQ2ZTE0ZDdhZmM4OGRlYWNlYWZjNTJmNjk2NjUyZGQ1MzdlY2IwOTQyNTI1NzczNTZlNmY2MDEifQ"
         },
         {
-          "resource": "repo://backend/src/tests/trip-status-machine.test.ts",
-          "version": "repo-file-v1:sha256:7602a8e9524459351179498d8d5688b078ddb868145edb7a9b21d6baea022fb4"
+          "resource": "repo://backend/src/tests/photo-authz.test.ts#L13-L35",
+          "version": "repo-lines-v1:sha256:82379b7d033e50c3debdfa0d97a7a3d04e5bf6c58daf55ab66f7760eddac1921:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxZGRlNjA5ZmU3MzQ3YmU3OGI4NzlhYjUwNTgxYTg4MTI3NTU4ZTY2ZjRjN2VhMmIxMjA0OTE0NmUxOTZiYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyNGRiMDA2M2U4N2EyZDYzNTMxZjU0NDUwNWQxOTY5ZmU1MTFhY2RmMDcyNTM2Zjc2ZjMzYzc2ZGY3NjAzMjYifQ"
+        },
+        {
+          "resource": "repo://backend/src/tests/trip-status-machine.test.ts#L1-L66",
+          "version": "repo-lines-v1:sha256:34131d4c0c3d875ffc65c2666a280f8462345bbbc002a598cba9b163e1641463:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyYjRmOGU3ZGJiNDA1OWM2MTYzNDBhOWM2OWQyYWQzYmM3MDlhYzhkOTg2NGI3N2I5NjQ0NDE1NDVjMDgzYjgifQ"
         }
       ]
     },
     {
       "id": "claim_526cfadd1dec4ddba747d9abb0e69104",
-      "statement": "Frontend tests live colocated as *.test.ts/*.test.tsx files (admin-advance-settlement-summary.test.ts, admin-advance-settlement-ledger-density.test.tsx, admin-advances-actions.test.tsx, customer-debt-projection.test.ts, useAuth.test.tsx, useAgentChat.test.ts, useBottomNavAnimations.test.tsx) and run via `pnpm test` which executes `vitest run`.",
+      "statement": "Frontend tests are 112 colocated *.test.ts/*.test.tsx files across pages/, hooks/, components/, features/, lib/, design-system/ and api/ (including admin-advance-settlement-summary.test.ts, admin-advance-settlement-ledger-density.test.tsx, admin-advances-actions.test.tsx, customer-debt-projection.test.ts, useAuth.test.tsx, useAgentChat.test.ts, useBottomNavAnimations.test.tsx) and run via `pnpm test` which executes `vitest run`; vitest.config.ts uses jsdom, globals, a `src/**/*.test.{ts,tsx}` include, defines __BUILD_SHA__, and aliases `@` to src and `@tingting/shared` to ../shared/src so tests mount real pages in MemoryRouter/QueryClientProvider with vi.hoisted-hook mocks and run shared source directly.",
       "evidence": [
         {
           "resource": "repo://frontend/package.json",
-          "version": "repo-file-v1:sha256:1c86647d68e5b27d24cad2ad329bce070d43247a0b2a850948d3dccde7b7dfa6"
+          "version": "repo-file-v1:sha256:d7938ecce3a69e2313e37f2f4403a5e0439a0e9cf97d26425ac3db4e802b975e"
         },
         {
           "resource": "repo://frontend/src/pages/admin-advance-settlement-ledger-density.test.tsx",
-          "version": "repo-file-v1:sha256:926d4200442b8b0bff2620c317fec74cf5812021ecf34f9181c98fd8f97e5bc2"
+          "version": "repo-file-v1:sha256:fcf8f4a98eefb829e71e40d9c4a19c07d8a9ad2277a0a643801cc0c7c57876ee"
         },
         {
           "resource": "repo://frontend/src/pages/admin-advance-settlement-summary.test.ts",
@@ -43,34 +47,50 @@
         {
           "resource": "repo://frontend/src/pages/customer-debt-projection.test.ts",
           "version": "repo-file-v1:sha256:1ab659033f29db24c74772bcaacd13f3566981aaeabb0b93efb31363361481c4"
+        },
+        {
+          "resource": "repo://frontend/vitest.config.ts",
+          "version": "repo-file-v1:sha256:67039cf678d6160593d8cf7805c745984460af151cad04a5666f8e619bf13a3e"
         }
       ]
     },
     {
       "id": "claim_27cb45936ba0428090bb21debb1468db",
-      "statement": "ESLint is configured for both root and frontend packages via the `lint` script but is not wired to any CI pipeline and is not run by default in the dev loop; there is no CI configured at all.",
+      "statement": "There is no build/test/lint CI: the only GitHub Actions workflow is .github/workflows/openwiki-update.yml, a scheduled OpenWiki docs-refresh PR job. ESLint is configured via `lint` scripts on root and frontend packages but runs nowhere automatically; frontend `check:ui`/`check:brand` and `build:strict`'s 600-line size guard are likewise manual gates.",
       "evidence": [
         {
+          "resource": "repo://.github/workflows/openwiki-update.yml",
+          "version": "repo-file-v1:sha256:65b40528283656ef0921cc1f26610c0f531241ea2b6b2b1fe2e54dd53a6f2e9e"
+        },
+        {
           "resource": "repo://frontend/package.json",
-          "version": "repo-file-v1:sha256:1c86647d68e5b27d24cad2ad329bce070d43247a0b2a850948d3dccde7b7dfa6"
+          "version": "repo-file-v1:sha256:d7938ecce3a69e2313e37f2f4403a5e0439a0e9cf97d26425ac3db4e802b975e"
+        },
+        {
+          "resource": "repo://frontend/scripts/check-size.mjs#L1-L30",
+          "version": "repo-lines-v1:sha256:62139a82db0fead4155afb381bf50ce208d4296ff01acda46d9c38ffb64e95b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwM2RlMzYwYThiNzRjNjI4MTYwOGQ3NTMxM2IyZDAyOGFhYWM0NWNhYThiODBmZjMwNDRjYjRlZjM0YzYxMjUifQ"
         },
         {
           "resource": "repo://package.json",
-          "version": "repo-file-v1:sha256:1c2984cc65964147af09c6d50c1222864eaff9c24c106dbc95df3760ad364722"
+          "version": "repo-file-v1:sha256:450d66450d3efcd7daae0e3f1a8794f584d8ddfeb4ded87635145c524d6ac520"
         }
       ]
     },
     {
       "id": "claim_1070b5b0fc154f0dabc60e059ef97589",
-      "statement": "The e2e/ directory is a Python Playwright suite with run_all.sh + helpers.py + seed_ui_audit.py and per-flow tests (test_00_auth.py through test_05_profit.py) mapped to docs/flows/*.md indexes; it is NOT run by `pnpm test` and is typically executed against deployed environments (demo or prod-mirror).",
+      "statement": "e2e/ is a Python Playwright suite of 14 suites (test_00_auth.py through test_13_forwarder_portal.py) covering auth, trip lifecycle/list, dashboard/finance, debt, profit, penalties, fleet, customers, config, system admin, driver portal, vendor expenses, and forwarder portal; it is NOT run by `pnpm test` and runs against the live dev stack via `make e2etest` → `bash e2e/run_all.sh`, which verifies :7173 and :3090 are up (aborting with \"Run 'make dev' first\") and maps suites to the docs/flows/*.md scripts. helpers.py supplies DEMO_ACCOUNTS for the five roles, a JWT bearer ApiClient, headless Chromium context, screenshots, TestResults with JSON output, and the run_suite entry point.",
       "evidence": [
         {
-          "resource": "repo://e2e/helpers.py",
-          "version": "repo-file-v1:sha256:7ffe8fa97289e9db512f72be1a2b06d46e103c7aa941badc6f3fda7b73acb7d9"
+          "resource": "repo://Makefile#L74-L77",
+          "version": "repo-lines-v1:sha256:92f3e31a6f2d6a8eea04bf66c437777ff3d00cbd864946bef7499e6dbcde82a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNmYWQxZmZiYTIwYTdhMWRmMmNhZDAyMTVlYTQxZTRjYTU1Y2ZhMTVjMTE0Zjg5Mjk4NTlkYjM5Mzk4NzgyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2UxZTA3NjBjNDFhZmMyNjQ5ZGRiYTBiNGQ1OTk3ZTljZmI5NmMwZWE5NjQyYTI2NzFhODc1Yzg3MTM5NjM0YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmVlY2ZiMzk3NWViZDJhOWRiMDAzNGZhNzhjMjE1YWQxNTQ3ODEyYjgwNmIxYjg3MWFjOGJkNjg1YjJiNDI1ZCJ9"
         },
         {
-          "resource": "repo://e2e/run_all.sh",
-          "version": "repo-file-v1:sha256:49b98c89ba6ef41b67e9b0d1aa0af27cc511a4d9af2404b2ae0d91d4d73418c4"
+          "resource": "repo://e2e/helpers.py#L13-L24",
+          "version": "repo-lines-v1:sha256:9bbe758fc902d2e95b2140509d7e08ed7a39263ace431024ba0171471c750bc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMGRiODg4ODY1NmY1NDU3YWQ4ODM5NzI0MzYzOTdiNjBjZTE5NGUwZmE2N2U4MDdkNjQ0Y2U5ODFmYjcwNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkN2M3NDNmNTQ5MGI1Y2EwODcxZTE3MjE4YzY2YmYyODA5MjkzZjBjYjg3MWYwMTBlODAwMjFmZjcxYWM2MTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMDMxNGQ5NjQ1YjIwZDg4MjNjYWRmNGFiMDk2OWNiMDJlN2FmMzhkNzNkMWM3YjU5MWFkMzc4ZjU1OGU0MGMifQ"
+        },
+        {
+          "resource": "repo://e2e/run_all.sh#L23-L80",
+          "version": "repo-lines-v1:sha256:8d215c7ba6612348d8ced83729cb23f2f2d0afb0236102612681b61bf6345a90:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNDliMTcyMjhiZmFhNThjZGNkMjliY2E1MGVhNmM3YWMwMjU0Y2FhMWIxZWQ2Y2Q2MWQ4NjM4ZjZjZjRjYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyMzZiMTYwOTNjNTk3YjQyMmFhNzEyODRhMjdkN2E4ZDE0MjlhOWE4ZjAxODk2YTM1ZTZmM2QzOTQxNDgxYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2YjIzODYyNGI3ZWNhNDIzZWU0Mjc0OGFmYTU1MTNlMGEwOGY5YjJkOTViZmYxMjk2Njc3Njk1YmFjYTY2ZjcifQ"
         },
         {
           "resource": "repo://e2e/test_00_auth.py",
@@ -84,11 +104,11 @@
     },
     {
       "id": "claim_d5b4987ff90a4514bbbfc492213e9b6a",
-      "statement": "Manual QA artifacts live in docs/qa/ (regression-test-plan.md, test-checklist.md, quan-ly-checklist.md, service-cost-checklist.md, iterations/, pete-feedback-2026-06-02.md, approval-queue-inventory.md, config-polish-audit.md) and testplan/ (testaccounts.txt fixtures); role-by-role test scripts in docs/flows/00-OVERVIEW_VA_PHAN_QUYEN.md through 15-QUAN_LY_LOP_XE.md walk through trip lifecycle, debt/payments, profit distribution, penalties, fleet, customers, configuration, admin, driver mobile, supplier/AP, advances, salary/attendance, and tires.",
+      "statement": "Manual QA artifacts live in docs/qa/ (regression-test-plan.md bug register with BUG-REG-xxx cases and the canonical runner invocations, test-checklist.md, quan-ly-checklist.md, service-cost-checklist.md, iterations/, iterations-quan-ly/, iterations-service-cost/, pete-feedback-2026-06-02.md, approval-queue-inventory.md, config-polish-audit.md) and testplan/testaccounts.txt (local admin/admin123 vs demo Abc123 credentials, JWT claims, dev-token minting); role-by-role test scripts in docs/flows/00-OVERVIEW_VA_PHAN_QUYEN.md through 15-QUAN_LY_LOP_XE.md walk through trip lifecycle, list/search, dashboards, debt/payments, profit distribution, penalties, fleet, customers, configuration, admin, driver mobile, supplier/AP, delivery/advances, salary/attendance, and tires.",
       "evidence": [
         {
           "resource": "repo://docs/flows/00-OVERVIEW_VA_PHAN_QUYEN.md",
-          "version": "repo-file-v1:sha256:a47e38cf75e9fdd6661d36274baea0b707820269824b11a3fb0cdfcab81d65db"
+          "version": "repo-file-v1:sha256:f96f792679748d523fa4099371c2c6d4b73f0a08b1dde1b139017f3fa447e7a2"
         },
         {
           "resource": "repo://docs/flows/01-TRIP_LIFECYCLE.md",
@@ -100,17 +120,149 @@
         },
         {
           "resource": "repo://docs/qa/regression-test-plan.md",
-          "version": "repo-file-v1:sha256:3f29578172bf9430aee158e91a2586b21492f18509d730e524ff0624e84b8963"
+          "version": "repo-file-v1:sha256:45a37fd735207e92ba301602845e85d326351c7b51665f4085b36e0ff93db8c9"
         },
         {
           "resource": "repo://docs/qa/test-checklist.md",
           "version": "repo-file-v1:sha256:2ffc8e34b8cef42458915ee75b64bd9708bb459e2fb367bcf85d13903b911dfd"
+        },
+        {
+          "resource": "repo://testplan/testaccounts.txt",
+          "version": "repo-file-v1:sha256:99d024adecfb13020377e44a77b219867a0f8d936579b1898bb96a084c0b82e3"
+        }
+      ]
+    },
+    {
+      "id": "claim_d875ba49dd254f7ca32cf0248d03d8c1",
+      "statement": "A `*-load-safety.test.tsx` family locks in the rule that a failed or in-flight query must never render as editable, empty, or defaulted content: salary-load-safety.test.tsx shows an alert + working retry with no editable attendance on failure/loading and asserts focusable aria-pressed driver buttons; forwarder-settlement-load-safety.test.tsx replaces an empty payable form with a loading status, blocks submission on error, retries both option lists, and retains selections across a rejected submission; expense-load-safety.test.tsx and config/config-load-safety.test.tsx apply the same pattern to expense editing and config pages.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/pages/config/config-load-safety.test.tsx#L20-L50",
+          "version": "repo-lines-v1:sha256:1e95ca986c1012b0399381ee7c9125ea527a22a9aea03f382b86045a91bdaaee:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMmE0ZjUzNzI3MzRhYjE1MTE2Y2YyYzExMzE1NTU4MGI4MGNhZTliZDg5MDMzZjkxZGIxOGRlODUzOTFiNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiMjUwYjkyYmIxYTEzOWFiNTg4MzE1YWM3ODE3YjkzNzMwNDUzNDA0NDM1Nzk2NTZjNGExMWEwMTc1MmRmZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/pages/expense-load-safety.test.tsx",
+          "version": "repo-file-v1:sha256:86956d90fb66f01b6d85c5d28f2df61573417394d9cf5f0a343e5256c5ccc8e4"
+        },
+        {
+          "resource": "repo://frontend/src/pages/forwarder-settlement-load-safety.test.tsx#L24-L55",
+          "version": "repo-lines-v1:sha256:e591acff71846ecd3ea6e3ae8d3fec75f353b388cdb18e7e2ef9c8ff1e0222b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYTFkM2NkMmNmZjgwNTk5OWQ0MDVkNWJlYzFkNzljOTYyZDBiOTk1OWY2NjEzNzg5MzRhOTczMzkxNjdiNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiMjUwYjkyYmIxYTEzOWFiNTg4MzE1YWM3ODE3YjkzNzMwNDUzNDA0NDM1Nzk2NTZjNGExMWEwMTc1MmRmZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/pages/salary-load-safety.test.tsx#L32-L62",
+          "version": "repo-lines-v1:sha256:58d5aa828ae88cd1f11fa2732727201f6d3478ef0406280a7c7bff3776a5c13d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExMDE0NTQxZWRmNDVhOTU0M2E4ZGQwNGMwNDIzMjM2NGQxZDc2ZjI5ODczMjg2MWYwZjBlYjQ5ZTk5MmIyZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiMjUwYjkyYmIxYTEzOWFiNTg4MzE1YWM3ODE3YjkzNzMwNDUzNDA0NDM1Nzk2NTZjNGExMWEwMTc1MmRmZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78a9fbe3fb91401da99843e148726d6f",
+      "statement": "Focus and a11y regression tests catch UI defects unit tests usually miss: TripListPage.quick-edit-focus.test.tsx types character-by-character into document.activeElement to catch the quick-edit cell remounting on the first keystroke and dropping the typed amount, asserting the same element stays focused with the full value; ExpenseEntryPage.error-state.test.tsx verifies every invalid required control gets the error class (and valid ones never do); portal-list-recovery.test.tsx keeps portal search focus alive across loading states and renders real totals when reduced motion skips counters.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/pages/ExpenseEntryPage.error-state.test.tsx#L33-L50",
+          "version": "repo-lines-v1:sha256:d2ddc190976f64c7ad6d73364ee65eb94a9cb82a42ff936e20c778dcd06e4ce8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1Y2U4ZjMyZDg2ZGI4OTBlYzYyMjViZmY4OWJkY2Y4MWVhOWJkZTE2ZjIyZTc4M2VhNGIxYTE0ZTk2ZDAxNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhOTA2NWE3MTU4OGJjZjE3ZjBiOTQ2Y2Y1NWY0NzdiMjIxMDViMjc3NjUzNTEyNzkxMmE2NzY2MjY5YmI2ZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0NTUwZjJkNjRjNGNlY2ZlYzdjMzhhY2JhNmZmOTBjMmMwZGY4ZGMwMWUwYzgyNWNhOTA0OGQxMTM0YjM3MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYWEyMTMxOGU0YTM1NDlmM2I5YzZlMWU2MTJiMmNjYzUzZjE0ZTAyMGRjNGEwYzFiZDMwOGQ0NDk3OGM0YmEifQ"
+        },
+        {
+          "resource": "repo://frontend/src/pages/TripListPage.quick-edit-focus.test.tsx#L47-L107",
+          "version": "repo-lines-v1:sha256:92c92dcb1e891a85243ee491f24d43f4aea87518fafd362682e693d007b700ee:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0OTljNjJjYTIxODBiMTAyOTdkNTQxYjU4N2Q1NGUyMTUxYTI3MWVkNTE4ZDI2ZTE5NTJkN2E2NDI4NTBjNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://frontend/src/pages/portal-list-recovery.test.tsx#L43-L70",
+          "version": "repo-lines-v1:sha256:ca7219603f71281dca16cf542854c830936c97f8d01845bcbed6cfe4e730d1cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZWJhMWQ3Yjk1MTYzMjE2OWRhMzI4MTM4MGJhOTIxN2I4MzQyNTkyN2FiZmEwZWYxOTJlZDA1NjllOTI3YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiMjUwYjkyYmIxYTEzOWFiNTg4MzE1YWM3ODE3YjkzNzMwNDUzNDA0NDM1Nzk2NTZjNGExMWEwMTc1MmRmZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjM2Y3NWE4MzYyZjE2YTEyMWUxZTU0MGVlN2IxYTI1Y2U2ZDllZDdiMDcxZWUxZTk4ODM5NmQ3ZDZhZTQ0NmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c7000f4671e4fe28155d74e84c7adfc",
+      "statement": "shared/src/calculations/ math tests (round, tripTotals, tripDriverSalary, fifoAging, iso6346, vehicleAlerts) are colocated node:test files not wired to any package script (shared/package.json defines only build/typecheck) and are excluded from the shared build via tsconfig.json; per the regression plan they are exercised transitively through backend tests and frontend Vitest, and the frontend Vitest alias to ../shared/src runs the same source without a build.",
+      "evidence": [
+        {
+          "resource": "repo://docs/qa/regression-test-plan.md#L33-L38",
+          "version": "repo-lines-v1:sha256:e5af69c040466631f6464d70588fb3ecb4b6dd3482846662cc2224573f9583cf:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGY2NjM1YjM2NjIwYjZhNzEyNjgzNmM3MjQ5OGQ3ZjQ1NzQ1OTQwN2VlYTQyYjkzZmRlYjdhMWE3YjIyYjZkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc3ZmFjZjQzNjE3ZWQwMjEyZDdjZjAxYzZhZmZiODgxMGY3NTcxMzhlMjNmMTQxZWU1ZTFiYTE5MzM1MmYxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTE1NzEwMDBjZmMyOTQzZjI2MDMzMDNiZjFkMDA5MjU4OTBiM2EwZjZiODhmYzIzN2Q1YjhkYjkwZmI0YTJkMCJ9"
+        },
+        {
+          "resource": "repo://frontend/vitest.config.ts",
+          "version": "repo-file-v1:sha256:67039cf678d6160593d8cf7805c745984460af151cad04a5666f8e619bf13a3e"
+        },
+        {
+          "resource": "repo://shared/package.json",
+          "version": "repo-file-v1:sha256:837b7b00647162d363601b2edfdffc7140ff593be5f21572d0269a78538b4d7c"
+        },
+        {
+          "resource": "repo://shared/src/calculations/tripTotals.test.ts",
+          "version": "repo-file-v1:sha256:ece76644b3a65a071314f917a234bd4371fcbfda34694ee6d127b6bb1c6920af"
+        },
+        {
+          "resource": "repo://shared/tsconfig.json",
+          "version": "repo-file-v1:sha256:70d4b20250bd487c924e9c8308aa5c2f9a8e3a250c8a2f24237389937b9401ad"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf47e1494db144be80d77df5a6cf7c7c",
+      "statement": "seed_operational_qa.py populates an isolated local database with realistic synthetic operations using only business APIs, guarded by an exclusive manifest that makes repeat runs read-only, a loopback-:3090-only origin check, and preflights refusing runs when a GPS provider is configured or push subscriptions exist (so trip completions cannot call external services); seed_ui_audit.py creates one synthetic record per entity plus a forwarder advance→approve→settlement chain on localhost; ui_route_audit.py is a read-only audit that regex-parses route guards out of frontend/src/App.tsx and visits every allowed route for the five roles at multiple widths, recording page errors and API responses ≥ 400.",
+      "evidence": [
+        {
+          "resource": "repo://e2e/seed_operational_qa.py#L1-L97",
+          "version": "repo-lines-v1:sha256:e0b2d02d0716dcd5745d9fe78d91efe61efb896bd56866a87e500069651b72fc:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2ZWNlNzVjODFmMjIyNGY4NGQzYjM2ZjcwNzAxOWFhOWYxNjI0MmIyYTg1YTc2M2IzYmYyYjcxYzMyMzQzOTcifQ"
+        },
+        {
+          "resource": "repo://e2e/seed_operational_qa.py#L105-L136",
+          "version": "repo-lines-v1:sha256:72c72672851a1e5dba1ac55be8b0c69b36a91a24094356def688e229dab4009e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMWNiYWY1NjhiODgwYTY3NDU5ZjRiNzM0ZDQ0ODNmOWIwOTc2N2YyZmQzYWY2NjZkYjE2OWE1ZmQwZjVmOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNzc1M2VjYjViMWFjZjhiMDI5MWQwZDlmZWE5YmZmMTA5YjAwNTliMDYzYTZiNjk4MGYwN2M5MDc0ODA4MGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZmMyZmU0NjE2Y2VhODkwZTdmNDNlZjcwODAwZDAyYWM4YjVhZDVlOTQyMDZkYWI0MmI0MjQxNDZlNTFjZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1MjAzYjc5ZTQ0ZGViYzJiNGZkNzU5YzJlZTgxZjdhYmI5MzgzNWEwZjE1MTQwMjA5Njg2ZWVkMTI4YzExZTQifQ"
+        },
+        {
+          "resource": "repo://e2e/seed_ui_audit.py#L1-L57",
+          "version": "repo-lines-v1:sha256:4cca56d38d647fa9c18cf5215adc1c9c44af204006b96c0060ba8747456c7b24:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2MTg4ZDU0ZTU5YjA0NWM2NGM4NGVhODQ1NDA0MWU3MzFlOWEwNTgyNDE1NWFmMGE2OWRlNWE2OTFjODYxMTAifQ"
+        },
+        {
+          "resource": "repo://e2e/ui_route_audit.py#L1-L60",
+          "version": "repo-lines-v1:sha256:44f42d82ade74176d231b2ceb9406cd793537dedb523c13b0a0ac281de420087:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NzgwNWMzZmU3YWM2MzA3NGY2OWNkYjI1YjlhY2Q3YTg2NzkyZGZlNTQwODE4YWM0Zjg3NjRiNDllN2QxNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1N2JjZWM3YWJiYjEwZjU4YTQ0OTE0YmIxZTg1MjZkOTRjZTE3MjAzMzVmNTMxMTI3NTFhOTk3MGIwM2ExNzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_97495baad6b94c2a8ab20e3243ead933",
+      "statement": "run_all.sh aggregates results by globbing /tmp/tingting-e2e/*_results.json while helpers.py defaults to writing under /tmp/nepo-e2e (override with NEPO_SCREENSHOTS), so the aggregated summary block can find no files even when suites ran; run_all.sh also executes with `set -euo pipefail`, so the first suite exiting non-zero (any FAIL) aborts before the summary. Base URLs come from NEPO_URL/NEPO_API (defaults localhost:7173 and localhost:3090).",
+      "evidence": [
+        {
+          "resource": "repo://e2e/helpers.py#L13-L16",
+          "version": "repo-lines-v1:sha256:d8aa9991116f2eeb52060e8f80845c2311ee4943af29effa1ef9b417a846262b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwZGI4ODg4NjU2ZjU0NTdhZDg4Mzk3MjQzNjM5N2I2MGNlMTk0ZTBmYTY3ZTgwN2Q2NDRjZTk4MWZiNzA3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU2OGMyZWExMWEzZTNhYTI5MjU2ZTZhZTFmNDBkNzFiNTkyYjljNDE0ZjQ5MjZkYTQ4ZTAwY2FiNmQzYTA3MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2Q3Yzc0M2Y1NDkwYjVjYTA4NzFlMTcyMThjNjZiZjI4MDkyOTNmMGNiODcxZjAxMGU4MDAyMWZmNzFhYzYxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTQ1NDNlNmJiNDA5NDMxYjliMGM2Y2E3MDM4YjcxN2IwNWMyYjNjYjAxODI0MzIxMjBlN2QwNDg1OGZmYThjZCJ9"
+        },
+        {
+          "resource": "repo://e2e/helpers.py#L75-L86",
+          "version": "repo-lines-v1:sha256:4256cdd481dff12ff4585f91aee24414dace08820bf8ec91ebf7a16cb7000624:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ZDM5MzdkOTI1ODIzMzdiOTRmZmJhYjdmYTVhYjc4MjQyMDJiZmVkZWFjYzZmZmQ3YjQ3ZGVlM2RkOWE5MGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MzE1MTFkODFmZTkwMWQwMGU4ZDJjYjQ5MzJhNjI2MTdhZGFiODIzMTQ5MDEyYWI2N2Y4ZTdiMWQwNjYwZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiZDI3NmY4MDZiMDQzMGNiYTJjODJhNGVhNWNlNDg0NGMzYzBhZGQ5YTBjYmVkOWYzMWRiOWUxYmI1NjAyN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNzNmOWIxZGQzZWQ5OTc4NDNlZGY2YzMwMDJiODc1YzlhMmIxNGUzMmNkODZlMjMwZmI1NTVlMWQxNWFiMTEifQ"
+        },
+        {
+          "resource": "repo://e2e/run_all.sh#L7-L9",
+          "version": "repo-lines-v1:sha256:92273d83e9069307abc01e63c0784a6d9651137e9be9c285b2428f9e1a0fe41c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODhmYzYzMzY2N2QwMzAwNzMxYmRkODQ0NzJkYzQyNGUxZjljNjQxNzVlYTJiYWRiNjY2NDcyZDkxYWViNGVmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTk5NmZiMjZiOTJjMjIwNGE0YjY4MjZlMjIyOWZlNTU1NmMyZDhkMGRhMjkyOWM0NzQyODg4ODJlY2Y4NTZkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTgyOTVlZjYwMWY1NWNkZjgzNjBjYTBlMmRhOWE4OTMwMmEyZmE3OTU3ODQ1MzkxOTg1MmY4ODU0ZjI4MGEyMyJ9"
+        },
+        {
+          "resource": "repo://e2e/run_all.sh#L89-L99",
+          "version": "repo-lines-v1:sha256:b9c4656a5b427fd629206c10759a6caa7725fa1e3db9bb3415a6d55f12062889:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYWJjNDRkMTQ5ODdlOTkwMTU4YWM5NmE5Y2JiOGQyNTBlYjJjNDkxNjg5NzVjZGY1MzQyOTQ3MDZmYmJkOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZmQ4NjE0MDA0OGNkOGFlYjNiY2JiYmI4OGMyODIyMDcyZGM0ODM3N2MyNGUyNzlkOTY0NGZkOTY1ZjBhM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjYzk4M2NmOTAwNTE4Njc0NDU5YzYzYmNkOTIyYjEyY2M1YmMxNjM2Njg0MjI5MjM3NTA5ODVjNjY0ZjYwYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMjZlOTk5NThlMTM0NjQ3ZjFiYzA5NmFiZTljNjYwNjY1NzE3MDgyOWY0MTkzNGI5NGJhOTYxNTE2M2E0MWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e4b1614bdac492ca518c7182c2b7453",
+      "statement": "The backend test runner historically needed `--test-force-exit` to exit cleanly; the regression-test-plan still notes it as a suite quirk, but the committed `test` script in backend/package.json does not pass it.",
+      "evidence": [
+        {
+          "resource": "repo://backend/package.json",
+          "version": "repo-file-v1:sha256:6484cd3fb4121348cbaeb92d5e715d2655b2a31ae39808fd781047439443cc41"
+        },
+        {
+          "resource": "repo://docs/qa/regression-test-plan.md#L27-L27",
+          "version": "repo-lines-v1:sha256:0749909208ad389752066425fb60b6cc6abdce43ae7c64e1780bd298b8dff11c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc0OTkwOTIwOGFkMzg5NzUyMDY2NDI1ZmI2MGI2Y2M2YWJkY2U0M2FlN2M2NGUxNzgwYmQyOThiOGRmZjExYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc0OTkwOTIwOGFkMzg5NzUyMDY2NDI1ZmI2MGI2Y2M2YWJkY2U0M2FlN2M2NGUxNzgwYmQyOThiOGRmZjExYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmYxNDZjYzkzODM4NDQxMjA2OWJiMmRhYmZkYjJiYTUyOTM2NDk0OGYxOWJjNDMxMjU5YTljNjI2M2VhYzFhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2ViZWNjODcwMTI5ZDZmOGE4ZWY3NDIwNzA1NTA4YmMxNDRmM2JlZThmMjY0NGQ5NmRiNmZhODE2Yzk3NjgzNCJ9"
+        },
+        {
+          "resource": "repo://docs/qa/regression-test-plan.md#L33-L38",
+          "version": "repo-lines-v1:sha256:e5af69c040466631f6464d70588fb3ecb4b6dd3482846662cc2224573f9583cf:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGY2NjM1YjM2NjIwYjZhNzEyNjgzNmM3MjQ5OGQ3ZjQ1NzQ1OTQwN2VlYTQyYjkzZmRlYjdhMWE3YjIyYjZkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc3ZmFjZjQzNjE3ZWQwMjEyZDdjZjAxYzZhZmZiODgxMGY3NTcxMzhlMjNmMTQxZWU1ZTFiYTE5MzM1MmYxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTE1NzEwMDBjZmMyOTQzZjI2MDMzMDNiZjFkMDA5MjU4OTBiM2EwZjZiODhmYzIzN2Q1YjhkYjkwZmI0YTJkMCJ9"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

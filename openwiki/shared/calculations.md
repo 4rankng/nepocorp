@@ -3,9 +3,6 @@ type: shared-calculations
 title: Financial Calculations
 description: Shared calculation logic — round2dp, computeTripTotals, fuel modes (AUTO/FLAT_RATE/MOUNTAIN), road-allowance formula, profit distribution math, FIFO aging, ISO 6346 container validation, vehicle alerts, trip driver salary.
 tags: [calculations, vnd, fuel, allowance, salary, fifo, iso6346, vehicle-alerts]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T11:26:37.739Z
 sources:
   - id: openwiki-source-9157af8dcdd677c49fac3ce8
     resource: repo://backend/src/db/schema.ts

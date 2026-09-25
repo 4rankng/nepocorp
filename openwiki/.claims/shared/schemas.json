@@ -1,66 +1,106 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e63279d82f7f799042939c60bd04ca3177d47d491cefe4db17d64bc50dc6d2cf",
+  "pageVersion": "sha256:eb5cb084509e4b292082d385ea37c94936bc7c2515c7e1a30536e36f629f8fda",
   "claims": [
     {
       "id": "claim_b6b86dcc2af143808dabf4113a8e776d",
-      "statement": "The @tingting/shared package exposes constants/index.ts (TS enums + Vietnamese *_LABELS Record maps) and schemas/index.ts (Zod schemas + re-exported z.infer input types); every enum has a paired *_LABELS Record so the UI never hardcodes display strings.",
+      "statement": "The @tingting/shared package exposes constants/index.ts (TS enums, Vietnamese *_LABELS Record maps, helper constants, and API path groups re-exported from constants/api-paths.ts), schemas/index.ts (Zod schemas + re-exported z.infer input types, which re-exports the agent/chatbot-metrics/llm-settings/faq sub-barrels), types/index.ts (hand-written interfaces for response shapes), and navigation/pageCatalog.ts (PAGE_CATALOG); UI-facing enums have a paired *_LABELS Record so the UI never hardcodes display strings, while logic-only enums such as TxnType, DriverStatus, CustomerStatus, DebitNoteMode, and ExpenseEntryStatus deliberately have none.",
       "evidence": [
         {
           "resource": "repo://shared/src/constants/index.ts",
-          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+          "version": "repo-file-v1:sha256:bb78bcbac126894a04d50577837b30a769c15e30a1074d968fcc3ec2165fe25c"
         },
         {
-          "resource": "repo://shared/src/schemas/index.ts",
-          "version": "repo-file-v1:sha256:d16f0709edb1278462c8808433eb8055235b80004572a45aa9fd7a0215b4c62f"
+          "resource": "repo://shared/src/index.ts#L1-L59",
+          "version": "repo-lines-v1:sha256:69aa022765218e93a31db12d5edfd4a6b6f5eac5149822e45b969684c663323f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNzQ0MjkwOTg3MDNlNjM0Y2M2NjRlNDk3NWQxNGFjNDkxMjc0OWU1MTYyNGFiMWEzNTNiZTI0NzNmOWMxMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NGNmY2RkMDBlZGNkN2Q1YWQ4MjcyNTM0YTM3MmU2YjY0YmUwZDYzYmU4M2UxNmVmMmZlZmRjZjNmMjY2NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMjUwOGZjZWJlZDk2ZTVhZDc1NjEzNGZmMDA3OTBmZGFjZjhhZjQxN2UyZWVkY2Y3Y2U2NjY2OTU4OTEyZjIifQ"
+        },
+        {
+          "resource": "repo://shared/src/schemas/index.ts#L1-L26",
+          "version": "repo-lines-v1:sha256:590f2d6b7c0303b472f2154bb3c95576302a899790905212bdbdf7a32214e295:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkYmQzZTgyYTAwZWJjNDY5OGMyZTQzODY3YTAxOTg3YTNkYjcxN2NkMTFmNzhhMTE5ZTJlZjBkMjY0ZmRlNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMzFhMzdlZGI5YWEyZTA0ZTUyMjQ0MWVjZmU1ZWRlOThjMmY2ZTM0NjEwNjk5MTNlZmYxYTFkNDE5YTU1NDMifQ"
+        },
+        {
+          "resource": "repo://shared/src/types/index.ts#L10-L23",
+          "version": "repo-lines-v1:sha256:c02f1e5666e9d9852252214538fc2dbf04a89bc9476d5ac2f6b33697f9a1ef09:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxM2MzNDZkZDBhNDUxMGRmZTMyMmU2M2RiZjI5ZmJhOTQ4ZjJlM2NjMzU3NzM3NTQxYjJiOTM5MmUzN2Q4MzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyODg0YmFiZTNmYjlkMDg1MTE4N2M1NDg5NDdmMTQ2YWRkMDIxN2Q2OTE5YzM0OWI2MTZiMjllNGI2YjYyZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3ZjU4MGNjYWU1NjNjMTBjNjYzNjAwODFhNDhkOTRhMGI2ZTJiNDU1YmE0OGQ3ZmU2MDFmNjUxZjFhZmEwMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MDhkMDQ5NjdhZmU2M2ExYzk4MzE4N2NhOWY4MzFjYjMwMTA3YTM0MzI2ZmY4YTkxOWMzZjNiYmQwM2U2OWMifQ"
         }
       ]
     },
     {
       "id": "claim_989899a71846441693021326d3451019",
-      "statement": "Major enums include TripStatus (CREATED, IN_TRANSIT, COMPLETED, LOCKED, CANCELED), FuelMode (AUTO, FLAT_RATE), LoadingType (HANG, VO), Role (ADMIN, MANAGER, ACCOUNTANT, DRIVER, FORWARDER), TxnType (16 members including TRIP_REVENUE, PENALTY, UNLOCK_REVERSAL, SERVICE_FEE), TrailerType (20FT, 40FT), truck/trailer/driver/customer status, PenaltyStatus, VehicleComponent, VehicleScheduleKind/Status, TireStatus, AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus, NotificationType, CarrierType (OWN, EXTERNAL), SettlementMethod, ApprovalStatus, DebitNoteMode, TruckCapRole, WorkDayStatus (TRIP_DAY/STANDBY/PERSONAL_LEAVE/WEEKLY_OFF), SalaryConfirmationStatus.",
+      "statement": "Shared enums cover TripStatus (CREATED, IN_TRANSIT, COMPLETED, LOCKED, CANCELED), FuelMode (AUTO, FLAT_RATE), LoadingType (HANG, VO), Role (ADMIN, MANAGER, ACCOUNTANT, DRIVER, FORWARDER), TxnType (16 ledger types including TRIP_REVENUE, PENALTY, UNLOCK_REVERSAL, SERVICE_FEE), TrailerType (keys FT20/FT40 with values '20FT'/'40FT'), TruckStatus/TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus, VehicleComponent, VehicleScheduleKind/Status, the TIRE_STATUSES tuple with derived type TireStatus, AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus (IN_PROGRESS, COMPLETED), NotificationType (14 event types), CarrierType (OWN, EXTERNAL), SettlementMethod (COMPANY_DIRECT, FORWARDER_ADVANCE), ApprovalStatus (PENDING, APPROVED, REJECTED), DebitNoteMode (MONTHLY, PER_BATCH), and TruckCapRole (INVESTOR, DRIVER); WorkDayStatus and SalaryConfirmationStatus exist only as pgEnums in db/schema.ts with no shared-constants counterpart.",
       "evidence": [
         {
+          "resource": "repo://backend/src/db/schema.ts#L48-L48",
+          "version": "repo-lines-v1:sha256:5480e04788f5fc21728c9630d6caaf3bb1e760530b175c720f3aad59a9c31547:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ4MGUwNDc4OGY1ZmMyMTcyOGM5NjMwZDZjYWFmM2JiMWU3NjA1MzBiMTc1YzcyMGYzYWFkNTlhOWMzMTU0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ4MGUwNDc4OGY1ZmMyMTcyOGM5NjMwZDZjYWFmM2JiMWU3NjA1MzBiMTc1YzcyMGYzYWFkNTlhOWMzMTU0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmQwZGZiZDZlZDUzOGQ4NjExZDJkMTRmM2Y2ODY2Y2YyNTMzMDlhYzFhNzg0ZjUyYTRiMDM0NzBkMWNmYzRiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA4ODUwZmMwNDcwYTM1MmE3ZmI2NTU2MGE2MTllZTZmOGIzYzlkZTA0MGFjMjZhZDUxZGRmOTUwNzI3MzdjYyJ9"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L620-L620",
+          "version": "repo-lines-v1:sha256:d6878f39b49a769fa4b888244bc70fc8929bce664b5b0b4f612fb6a19c5aeefe:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY4NzhmMzliNDlhNzY5ZmE0Yjg4ODI0NGJjNzBmYzg5MjliY2U2NjRiNWIwYjRmNjEyZmI2YTE5YzVhZWVmZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY4NzhmMzliNDlhNzY5ZmE0Yjg4ODI0NGJjNzBmYzg5MjliY2U2NjRiNWIwYjRmNjEyZmI2YTE5YzVhZWVmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWE4OTMzM2ZhNDYyYzkxYThiYzI2MmU4NzVhODg3NjNhODY0YTcxZGU1MDY1MGIzOTM5MDE0N2I0MmM2YmZhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTZmZjQ0ZDIyMTYyZjgyNTlkMjg1OGU4YTJkZGMzNDQwZjAwODJlNTBjYTNiMzc4ZWFjYzY0ZjQwMWEwOTI2YiJ9"
+        },
+        {
           "resource": "repo://shared/src/constants/index.ts",
-          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+          "version": "repo-file-v1:sha256:bb78bcbac126894a04d50577837b30a769c15e30a1074d968fcc3ec2165fe25c"
         }
       ]
     },
     {
       "id": "claim_a05ed297a484449d9c9cb04c04a244eb",
-      "statement": "Helper constants include BILLABLE_TRIP_STATUSES = [COMPLETED, LOCKED], FINANCIAL_ROLES / isFinancialRole = [ADMIN, MANAGER, ACCOUNTANT], Casbin resource names (CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS, SALARY, TRACKING, TIRES, VEHICLE_SCHEDULES), FORWARDER_EXPENSE_TYPE_DEFAULTS, ANCILLARY_EXPENSE_TYPES, PUSH_RULES, AGENT_ROUTE_KEYS, ACKED_DIRECTIVE_KINDS, and admin API path constants CHATBOT_METRICS_PATHS / LLM_PROVIDERS / LLM_PROVIDER_MODELS / LLM_PROVIDER_LABELS / LLM_SETTINGS_PATHS / GPS_SETTINGS_PATHS / FAQ_ADMIN_PATHS.",
+      "statement": "constants/index.ts helper constants: BILLABLE_TRIP_STATUSES = [COMPLETED, LOCKED] marks trips whose revenue/AP has posted to the ledger and are billable on debit notes and carrier payment statements (P&L and profit distribution stay LOCKED-only by spec and must not use this set), FINANCIAL_ROLES / isFinancialRole = [ADMIN, MANAGER, ACCOUNTANT] for expense approvals and financial reports, FORWARDER_EXPENSE_TYPE_DEFAULTS (8 seed rows for the forwarder_expense_types config table), and PUSH_RULES whitelisting the only NotificationType values that wake a device via web push, each mapped to a driver/financial/all audience.",
       "evidence": [
         {
-          "resource": "repo://shared/src/constants/index.ts",
-          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+          "resource": "repo://shared/src/constants/index.ts#L208-L218",
+          "version": "repo-lines-v1:sha256:6aea6f9d4af59d1f787e442abb3b8a6d6eae8caa18e1dfc26b53f79504a628f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3NzNjNjM1NGI5NjU4MjkzZTIyNmQ3MGU5ZDYxNGQzYjUwOGM0YWI5Y2Q4NDMwZjk1YzJiNmI4MWZhYTI4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NTg1OGYwYjY2ZDZkNzdmNjc2YjljN2I4Zjk5NWY2YmZhMWI5OTRmZTQ2NTZjNzNhOGQ2YTE1MzU0YmU4YTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzNjA4MWRkZTlkY2M1OTliODk1YzQxMDY0ZWFmZGIzNDhhYjJlN2M3OWVjM2IxNmJjMDNiYzU4MmRjOTY3YTgifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L35-L41",
+          "version": "repo-lines-v1:sha256:135b85f2c526e69170f5ed2ed350009da8c0fcdb486a9b1b8017f1c32a1f7dba:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U5YTVjZDJhODc4NmE1ZThhMTNmYmFkM2EzZWVkMTc2YjIzMDA4ZGYxZWIyMTEyZjdjMTc1NTI3MzU2Y2JiMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjU1NThmNWRhMjA4ZWFhODVkMjM4M2FlMjhhNmQyZjQxZTIyZDYwZjBhMjJkZjU5ZmEyMzQ4NGYxNmU4NzBjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjlmNDI1NjdlNTEyYzQ5YzI2NWNjYjEyNjExNDM5OTU2NGM5OWYzZmY4YjdhMzEyMDNlM2JhNmY4ODdjNzk0YiJ9"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L366-L377",
+          "version": "repo-lines-v1:sha256:7c97f2f29d38207487d1ebb836dc2bf9c9648e6510d8396e4189e01115ab86a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2N2RhY2IxNzMyNGE2OTU1ZGM0MTdlNWM5M2UyZDg4MmE5M2NkMjI3MDhlNzY2MDFlYTNjN2ViNzg1ZmRjZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwZDJjMzM2OWZiZGEwMmZhMmY4NDA5ODQ5YjFkM2VhYzVlZjVkNjg0ZDQwMTZmOGYxMTIyNTFkNTgyMWY1M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxOWQxNmEwYmZjMGJlMmI5ZDA0NTNiYzRlNTUxOTcyNGRkNjA0ZmRmZmU0ZmVhNjdiOTFlOWQ0ZTRmN2JlMjEifQ"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L9-L15",
+          "version": "repo-lines-v1:sha256:5633ff056694b11e4243d5093156d173bd8cb685e7aa278a7057ce3619a11bc8:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWY5NTBmNDdiMmJlZjY5OWUxNjUwMTgyZTUyMzNkYWM0YTE0YzRhMmRmNzdmNWViMDM1NDBkYmUyOWNkNjU5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGVhNDA5MmRiYmYyNWYyNDEzY2JhN2YwMzRiYjU0N2VlMjQ1NTZhYmEyZjYyNTI3NDM2M2Q5ZTM5MWZhYzE0ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTdiYjQyMjY5ZjIwNWZiMjcwMjNhMjllZWVjZWY4ZTU4MTRhYjgwMTE0MWQwYzViNTBiOTg3YzA2NjkzNjNkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTExYmJkZWYwZWI5MmRlMTM5Yzg2NTJiZGVlMGZlMWZiMjMwNDFjYmRlZWVkM2E2YjczMTY2MDllZDg3YjQ5OCJ9"
         }
       ]
     },
     {
       "id": "claim_1c0d1a5dc9114c0ca3da6f49ff29ae43",
-      "statement": "Two custom Zod primitives are exported: numericMoney (union of number and string that transforms to a decimal-string with 2dp) and numericDecimal (same shape, higher precision for non-money numerics); major schemas cover Trip, payment/penalty/adjustment, auth, catalogs, suppliers/expenses, vehicle schedules, containers/seals/expenses/instructions, forwarder flow, tires, billing, commission/payout/offset, containers/ports/seals, Bách Khoa GPS, agent/chatbot, and FAQ.",
+      "statement": "schemas/index.ts exports two numeric primitives — numericMoney and numericDecimal, each a z.union([z.number(), z.string()]) that Number()-coerces and rejects NaN with a Vietnamese message (despite the names they yield plain numbers, not decimal strings) — plus private positive/nonNeg numeric, ''→null optional-field, offsetDateTime, and booleanish helpers and postgresSerialIdSchema (positive int capped at 2_147_483_647), and schemas covering trips/fuel allocations, billing documents + debit-note templates, payments/penalties/adjustments, auth/users, catalogs, suppliers/expenses, vehicle schedules, trip containers/seals/expenses/instructions, forwarder advances, tires, commission/payout/debt offset, container types/ports/seal types, Bách Khoa GPS parsing, and the re-exported agent/FAQ contracts.",
       "evidence": [
         {
-          "resource": "repo://shared/src/schemas/index.ts",
-          "version": "repo-file-v1:sha256:d16f0709edb1278462c8808433eb8055235b80004572a45aa9fd7a0215b4c62f"
+          "resource": "repo://shared/src/schemas/index.ts#L28-L62",
+          "version": "repo-lines-v1:sha256:0ef92e55c8c41ea49a016312f1acb2f61b5906e9fe89776d40568a6e00e26ee6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiYWQ5ZTYwNTIyNGUzM2Q4MzRjMTdiYzU5YjgwOWQ0ZjE1ODliZWJmMzZhYzgzODkwNWE3MTA2YTc0ZDFhNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZmM0ZjdkYjhkN2VhNjUzMTQyMjQ5NDVhMmVmODgzMjgwYmRlNmZmYWViNGNmNjg3YzRmN2VmZTE5ZjA5YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZTU1NjdkNWE5MDU2YTkyYTVhMjVjZGRhZGY5YWQ0OTk0NDcyMzQyMWFiZGFiOTRiZThjY2Y3NGM2Y2JhZTUifQ"
+        },
+        {
+          "resource": "repo://shared/src/schemas/index.ts#L832-L835",
+          "version": "repo-lines-v1:sha256:355baac6ddca5c5e5a3b78544367aa81cccb6a1dcd4c6c2b76f072e4dbb4180a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM5ODI2YjUxNWZiYTk3YzA1ZTNmNWM4MjZlYTI4OWRmMThiODA4ZTA4ZWI1ZjhkZGQ2MzNlYTc0MTkzMjQ3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTZkZDVkMjQyMTc1YzZjZjkxMzUwNGRkODQ0NmJlNDI5OWM5MDgyYTM0MjUyMDdhNjgxNzdhNWE3NTIzMWY5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQ4M2VlZjMyYjc3MjRmNTg5NDI4NmMwZWQ4ZjBhNDZmYWYzMWM2MzRhMmEwOGE3OWRjOWI4MmQ3NjM3OGIzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDJmZTBjZjFjZTA2NDliM2RiNDUyNGNiMTBjY2JjYzFkOGQwYTJkOTc3YWE0MmYzZjg4Y2E5M2UwNTU1OWY4MyJ9"
         }
       ]
     },
     {
       "id": "claim_9ad8b23a0ebb48618c12fd34fd5e3762",
-      "statement": "The z.infer pattern is preferred over hand-written interfaces — every schema has a paired `export type XxxInput = z.infer<typeof xxxSchema>` so backend handlers read req.body through xxxSchema.parse() (ZodError → 400 in globalErrorHandler) and use XxxInput for the service signature while the frontend re-imports the same XxxInput for form types.",
+      "statement": "The z.infer pattern is the stated convention (AGENTS.md: use z.infer<typeof XxxSchema> for input types rather than defining separate interfaces) — schemas/index.ts pairs each schema with `export type XxxInput = z.infer<typeof xxxSchema>`; backend handlers read req.body through xxxSchema.parse() and ZodError becomes a 400 carrying the first issue's message plus field path in globalErrorHandler; service signatures take the same XxxInput; the frontend re-imports identical types (e.g. vehicleScheduleClient types create() with CreateVehicleScheduleInput), while response shapes remain interfaces in types/index.ts that the schemas must mirror.",
       "evidence": [
         {
-          "resource": "repo://backend/src/middleware/errorHandler.ts",
-          "version": "repo-file-v1:sha256:acfd36a49265e030f918af9fefc526e9b7be37ae9ea64d70a023fe36cc172ebe"
+          "resource": "repo://AGENTS.md#L137-L140",
+          "version": "repo-lines-v1:sha256:1b9262ab01e9dbf66b337b1e1b1117df4080db19efc13ece7158535be7537eba:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJmZTUwMjY3ZmU4ZGM3OGJiYmY3NTI3ZmNlZjUzMjE2ZGMwNTRhMTk1N2U4YTg5NTk3YzMzNTkzMjAzYmQzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU4NWU3NzNmZGFmMmZjYTg3ZDI1NzE4NDUxYjU2OWJjYzNlODFhMTliMDRkNWZjOTEzNzg0MWQxYWU1YjU2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGY5NGNiMDc4MjAxNzQ3NjE0Mjg5MDhiOGIxNjQwMTNiOTZkMDljNmJlMjAyOGUwNDI2ZmFkMDNhMzYwNWViNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI5OTk0OWExMTI1NWUyNmQ4NGEwNDc2Njc5ZWIxOTcwMzVmMmY5ZDg4YzFjY2NhOWFkM2IxMzAzNTM0YWMwMSJ9"
         },
         {
-          "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "resource": "repo://backend/src/middleware/errorHandler.ts#L18-L33",
+          "version": "repo-lines-v1:sha256:036281ea1a4b731a9da23cb11a1c5a42fd8a70da5f4ef875db40ef97cf4ce302:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4Njc1OGJjMTk3MmExNzkyYTc2OTI0MTU2ZmU5OWRiN2MwMjViZmRhMjI5Mzc4OWZmMWJhMzA4NjYxMDM0OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2ZTUxZTBkMDA4ZjE2YzdhMmI3MDAyZThiYzQ2NTQ4N2FlMmY1YTMzYjA4ZjczZjUzNWQwMGJmMjhiODdmZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzNWYzMjYyYjNiYzZjYjljMTNkYTdkNDA1MzZjMWE5ZmY1YjNkMDVkNzQ5ZWQwNTkxNDZlMDM5OTFjN2Y2NzYifQ"
         },
         {
-          "resource": "repo://shared/src/schemas/index.ts",
-          "version": "repo-file-v1:sha256:d16f0709edb1278462c8808433eb8055235b80004572a45aa9fd7a0215b4c62f"
+          "resource": "repo://docs/code-standards.md#L8-L10",
+          "version": "repo-lines-v1:sha256:e237420df610bdc338cd978efc292d4d5d60963646397577cf78dce4045293cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkyMDczM2VmNWYyMTExOWVmNWNhYTM4ZDc0NDIwYTgxODk4MGMwMTI2YmM3NjZlOTYwZWFmNGY3ZTc5ZDdlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVlMGUyOWE0ZjYzZmNmZWVlMmQ1MjExMmNmNmJkNzMyNWM0ZWE5Y2FmNzU5MDJmMDdiYTkxMTVkMGI4MWM2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWEwNzJiOTM2MWI2YTRhNjk4OTlkZDU0ZDQ1NWUwZDliZDgzNDBjOGY5ZmVjZDRlOGE4NjhiYWM3YjE5YjhlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Y2ZjhhNTQwY2MyOTUyYmZhMTc3YjNmOWNlMjUwZjY4YzlhOTE2Mzc5ZTAxNjI0OGYxZjk5MmUwMGUzZjA2MiJ9"
+        },
+        {
+          "resource": "repo://frontend/src/api/vehicleScheduleClient.ts#L1-L35",
+          "version": "repo-lines-v1:sha256:01a7bf30c40140c912c951f23db7eb01120eec70f9c4f5e14463312171bc04b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0YzE3N2U3OTI4OTE3MzQxNjRkOWY5ZTZiY2Y4NzgyYmI3OTUzNjRiN2FlNWQ3NzVjMGJmZmI3NGJhNDk3MmMifQ"
+        },
+        {
+          "resource": "repo://shared/src/schemas/index.ts#L1083-L1122",
+          "version": "repo-lines-v1:sha256:e8e897a19a1f7923e40b96023c20c012492f6f6d314b6f7426f7b2f5425fcaa8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNjJjZjhjM2M2ODM2ZjEyNWJhZDMzYTgxY2U2MzFjOWRlZjE4MzZhNmRjM2YzMGY1OTFkZWM2MDFkMTM5YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZWQzOWIyYTY1Zjk5MjcwZTFhZmVmZTFmMGZhMmFkYWI1YjMxNGIxMWVkNjk3ZTIwZjIzYjdkYjczODFkZmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NmMyMjg2OGU2ZjQyMGNiODY1MDY5ODFiMDBjOGExNTQ2ZjY2MDM5MGJlYjczZmQ4MTk4OTgzZTJiMDUzOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3M2ZmY2EzMmUxMmQ1MTYxZGFkZGY2YmU2ZTc5NDY3ODQxYjEyZTVkMzcyZjE1YTQ2NjM1MDliNmYwYTI2MzQifQ"
         }
       ]
     },
@@ -92,7 +132,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

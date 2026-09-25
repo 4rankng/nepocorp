@@ -77,7 +77,7 @@ shared/      Shared types, schemas, constants, calculations
 
 ## OpenWiki
 
-See [AGENTS.md](AGENTS.md) for OpenWiki agent instructions.
+@AGENTS.md
 
 <!-- OPENWIKI:END -->
 

@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-09-21T11:47:54.629Z",
+  "updatedAt": "2026-09-25T02:46:51.671Z",
   "command": "update",
-  "model": "host-agent/opencode",
+  "model": "glm-5.3-flash",
   "status": "interrupted",
   "language": "en"
 }
