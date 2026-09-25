@@ -85,10 +85,16 @@
  * over the base translucent card background without `!important`.
  * ========================================================================== */
 
-/* ── Filter bar ── */
+/* ============================================================================
+ * N4-rebuild: Search + date-range filter bar.
+ * REAL CSS GRID (not flex) so the date pair is one grid item that cannot
+ * float off as a separate panel at any viewport. ≥1280 = N-col auto-fit,
+ * 768-1279 = 2-col, <768 = 1-col stack with the date pair still 2-col.
+ * ========================================================================== */
+
 .fwd-trip-filters {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(260px, auto);
   align-items: center;
   gap: 12px;
   margin: 0 0 16px;
@@ -98,8 +104,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1 1 280px;
-  min-width: 220px;
+  min-width: 0;
   height: var(--control-h);
   min-height: var(--control-h);
   padding: 0 10px;
@@ -121,17 +126,26 @@
   color: var(--ink, var(--fg, #111827));
 }
 
+/* Date pair — a CSS GRID item containing 2 dates side-by-side. Transparent,
+   no border, no own background — the pair blends into the filter bar so it
+   can never float off as a separate white panel at any viewport. */
 .fwd-trip-filters__dates {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 .fwd-trip-filters__date {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-size: var(--fs-sm);
   color: var(--ink-3, var(--fg-3, #6b7280));
 }
@@ -142,6 +156,8 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.85);
+  width: 100%;
+  min-width: 0;
 
   height: var(--control-h);
   min-height: var(--control-h);
@@ -151,6 +167,21 @@
 
 .fwd-trip-filters__date input:focus {
   border-color: var(--accent, #00B14F);
+}
+
+/* Tablet 768-1279: keep 2-col grid (search + pair side-by-side). */
+@media (max-width: 1279px) and (min-width: 768px) {
+  .fwd-trip-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Mobile <768: stack 1-col, but date pair stays 2-col on a single row. */
+@media (max-width: 767px) {
+  .fwd-trip-filters {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 }
 
 .fwd-row-legend {
@@ -198,23 +229,12 @@
   color: var(--success, #00B14F);
 }
 
+/* Phone (<640): legend wraps to column; filter bar already stacks via the
+   767px breakpoint above — nothing flex-specific to undo here. */
 @media (max-width: 640px) {
-  .fwd-trip-filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .fwd-trip-filters__search {
-    flex: 1 1 auto;
-    min-width: 0;
-    height: var(--control-h);
-    min-height: var(--control-h);
-  }
   .fwd-trip-filters__search input {
     height: 100%;
     min-height: 0;
-  }
-  .fwd-trip-filters__dates {
-    justify-content: space-between;
   }
 
   .fwd-row-legend {

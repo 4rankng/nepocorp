@@ -139,6 +139,10 @@
 
 /* ── Filter Bar ─────────────────────────────────────────────────────────── */
 
+/* REAL CSS GRID rebuild (kanban 20260925_8).
+   ≥1280 = N-col auto-fit; 768-1279 = 2-col; <768 = 1-col stack with the
+   date pair still 2-col inside the bar. Pair wrapper is a transparent grid
+   item so it cannot float off as a separate white panel. */
 .expense-filter-bar {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -154,6 +158,20 @@
 
 .expense-filter-bar:focus-within {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+/* Date pair — a CSS GRID item containing 2 dates side-by-side. Transparent,
+   no border, no own background. Blends into the filter bar at every viewport. */
+.expense-filter-bar__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 .expense-filter-bar__select,
@@ -194,7 +212,7 @@
 }
 
 .expense-filter-bar__date {
-  min-width: 140px;
+  min-width: 0;
   padding-right: 12px;
   background-image: none;
 }
@@ -211,7 +229,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 36px;
+  height: var(--control-h);
+  min-height: var(--control-h);
   padding: 0 14px;
   border-radius: 10px;
   font-size: var(--fs-xs);
@@ -222,6 +241,7 @@
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
+  justify-self: end;
 }
 
 .expense-filter-bar__reset:hover {
@@ -505,6 +525,8 @@
     gap: 12px;
   }
 
+  /* Tablet 768-1023: 2-col grid; date pair stays 2-col inside its own
+     grid item so it never breaks apart or floats to its own panel. */
   .expense-filter-bar {
     padding: 12px;
     gap: 10px;
@@ -516,12 +538,17 @@
     min-width: 0;
   }
 
+  .expense-filter-bar__pair {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .expense-filter-bar__divider {
     display: none;
   }
 
   .expense-filter-bar__reset {
     justify-content: center;
+    justify-self: stretch;
   }
 }
 
@@ -637,13 +664,20 @@
     line-height: 1.35;
     margin-top: 1px;
   }
+}
 
+@media (max-width: 767px) {
   .expense-list-page .expense-filter-bar {
     padding: 10px;
     gap: 8px;
     border-radius: 14px;
     margin-bottom: 12px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* kanban 20260925_8: <768 stack 1-col, pair stays 2-col inside. */
+    grid-template-columns: 1fr;
+  }
+  /* Pair stays 2-col on phone so the dates share one row (kanban 20260925_8). */
+  .expense-list-page .expense-filter-bar__pair {
+    grid-template-columns: 1fr 1fr;
   }
   .expense-list-page .expense-filter-bar__select,
   .expense-list-page .expense-filter-bar__date {
@@ -662,7 +696,7 @@
     min-height: 44px;
     padding: 0 11px;
     font-size: var(--fs-xs);
-    grid-column: 1 / -1;
+    justify-self: stretch;
   }
 
   .expense-list-page .mobile-table-wrap {

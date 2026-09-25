@@ -322,28 +322,33 @@ export default function ExpenseListPage() {
 
         <div className="expense-filter-bar__divider" />
 
-        <input
-          type="date"
-          name="expenseDateFrom"
-          aria-label="Từ ngày"
-          className="expense-filter-bar__date"
-          value={dateFrom}
-          min={monthRange.start}
-          max={monthRange.end}
-          onChange={e => { setDateRange(current => ({ ...current, monthKey, dateFrom: e.target.value })); setPage(1); }}
-          placeholder="Từ ngày"
-        />
-        <input
-          type="date"
-          name="expenseDateTo"
-          aria-label="Đến ngày"
-          className="expense-filter-bar__date"
-          value={dateTo}
-          min={monthRange.start}
-          max={monthRange.end}
-          onChange={e => { setDateRange(current => ({ ...current, monthKey, dateTo: e.target.value })); setPage(1); }}
-          placeholder="Đến ngày"
-        />
+        {/* Date pair — wrapped as ONE grid item containing 2 dates
+            side-by-side. Transparent / borderless so it cannot float off
+            as a separate white panel at any viewport (kanban 20260925_8). */}
+        <div className="expense-filter-bar__pair" role="group" aria-label="Khoảng ngày">
+          <input
+            type="date"
+            name="expenseDateFrom"
+            aria-label="Từ ngày"
+            className="expense-filter-bar__date"
+            value={dateFrom}
+            min={monthRange.start}
+            max={monthRange.end}
+            onChange={e => { setDateRange(current => ({ ...current, monthKey, dateFrom: e.target.value })); setPage(1); }}
+            placeholder="Từ ngày"
+          />
+          <input
+            type="date"
+            name="expenseDateTo"
+            aria-label="Đến ngày"
+            className="expense-filter-bar__date"
+            value={dateTo}
+            min={monthRange.start}
+            max={monthRange.end}
+            onChange={e => { setDateRange(current => ({ ...current, monthKey, dateTo: e.target.value })); setPage(1); }}
+            placeholder="Đến ngày"
+          />
+        </div>
 
         {hasFilters && (
           <button className="expense-filter-bar__reset" onClick={resetFilters}>
