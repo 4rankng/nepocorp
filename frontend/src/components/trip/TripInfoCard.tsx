@@ -199,14 +199,18 @@ export function TripInfoCard(props: TripInfoCardProps) {
         <Field label="Ngày khởi hành" required controlId="departureDate">
           <input id="departureDate" name="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
         </Field>
-        <div className="trip-info-card__group">Container & thuế</div>
-        <Field label="Số lượng cont" required controlId="containerCount">
-          <input id="containerCount" name="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} required />
-        </Field>
-        <Field label="Loại container" required controlId="plannedContainerTypeId">
-          {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId', true)}
-          <span className="tc-field-hint">Số container/seal cập nhật sau</span>
-        </Field>
+        <div className="trip-info-card__group">Container &amp; thuế</div>
+        {/* Count is a 1–10 number — it never earns half a row; the container
+            type select takes the remaining width (20260925 design pass). */}
+        <div className="trip-info-card__pair">
+          <Field label="Số lượng cont" required controlId="containerCount">
+            <input id="containerCount" name="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} required />
+          </Field>
+          <Field label="Loại container" required controlId="plannedContainerTypeId">
+            {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId', true)}
+            <span className="tc-field-hint">Số cont/seal nhập sau</span>
+          </Field>
+        </div>
 
         {/* VAT rate */}
         <Field label="Thuế VAT" controlId="vatRate">

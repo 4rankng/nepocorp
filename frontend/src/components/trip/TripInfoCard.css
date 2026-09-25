@@ -21,6 +21,31 @@
   min-width: 0;
 }
 
+/* Related short field + wide select share one row at every viewport: the
+   count never earns a full track, the select absorbs the rest. */
+.trip-info-card__pair {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: minmax(84px, 120px) minmax(0, 1fr);
+  gap: 16px;
+}
+.trip-info-card__pair > .field {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+/* A wrapping label must not push one control below its row neighbour — same
+   contract as .tc-form-row: fields borrow shared label/control tracks.
+   Engines without subgrid keep top-aligned labels. */
+@supports (grid-template-rows: subgrid) {
+  .trip-info-card__grid > .field,
+  .trip-info-card__pair > .field {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 3;
+  }
+}
+
 .trip-info-card__group {
   grid-column: 1 / -1;
   margin-top: 6px;
@@ -51,25 +76,13 @@
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
     gap: 10px;
   }
-  .trip-info-card__grid .field {
-    position: relative;
+  .trip-info-card__pair {
+    grid-column: 1 / -1;
+    gap: 10px;
   }
-  .trip-info-card__grid .field:has(> .tc-field-hint) > label,
-  .trip-info-card__grid .field:has(> .tc-field-hint) > .tc-field-label {
-    padding-right: 58%;
-    box-sizing: border-box;
-  }
-  .trip-info-card__grid .field > .tc-field-hint {
-    position: absolute;
-    top: 0;
-    right: 0;
-    max-width: 56%;
-    margin-top: 0;
-    text-align: right;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  /* Field hints flow UNDER their control on phones (subgrid track 3): the
+     old top-right pin collided with wrapped labels and force-truncated
+     every hint past ~9 characters. */
 }
 
 /* External-partner margin preview — a soft inset well inside the white card. */

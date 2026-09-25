@@ -714,6 +714,19 @@
   .bucket__count { font-size: var(--fs-2xs); }
 }
 
+/* iOS WebKit renders <input type=date> with its own native control metrics —
+   value text at ~17-20px and an oversized box regardless of author font-size.
+   Dropping the native appearance makes it a plain box that honours the token
+   scale (.input supplies size/height). Scoped to iOS like the other
+   WebKit-specific normalizations; desktop pickers are untouched. */
+@supports (-webkit-touch-callout: none) {
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: var(--control-h);
+  }
+}
+
 /* Safari zooms focused editable fields below 16px. Scope the exception to
    FOCUS on iOS text entry only: at rest, inputs/textareas follow the token
    scale like every other control (button-based selects and labels never
