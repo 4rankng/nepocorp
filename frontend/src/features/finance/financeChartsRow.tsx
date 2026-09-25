@@ -45,7 +45,7 @@ export function FinanceChartsRow({
   return (
     <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="fade-up-3 finance-charts-row">
       {/* Revenue trend */}
-      <div className="dash-wf" style={{ flex: '2 1 400px', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="dash-wf finance-charts-row__main" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <div className="wf-card wf-chart" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div className="wf-card-h">
             <div>
@@ -91,7 +91,7 @@ export function FinanceChartsRow({
       </div>
 
       {/* Right column: cost pie + top trucks stacked */}
-      <div className="panel" style={{ padding: '16px 20px', flex: '1 1 280px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div className="panel finance-charts-row__side" style={{ padding: '16px 20px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
         {/* Cost pie */}
         <div>
           <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>

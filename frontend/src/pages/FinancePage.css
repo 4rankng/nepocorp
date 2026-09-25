@@ -75,6 +75,11 @@
 /* Category totals remain visible beside their labels without inheriting the
    global comparison-table minimum width. */
 .finance-category-scroll { min-height: 0; }
+/* Charts row columns — flex lives in CSS (not inline) so the phone media
+   query can neutralise the desktop flex-bases: in a column row, basis
+   280px/400px become hard heights that clipped the cost panel. */
+.finance-page .finance-charts-row__main { flex: 2 1 400px; }
+.finance-page .finance-charts-row__side { flex: 1 1 280px; }
 .finance-category-table {
   min-width: 0;
   table-layout: fixed;
@@ -191,8 +196,12 @@
   .finance-page .finance-charts-row {
     flex-direction: column;
   }
-  .finance-page .finance-charts-row > .panel {
-    flex: 1 1 auto;
+  /* Column layout turns the desktop flex-bases into HEIGHTS: flex-basis
+     280px clamped the cost panel (cropping its legend) and 400px inflated
+     the revenue wrapper. Natural height on phones. */
+  .finance-page .finance-charts-row__main,
+  .finance-page .finance-charts-row__side {
+    flex: 0 0 auto;
     min-width: 0;
   }
   .finance-page .finance-revenue-chart {
