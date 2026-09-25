@@ -443,13 +443,21 @@ tbody tr {
   transition: background 150ms ease;
 }
 tbody tr.is-clickable { cursor: pointer; }
-tbody tr:hover td {
-  background-color: var(--surface-accent);
+/* Hover fill only for real pointers: iOS keeps :hover stuck after a tap, so
+   an entire mobile table-card stayed mint until the next tap elsewhere
+   (fleet tires, 20260925). Touch feedback is the :active rule below. */
+@media (hover: hover) {
+  tbody tr:hover td {
+    background-color: var(--surface-accent);
+  }
+  /* Explicitly override sticky td cells on hover to ensure sync */
+  tbody tr:hover td[style*="position: sticky"],
+  tbody tr:hover td.sticky {
+    background-color: var(--surface-accent) !important;
+  }
 }
-/* Explicitly override sticky td cells on hover to ensure sync */
-tbody tr:hover td[style*="position: sticky"],
-tbody tr:hover td.sticky {
-  background-color: var(--surface-accent) !important;
+tbody tr:active td {
+  background-color: var(--surface-2);
 }
 tbody tr:last-child td { border-bottom: none; }
 

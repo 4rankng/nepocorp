@@ -1000,6 +1000,24 @@
   .fleet-page .m-card__row .fleet-tire-link {
     margin-left: auto;
   }
+  /* Single-line guarantee: grid cannot stack label/value the way mobile
+     engines occasionally do with block children in a wrapping flex row, and
+     the value ellipsises instead of squeezing against the card edge. */
+  .fleet-page .m-card__row {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+  .fleet-page .m-card__row-value,
+  .fleet-page .m-card__row > *:last-child {
+    justify-self: end;
+    text-align: right;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   /* Shrink the panel-head icon for the 3 fleet panels (trucks / trailers /
      drivers) — matches the penalty-page mobile sizing. */
   .fleet-page .fleet-card-icon {
