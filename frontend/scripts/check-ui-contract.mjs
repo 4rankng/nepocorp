@@ -37,6 +37,13 @@ async function visit(directoryUrl) {
       || /width\s*:\s*4px\s*;[\s\S]{0,48}height\s*:\s*32px/i.test(css)) {
       failures.push(`${displayPath}: legacy 4x32 status rail`);
     }
+    // Centralized type scale: literal px font sizes are legal only in the
+    // token file itself and in pinned paper-size document renderers.
+    const fontPxExempt = displayPath.endsWith('styles/tokens.css')
+      || displayPath.endsWith('debit-note-template-editor.css');
+    if (!fontPxExempt && /font-size:\s*\d+(?:\.\d+)?px/i.test(css)) {
+      failures.push(`${displayPath}: hardcoded font-size px — use var(--fs-*) tokens`);
+    }
   }));
 }
 
@@ -117,6 +124,17 @@ const responsiveCss = await readFile(
   new URL('../src/styles/responsive.css', import.meta.url),
   'utf8',
 );
+// iOS zoom exception (kanban 20260925): must stay focus-scoped and read its
+// size from the centralized token — never a literal, never at rest.
+if (!/--fs-ios-focus:\s*16px;/.test(tokenCss)) {
+  failures.push('styles/tokens.css: iOS focus exception must stay centralized as --fs-ios-focus');
+}
+const iosFocusIdx = responsiveCss.indexOf('@supports (-webkit-touch-callout: none)');
+const iosFocusBlock = iosFocusIdx >= 0 ? responsiveCss.slice(iosFocusIdx) : '';
+if (!/#root input:not\(\[type="checkbox"\]\):not\(\[type="radio"\]\):focus,/.test(iosFocusBlock)
+  || !/font-size:\s*var\(--fs-ios-focus\)/.test(iosFocusBlock)) {
+  failures.push('styles/responsive.css: iOS zoom exception must be focus-scoped and tokenized');
+}
 const phoneBlockStart = responsiveCss.indexOf('@media (max-width: 640px)');
 const phoneCss = phoneBlockStart >= 0 ? responsiveCss.slice(phoneBlockStart) : '';
 const phoneControlSelectors = [

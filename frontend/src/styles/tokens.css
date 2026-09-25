@@ -318,6 +318,11 @@
   --fs-section: var(--fs-lg);
   --fs-page-title: var(--fs-2xl);
 
+  /* iOS WebKit auto-zooms focused editable fields below 16px. Single source
+     for that exception; responsive.css applies it only WHILE FOCUSED so
+     at-rest text keeps the token scale. */
+  --fs-ios-focus: 16px;
+
   --fw-light:    300;
   --fw-regular:  400;
   --fw-medium:   500;

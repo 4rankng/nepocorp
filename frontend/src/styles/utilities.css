@@ -15,7 +15,7 @@
 [class$="__crumbs"] {
   margin: 2px 0 10px;
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--fs-md);
 }
 [class$="__crumbs"] ul { gap: 4px; }
 

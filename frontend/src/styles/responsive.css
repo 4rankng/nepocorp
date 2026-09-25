@@ -714,19 +714,21 @@
   .bucket__count { font-size: var(--fs-2xs); }
 }
 
-/* Safari zooms focused editable fields below 16px. Limit this exception to
-   iOS text entry, not button-based selects, options, labels or every phone. */
+/* Safari zooms focused editable fields below 16px. Scope the exception to
+   FOCUS on iOS text entry only: at rest, inputs/textareas follow the token
+   scale like every other control (button-based selects and labels never
+   inflate). Size lives in --fs-ios-focus (tokens.css). */
 @supports (-webkit-touch-callout: none) {
   @media (max-width: 640px) {
-    #root input:not([type="checkbox"]):not([type="radio"]),
-    .modal input:not([type="checkbox"]):not([type="radio"]),
-    .drawer input:not([type="checkbox"]):not([type="radio"]),
-    #root textarea,
-    .modal textarea,
-    .modal .modal__body textarea.input,
-    .drawer textarea,
-    .drawer .drawer__body textarea.input {
-      font-size: 16px;
+    #root input:not([type="checkbox"]):not([type="radio"]):focus,
+    .modal input:not([type="checkbox"]):not([type="radio"]):focus,
+    .drawer input:not([type="checkbox"]):not([type="radio"]):focus,
+    #root textarea:focus,
+    .modal textarea:focus,
+    .modal .modal__body textarea.input:focus,
+    .drawer textarea:focus,
+    .drawer .drawer__body textarea.input:focus {
+      font-size: var(--fs-ios-focus);
     }
   }
 }
