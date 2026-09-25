@@ -1,4 +1,4 @@
-import { Check, Loader2, Plus, Upload, X } from 'lucide-react';
+import { Check, Loader2, Plus, Trash2, Upload, X } from 'lucide-react';
 import { formatDate } from '../lib/format';
 import type { ExpenseWithRefs } from '@tingting/shared';
 import { EXPENSE_PHOTO_MAX_BYTES, type FormState } from './expense-entry-utils';
@@ -53,8 +53,8 @@ export function ExpenseBasicFields({ form, errors, isEdit, existingExpense, set 
   </>;
 }
 
-interface PhotoAsideProps { photos: { id: number; url: string }[]; uploading: boolean; isEdit: boolean; submitting: boolean; handleBack: () => void; removePhoto: (index: number) => void; handlePhotoUpload: (files: FileList) => void }
-export function ExpensePhotoAside({ photos, uploading, isEdit, submitting, handleBack, removePhoto, handlePhotoUpload }: PhotoAsideProps) {
+interface PhotoAsideProps { photos: { id: number; url: string }[]; uploading: boolean; isEdit: boolean; submitting: boolean; handleBack: () => void; removePhoto: (index: number) => void; handlePhotoUpload: (files: FileList) => void; onDelete?: () => void; deleting?: boolean }
+export function ExpensePhotoAside({ photos, uploading, isEdit, submitting, handleBack, removePhoto, handlePhotoUpload, onDelete, deleting }: PhotoAsideProps) {
   return <>
                 <div className="expense-layout__aside">
                   <div className="expense-panel expense-panel--photo">
@@ -111,6 +111,20 @@ export function ExpensePhotoAside({ photos, uploading, isEdit, submitting, handl
                   </div>
 
                   <div className="expense-actions">
+                    {isEdit && onDelete && (
+                      <button
+                        type="button"
+                        className="btn btn--danger expense-btn-delete"
+                        onClick={onDelete}
+                        disabled={deleting || submitting}
+                      >
+                        {deleting ? (
+                          <><Loader2 size={18} className="spin" /> Đang xóa…</>
+                        ) : (
+                          <><Trash2 size={18} /> Xóa</>
+                        )}
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn--secondary expense-btn-cancel"

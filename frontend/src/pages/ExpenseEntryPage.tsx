@@ -32,6 +32,7 @@ export default function ExpenseEntryPage() {
   const [expenseType, setExpenseType] = useState<'COMPANY' | 'TRUCK' | 'TRAILER'>('COMPANY');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [pageError, setPageError] = useState('');
   const [photos, setPhotos] = useState<{ id: number; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -368,6 +369,29 @@ export default function ExpenseEntryPage() {
     }
   };
 
+  // Delete lives on the edit screen (row taps stay navigation-only). Backend
+  // soft-deletes and, for UNPAID rows, posts the matching ledger reversal.
+  const handleDelete = async () => {
+    const ok = await confirm('Xóa phiếu chi phí này? Dữ liệu không thể khôi phục.', {
+      variant: 'danger',
+      confirmLabel: 'Xóa chi phí',
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await api.delete(FINANCIAL.EXPENSE(Number(id)));
+      toast({ kind: 'success', message: 'Đã xóa chi phí.' });
+      // Same bare-prefix invalidation as handleSubmit: every cached expenses
+      // page must refetch so the removed row disappears from all filter views.
+      // eslint-disable-next-line @tingting/no-bare-query-key
+      await queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      navigate('/expenses');
+    } catch (err: unknown) {
+      setPageError(err instanceof Error ? err.message : 'Lỗi xóa chi phí');
+      setDeleting(false);
+    }
+  };
+
   if (isEdit && loadingExpense) {
     return <ExpenseLoading />;
   }
@@ -469,7 +493,7 @@ export default function ExpenseEntryPage() {
               </div>
             </div>
 
-            <ExpensePhotoAside photos={photos} uploading={uploading} isEdit={isEdit} submitting={submitting} handleBack={handleBack} removePhoto={removePhoto} handlePhotoUpload={handlePhotoUpload} />
+            <ExpensePhotoAside photos={photos} uploading={uploading} isEdit={isEdit} submitting={submitting} handleBack={handleBack} removePhoto={removePhoto} handlePhotoUpload={handlePhotoUpload} onDelete={isEdit ? handleDelete : undefined} deleting={deleting} />
           </div>
         </form>
       </div>
