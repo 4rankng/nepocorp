@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:25ed70aba7ea35a743e72b193a47a33c9b1e254bee0f14fa29ba0fb7947aaf61",
+  "pageVersion": "sha256:ee47635f6bd09b72fa7679e88de33a5247e0b2c7d32f141788c38ec4384a8a01",
   "claims": [
     {
       "id": "claim_5bc9d16b695240b5a32fc53cd20ab88f",
@@ -14,11 +14,15 @@
     },
     {
       "id": "claim_533b40a5da834275b664d02bd46d59d5",
-      "statement": "Data-fetch hooks wrap TanStack Query by domain — useCatalogs reads the bootstrap catalogs; useAuditLogs reads audit logs; driver/forwarder/financial/salary/tire/notification/dashboard queries are split into per-domain files (useDriverQueries, useForwarderQueries, useFinancialQueries, useSalaryQueries, useTireQueries, useNotificationQueries, useDashboardQueries); useChatbotMetrics, useAppSettings, useGpsSettings, useLlmSettings cover admin-only surfaces; useQueries is a generic data-fetch helper and useCRUD is a generic CRUD factory against the API client.",
+      "statement": "Data-fetch hooks wrap TanStack Query by domain — useCatalogs reads the bootstrap catalogs; useAuditLogs reads audit logs; driver/forwarder/financial/salary/tire/notification/dashboard queries are split into per-domain files (useDriverQueries, useForwarderQueries, useFinancialQueries, useSalaryQueries, useTireQueries, useNotificationQueries, useDashboardQueries); useChatbotMetrics, useAppSettings, useGpsSettings, useLlmSettings cover admin-only surfaces; useQueries.ts re-exports the domain query modules for pages; useCRUD is a generic (now deprecated) CRUD factory whose writes invalidate every catalog key via invalidateAllCatalogs.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/hooks/useCRUD.ts",
-          "version": "repo-file-v1:sha256:4ded73e1eb85b3dc99a35bfcf2a6593348f42b7cabe04082f7ea00f1d2c981bf"
+          "resource": "repo://frontend/src/api/keys.ts#L422-L437",
+          "version": "repo-lines-v1:sha256:305ba3320ce51b8b5a9ec78f5ab9c069a8136077e11dcf35c8f4d6d7e7130267:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjNDFjMzEzMTAyMTU0YzAyNzQ4OGQ2NzNlZjE3NzRhN2FjMWMzNDM2ZDRkYjUzMzdhNWMzYmQ1NDJiMmJmNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/use-trip-form-submit.ts",
+          "version": "repo-file-v1:sha256:940f2c356414b89987183d92ef8e19c872fe0e1e31dc21fc974887411e78bf3a"
         },
         {
           "resource": "repo://frontend/src/hooks/useCatalogs.ts",
@@ -35,32 +39,40 @@
         {
           "resource": "repo://frontend/src/hooks/useForwarderQueries.ts",
           "version": "repo-file-v1:sha256:fe497f2ba5d7648fa6c12e0593c93f2f99a0f4ddb1e23273a24131b614fea1d3"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useQueries.ts#L1-L6",
+          "version": "repo-lines-v1:sha256:86eecbee9a0ce7683df2ee7dbe1e496ef13e12f95b93d6e48243e0a02d61435b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWZjYTIyZjIyYTUyOGJjNjE5YTI2OWFkNGZiZDAxOThhNzkzZWZkNzJkNDUwODE1NWFiZGQyMzUzYzI0MTAzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFkOGI4NWMwMmVmMzdkZmMwNzA3OWI4NWQ0NzQ4YWQ3ODRmNWQ0YmMwOTU2YTA1NjRiYjVmNWVkYjJlMTlmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
     {
       "id": "claim_05a4694f90fc4423960fd87c5d0eece3",
-      "statement": "Form hooks orchestrate the trip-form state machine: useTripForm owns legs/fuel mode/allocations/allowance/revenue/expenses/instructions and validates against backend Zod schemas; useTripFormContext.tsx provides the React context so deeply-nested trip cards under components/trip/ can read+dispatch; use-trip-form-submit runs the submit pipeline and invalidates caches; tripFormDispatchUtils provides reducer-style dispatch helpers; useDirtyGuard warns on back-navigation.",
+      "statement": "The trip form is a layered pipeline: useTripForm.ts is a thin facade that composes useTripFormState (owns all useState declarations, edit-mode seeds, and resetForm/resetToggle) with useTripFormDispatch (derived fuel/toll/profit estimates, route/pricing/driver-salary autofill effects, and the submit wiring) and flattens both into one return object; useTripFormContext.tsx provides the React context so trip cards under components/trip/ read+dispatch; tripFormDispatchUtils supplies pure helpers (carrier-conditional required-field progress, container-count clamp, fallback legs); useDirtyGuard warns on back-navigation.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/hooks/tripFormDispatchUtils.ts",
-          "version": "repo-file-v1:sha256:b524b02dc877256a25a0e7e551558ef51aede8426129a5c49e83c9f7204bd16b"
+          "resource": "repo://frontend/src/hooks/tripFormDispatchUtils.ts#L29-L90",
+          "version": "repo-lines-v1:sha256:9e954d793d3a9703e2d57f1957f31f0320ad74f049528469db096577e38dc69e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5YTI0NmI1N2M2NjBhYzI3ZDkxYjk5YjZkODU1ZDAxZmEzZmI0Mjk5MDc0YTZhMmRlMDVhODkzZWU1YmZlY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiMmI2N2FmNjYzMDVhNTQ0OWE0NzZjNTM0MTEwYzQ1ZTVlNjIyNjk2ODk1NmIzZmQ2ZGMyYzVhNWVjZmYyZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/src/hooks/use-trip-form-submit.ts",
-          "version": "repo-file-v1:sha256:57a243dfb468bce4abc28e0246ced9c11ea97201ab68e4f7f2f5df8fe52374da"
+          "resource": "repo://frontend/src/hooks/useDirtyGuard.ts#L1-L54",
+          "version": "repo-lines-v1:sha256:b793cea1136657339525e6505c0ba9ddd98f8ae4408ed263872ff435e7c8caf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjNzM4MzdjZGFiNjEwMGYyMjI0ZGJkZTNhNTkxOGFkODhhMjExZmIwNTI2MDIxZjUzMDI5NzQyYTMyNGU4NjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/src/hooks/useDirtyGuard.ts",
-          "version": "repo-file-v1:sha256:b793cea1136657339525e6505c0ba9ddd98f8ae4408ed263872ff435e7c8caf5"
+          "resource": "repo://frontend/src/hooks/useTripForm.ts#L161-L242",
+          "version": "repo-lines-v1:sha256:881cb79c90ae07d9fb5e8ab31d8fda38a1a2c08b4edaf1b2aa8d990bf27773f2:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjM2MwMjFkNmEwZDRjYTQyMjVkNzg2MDE4NWJmNDI5MmRmOGZlMWRmMWViOGIzODY2MjdiMTg0NGE5MDY2MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2OGZhYzFjY2IzMTg4NWQ5MGJjYTRjN2M1MjY2OTZhODMyYjkzMDVjNTg3ODUwZGViODU3Zjc1MWQzOGNmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/src/hooks/useTripForm.ts",
-          "version": "repo-file-v1:sha256:80b50e1e5e0e44c4a0aae07a9c8f15a58736b71071b819bb5301bfe498814dd5"
+          "resource": "repo://frontend/src/hooks/useTripFormContext.tsx#L1-L19",
+          "version": "repo-lines-v1:sha256:bec0584db6fd1cbfef068717e8e2fcd4d223d16e4de9bfe86df292ea649624ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NzY2NzU5YTNlZWI1MjU4YjY5NzFlZmJlNDk0MmQxZDQxNTBlMjRlOGQ0NGE0YjdjMGIyZWFhNmQ1ZWYwNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/src/hooks/useTripFormContext.tsx",
-          "version": "repo-file-v1:sha256:bec0584db6fd1cbfef068717e8e2fcd4d223d16e4de9bfe86df292ea649624ed"
+          "resource": "repo://frontend/src/hooks/useTripFormDispatch.ts#L1-L8",
+          "version": "repo-lines-v1:sha256:8c20b2a686f4b20c8a8d30af7767290ecb65fd1bbc120914a2bc3857a8ffadf5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWMyOTNhMGZhMmM0ZWNlOWY3ODM0ZDgzNGNkNjlkN2Q4NGY4Mjk0ZmM4ZDg1YWU0NGQxYzMyNmIyZjllYmYyMyJ9"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useTripFormState.ts#L1-L13",
+          "version": "repo-lines-v1:sha256:77183fd39e864e713a933779e7f093a37417ce74a0c330ce128bda89f09a86e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNTdmOWRkYmMyZTM5MDU5OTVhZGNhNWNlZDAyNWEzM2IxMmNhNWMzMzllNzFmNTVjMjVmZmRjMjdhZDJmNzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxN2IxMGY4Y2U5ZDE1Yzk3MWQ3MDQ2ZWI4MTg5YTU1ZjYxMjdlNzA1OGNjYzc0YjJkYjFlYjAxOTgyOGMzMWIifQ"
         }
       ]
     },
@@ -103,10 +115,190 @@
           "version": "repo-file-v1:sha256:9b79ba0eb72895c74ac148b21a28a96fc7d461742437cce4941af38148c56e7d"
         }
       ]
+    },
+    {
+      "id": "claim_0ed2a2f4ddd04257a45bb9aa51aeda8d",
+      "statement": "Trip-form validation is imperative field checking inside use-trip-form-submit's handleSubmit — compulsory fields per carrier type (OWN: truck/trailer/driver; EXTERNAL: partner + freight cost, with the external plate deliberately not required at planning), legs, fuel-supplement reason, per-allocation liters > 0 with at most 2 decimals and a supplier for CREDIT rows, and no half-filled seal rows; the frontend has no Zod dependency, so shared Zod schemas validate server-side only.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/package.json",
+          "version": "repo-file-v1:sha256:d7938ecce3a69e2313e37f2f4403a5e0439a0e9cf97d26425ac3db4e802b975e"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/use-trip-form-submit.ts#L42-L200",
+          "version": "repo-lines-v1:sha256:6e4d7a9caaf5a010bcd3279a9fdb0694197f6ed1da5c525b0dcf5d5b9c455cb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzZmFlNWUwNDAxNmFkZWU4ZWFlZTBlNzAyZWQ3MzRhZTBlZGEwMjkwYjE3NjA0NTc2MWU4NmE0Zjc1YzUyODVkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyYzc0NmVhMjgzNDE4MzkyM2I1YjRiMWNhMDk4ZjJjNDFhNTVjMmNjZDRlZGVkYmYzMmVjNTk0NTFlMWFhOTc4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4ZWNmNGMyZWMwNzIyMjc0ZjRhZDY2ZGVhYmVlNzFjZWYwYTU0NmFhZGM3MWUwNTM5ZjA2MzlmZTE4NzRhMjYzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlYzk2YzBlZDAxMDdlOGUwNTk4MjkxMGU5NGNiMjg2N2UxYzFiYTA4NzViYTI1Y2VhY2I3YjQ2ZjdiNzgwZDVmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_0d8eddfd1d4e4e2aa5349f6bee274760",
+      "statement": "In create mode use-trip-form-submit commits sequentially — POST /trips, flush buffered photos, pre-departure PUT only when hasOptionalData, then the container reconcile — and skips the instructions upsert; the created trip id is retained in a ref with a JSON fingerprint of the planning fields so a retry after a rejected follow-up reuses the id without a second POST, while a changed plan makes the hook refuse instead.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/use-trip-form-submit.test.ts#L103-L115",
+          "version": "repo-lines-v1:sha256:6affe1aac1877d58cb3a629cae330585ba62a044ebe02c49802d0ff532e862f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZjMyZWQ2YTBhY2Y2NjI0YTFjZGYxMGIyN2I5OWY2OWIyNWRlYjFmNGZhZDk3ODQ3NTVjNmFiMmViODE4MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZDM1YTA4ZGE4OTE5YzFlZTIyNTM2NmFjY2NkYzU0OGFkYmI1MDUzZTc4NDY3ZTQwNTU5MDMxYTg5NGVkNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhYTFjNzkwYTYwMWQ1ZjBiYzk0MjdjZTQ3NTkzNTkwYjc1YjI1NzMzYTU0ODQwZjU3NmJlMWFiMDBlNWUxYWIifQ"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/use-trip-form-submit.ts#L435-L545",
+          "version": "repo-lines-v1:sha256:6f2dd569debb662c54ddccfd76cc73acc2d3f7f7d69673e2d4d7f7de1b45a960:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyODNhNjdhOThjOTQ0ODQ5ZjMxNGVmNGRmOGJhZTQyM2I0MjU1YjMxN2RjOGU5OTM5NmUxZWM3OTE2NjRjYzg0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwYTE0NGJjMzI1MzdiZDI4MzQxYjFjODQ0NjkxMzhhZDY5NTA2NzBmMTU5NzhlZGEyMGNiMTY1MDYzMzljMDY4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxMTIxOTRjM2Q1MjEwYTdlZmU5YTM4MmMxYjdkOTA3NWMxMTkzM2VmNjU3ZmY0Mzg0NjA3NmM1ZjExMTExM2VhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzMzhjNTA4ZTIyNGNiYTJkZjRmZWNmZDI0ODVlYTY0N2ZjNTdjZTU1MjE5MzY2ODNmYzc4OWU2OWE5NTVjYjcyIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_d5fe89f7b250478b8bf4ed9bafafdd30",
+      "statement": "In edit mode use-trip-form-submit PUTs /trips/:id/pre-departure (status CREATED) or /trips/:id/actuals with existingTrip.version through saveTripFiguresOnce, which on a 409 refetches the trip detail and rethrows without retrying the stale payload; after the figures commit it reconciles containers and upserts instructions best-effort — an instructions failure surfaces an error and keeps the manager on the page without rolling back committed figures; revenue splits serialize as undefined when untouched so the server preserves stored revenue.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/use-trip-form-submit.test.ts#L18-L42",
+          "version": "repo-lines-v1:sha256:24b5adb4b1b327ac7eae556f0d4c184ab010a4cc0a339b13613665796afa980c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjYWRkNWZiNjY4YzJhMDEwMGI2ZDdhMjg0MDY4N2ZkYzgwZmYyYjM4NGRhMTFkMDYxNTdhMTQ4NTE4MDVkMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViODJiNzJkNGMzMjJhMGVlZjQ2MDUxY2I3MTE1MGIxNTI1YzNjNjhlYmM1YmUxNWJmZDdmZTdjOGFkNmUxNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjg5YzQ5OGI0NDU0YzZlOTUyNjcxNTliN2EzM2EyMDU2OTg1YWVjN2IxODYxZjA3NWE0YjI4MWNmNTM0NGUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/use-trip-form-submit.ts#L22-L34",
+          "version": "repo-lines-v1:sha256:7bcf9103d93139c053e986ff3e31a6584e9ab7507c09dc99beb4c6c25f4e743a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZjVmOTFhODllMWY0MjdiMGU2YzIxMmY1MWM4Yjk2NWY5YWI1NDAwYTNkMTY2OGE1OTBlMDYyZWRlYjdmODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNGEzNjlmMzE5OGYzMmQ5MTM5MDE5MjIwYjE2ZmY1ZGNhMmQ3YWYwZjZkNzJhMDY5YjBlNTdjODlhMDI2ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0ZTJkODFiNTFhMmY3NmY4MDJjZGVhMzA0MTkxM2FhMTFmNzllODY0Mjk5Y2IwYzQyMWJhYzE3OGY2OWMwZjAifQ"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/use-trip-form-submit.ts#L345-L433",
+          "version": "repo-lines-v1:sha256:c9b75806355e794480362f513c35eeb26683a74e031ed5211623008f90b42eed:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzdhODE5ZWIyNWQ1Mjc1MTA2NmNlNjM3NjU3MzVhZjRhNzkzN2IyOTFiODYxZjY0ODk1MGQxZjIxZThhYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3YzliMDljMjU2MDYzN2NiOTc4M2I5MTBiZWVjNTY2NTkxZWNjNGM0Nzk2ODE3ODFhMzA5NDgzMTQyZTEwMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2YjRmZDhkNWQ0NDRkOTU2MGUwZjU2MTYzZGIxM2ZlMmExMGZhZmViNjk2MjE3NWExODg0MGFlMzgwYWI3MzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b6e06483bae47a7b157b66777fcd411",
+      "statement": "useDirtyGuard detects edits by JSON-snapshotting the provided deps values rather than setter calls; the first observation after ready becomes the clean baseline so asynchronous edit-mode population is not treated as an edit, markClean() re-baselines, and a stable isDirty() getter is read at event time; TripCreatePage and TripEditPage wire it into useBackShortcut with the useConfirm discard dialog (TripEditPage gates ready on a formHydrated flag).",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useDirtyGuard.ts#L1-L54",
+          "version": "repo-lines-v1:sha256:b793cea1136657339525e6505c0ba9ddd98f8ae4408ed263872ff435e7c8caf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjNzM4MzdjZGFiNjEwMGYyMjI0ZGJkZTNhNTkxOGFkODhhMjExZmIwNTI2MDIxZjUzMDI5NzQyYTMyNGU4NjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/pages/TripCreatePage.tsx#L33-L39",
+          "version": "repo-lines-v1:sha256:9f863f0d206ad8809c1bca1398525290ad3af01062d4862ef33d4ae217e53611:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJlZjllNjc2MDNjMTEzZTY5ZmJjNTQyOWMzYTQ1MzRhMWY2YTkyZGFlMWNkMTE5ODA1YmI1MjUxZThmNjMyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc4ODIwMTNiNGNlNTA0OWVkYzE0MjQzZGFkNWQ5OGNkZmE3NWJiNDUzOTMzNDQ1Mjk2NDkzOGE0NTc1MWU4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWE4MmM3NWQ3ZjRlYzEyZjE1NDI2MmI0MDI5N2RkMmQyNzBiNjgyMjZmNzhmMTQzY2E0ZTg4Yzg5Njk3NjFiNSJ9"
+        },
+        {
+          "resource": "repo://frontend/src/pages/TripEditPage.tsx#L100-L118",
+          "version": "repo-lines-v1:sha256:17f1b9e7a332b4b6f2b418b76c2abe63ef8a3bcf46e4cf9de6cdb119c58460a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzRkODFjMTc4NWFiNWYxNDY1MDU4MjAzOTE2Y2M4YTAyODkyOTU2NjU0YTZkOTU0MmY1YzJmMGQyMTc2NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ZWVhYzM1ZWVmNzg4OGNhY2E0ZTYzYWJmZGExMTA1ZTI2NjYwMmRmN2VhYWU4MWUxZGExNGEzZGRiMjUyMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3MTAxNTc0MDUyZmJmNDQ4NzJjZWFlMDhjNzFhM2VkZmRiYzhiMTk1ZDhhMWY3MzI5YWMzNTE1MTc2Njg3MzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f71cd1e188ba448da0b1aac3394155bb",
+      "statement": "useAuth caches the session user under qk.auth.me (staleTime 5 minutes, refetchOnWindowFocus/retry off), decodes JWT expiry client-side without a library (malformed payload counts as expired), and on login/logout cancels the in-flight auth query, removes every query whose key does not start with 'auth', and clears the mutation cache so a late response from a previous account cannot repopulate the next session; logout also disposes the agent socket and forgets the assistant conversation.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useAuth.tsx#L34-L110",
+          "version": "repo-lines-v1:sha256:d7621a49a3bca8580d3a3fccf1faf9005943bf493679604c9d73e94a9fa1a9e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNjllYzA4ODk2ODExNzBkNzI2YTk2N2IyNDMzNDEyYmQyMzQ2ZmYyMmNhNjExODZhZTFhMTE4N2EzZTE4MTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZGQ4NzZkMTQ1NDk3NGM1ZTNkMzM1NTBmMTkzZTQwNjIwMTgzYjZjZmJlMTc4MTRmMDc1ZTk2MGFiNWE4MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0ZWMxY2U2NzkyMGJkN2ZiNWEzZmIwZmQxZmM2ZTA3YzNkNWI1ZWMzODViNDg1NDczMGFiNjVlZjg2MzQ0OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzZGNjYjI1YWY2ZWVhYjg5NWMwMTVmMmI4Yjg4OTI3MjVhNmRlMTVlZGU3ZGMwMTJkOWRlNGQxM2E1Y2QyMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_124b8d4a2d5743abb07b18ddaf69dfd6",
+      "statement": "JWT storage has a single owner: design-system/hooks/useToken wraps localStorage['token'] behind getToken/setToken/clearToken with an in-memory cache; both useAuth and lib/api/client (which attaches the Authorization header from getToken) go through it, making an HttpOnly-cookie or refresh-token migration a one-file change.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/design-system/hooks/useToken.ts",
+          "version": "repo-file-v1:sha256:21e976087eeee04143200f1efb3c32ca2f88e330fe2c6646d4a89ab96fe903ae"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/client.ts#L14-L23",
+          "version": "repo-lines-v1:sha256:b5fe26a2eefbd29bbcc3d6e0423e5acfc9bf4193bc14e6a3abd9ac2cd2ea1700:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyM2NiNGMxM2Q2Nzc1OWQ1NGY3NjcxZDQ0MDM0OTcyZDA5MDNhMzlkMDhhZmFlNzNiYjk4MWViOWFiMGRjZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlZGRhNTBmODQ0NjFlMjRmOWRkOGY0NWJiMGJmY2JiN2JjNDhiMDk2ZWNjOGZhNDhkNjAxOGY0M2VkZjMxNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmN2M4N2VkMGEzZjVjMGUyNGI4MDU0NjIxNzVkYjNmNGM4YTE3ODE3YjliOGNiODhjM2UwZjdiOWUzMTc0NjIifQ"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/client.ts#L43-L48",
+          "version": "repo-lines-v1:sha256:6aa17017e7141d4bc164682eeaf4c32653dca013d7c142fb362fb0fc3482e05d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ1NDBjMDBiYmIzNDc4YTlhY2IwOWUyNDRkMGE5NjI5ZjA0OTY2YzU5OTExYjdlZTc1YjFlNTllODNiMDU3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM5MjYxMWRlMDMxOWQ4MDlhNTU1N2UwMzM2ZGViNGZmZmFjMzM3MTM5NmU2OGRjOTY0MzhmZjJhNThkOTU4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmY2MDFjMzk5Mjc5MGQxNWQ0YTcxMzZhM2Q0ZTExZWNlMGNlODYxOTFiMjk1NTFjYTllZGU1Y2Y1OGJjNGVjNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_59f0573c28d046119a9eb91f24fcb331",
+      "statement": "A 401 on a still-current token is handled as an application-state transition, not a form error: the HTTP client clears the token and calls notifySessionExpired(); AuthProvider subscribes via onSessionExpired — the framework-agnostic listener registry in lib/api/session.ts — sets sessionExpired and logs out, while a late 401 from an older request (token already rotated) and unauthenticated 401s such as bad login credentials remain ordinary request errors.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useAuth.tsx#L112-L118",
+          "version": "repo-lines-v1:sha256:eb07d3cbce9ecf2f67acd318d71920a3f18ff1695bad30898279d36d1a2ad820:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYyMjUzZjBmNzQwYzVhMzk5YTU5ZDBhY2Y3YmZhZTc3ZTA1NzQxNzllN2QyM2QzMGEyOTg4MzNjYmZhYWY4NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlZjAxYmMwOGRiYzNiNjNlNGU3NWVhM2QyNmE1Yjk0MTg5MTg3N2UyN2FkODkxMzI5Yzg0MTFkN2Q4ZGM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTMxOWUwYzM5YjdmMWRkYTgzZDRkMWRmOWI5NjE3ZDk5MTExMjQwMTYwN2Y2OGQ0Y2Y3NDMwY2Y1YzIwZTExMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTJiOTI2MTcwODU4MjNkNzQyNDNjYjc2OTE2MGFlMTY3Y2JhNDdjZTY5NTAwODE2NjA2MGQxZGFkMmZjODBhOCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/client.ts#L80-L93",
+          "version": "repo-lines-v1:sha256:e95d35b8b2c005da889879534311aec4dfe93704a5208dd376ee87ef9bcaee01:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDg2MzJlNTRlOTI5OGFiYjk1ODcyN2UyZDUxNDA4YWJhZjEzNjYwMzUzNzkxMDE0MGFiZjY1YjMwYWI2MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhYmE3Zjg2ZDgyOWE3YTEzNzU2MDlkNTIxYzZiZjhlYmEzYjVkMGM0NTlkOTE0OTM1NWYwZGQ3NTc3N2RmY2MifQ"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/session.ts",
+          "version": "repo-file-v1:sha256:e6c4e36d27ba7fc890c826acb0f7359356962040b877cbf2bede311aa6be1304"
+        }
+      ]
+    },
+    {
+      "id": "claim_3366a7650870497bb141d75d95e0d756",
+      "statement": "All query keys are minted by the qk factory in api/keys.ts — domains get broad all/*All prefixes plus parameterized list/detail accessors as frozen as-const tuples; trip detail ids are normalized to strings because TanStack deep-equality treats ['trip',68] and ['trip','68'] as different keys, which previously defeated the save 409 retry; allCatalogKeys is compile-time-guarded to cover every qk.catalogs prefix, and invalidateAllCatalogs invalidates all catalog keys plus configCounts in one shot for useCRUD writes.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api/keys.ts#L1-L24",
+          "version": "repo-lines-v1:sha256:2a78ec08e2bad764486fdf297bd213af4187ec4d86b7cc8df7cb5790d67c3055:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMTMzMmU5MzhlYTE2OTllZTcyZTRhZjI2NDY4YTFiOGE0NWY0MGQzNTAxNzAxNzY3NjIyMjU2M2U5OTdhZmIifQ"
+        },
+        {
+          "resource": "repo://frontend/src/api/keys.ts#L120-L131",
+          "version": "repo-lines-v1:sha256:424a303a244f3c2f889ede67d65a9e6e1d57226b4cbe352805080aee01b20d31:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0Mjk0YTYwMTIyY2RhZWExNzk0MGRmNjBjOGNjMTA1YjkxYWE1OTY2OWMwZmI5MDFiNDI2ZTk4MTBmYTNhZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4NTA5YzY1MGZlNmU2YjcxMWIwYmU3ZDNhN2QzYTIwYmIzNjU3YzYyMTk3NzMwMGM1OWYwN2RiZWQyM2U3YjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3NDJhOGY1ODY1NGMzZDA5ODM5MjZkMTYzMjA4YWVjNzAzYWUzMmE1NWU1NzJlMGVkZjE3NjQyYThiZTFiODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMmI3MTk5NWNhMmQ0Y2NkZGI5M2E5NmQxZTY0NjU0MmYzNzRkMjE5MTdmNzczMTVhYWViMGNhZWQ0ZDhkNWMifQ"
+        },
+        {
+          "resource": "repo://frontend/src/api/keys.ts#L408-L437",
+          "version": "repo-lines-v1:sha256:21c0a96cb5ae5b52a5e62239390bb3ea2e5f72cb8250744815c8bdf823ee12b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YWM3MDJhMDk1MGUzYjBlMGFmNTY3NjY3OTBlZWEwMzRiMWNmNTdkMDBkMGQ5ZDU0NDQ1Y2RlNGI0NWFiMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3Y2VlNTcwYTY3NmVkNWQwMTA5ZmFjMTY4ODE5YzU4YzZlM2FlMjQ4ZjFkNGJhZGM2YTIyY2RhNzdjYTM4N2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d3e1303b2131482fb5694a4baa5031c4",
+      "statement": "useTripFormLegs seeds legs from the selected route (defaultLegs, or the route name split into an outbound+return pair) and applyLegUpdate auto-generates a mirrored return leg in create mode; return-leg fields stay linked to leg 1 only while they still mirror it — once the user customizes a field it becomes authoritative — and deleting the return leg sets hasDeletedReturnLeg so the auto-generation does not resurrect it.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useTripFormLegs.ts#L24-L86",
+          "version": "repo-lines-v1:sha256:0abb1bfe14f0f895f9a2dcb83c6bb7541836756861ff8afcb4cd0c86c8c24650:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MTE1MGJiOTkwYjgwN2IzM2E1NDE3NzJkZGM3NGU2NDRmOWIwMmQ3ZDljYTMyOTRkMDU1ZTFiNWE5ZTM4NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4NzMzNGI2NjM4ZWQ1NGIyMDcyNTY3ZWUzMDhhNWQyMDRlZmNjYjc1ZTFmMmVkZDIyNWRmZDRhNjRkYTM3M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3Yzc3Njg2ZjgwYTA0OTZkYThjMDQyMDNjMDBhZjhlM2EyMTdkZWM0N2U1ZGFkNDdlMmEwYzdjOWM4MWVkYjMifQ"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useTripFormLegs.ts#L97-L198",
+          "version": "repo-lines-v1:sha256:d87df68f41a60d10c377a5e5aa79a8d2386d4905f6f9d1b99127c9c0f37b5494:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1OTY2ZmJmYTg4OTk4ZGE3NDY1NmM1MDE5NDk1NmMyNWYwODQ5NDU3NjYwYzAwOWZlNjNkMWU5ZmE5ZGM5MzFjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5NWVmMDFiYzA4ZGJjM2I2M2U0ZTc1ZWEzZDI2YTViOTQxODkxODc3ZTI3YWQ4OTEzMjljODQxMWQ3ZDhkYzRkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwMGU4NjI0MTRkNTFmMmFlZDE5ZTY2MzNiYjQyNDUwODgwNWIxNDZhYzRiZTIzOGZlYzcxYzU1NjY2MmUzOTQyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNGQzNzYyNDUwMmE5NzM0NjZmNmRiNmNlZWQwMjZhNmY4YWEzMDcyY2IwNDk4ZmEwZTVhYmNkZTU1NDQyZjI4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_05fe1eafd59d4148a1218f63f81ead79",
+      "statement": "useTripFormPhotos routes CONTAINER/SEAL uploads through POST /ocr (recognition + persist when the trip exists) and OTHER through POST /upload, buffering create-mode and unsaved-row photos as blob: previews held in RAM; flushPendingPhotos uploads them after trip creation, and flushPendingContainerPhotos uses POST /ocr/persist-only — recognition already ran at capture — once saveContainers assigns server ids, returning a blob: to server-URL swap map; per-zone UploadingState plus isAnyUploading gate the submit button.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/useTripFormPhotos.ts#L128-L234",
+          "version": "repo-lines-v1:sha256:b9b8d63f26f06144b63d03f321226b71e13a6e6cabffdaa47e4b7ce56ddb2989:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0ZjJhMmY5OTZmMDhlNjgwYmQyOTIxMzVhNmZhNDk3OGJkYTI2ZTYwMmQ4NGYzM2NiMWQ1OTQ3NzVkNDMwNGI1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmZGM1MmYwOGIzOWIwOGIwMWM4ZDMwOGJmODgwYjBiZWYwMmZkMWRmY2M5ZDlhYTkzYTRkMWI1ZjRkNThiNmNiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNWNkYzQzYjNiNDZjYzExYjQwMWJmYmViZjZiZmE2NTAyZmNjNTgzZWJiOThlMWYzNjJmYzZhYzFjYTU5YjA0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4ZDkyOTMzMzNiN2M1NGU4ZjY3NGI3MWE4OTM0ZTcyMmU0NDkyYmM5NDI5NmUwMTQ4ZDM3YTk3ZjA5Y2EwNDRhIn0"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useTripFormPhotos.ts#L51-L114",
+          "version": "repo-lines-v1:sha256:9b2a69c2daf97467dfb9759e6f758629c7646c29eaad52a7a368e85e11973e96:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiZGY2MjYxZDExNjE2NWQzMTdmOGM0M2QzNzIzMDc5ZGJkOGJmNGJjMTI1NzMzMGEzZGMzMmVhZTQwOWUzMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYTc4YmE1NTc4N2I3ZDIyNDMzYWJiMTgxZGRiYjNiMDQzMjBkMGViYWI3NWUyYTQyODZhNjc5Y2ExYjcwNjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjNTZiNGY0YzVkNDhhM2YxOTNjZTk1Nzk0YWYzYTNkYzQxNGQ1NDA1N2NhY2JlODkxODg1NmY4MzdhMTg1MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmNmViYjIwZDg3MDk2Yjk4MzZhZjJkMWIxNzAyOGY0NTc1NTI3YTVkMjU1YWE2YWRiOWM1MGQzOTBiMDI2ZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7772925ee74e4498bb4a6053de58f58e",
+      "statement": "usePersistedContainerType (edit mode only) fetches the trip's persisted container rows, clears the planned container type while the next trip loads so the previous trip's choice never leaks, derives the common persisted type via resolveCommonContainerTypeId, and refetches when resetToggle bumps on the 409 reload path.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/usePersistedContainerType.ts#L28-L78",
+          "version": "repo-lines-v1:sha256:135dccf6f236a37b344962604310a0bd5c79d61aadde731cd8273646dedc2e3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNTQ0NzE4N2M2Mjk0M2M5NThlNTkxYjc1NjdiMGMzNTU5MDFiMDE4ZWE1MWRjMjc0NWJiODJlYjVlMzE1YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMDAwY2FjMTJlMTIxYzA2OTMyMDJlNmQwY2ZjOWRmM2M2OTAyODk1MDc4MTdmYWNlODYzMTgyYTk2NGE3MjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_01ca8a1ad4fd48259a30600766a7fa37",
+      "statement": "Every animation hook follows two shared rules: respect usePrefersReducedMotion — provided once at the app root by ReducedMotionProvider so all consumers share a single matchMedia listener — and clean up via anime.js createScope().revert() on unmount; hooks/animations/ exports usePageAnimations, useListAnimations, useCounterAnimation, useMotionPath, and usePressAnimation on this pattern.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/hooks/animations/index.ts",
+          "version": "repo-file-v1:sha256:f013d9da34458ce51ea16f4d787704347f3a3726099b64bbf5ba79cfca56db0b"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/usePrefersReducedMotion.ts",
+          "version": "repo-file-v1:sha256:0116b57af5cf1a20bccf3e51ddb8e96a9952ddce782ce1df5504697ab739d559"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

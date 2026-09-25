@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:31550e945462541584445b4983d7a5bac7a3bd21eb7c58b7e57087c618727e40",
+  "pageVersion": "sha256:6d9d60983e3dc9ed29a6e5a03795f9dbc7f87080bf1a4f630c889e9dc530b769",
   "claims": [
     {
       "id": "claim_ddafb2b90d824d6091693142b74e71af",
@@ -14,41 +14,57 @@
     },
     {
       "id": "claim_b992e1f0f2504c57b783730086824bc5",
-      "statement": "The TripForm is composed of composable cards under frontend/src/components/trip/ (TripInfoCard, JourneyLegsCard, FuelTollsRevenueCard with FuelSection + FuelAllocationEditor, AncillaryFeesCard, ContainerInstancesCard, ImagesNotesCard, TripInstructionsCard, TripChecklistPanel, TotalsPanel, ActionBar, TripSummaryCard, AllowanceSection, FuelModeToggle); useTripForm + useTripFormContext orchestrate them, useDirtyGuard + useBackShortcut warn on back-navigation, and TotalsPanel previews computeTripTotals from @tingting/shared so UI matches server math.",
+      "statement": "TripCreatePage and TripEditPage share one useTripForm state object exposed via TripFormProvider/useTripFormContext and compose cards from frontend/src/components/trip/: create renders TripInfoCard, JourneyLegsCard, FuelTollsRevenueCard (FuelModeToggle + FuelAllocationEditor inline), a CardSection wrapping ContainerInstancesCard, ImagesNotesCard, TripSummaryCard, TripChecklistPanel and ActionBar; edit renders an inline route/dates section, JourneyLegsCard, then OWN trips get FuelSection + AllowanceSection while EXTERNAL gets external-carrier/revenue sections, plus ContainerInstancesCard, PhotoUploader, AncillaryFeesCard, TripInstructionsCard and TotalsPanel in a right rail. useDirtyGuard + useBackShortcut warn on dirty back-navigation, and TotalsPanel previews computeTripTotals from @tingting/shared so the UI matches the totals the server computes on save.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/components/trip/FuelAllocationEditor.tsx",
-          "version": "repo-file-v1:sha256:63a42d1a4af9790a6ced41d04bf7870f8c53d6b2a8cfb73b2b4d758f006cee31"
+          "resource": "repo://frontend/src/components/trip/FuelSection.tsx",
+          "version": "repo-file-v1:sha256:64f966bde95f846307383d4b4804382bbc61977bd82e939aa5342ce75626323f"
         },
         {
           "resource": "repo://frontend/src/components/trip/FuelTollsRevenueCard.tsx",
-          "version": "repo-file-v1:sha256:0a79d29f9d07838be2ac8b0b34f5b9b24958039c0d31b014ade5a590a03da56c"
+          "version": "repo-file-v1:sha256:75360eaa78e99a036e7911aed4df225bf958c4bb6a8bfe684d80ef46481c8c14"
         },
         {
-          "resource": "repo://frontend/src/components/trip/JourneyLegsCard.tsx",
-          "version": "repo-file-v1:sha256:e79ba046cd6ddcead67621f5e5594ab91a64f283340a96345ad5e3cab79fc747"
+          "resource": "repo://frontend/src/components/trip/TotalsPanel.tsx",
+          "version": "repo-file-v1:sha256:5e0cc995c943dbc6a63729de37aa4927730dc471aff6852614a59b64d7760356"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useTripFormContext.tsx",
+          "version": "repo-file-v1:sha256:bec0584db6fd1cbfef068717e8e2fcd4d223d16e4de9bfe86df292ea649624ed"
         },
         {
           "resource": "repo://frontend/src/pages/TripCreatePage.tsx",
-          "version": "repo-file-v1:sha256:8ca0cb40f47c56de81cb66c56dee5885c55ef77a3c413233542d0b36168eece2"
+          "version": "repo-file-v1:sha256:b1b9893f03576008fa6dbdfcbab9f7020ec9edeab3d9b9060e9f4d28f152c3a3"
+        },
+        {
+          "resource": "repo://frontend/src/pages/TripEditPage.tsx",
+          "version": "repo-file-v1:sha256:307e9525590cce282b8aacbf2d09421c91246a86c8536b2bee0890198cfcc38a"
         }
       ]
     },
     {
       "id": "claim_789cb86e2faf45258f892bafef77d6c2",
-      "statement": "LocationAutocomplete is backed by Map4D via /api/maps (casbinAuthz('maps'), readable by all roles) and is used by TripForm legs and any origin/destination picker; it returns Vietnamese-formatted addresses with lat/lng.",
+      "statement": "LocationAutocomplete merges a locally fuzzy-matched ports catalog (shown first, CẢNG/BÃI badge) with debounced /api/maps/autocomplete results (Google Places (New) with Google Geocoding fallback, Redis-cached; historically Map4D, now bypassed); the route is mounted with casbinAuthz('maps') and every role (ADMIN, MANAGER, ACCOUNTANT, DRIVER, FORWARDER) has maps:read; the component is an ARIA combobox used by JourneyLegRow for trip leg origin/destination and by the route config RouteFormModal.",
       "evidence": [
         {
           "resource": "repo://backend/src/index.ts#L122-L122",
           "version": "repo-lines-v1:sha256:ecf3aadbf463540b7329c55fd975189de8955edad96dee449d74094e0eff644a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNmM2FhZGJmNDYzNTQwYjczMjljNTVmZDk3NTE4OWRlODk1NWVkYWQ5NmRlZTQ0OWQ3NDA5NGUwZWZmNjQ0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWNmM2FhZGJmNDYzNTQwYjczMjljNTVmZDk3NTE4OWRlODk1NWVkYWQ5NmRlZTQ0OWQ3NDA5NGUwZWZmNjQ0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGQ2YTRhM2YzMDU3OTg5ZjdiN2UwYWQ5NzdjY2IxY2U3NDFmOTI2YWZkMmNjNWJiNWU1Y2M4NWI3ZmZjMmFhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc4ZjE4ODliOWZiNjM0MmM3MDY1OGE3ZmFlMjYwMmVmMzlkZmIzMGVmZDU3OTg0OWUxYzI0ODBjMjc3MzhjOCJ9"
         },
         {
-          "resource": "repo://backend/src/routes/maps.ts",
-          "version": "repo-file-v1:sha256:a36a7fdd4a0ae6f12a8f45b7c38703e002db61286e62e9cf956e51fad6c3fd4c"
+          "resource": "repo://backend/src/services/map4d.ts",
+          "version": "repo-file-v1:sha256:7d9c54a6a4109cd1f534bc3743ec5486bcba4c24480effb9ad47cfc8b2367790"
         },
         {
           "resource": "repo://frontend/src/components/LocationAutocomplete.tsx",
-          "version": "repo-file-v1:sha256:f2139196cfb8ba5cb659e09863815e89e16d249d7e316a2ec8e735000d9d872d"
+          "version": "repo-file-v1:sha256:84eb6ea967bae0830d4e1ba0bbaec44570293159a94eb5655c2a874cc442fadc"
+        },
+        {
+          "resource": "repo://frontend/src/components/trip/JourneyLegRow.tsx",
+          "version": "repo-file-v1:sha256:592659647e687190252dde82c7e87ec65438b202016ff1514fb81f9293d98104"
+        },
+        {
+          "resource": "repo://frontend/src/lib/maps.ts",
+          "version": "repo-file-v1:sha256:98936bde43d09b98097f4338eefbc874ca99e70edfe960fec0b23befdd97e791"
         }
       ]
     },
@@ -74,17 +90,143 @@
     },
     {
       "id": "claim_9cd6c15b031847c9a05f101f9bf5b7ee",
-      "statement": "User-visible strings are Vietnamese (Lưu, Hủy, Đang tải…, Không có quyền truy cập, Không tìm thấy API), money uses ₫ suffix with no decimals, dates use vi-VN locale, and DRIVER/FORWARDER pages are mobile-first responsive.",
+      "statement": "User-visible strings are Vietnamese (Đang tải… in App.tsx PageLoader, Lưu cập nhật/Lưu/Hủy/Hủy bỏ in TripEditPage actions, Không có quyền truy cập from the backend casbinAuthz/requireRoles 403 bodies, Không tìm thấy API from the backend 404 catch-all); money renders with a ₫ suffix and no decimals (formatCurrency/moneyParts in lib/format.ts), dates use vi-VN pinned to Asia/Ho_Chi_Minh, and DRIVER/FORWARDER pages are mobile-first (bottom nav + driver-mode layout, per code-standards.md).",
       "evidence": [
         {
+          "resource": "repo://backend/src/index.ts#L149-L149",
+          "version": "repo-lines-v1:sha256:3cc3a5977aa6d89e8cb07e4df7956c76cdbcadd7b84fd8420f377e830ba26c5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NjM2E1OTc3YWE2ZDg5ZThjYjA3ZTRkZjc5NTZjNzZjZGJjYWRkN2I4NGZkODQyMGYzNzdlODMwYmEyNmM1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NjM2E1OTc3YWE2ZDg5ZThjYjA3ZTRkZjc5NTZjNzZjZGJjYWRkN2I4NGZkODQyMGYzNzdlODMwYmEyNmM1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGI4NDE2NjU0NGU0Yjg2MzYxYTRhZGUyNGJhYjU3OWQ1MjdhMGY0MTUxOTA1MjNlZGRlNGI0YTRkZWJhMzU2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ExOTUxZGQ0MjBmODM4MmJiOWFhMGE0MDg3OWI5ZTc5OTBhMzM0YjAyOGQwZmViNDA0Y2VkYTljNGEyYTRjYyJ9"
+        },
+        {
+          "resource": "repo://backend/src/middleware/casbin.ts",
+          "version": "repo-file-v1:sha256:a097f419b45543e651b7848857252cda951040082fdaed96f356e6f03a52993c"
+        },
+        {
           "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "version": "repo-file-v1:sha256:e8a533ea7369229898bf92f1a6b44e49a0093f44ecc6f2c12c1d6870759ff382"
+        },
+        {
+          "resource": "repo://frontend/src/App.tsx#L75-L82",
+          "version": "repo-lines-v1:sha256:d67e22fd5f72b5c0474a42cabb4d94a3a5e4b8b4b50ca2017135d0759dd179e3:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTczMDAwNmUxZjJjZmEyMjZhMzIzMjMzODQzM2QwMzllNTMwMjQ4M2EzZDJiNmI1NzM4ZWI0ZTk2ZGE2YWQ3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmQ0YTIyMDg5ZDk3ZDYzYmY4ZDZlYWI2ODA1Y2YxYjllZTQ1OTNhYzZjYWIwNDdlYWY0YjU5NmRhZDU4ODRmZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQxNzFhMWUwNmExN2JhZGM4NmVlODdmZTQ2NDNhMGNmOGZkMzU0ZmU0M2JjZWNkZjdkZTgxNzE4MGU5NDMwMCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/lib/format.ts",
+          "version": "repo-file-v1:sha256:a2cbc547a19fe978c2960f9090f472ed6dc2d582c18d1d21970aa751683fb531"
+        },
+        {
+          "resource": "repo://frontend/src/pages/TripEditPage.tsx#L523-L568",
+          "version": "repo-lines-v1:sha256:d1bd8dd044f34e1ceb402329b25875a9e41bfde2515c01760536354a8d863c46:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2OWJiYWI0ODhiMzk5MmIxZjk4MzQ5ZTU0YjUyNmIyNWMxN2MzZWM2ODhiMGZkOTBjOTFlYmI5YzA3Mzc1MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNzNhZGIxZjE2MDUzNGM2NDQ4NWUxMDFkNmU0NTNhNjE1OGM2ZTcxYmEyMWEyZjM2ZWI5YzUwODQ3NWNiYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMTYyYzZmNTJkNmRkZjU4NGU1MzNhOTVjOGFjMWM1MzQwNGI1YWNmOGI5ZmJhOTQyMzIxYWU0OThlOWIwYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczYTRiYWEyOThkNDI3NjgyN2QyYzI3ZjI2YjBiYWFlMjA4MWUxMWVkODU4ZjNkYzIwNDU5YzgwZWE3ZTE4NzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfb4592c4fb14fa39759b2c055bcb9fb",
+      "statement": "shared/src/navigation/pageCatalog.ts is the single source of truth for page paths, Vietnamese titles and agent search descriptions; it deliberately has no roles field (runtime RBAC stays in App.tsx + Casbin), an entry is agent-navigable iff it has an agent sub-object with a compile-time assertion keeping AGENT_ROUTE_KEYS equal to that set, and frontend/src/lib/routes.ts projects it into typed route builders, homeForRole() and the precedence-ordered titleForPath() rules used by Layout for the tab title and aria-live announcements.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/context/AgentDirectiveProvider.tsx",
+          "version": "repo-file-v1:sha256:cffdb1e863fc72dd0d0f931fd688bce4327739ed2779f737168f2f18546e50df"
+        },
+        {
+          "resource": "repo://frontend/src/lib/routes.ts",
+          "version": "repo-file-v1:sha256:ee6176040067536bbab93322f4603542aa3ee1bad0760234651374cb9132eb1f"
+        },
+        {
+          "resource": "repo://shared/src/navigation/pageCatalog.ts",
+          "version": "repo-file-v1:sha256:d91a021b575110ef38e798682765a621d018cb42a84cd48ff61a044868642abb"
+        }
+      ]
+    },
+    {
+      "id": "claim_09e56227aea9437ab9a740689414f5a7",
+      "statement": "frontend/src/features/<domain>/ owns page sections, rows, panels, pure helpers and domain hooks (trips, dispatch, debt, payables, forwarder, advances, dashboard, fleet, tires, penalties, users, trip-detail, finance, customers, expenses); pages compose them, e.g. TripDetailPage builds from the trip-detail barrel (logic .ts + UI .tsx), and domain mutation hooks like useDispatchMutations, usePenaltyMutations and useUserMutations keep mutations next to their UI.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/features/dispatch/hooks/useDispatchMutations.ts",
+          "version": "repo-file-v1:sha256:cac69245c74812518dbc3bc515e8b8b97d82703aaf909156f0ebab506061f016"
+        },
+        {
+          "resource": "repo://frontend/src/features/trip-detail/index.ts",
+          "version": "repo-file-v1:sha256:29d20bbca51d536bee5aad645831145e5baee7d7bee857a4e3f39d8f37ef80d0"
+        },
+        {
+          "resource": "repo://frontend/src/pages/DebtDetailPage.tsx",
+          "version": "repo-file-v1:sha256:10a064ca3713a4fe2fbd1ce83aadcec0078fa1e358f4ecd33aa5848b19284adc"
+        },
+        {
+          "resource": "repo://frontend/src/pages/TripDetailPage.tsx",
+          "version": "repo-file-v1:sha256:b2e644021a031c2cacce52de9e482a80080efb8c3c1e8732401396755c6c3627"
+        },
+        {
+          "resource": "repo://frontend/src/pages/UsersPage.tsx",
+          "version": "repo-file-v1:sha256:6679906f865e1baed270f2bb7a1f59f1039df8b8e4098e2ea33ab777575695f3"
+        }
+      ]
+    },
+    {
+      "id": "claim_920269daf8534cdb98d188d49b2e117b",
+      "statement": "pages/config/ catalog CRUD screens are declarative CrudTable<T> compositions (title, endpoint, columns or compact renderer, renderForm) with the table handling react-query fetching (qk.crud.entity), useCRUD create/update/delete, inline forms, empty states and confirm dialogs; richer screens (RoutesConfigPage with RouteFormModal, AppSettingsConfigPage, CompanyInfoConfigPage, CustomersConfigPage, FaqEntriesConfigPage, DebitNoteTemplateEditorPage) live alongside and are routed with per-screen guards.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/components/config/CrudTable.tsx",
+          "version": "repo-file-v1:sha256:8e19877a83dfe54afa1fe0f1d488f7a6ddf57cc33d18a6089c7ca43203732ed7"
+        },
+        {
+          "resource": "repo://frontend/src/pages/config/TirePositionsConfigPage.tsx",
+          "version": "repo-file-v1:sha256:a3b43a4f4ab4a70748ff65f192ee6f97f9819257e7e28528984d96149037fc28"
+        },
+        {
+          "resource": "repo://frontend/src/pages/config/TrailersConfigPage.tsx",
+          "version": "repo-file-v1:sha256:80f56fccfc6d2674093e37f30ac251c0622faf2b5c48faa436be96f9d6644dd9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d8ceb804fdb480fbc594bcd41e78993",
+      "statement": "FuelAllocationEditor records OWN-trip fuel as per-purchase rows: rows are seeded/normalized by normalizeFuelAllocationRows (one CREDIT row per active catalog fuel supplier plus an OUTSIDE cash row, shared pure helpers in fuelAllocationRows.ts), re-normalized when the catalog or row keys change so catalog points survive a trip reseed, support duplicating a row as extra-<n> (lần N, max 10) for repeat purchases at different pump prices, show the effective price (entered actual ?? configured, never blank) on empty rows, and disable CREDIT rows whose supplier is no longer active; tests cover normalization idempotency and price-cell precedence.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/components/trip/FuelAllocationEditor.priceCell.test.tsx",
+          "version": "repo-file-v1:sha256:bbd3ffe3c04bd900d1ac23a077e04477a3824b8fdac6cd1c61d74b6889647e10"
+        },
+        {
+          "resource": "repo://frontend/src/components/trip/FuelAllocationEditor.test.ts",
+          "version": "repo-file-v1:sha256:a96bec4bd20ff0d66e2284c18e97a5a1f53ccd5a9a60cea82d8e534792fb5ac9"
+        },
+        {
+          "resource": "repo://frontend/src/components/trip/FuelAllocationEditor.tsx",
+          "version": "repo-file-v1:sha256:67044a8dc2b99dbb934efddd482e766b17cf234a9bef5557309eeeeab601bcb0"
+        },
+        {
+          "resource": "repo://frontend/src/components/trip/fuelAllocationRows.ts",
+          "version": "repo-file-v1:sha256:85403e6b7316a2fe8ee99e9f7b424ceac1c7c4598a2eaf9489dae7a0c52323c6"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useTripFormState.ts",
+          "version": "repo-file-v1:sha256:02615081d20fa90c80a0bfb5825aa874f067bc12537197f633cfede048a6d80d"
+        }
+      ]
+    },
+    {
+      "id": "claim_00bfcf4418264d8eadb1e90bdd5d9618",
+      "statement": "main.tsx boots the SPA with a query client (retry: false, refetchOnWindowFocus: false, 5-min staleTime), installs a stale-chunk error handler before React mounts to self-heal post-deploy dynamic-import failures, registers the production service worker (skipWaiting + clients.claim with one reload on controllerchange), and nests QueryClientProvider → BrowserRouter → App, whose provider stack is ReducedMotionProvider (outermost, shared matchMedia listener) → AuthProvider → ToastProvider → AgentDirectiveProvider → MonthProvider → SearchProvider.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/App.tsx",
+          "version": "repo-file-v1:sha256:c7a393a17d9d3a3bf95433d4713a6be7aa455b19879502b0196d2c716d836434"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/usePrefersReducedMotion.ts",
+          "version": "repo-file-v1:sha256:0116b57af5cf1a20bccf3e51ddb8e96a9952ddce782ce1df5504697ab739d559"
+        },
+        {
+          "resource": "repo://frontend/src/main.tsx",
+          "version": "repo-file-v1:sha256:f6e85b2e70a9ba9a1361d3802c785781b7bb699fc138735eb320b37f854c2f42"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

@@ -1,78 +1,144 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2988995cc8f105f6653c951bda3255c51fa37a83a061e4c0a7192dc62fdeccc0",
+  "pageVersion": "sha256:a401d3cc01a562407835861e13e66281723f4ddf29c14d6b10b0d8e63c6a379d",
   "claims": [
     {
       "id": "claim_13eb99d5ca034190969ec84ad871b0cd",
-      "statement": "NEPO is the production codename for the Vietnamese trucking/logistics platform; TingTing is the historical/marketing brand and the two refer to the same system (marketed as TingTing in some seed scripts and design docs).",
+      "statement": "NEPO is the production codename for the Vietnamese trucking/logistics platform (legally CÔNG TY TNHH NEPO, Hải Phòng, per the company-info defaults); TingTing is the historical brand that survives in day-to-day identifiers — the @tingting/* workspace packages, the tingting-backend/tingting-frontend Docker images, the *.tingting.vip domains, and the docs/flows user manuals — while the API logs 'NEPO API running on port 3090' and production runs as the nepocorp stack. Both names refer to the same system.",
       "evidence": [
         {
           "resource": "repo://AGENTS.md",
-          "version": "repo-file-v1:sha256:1f5789ebacc8772ac791c7ca51a5de77e15ff99c15d3cf920a73a3a817f2d03c"
+          "version": "repo-file-v1:sha256:9be62eac9dfa6201d831dff3c1fb7883ddd44be4407893cc44bb462988792792"
         },
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://Makefile#L102-L135",
+          "version": "repo-lines-v1:sha256:0cee68a9a99ca0d0a0458a013c42809ca83649c9c6b92966ec697a7d9fdc824a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ODdlYTg1MjY0Y2Y1Njk2NmUyYjkzNzM2MzU0NGMwY2FjMzhmYmUyYTQ4OTE1M2FlYTQ5MzQ0YzA0NGY0YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5OTI1YzBhMmE3MWVjMGRlYThjOWVkMjc4MDM1YWI0NGYxYzUwNzM5Yjg1MDFkZmQ3YjQ2ZDc3NjkwZDhjYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ODdkZGVlNDU4Yzk1NjRhOTMxYTMyYTNjOWU2NWQzODllMGRiNzc1ZjA1OTBjYzg4MzA2NzQzMWNjMmJlYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwMzdjNWI1OGY5NTBmNDhhOTY4YjY1OGQ3ZThhNDdkOWUzMDBlNzE5OTcyYzU3N2UyMzU5MTlkMjEwYWMwY2YifQ"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L154-L156",
+          "version": "repo-lines-v1:sha256:8e0e8c587e6d8eb680f76b70e8f1a9837933befa32cc45b8efddc502136a6821:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgxZjE1ZmFkZWQ0ODhmYjQyMTAxMmQwMTkzOWZjM2U2MzkxNmIxYzdmYzkzMmU3ODk0NWY3NTRkZDQ1NjRlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAwYjUyMDY1NTNhMDMzNjYwNGEwZDcxZGJhMDAzZDJkYmRjZjhjODhhZGJlNzk5ZTM4NDc2OTUzMWI4MTkwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzY4MWJhOGFiNTZiZTQ5MmU3ZDYyMDYyNjY1OGVjOTIyZjU1MjMwYTdkZDI2NGU4NDVlZWY5OWU3ZTc1MGE0YiJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/company-info.service.ts#L29-L40",
+          "version": "repo-lines-v1:sha256:8200e1864af95cbf29364f76dda4760a74d238297d4c00ce6e48ff321e621702:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzN2JiZTdlMTViNTFmYzFjMWU0Mzg4NzM5YTllYmE2ZjgzMmY4NzVmZTExMzhjOWI2NzM0NTU1ZmU2MDM5OGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NTA4YWE4ODgyYjExYTJmNzljYjVmYmIzY2M0ZTQzZDI1Nzk4OGU3MzJlZTc3NDA3ZjViZWY1ZjdjOWE0NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmNWFmMDJjMDE1NWQxMmFiMDRhNDU2MDI1ZmJmNmZjNzJmODgxYTVlMjNlYTNmZDhjOTk1NzcwMTIwNTc3YWMifQ"
+        },
+        {
+          "resource": "repo://docs/flows/README.md#L1-L14",
+          "version": "repo-lines-v1:sha256:c820ee29984ed1966b2d34167643283f2c4cd73aae7d76ec3f7be137575d264d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNzdlMjQyZGFlZGYyNzU5NDRhOWQ1ZGJkOWVlOGVjZjFlMTI0MDIwYWUyZTkxM2I4MmMyMmM4OGFhN2JmODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlYjk5YjVjZjc4M2VhZTcyMWMzNTI0ZWVhZDc4MDMyYTkyMzU1YjJjNGQ0MDFjZjI2OTI1MGUzMjFjMDVmYTYifQ"
         }
       ]
     },
     {
       "id": "claim_fcab07b87361420096fbb2a3afe50cde",
-      "statement": "The wiki task-routing map points to backend/api-routes.md for adding a REST endpoint (with casbinAuthz + Zod schema), backend/database-schema.md for Drizzle migrations (pnpm db:generate, make prod-migrate excludes *.revert.sql), frontend/app.md for editing pages, frontend/hooks.md for custom hooks, backend/ledger.md for ledger work (ADJUSTMENT/UNLOCK_REVERSAL only), shared/calculations.md for fuel/allowance math, backend/auth-rbac.md for Casbin policy edits, shared/schemas.md for Zod schemas with z.infer, development/testing.md for diagnosis, and deployment.md for prod rollout.",
+      "statement": "The wiki task-routing map points to backend/api-routes.md for adding a REST endpoint (casbinAuthz + Zod schema; path-specific routers must mount before the catch-all /api in backend/src/index.ts), backend/database-schema.md for Drizzle migrations (pnpm db:generate from backend/; make prod-migrate excludes *.revert.sql; make prod-migrate-file FILE=… for one file), frontend/app.md for editing pages, frontend/hooks.md for custom hooks, backend/ledger.md for ledger work (ADJUSTMENT/UNLOCK_REVERSAL only) and for billing documents/debit notes (billing-documents.routes.ts + billingDocument.service.ts over billing_documents/billing_document_lines/debit_note_templates), shared/calculations.md for fuel/allowance and debit-note math, backend/auth-rbac.md for Casbin policy edits (policy.csv loads at process boot via initEnforcer(); apply edits with a restart), shared/schemas.md for Zod schemas with z.infer, backend/admin-and-agent.md for the agent/chatbot subsystem (/api/agent + socket.io transport gated by BOT_ENABLE, /api/admin/chatbot metrics), backend/api-routes.md plus shared/schemas.md for vehicle schedules (/api/vehicle-schedules office-role CRUD with a complete/cancel lifecycle), development/testing.md for diagnosis, and deployment.md for deploy/ops.",
       "evidence": [
         {
           "resource": "repo://Makefile",
-          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+          "version": "repo-file-v1:sha256:725ebe4e8d313fd83a4b5b2a2710cd9e52fe061893e7b0b35dffbdfb3786208b"
         },
         {
-          "resource": "repo://backend/src/db/schema.ts",
-          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+          "resource": "repo://backend/src/casbin/enforcer.ts#L7-L19",
+          "version": "repo-lines-v1:sha256:35e32dc5a54a0c0a346fe1640e8fd1a0fb381b26e1f3ded3a994c78bcc0d2c72:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MzdjMDhjN2VlNmRmODFiMzQ3YjQ2OTJjODA4Y2FjNDg2Y2FmMGY1YTc0ZWM1YWU3MDE1MGMzNzY5Mjg0NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzN2U5OTEzNjJiYmI5ODc0NDg4MWZiNTNlMzhkN2EyNzExYzQ0ZmU3OWRmZTM2Mzg2ZDZlZDRlYTdmZWE5NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5OWVhNmIzZTAzNWI4ZTIxZjZhZjhkNzQ2MWJmMjI3NzkwZmEwMTg3MTY4MzRlMWRhZDdmYjhhNTdhN2Q2ZGQifQ"
         },
         {
-          "resource": "repo://backend/src/index.ts",
-          "version": "repo-file-v1:sha256:0e60da80f06ec1a165babadf56f7a6a93de3ac510d30f6529b937121930389d2"
+          "resource": "repo://backend/src/index.ts#L95-L149",
+          "version": "repo-lines-v1:sha256:6bb5d9771ab6a7fe3ede513a1ff19c5999460138bdefe9e5bb9ebf6a81c78293:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMWRkNGEyMmRiZDBlOTEwOTA0MTk4YTk4ZWJhYzQyZThiNjNhYmFkNjQyMTQ4NGZiNzZmZjgzNjFhNmQzMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYzNhNTk3N2FhNmQ4OWU4Y2IwN2U0ZGY3OTU2Yzc2Y2RiY2FkZDdiODRmZDg0MjBmMzc3ZTgzMGJhMjZjNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MTQxNzRiZjI4Zjk3NDJlZDI0M2Y3MTE4OGZjNjdmNmViZTczNGNkMTYyNDMzMjU1ZmI1NDRhMzMyNzg2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhMTk1MWRkNDIwZjgzODJiYjlhYTBhNDA4NzliOWU3OTkwYTMzNGIwMjhkMGZlYjQwNGNlZGE5YzRhMmE0Y2MifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/agent.ts#L1-L30",
+          "version": "repo-lines-v1:sha256:c86f5ce5ed55b8eb9a8a34fcdea034373cddfbb1694365255b66059583aa7c99:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMGE4MzYzMzNiNjg3NTBmN2M2MTA4MGNjODQyOGQwZjhiMDhlZWQ1ZjAyYmNhNWUzNGU0MGE3MzJmZTBkYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyODU1ODE2MDA3OTQ1OGUwNjYyMTAxZTkzMTYwNjBlMWI4NjJkYWE5ZGZkY2Y5Y2ZmOWY4ZTlmZDBkZmJjNzQifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/financial/billing-documents.routes.ts#L10-L45",
+          "version": "repo-lines-v1:sha256:92ffb0ab9c1e8c45798cfda8b24a78acaac2c0e3d1446fb86ef47e7488f14028:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1OTlhZDEwN2UyYzY0NDZjOWQ3MDhmYTg2OTQyOTVkMGE0MmUzYWIxZDJhYzJkMWZmMDhjZjYyZTNkMDQ0YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNzQxZDJjMDhlNmY1MTBiN2U5YTI2NGYzNzhmOWNlMDA0OWE1MDRlMGU3ZWY1ZDY3Y2QzZWE4MTNmODU0NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyNDExZjA0ODBjZWFkOTBiOWZlMzA0YjdhM2NhMmIxNjZhODAyMzNjYjMxYjRjZTQ4OTMzNDJkMGM0MDNhZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhZjBkMjAyN2IxODQ1YTU1YmEwNjU1MzJkMDM0YTgxZDQzYjA3M2JkNmVhZjUzZDI0NzcxMzRmOGQzOTA2MjEifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/vehicle-schedules.ts#L26-L58",
+          "version": "repo-lines-v1:sha256:30e67e77f9e8f61cdcc5c3cc3223c38167136ebed0e8db4324f2c28729ced202:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViYTA3MzUwM2Y5YjRlOTRmZTYxMDM5MzE4ZTlhOTA2OTU0NDliMjdmMDQ1YjM5ZDQ0OTgzMzNiYzIwNjNlOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhODI1YmRmNDM0OTI1N2JjZDNhODM5NWRjN2E1ODUwYTQ4OGY4OWE3YjE0MTQ4NzE5Mzk2MjRmNzllODY2MWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZjU0M2U2YzQ1ZjhkN2Q0M2Y2MWFiYjZjN2QwYjA1NDdhOTk3ZDkyYjQ4YjQwOTY4YmYzMTIxOGNkOTg1ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmMzhjYzdhNGVhN2U0ZmE0ZTNmZjRkYTgwYjA3ZjJjNjIyZWQ5OGM4OTVmYzNiMWVkYjYyNmE0MDk3ZThiNTcifQ"
         }
       ]
     },
     {
       "id": "claim_e9e6be3aef56433e95def9ea7494a664",
-      "statement": "Authoritative Vietnamese documents in docs/ are: CONTEXT.md (domain glossary), docs/flows/DELIVERY_TRIP_LIFECYCLE.md (trip QA guide), docs/flows/00-…15-*.md (role-by-role test scripts), docs/code-standards.md (conventions), docs/codebase-summary.md (codebase map), docs/system-architecture.md (architecture), docs/deployment-guide.md (deployment), PRODUCT-SPECS.md, and ROADMAP.md — the wiki pages are a navigation index, not a re-authoring.",
+      "statement": "The authoritative documents are: docs/flows/README.md (index with the routes × documents × roles coverage matrix) plus docs/flows/00-OVERVIEW_VA_PHAN_QUYEN.md … 15-QUAN_LY_LOP_XE.md (role-by-role Vietnamese QA/user-manual scripts) and docs/flows/DELIVERY_TRIP_LIFECYCLE.md (trip-lifecycle QA guide); docs/code-standards.md (conventions); docs/codebase-summary.md (codebase map); docs/system-architecture.md (architecture); docs/deployment-guide.md (deployment); docs/project-overview-pdr.md and docs/project-roadmap.md (product requirements and roadmap — the former root-level PRODUCT-SPECS.md and ROADMAP.md no longer exist, though some older docs still link to them). The Vietnamese ↔ English term mapping lives in the docs/flows set. The wiki pages are a navigation index, not a re-authoring.",
       "evidence": [
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://docs/code-standards.md#L1-L9",
+          "version": "repo-lines-v1:sha256:19b49cd407aae3bb5ecd0b0d6072855b09582a42f6bf8ca11084eb003de392c2:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk4OGE4NzBlMmU2NDkxNTg5ZGJmZTYyOGNlM2FmYzVjNWJlY2Y5ZjM0M2QyNWUwOGRjMWQ2NjZmMDE5NjRhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRkMzhiNDg0Y2NjNzk1YTk5MzBiMDc2ZmIxYTI3NTM4NTY5YTc1Yzc4NzVmYzhiNTFjNzU3MWEwMzRjNjFiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQwMDFiZDRiMTJiY2UxNWY3NDE0Y2ViYzM0MjJmYjliNTUwNWZlNDc0NWU2MTgzZTRhN2YzNGRjNGRiNjhkYiJ9"
         },
         {
-          "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "resource": "repo://docs/deployment-guide.md#L1-L16",
+          "version": "repo-lines-v1:sha256:e9583e8604d5a67703762d7f2dcb7fb8423f9ced255d5888bac61b43fd812b66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNzRmNjZmOTA3NzUyNTlkYmQ4MzBmOWI5MWIwYTI0NTE2OWE2ZTNjM2ExZjAxOWE1ZjAxODE5NTQ1Y2RmY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhM2E0MmRlNzliNDEyYThlNmI4MDZlYzA0M2RjNGEzZGQ2ZmY1MTZlMGQ1ZmNiN2ZmZjNmZDBkMGZmNzA1ZTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkYzA3ZjIyYzRkNWEzYzM2YmRmODkzMjdkY2JkNzUyYTM4ODRjNjAyMTc4MjczNzNkOGIzZTU1NWM5NGExOTIifQ"
         },
         {
-          "resource": "repo://docs/deployment-guide.md",
-          "version": "repo-file-v1:sha256:a1d2d85eb7c647a428f36f40b7b5657208afba8b3409d5d1f4308c189a1cd13f"
+          "resource": "repo://docs/flows/README.md#L1-L37",
+          "version": "repo-lines-v1:sha256:d1609e45163bc1dc5542e3e970945ce59823286b15f2a5465ae0dee19dfc6297:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNzdlMjQyZGFlZGYyNzU5NDRhOWQ1ZGJkOWVlOGVjZjFlMTI0MDIwYWUyZTkxM2I4MmMyMmM4OGFhN2JmODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxMTg1OWVjODNhMTJhY2IyMTRhNDFhMTc5MmMxNjVjM2U2NjY4OGQxMDUxNDc1NTcwYzJkMWQ1ZDY2OGQyMGMifQ"
         },
         {
-          "resource": "repo://docs/system-architecture.md",
-          "version": "repo-file-v1:sha256:d47b37e471cfb1092dd8baab252825bca08e78cc5df1a301faf80ede11cb1c70"
+          "resource": "repo://docs/project-overview-pdr.md#L1-L13",
+          "version": "repo-lines-v1:sha256:7afbf58cbe7e18e806c477a0c21b480b9ab048baf43fba02945a208dd7f840a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNGE5M2M1NGNmMGJjMDEzZWVlOWYzYmU5YmZmOTI2ZDVhZTE3YzlmNGFkOTQzZWI5NmJlNjJiYjc4MmI0MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmZTQ1MmZmYWVlYWIwYWMwNjgyNDE1ODY5NDkzYjMyZTUxODUzZDc3NzBkOWYyZjU0MWM4MWMxZjdhMDFlYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyNjkyMjY5YjliNTUwZmI3NDFkY2I1MzgwYjk4Yjc5NTA2Mzk0MDNiOTY0NmI3MmNkOTVkOGE4OWJhMjZhOTMifQ"
+        },
+        {
+          "resource": "repo://docs/project-roadmap.md#L1-L17",
+          "version": "repo-lines-v1:sha256:b1da042d505c1613f2cef8e65698d035ed5129ac3415490f5ad488e3ac878aa6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4YTJhZDUzNDdmYjk0ZmM3ODhhYmI1YjE5NTg2Zjk5MGZmNDVkZTQ2YjVmMmFjYTM5NjdkZDM3MDEzNjUxNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzY2Y4ZDlkYjgxMDhmNThkODQ3N2UzODIyM2VlODI3YjViYWYzNTJiYmZlMGUzMTk0MTU3YzAwYTIyNDViNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MTVkMmFhM2JjNGE5Njc5ZGZjNzM5YmM4OTE0NzllYmZkZjRmODMzNGE5YmJjYzdhZGMwOGNmNDU2YTQyZjAifQ"
+        },
+        {
+          "resource": "repo://docs/system-architecture.md#L1-L3",
+          "version": "repo-lines-v1:sha256:36bc5ea02831eded343019c20ffe3acd754c6c267f7392fbea2b57df74239803:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJjODdlOWYyNWQzMDIxZDdlZThhODc5MzIxMjVjYjJkZDhjMDBlZDQyZGZhOWQwOTcwMGUxYzJkM2E1ODM1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2QzNWQwNzMzOWQ2NjFjYzczZmY3NGZjYzBlNTY0MWFhMGQ0NTMzZTk2ZTg3MzdmOTkzOTAyN2QxOWZjM2UyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFkNDZhY2UzY2M1MTY5MzkyMDdlN2U3NWYwZjI4NWRlYmY0ODA2ZWEyNzcwZGZkNGUxMjI3YjNkOTkyMDRmNiJ9"
         }
       ]
     },
     {
       "id": "claim_13d83ca21d1148bdb4f6d7acb0f8b8d1",
-      "statement": "Conventions at a glance: TypeScript strict no any, Zod schemas with z.infer over hand-rolled interfaces, Vietnamese user copy with VND integer display and exact numeric(15, 0) ledger / numeric(15, 2) cost columns, one driver per trip, append-only ledger, Vietnamese audit messages, casbinAuthz + requireRoles dual-layer RBAC, Tailwind v4 (no tailwind.config), no !important, no raw DB IDs in UI text, mobile-first for DRIVER/FORWARDER.",
+      "statement": "Conventions at a glance: TypeScript strict no any, Zod schemas with z.infer over hand-rolled interfaces, Vietnamese user copy with VND integer display; money is stored exact as numeric(15, 0) for ledger and trip money columns, while the remaining scale-2 numerics hold fractional quantities and per-liter prices (fuel norms L/100km, liters, fuel allowances, unit_price) rather than ledger amounts; intermediate math goes through round2dp()/computeTripTotals() from shared/src/calculations; one driver per trip (single trips.driver_id), append-only ledger, Vietnamese audit messages, casbinAuthz + requireRoles dual-layer RBAC, Tailwind v4 via @tailwindcss/vite (no tailwind.config), no !important, no raw DB IDs in UI text, mobile-first for DRIVER/FORWARDER.",
       "evidence": [
         {
-          "resource": "repo://CONTEXT.md",
-          "version": "repo-file-v1:sha256:fe68e3f281f16949f23d2bf6f7d83c561b9684180b192441c0a7e9a3a587e3a7"
+          "resource": "repo://AGENTS.md#L114-L156",
+          "version": "repo-lines-v1:sha256:f37de0b2fab5ff3438a3c513dc09325ab2cf2999f96405d2bcf7afab75d15b7a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjM2YwYThmOWQzY2MzZjg3NTc3OTA1MDY4Y2IzYWQ5MDRjMTM5OGNjNDY4Zjc3OWNiODJmMGMzMzYyZjQ2MWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMTU0NjE5N2FmOTZmMTY0NmUzMTNkNWQ3NWEyNWNjOTU5MWUxNzdkZGRlZDMwYTllZDRmNDAzZDk4MWU0MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1ZGFiNGZmMjUwMjY3OWQ1MGJmNjFjOWQyZWEzMGM2Y2I3ODRjYjNjMzliOTRjOTgyZWE4YWI5N2NiZmY0MjAifQ"
         },
         {
-          "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "resource": "repo://backend/src/db/schema.ts#L287-L335",
+          "version": "repo-lines-v1:sha256:cba01eaaf8313422b96fadbbf908f0df1c480178a1806f95a60ae7e768d6284d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZmI1ZmI3ZTRmNzZiNmY0Zjk1ZjQyNzFlYjAzMmQxZTFiYzRlZmViYzY3ZDE5MWJiODQxNzU5ZTExODljZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmM2I0MjFhMTlmZjFmZTE1YmJkZDNlMjQwM2EyYzExNWI5YzRmMDEzMTg4MTRiZDdmMjNmMDUwZDk2Y2ExZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwNDk4Zjc2MTJkYTkzMDVlNzFlYTI5YjMzNTc3OGFmMThhZDZkZGUwODdhYzFiOGE0NTY0NGMxMTViMzU5NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjZThjZWUzZWRlZjk0YTliNzE1YmVlNjZmMWVhYTU0ZTE1YjczZjAwNGE4NmQ4YzFiYzMzMzNkN2UzMGUwMTAifQ"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L405-L426",
+          "version": "repo-lines-v1:sha256:567fb32dd756d8ea3eea39af7bf7e980df24c0c0b8624145950c41137c38490a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNWE4ZjgyYmQ3Y2ZjNjEzZWQ3MTRmMzBkMGI0ZTU2ZTRhYjhjN2FjMDFiMWU1YmI5NGRmNTkxNzUzNTIzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliNDI2MTQzM2QyOTM3MjIxZjIzNDM5ZjExNWE1ZTBhYTI0Nzk0YWIwMjUwMzIzYTRjYTEyZDA1M2E2MjliNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZGQ0ZmE0YzM3MTYxMmQwM2RmOWJmMjhkMTc4ODUxNmE5YTk1MDM5N2RkMzlmZDExMjQ2YWJkM2I3YTY4YTUifQ"
+        },
+        {
+          "resource": "repo://docs/code-standards.md#L5-L48",
+          "version": "repo-lines-v1:sha256:ef4189c8c596d50633f414a2afd987c83ab0f834c7fa50f54f400790dab1104d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiOTczZTM4NDI4MTg1OGFlYmE1MDY3NDIyMjFhNjg5YjEwNmUwMjRlOTBkOTc2MjE4Nzc2MDVhOTNjODRhNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkODEwNDk3MzlkYTE2ZTEzY2IxMDIzMDA5NTY0MGNmMmM4M2YwMzljNzAwNGY0ZjBmNzc2NGVmNjcxMDQ4MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5MzYzMTFkMGU4MjEzOTc3MTNmNzlhNDc3YjhlNTZjYmRlMjQxZWE5N2FhMDVlMGIzMjk1ZDE1ZGFlOWM1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNDg1ZDU0NzlhMWY5OTkxYzg3NjI2MWVhNWQzN2EyYmViYWY4ZWE2ODllNGZhZTQwZDM0MjM4Mjk0ZDQ2MTgifQ"
+        },
+        {
+          "resource": "repo://docs/code-standards.md#L82-L114",
+          "version": "repo-lines-v1:sha256:109d8239a398865613df718d82fe2e3acae7e1028c2399995ac44d2abb6a4bc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NTE3NWY0YTk1ZmMxZTZmODFjOTEwOGQ5NWM0Y2VkODhmOWJhZjA2ZGFmZGVhMWFkMzMyMGY0MjlmZWQxMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMWI5MzkwMGViN2EwOGRhOWI4ODc0ZGFkNzMyNjIzMGVmZTdiNTI0MWM4NDBlODFlNGFmZTM0ZjJkMTQwMGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2ZDM0MDg1NDUwZmQyNTM0N2Q2MzcyNDY3OTljMWU1MmM5NjNjNDBkYWZiOWQ2ZGY0MDg0MzU3MGM2MDQ2YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5ZmYwNjk0YzY5ZGMzM2VlYWUwNmQwZTU5NThjNDE4MGVjNzMyZjJjMzJlNDA4MzdkODk3MGMzMTZkOGVkOWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5a5e4d76990f4e4282b2cf8a93cb0682",
+      "statement": "The root Makefile is the single entry point for every environment: make setup (infra → drizzle-kit generate + migrate → seed; login admin/admin123), make dev (db/redis containers + backend :3090 + frontend :7173 in parallel, with best-effort generate/migrate on boot), make migrate / make generate for hand-run drizzle-kit, the demo staging targets demo / demo-backend / demo-frontend (build + push images and roll demo.tingting.vip from /opt/demo via deploy/docker-compose.demo.yml; demo-backend runs drizzle-kit migrate inside the recreated container, and demo deploys ship code only — never re-seed or wipe the demo DB), prod-migrate / prod-migrate-file (apply backend/drizzle/*.sql to the production DB, skipping *.revert.sql, or a single FILE=…), and the ops targets backup (prod pg_dump → OneDrive), restore (latest dump into the local dev DB with all passwords reset to admin123), and adminer (prod Adminer over a private SSH tunnel on localhost:8082).",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L128-L178",
+          "version": "repo-lines-v1:sha256:f7ba79603da5c0464f4569935d7fd08d66fe564fd3dee04dbf3e5e70b7b8db38:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MzMzNzVlN2I1YjZmNGU2MWNkZTAzOWI1NjA4YTcyOWRkOTA2N2NjZmJjM2M4YWUxNGVhNzY1ZjkyN2E4ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTVlYWQ1ZjEyYmZhY2I4NzUyYmE0OGYzZjRmYjBhNzM1NWI3NTYzYjU4NTdjYTZiY2E3ZTcwOGUxNTRiMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNjI4ZWZhYTYzZmUyYTI2ZWU0OTIyM2VlZGEwMTJjNTQ0YWFlYjJjZmU1ZDIyYzkwMTU3ZDMzZmFkYTU5YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2NjUxNWJhNWQwYmEwOTQ0MTlkOGZiMmU3ZDA1YTU5MjM4YzhjZmVhNDBmZDQ5Yzk3NWE2ZDZhNWZiYjdhMmYifQ"
+        },
+        {
+          "resource": "repo://Makefile#L16-L63",
+          "version": "repo-lines-v1:sha256:c01241540ef3b19b4f5488a3d817dbb8728b5b6ef2ef36438b3b65ac49938cf4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZDU3MTkzOGI4MmU5NDdjNTg0ZjEzNGEyYzg4MzM0ZTRmMDc2YTAxY2RkYzU5OWI5NGI0MzlmMDc5OGVmYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhMWY5MGQwNGU4YmMxOWI5OGQ1MjI4ZjVlYWNkYTNlMDIxZTkzNmIyYjQwNTFjZTc0YWExZmYzYmIwYmFmYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMzkzZTM1ZTgzNmEwZjc0MjA5NmE3NmYwMjUzMDI3YjcyM2RkMGRlNGQyOTdkOTlkMjJlMzY0NDM1Yjc0MTIifQ"
+        },
+        {
+          "resource": "repo://Makefile#L180-L209",
+          "version": "repo-lines-v1:sha256:7ec3966d339d9dfd939afc0dd699523552fddbcfa01a6fcd33f176c244b0adf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NDg5NTY0Yjg4YzdjYWY2NmM3OWZjZDhhYTQ2MzZmZjkyNjY2ZWM0OTkzYzYyM2ZmZTczZmZlNWJlYjYwZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YzkxNzE4MTBlMjg0NmQ3OGI2Nzk1OTMyOTg4ZWUyMzA5MmZjODk5Y2NiMDQ5MzY4NDgxMWE0ODZlZWYxY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ODA2YzY4MjFlZGM5OTllMjgxMjdiNjUwNGM2M2I3N2IxMDliNWNlMmYxM2E1NGI2NDhiODVmMDgwMDZkNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxYmQ5MzI1YzE4YTZlZDg4OGQ1NDI0MjE3ZTRiNGVjMDlkMDA2MmVjZDQ3OTk4NDEwNWE0NDFhYzg3YjM0NzYifQ"
+        },
+        {
+          "resource": "repo://Makefile#L211-L277",
+          "version": "repo-lines-v1:sha256:a4e9397f854e68c85ca9c084ffa57b10d15fd41b93ef52873c5911ac423d98dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZjRlNWRiZTgwMDBkMzk2ZDc4ZWNiNDQ4ZjQ2YTIwOWI0NDI0NmM2MjgxMDYxYWFiOWU1YmQ1NDM5NWIwMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNjc3Zjg0MmJkZThhMTBkZTBjZmFjYmVjNGQ5ZWE5MzI1OWE2ZDNiNTc5NGY5M2JhMTNlNDI1NTdmNDUzZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxNWUxMGU1MzY2MjgwYjlkMGFiNGQyZDE5YTQ5YjE4YjY5ZjA0ZjEwODk0ODE4NDg2ZGFmYTFlYWE3OGFiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2YWEwNWNlMGIxMjE0YmRkNDJiOWJkMjIwMzVlNDU0NjU3MDg2ZmVlMThkMjkwN2I1NzUyMWE5MmY5ZTM0MjUifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

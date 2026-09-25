@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:80825cb0e6d61aeef0f2abbae282c110443e1ab3a2beb931c596fddcb9509a07",
+  "pageVersion": "sha256:ae66e83392e58b206e168c164d391e19ed1dd54744e150d5dd40f67fef89dc79",
   "claims": [
     {
       "id": "claim_4d35ef18e37546058eddef8f641d9e57",
@@ -36,31 +36,271 @@
     },
     {
       "id": "claim_50c5b3b508214756b98fd203dc7102c4",
-      "statement": "The prod-migrate Makefile target (Makefile:166) iterates over backend/drizzle/*.sql filtered by grep -v '.revert.sql' so dev-rollback pairs never run against prod (commit 45fbad3); it SCPs each file to the prod server, docker cps into the Postgres container, runs psql --single-transaction -v ON_ERROR_STOP=1, and treats already-applied files as warnings so reruns are safe.",
+      "statement": "The prod-migrate target applies every backend/drizzle/*.sql file except *.revert.sql (dev-rollback pairs must never run against prod): it SCPs each file to root@nepo.tingting.vip:/tmp, docker cps it into nepocorp-postgres-1, and runs psql -U nepocorp -d nepocorp -v ON_ERROR_STOP=1 --single-transaction so a partial migration rolls back cleanly; a failing file is reported as 'skipped (already applied)' so reruns are safe (migration SQL must be idempotent), the /tmp copy is removed regardless of outcome, and the target ends by restarting nepocorp-backend-1 so the running backend picks up the new schema.",
       "evidence": [
         {
-          "resource": "repo://Makefile#L164-L179",
-          "version": "repo-lines-v1:sha256:eafd253bc35af1783a86cde73789fe171c32bf0934c734fc5af0f1a449cb4077:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NDg5NTY0Yjg4YzdjYWY2NmM3OWZjZDhhYTQ2MzZmZjkyNjY2ZWM0OTkzYzYyM2ZmZTczZmZlNWJlYjYwZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OWEwZmIyMTcxZjliNTk0YmQyZjA5YzQwMmEwYjU1MmRiNjNiNTBlZDBhNzE1OGEzMWQzMGFlYWRhYjVjMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1NmMxYmEyY2YyMTUzNmJkZWUxODJhNDE0YzMzMjc1NzM3NTM1OTIwNjYxYzBhYWQ5ZWM3MDk5MDBkYTBmMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyZDYyMzBmNzc3Nzc0ZjA2OGEzMGY5ZmMzYzNlNWZlNTJiOGIyYjg1Yjc5M2VmNzViMmQ5NDY3YjRiNDBjMTEifQ"
+          "resource": "repo://Makefile#L180-L198",
+          "version": "repo-lines-v1:sha256:efbe9112f20b583bf250b892bbf52397a1bf28c4c8986674a8698cb58c628527:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NDg5NTY0Yjg4YzdjYWY2NmM3OWZjZDhhYTQ2MzZmZjkyNjY2ZWM0OTkzYzYyM2ZmZTczZmZlNWJlYjYwZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NWRkM2IyYTZjMzIxMDkwYmM0NGIxNDE1NTRjOGE2YmI0ZjdkOTlkMTNkZmI3YjNhMmU4ZmJlOWYxYWZjNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ODA2YzY4MjFlZGM5OTllMjgxMjdiNjUwNGM2M2I3N2IxMDliNWNlMmYxM2E1NGI2NDhiODVmMDgwMDZkNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4N2M4ZDMyMDJjNDAyNDdhYTAxYjJiYmE3M2MyZGU4NWJhYWZhMjk0MDZjMGYwZjc1MjBhNzgzNWVkNzhmMDgifQ"
         }
       ]
     },
     {
-      "id": "claim_0f0885a6e82a4b209805bff4503be414",
-      "statement": "Backend and frontend rollout use the Makefile prod-* and demo-* targets with separate server, compose, and path variables (PROD_SERVER, DEMO_SERVER, PROD_COMPOSE, DEMO_COMPOSE, PROD_PATH, DEMO_PATH); demo uses seed-vantai-6months.sql so training screens are populated.",
+      "id": "claim_fdbf6350d1004fa8be928cebf370396c",
+      "statement": "Deploy targets build and push images to Docker Hub with docker buildx (builder bb, linux/amd64, inline registry cache), tagging each image both :latest and the short HEAD sha; backend/.env supplies the Docker Hub credentials and the frontend Makefile shares it via include ../backend/.env.",
       "evidence": [
         {
-          "resource": "repo://Makefile",
-          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+          "resource": "repo://backend/Makefile#L1-L31",
+          "version": "repo-lines-v1:sha256:6cdde5595a2e7205814702a2bcea92071e9a59c708941dec60e54b07766d97fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkY2Y1N2E2MWJkNGY3ZDljYjAyZWU5ZTc0YjUwZTRlZTM3YWYxZDU1YTFiMmNlZmJhZTZmMDAyYTA4NzVjMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZDg5ZGIyNmI5NGM4NzdmN2UzMWUxMDVjODVmYTM0YTIyYzkyNjliZmJiNzcwY2Q4ZTUyNWJiYzAzYTM1ZDgifQ"
         },
         {
-          "resource": "repo://deploy/seed-vantai-6months.sql",
-          "version": "repo-file-v1:sha256:c900645a653df1cfc678efed2b3498a28d0d8b538b7d8395ad5ac135e8e8c586"
+          "resource": "repo://frontend/Makefile#L1-L31",
+          "version": "repo-lines-v1:sha256:6c9d199cf5dc3577fe8d1f778868e35a2f2dca7306cad6528e0e46003f52c41e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZTNjZjRiMDJjMmU5MGY5NzA4N2Y2YmU5Mzc4N2RjOGEwYzdkNWRkMzg1ZGMxYTZkZGU2ZDQ4YmExMjIwNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZmFlMTRlM2ZlOThiMjQ1OWI2NjA5MzFlYjg2ZTQxMDU2ZGEwNDFjNWU1YTgxYzY4NGZhMjNmNTcwMTg5ZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OWZjZmY0N2YyZjZmMjk1OWQxNmEzN2JkOWI2OWUyM2M0ZjExYmQxZGY1MjlmZjcwMjY5YTdlZGQ5YWIxNTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9bcfe5e2b4424930a3e26197e2a9155b",
+      "statement": "Backend and frontend rollouts on both stacks follow the same flow: docker compose pull, then up -d --force-recreate --no-deps inside a 5-attempt retry loop with 5s sleeps (a racing deploy or an interrupted removal makes compose fail with 'removal of container … is already in progress', which is transient and converges on retry), a wait for the container to answer docker exec echo ok, and disk reclaim via docker image prune -af --filter 'until=72h' — the -a plus until filter keeps current and recent rollback tags, where plain prune -f only removes dangling images.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L144-L164",
+          "version": "repo-lines-v1:sha256:ce73e994f6edbafe03fb98ff8275944edf810a61ec9392872c37e1a9549fc861:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhM2YxZWQ3ZjIyMDJmNzI0NzJmYzUxN2ZiYjhiZjhhMGRhZmQ2YTdiZDE0ODNhYjk0NTcwMDNlNjQ0ZWU1NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzODA4MDQ3MDE0MDY3N2VkZDg3YTAyYjMyYzU2MzcwNmUxNTIyZjc5ZDE2MDk0ZWQ5YWMzMjdiM2VlZDU5NGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwYmY3ZDIyMjViNDNhNWEzOTM2NjQ4ZjU4MjYxMzZkNmE0MmE1NmEzYjhkMGU3OTNjZjNkMGQ2NDA1MWJiMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5ZmVjMTkxYjY0ZDUxOGViMzQzN2Q0MWIxM2VlZjYwMTNiODMyZDk4MDA2MDZmZGJmYjk5NDM4NDE4YTNlZDAifQ"
+        },
+        {
+          "resource": "repo://backend/Makefile#L32-L63",
+          "version": "repo-lines-v1:sha256:0d5a072b13686f7db17ef544410df1ba41d6cec6a5c7c0438f786238d2336500:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZGFlZjI2ODE0NDhlODZiZDcxYzc4MDBmM2Y3Y2Y1ZmFhNGNjZjk0ZjUwMWNhMzNjOTQ2NTc3Mjg1NjZhNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyMzRhYmVjM2E1NTBlN2JiMTZmZTUxOWU4ZDNiNjYyNTU1ODM0NDc3NWEzYTg2ZDVlOTAyMjAzNGM0NDFlMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1ZTZlYmFlYzcyZDJkZDc4ZjU2N2I4NmY5YTRkODkxYjM0ODliMmQ2ZDJhOGJjOGNiZjI1YzZkNjY5NTZhYzcifQ"
+        },
+        {
+          "resource": "repo://frontend/Makefile#L33-L50",
+          "version": "repo-lines-v1:sha256:b56a60c104abc019349cff482fa9f1c30c3c352c7cc3eda0a9d43f03d0b76502:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNDAxNGNjOWQ1ZjcxOThjMzRhYTE5N2I3MGU4MThhMWExODA3YzllN2RhN2QzODdkZTU2ODcyYjViZDdiNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3YmU1ZGQxNmU4Nzc3OGQ2ZDBlOTMxY2FmYzM1ZjU2ODdkY2M2MmRmOTZmNjEwZjZlZWFhMzM0NWQ2NjhiODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyMzRhYmVjM2E1NTBlN2JiMTZmZTUxOWU4ZDNiNjYyNTU1ODM0NDc3NWEzYTg2ZDVlOTAyMjAzNGM0NDFlMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b419f3d67e74e2abc198dd2fbe18457",
+      "statement": "After recreating the backend container, both demo-backend and the prod deploy run migrations inside the app container via docker exec <container> npx drizzle-kit migrate; migration SQL is baked into the backend image (COPY backend/drizzle), so each release migrates with its own code and deploy-backend alone is sufficient for schema-only changes.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L153-L165",
+          "version": "repo-lines-v1:sha256:ae6df5b25bf7667c42f01f137783275c1c390aaab71101f065fb8b2f8d33182a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZmU0NTk1MGM1MGZiNjhlYjgyZTVjMTIwZTkzNTgwODQyMDZjMTljZGRiYjM5OWMyMGY5ZjZjZTU0ZmJkZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxODI2ZGFlYjEwNjEwMTk4MDM1MzNjYzE4YzZkZjFlMTFhMTE3OTFlNjY2ODk2ZWIyODRiZmQyZTBlZDc5N2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5ZDFkZmEwZjA4MzZhOTkwNjAyZGUyMmU5NzM1MzhiZDMzNTAxYjhlZmRjNzk2ZGExMThlY2ZiZTA3YzZlN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NmQwZDUzNjY2NDQzZTlkNmNhZTVjZWNhMDk2MTk2ZjA5MWJiYTE5ZWE0MjQ0YjNlZDg3ZTUyYzkwMmM3NTYifQ"
+        },
+        {
+          "resource": "repo://backend/Dockerfile#L54-L55",
+          "version": "repo-lines-v1:sha256:04ae91252b50717433a80adc0368dd519c582f4b4e608f07af291708d3957b06:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFlYjk5NjRlNzQ0NWU4YWE3NDYyYWMwMTM4MTMzMmMzZmEyZjUyNmQ0N2IwOTU2ZDU1MWI4MWZlOWM3NzdjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGY3ZjBiN2JjOTJmZjExZTdjY2UwZGQzOTNlOGZjZGVhN2VlODc2NzZiNmY1NTg4N2ZmY2M1OGE3MjdjMDZiOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjIwNGJjNjAzNjViYjlmZTVmNDM3NmYzYWY5NzQ3MGEzZmNlZDQxNTM4NjQ0YjZlNTIwNzk2YTVkYjMzMWMxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2ViY2VlYWM4ZDlhMjZkMzExODkwY2ExYzgzZjRkODQ4NTc0OGMwMGI4OGE4Mjg2MmM2ODY5ZjMwYTViM2M2ZCJ9"
+        },
+        {
+          "resource": "repo://backend/Makefile#L46-L55",
+          "version": "repo-lines-v1:sha256:0a9963b03e5f2a8a97a4f7d61593a9d59a4acee2a4f0f70ae5888efa862e07eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZmU0NTk1MGM1MGZiNjhlYjgyZTVjMTIwZTkzNTgwODQyMDZjMTljZGRiYjM5OWMyMGY5ZjZjZTU0ZmJkZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZmRkMmRiMDg5MTRiNGE3Y2VkYWQ5MjA4ODE1MDU5YTAzOTg2NjhjZmQ5N2IwN2E1ZmU3YzEyM2UxMTcwNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5ZDFkZmEwZjA4MzZhOTkwNjAyZGUyMmU5NzM1MzhiZDMzNTAxYjhlZmRjNzk2ZGExMThlY2ZiZTA3YzZlN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MmYyYjNkY2U1ZWVmZmNjMzY0YjNhNTRmMTBkNTVkZDhmNWJiNmJlNzdiN2Q5MjFhOTQzNDEwZjViZmMwNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0cf71a9d493441d794ef2f4e5a056c27",
+      "statement": "Demo staging targets are parameterized by DEMO_SERVER := demo.tingting.vip, DEMO_PATH := /opt/demo, and DEMO_COMPOSE := deploy/docker-compose.demo.yml in the root Makefile; the root Makefile also defines PROD_SERVER := nepo.tingting.vip, while the prod deploy path /opt/nepocorp and compose file deploy/docker-compose.prod.yml are hardcoded in backend/Makefile and frontend/Makefile.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L104-L135",
+          "version": "repo-lines-v1:sha256:6cd78240a79994a3098d77341ab41b8c580377e91372ede6bb94c16db072d605:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNjJhMTI5OGMwOWY5NDg2ZmRlMzE2MzI0MzllMjE2YjBjZTYyN2U1ZWZkNGFhYTNmZWZhNjhhNjM5M2FiM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5OTI1YzBhMmE3MWVjMGRlYThjOWVkMjc4MDM1YWI0NGYxYzUwNzM5Yjg1MDFkZmQ3YjQ2ZDc3NjkwZDhjYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxN2RjNGVjZmY5NzEwMDgyM2ViNTgxZDc1MWM3OGZmMWUzZjIyOGY2MTFhNGI2Y2IwMWQ2ZTU1ZjZjZTE5YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwMzdjNWI1OGY5NTBmNDhhOTY4YjY1OGQ3ZThhNDdkOWUzMDBlNzE5OTcyYzU3N2UyMzU5MTlkMjEwYWMwY2YifQ"
+        },
+        {
+          "resource": "repo://backend/Makefile#L10-L36",
+          "version": "repo-lines-v1:sha256:ac39c575e62dbaf130316c5a91b6af22cf44e1c79386e6ece22fdfa7334842c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNjJhMTI5OGMwOWY5NDg2ZmRlMzE2MzI0MzllMjE2YjBjZTYyN2U1ZWZkNGFhYTNmZWZhNjhhNjM5M2FiM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMWZiNWYyOTI1OGMwMGU1MDI5ZTFmMzdjNTQ3ZTc3ZTM0MzU5NTJlMzdhYTA0ZGFiYTY0MTAzNzMwNDM3YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMzQyZmFlY2EwMjY5MDRjYzBlODY0MzEzYzg3ZDk0NGU1MTM5Mjg0ZGQwYjk0NWQyZWMzNTk5YzI5YTI4YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyZjc0YWUyNmE1NTE4NzYwZTAzZmQzNDI4ZDdiZDIwOGEyOTNkMGEyNDRlYWE2YzgzMTRjNDBlZmI0MGQwYjAifQ"
+        },
+        {
+          "resource": "repo://frontend/Makefile#L10-L37",
+          "version": "repo-lines-v1:sha256:b57bd210796e456ceef594c6d2afbb728fc2c638de47b0f1097a580b07034918:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNjJhMTI5OGMwOWY5NDg2ZmRlMzE2MzI0MzllMjE2YjBjZTYyN2U1ZWZkNGFhYTNmZWZhNjhhNjM5M2FiM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNDBkZDFmYzMxNGEyYTBiMjBmOWYxZTc5MTcxODQ0MGRkOGM1ZmI3YmY5MmUwNDlkNTVmMTdhYTk0NGE0NDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMDEyNzhhZmQwYWQ5MjBjMDZiYzViM2QyNWVhNTdhNzgyMWNiNzIwNGVlNTE1MDYzNjljOGNjMmY2YWQwYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxNzU2MGU2N2I2Y2RkYjA5OGFiYzBiMjI4Yzk1N2UyN2UxODNhYzJjMzA4MzNjNTMxOWE2NjczMjI0YTY1Y2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_750587a609cd4d91b38c19604722d21c",
+      "statement": "The demo compose project 'demo' is a second stack on the vantai droplet with loopback host ports 3091 (backend), 3001 (frontend), and profile-gated 8081 (adminer) because 3090/3000/8080 are taken by the vantai stack, redis capped at 64mb because the 1GB droplet hosts two stacks, and CORS_ORIGIN=https://demo.tingting.vip; the host vhost deploy/nginx-host-demo.conf routes /api/ and /socket.io/ to 3091 and / to 3001.",
+      "evidence": [
+        {
+          "resource": "repo://deploy/docker-compose.demo.yml#L1-L14",
+          "version": "repo-lines-v1:sha256:77b4d6822a4e415e442dbbdc8844834a0742b36c268b1a35efc349f237f28b36:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ODllN2VhYmI3YmE1OTIyYTUwODdjMjVkMzE1YTFlNWZiYjZiMGY5NzUxMDg2MjU3OWQzNDg0MjhkYmQ5ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYjc5ZGMwZmNkMzQ3Yjk4OWE3MmEzZjM2Mzg4MjhkZjIzOTJlZWY4ZGY5MjAxZGU5MjgzMDMxNjgzOTdhZDAifQ"
+        },
+        {
+          "resource": "repo://deploy/docker-compose.demo.yml#L35-L79",
+          "version": "repo-lines-v1:sha256:694e954acc22a37f5cc9fb186f33239f7e9b68531ec34f1c8914c69e4775d1aa:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzY2JhNmZmNmJlYzc1YjM4MDM4Y2I3ZTZiZTIxYmFiMThmYmMyYTJlMWI1NmI0ODNkMDg2MjZkMWFiNjhiMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3M2M1ODY3MGY5Nzg2MGY1ZTM3NTExN2QzN2U2NWJiNTc0Mzg0NDc4OGY3OWNkYTAxOTJhMWM2MzM1OWI3ZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhNWNkZmUxZWFmMzE1ZjU1NWE0MWFkY2NhZjg1ZTI5MGExNTcwNTNiNjY5MzBjODk2Y2I2YmZiZGY0ZjY2ZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0NGI3MjY4MWY0MDdmZGUyOTVmMWJiNTE1NDhkMGU4NWIyMzAwOTg4NmU4MDU3YzZiYWIzZDIyNGZiZWYxN2MifQ"
+        },
+        {
+          "resource": "repo://deploy/nginx-host-demo.conf#L10-L67",
+          "version": "repo-lines-v1:sha256:292ad59b62ec711f8d629e770d447aada86d4b6dcf9fe7a9969b61c51cf9bdae:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDcxM2VmMzRlMzUzZmUyOGU5NWM1YmExY2RjYTcwMmEwYTg3NzBkYWU2NmFlYmQ3Mjg2N2UwYTE5MzRkNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYzE2Mzg1MzQwYzU1MzlhODJmNWVkN2M4M2E5OTA3NWVmZGFiOTQ4NmJlYjY3ZTAzMmEyMmUwNGViNTUyNTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f6417ec50adb4800b062156ea3a2f4a9",
+      "statement": "The demo database is a one-time anonymized production snapshot (taken 2026-09-03 via ad hoc SQL, deliberately not committed) — demo deploys ship code only and must never re-seed or wipe it, and all demo accounts share the password Abc123; this contrasts with deploy/seed-vantai.sql and seed-vantai-6months.sql, which TRUNCATE the schema on load for the separate silversea-bound vantai stack.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L128-L135",
+          "version": "repo-lines-v1:sha256:35296a2047aa78133b682787351466f55b0469cb7990047f8137488e5d17d36e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjczMzM3NWU3YjViNmY0ZTYxY2RlMDM5YjU2MDhhNzI5ZGQ5MDY3Y2NmYmMzYzhhZTE0ZWE3NjVmOTI3YThkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk5MjVjMGEyYTcxZWMwZGVhOGM5ZWQyNzgwMzVhYjQ0ZjFjNTA3MzliODUwMWRmZDdiNDZkNzc2OTBkOGNiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM2MjhlZmFhNjNmZTJhMjZlZTQ5MjIzZWVkYTAxMmM1NDRhYWViMmNmZTVkMjJjOTAxNTdkMzNmYWRhNTlhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTAzN2M1YjU4Zjk1MGY0OGE5NjhiNjU4ZDdlOGE0N2Q5ZTMwMGU3MTk5NzJjNTc3ZTIzNTkxOWQyMTBhYzBjZiJ9"
+        },
+        {
+          "resource": "repo://deploy/docker-compose.demo.yml#L12-L13",
+          "version": "repo-lines-v1:sha256:61dcd76cae5739d1b8b3760ce3fd08226d6469062c3247a8f18561342b5a0977:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU1MmY0YjlmODUwOTE2YTgxOTJlZWZmYjhkMGVmY2NjOWQxZTAyMjU0MTllZWZlYjI3ZTRjZTcyOTJjOGRlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJiNzczZjY0MDdkZTdhNTQ4ZWEzMDIzNzA0ZDhmYTkxZTNlY2QyNjJlOTc2YTk3NjBhYjk2OTZjN2FhMjRhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTcwYTI1ZmI0ZTEzYWZkOTQ1NmYwNDI2MmJiNDlmNjE0YTFkZjM2MjU1MDdlMjFjMGE0MjhhMTgyYWYzMzlkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRjNDJlMmMwZTAyNjNlZmJkYTZkNDg0NWRhMTUzOWUyOWZhMjhhNDZhN2NjMzEyNGQ3ZTY0YTM0MWI1Nzg1NSJ9"
+        },
+        {
+          "resource": "repo://deploy/seed-vantai.sql#L1-L26",
+          "version": "repo-lines-v1:sha256:904d0e63f0e1175bf85e645da15a4f6ce61f433d0be781e05e070ca8c0fa610b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1YzgwMGE5YTY5MDg3OGNkZmI3MmViZjc5Nzc1NDlhNzc3ZWFlNjYyMjI0NjhiNGVmZTI2YTIwMmRkYWFjNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZWNmNTk0YzBjNDA1ZWYzNmUxMjYwNTU1ZDA1NzE4NGM2OTE1OTk3MDkxYWEyYTlhOWY4ZDU2YTk3MGQ0YmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2ZmJjYjgzNmU5Yzk2MzI3YzM2Y2ZiMTg0ZDBmNTU4NzQ1ZDFkMDM4OWE5ODg2NmY1OTFkM2M4NmNlM2U0M2UifQ"
+        },
+        {
+          "resource": "repo://docs/deployment-guide.md#L140-L148",
+          "version": "repo-lines-v1:sha256:d9026b11e038bc300b7378d127260ebc8a8029c77526f0bf314c4d825d95ae49:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDFjNDQ5NjZkZDM5ZDgyMWY4NTc2NjdhNGMwZDZiMzA4MTZhM2UzN2RlM2E0NTBmOTdjYjQxNjA2MDY4YjZlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWNlZjllMGZiZjZkZGYzNmEzMjgxYmZmMzkwZjAwZmNiYWUwYTc1MWEwNTM3ODI1YjU1YWZkNTgyY2VjZjdiOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmRjZWEzOWRhNzk2M2Y0ZmM1MTNlOWU3OTI0YTRmZmMwYWU2MWJlYzkzNmQ1YjMwMjAyZjdmNThhZGM5MWNjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDk2YzI2MzMyYTdiYzQ0OGYwYTc4OGIwNWU4Yzk2NmQ4YjljY2VkOWJjZGM2YzA4MTYxNWRjY2RhN2UwOTVkMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f53a6bc9037945889a941db49ea44a62",
+      "statement": "make prod-migrate-file FILE=<name>.sql applies a single backend/drizzle file through the same scp → docker cp → psql ON_ERROR_STOP/--single-transaction pipeline (without restarting the backend), for surgical single-file fixes.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L200-L209",
+          "version": "repo-lines-v1:sha256:fd41e3093ca49222f2f8355228017a731c9edf6c2dcefd5c551730b049ed2ddb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNzFlMDJkYmVlOGM3YmRkZTczN2RjMGQ1OWJhMTE3OTY4YTFiZDYwYzQ3OTY5ZWM0NzdjNzc5M2Q4ZDk2NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YzkxNzE4MTBlMjg0NmQ3OGI2Nzk1OTMyOTg4ZWUyMzA5MmZjODk5Y2NiMDQ5MzY4NDgxMWE0ODZlZWYxY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2N2FkMTM4OWQ5NzIzM2FiMGJkYTVjM2FlNGQ0NzIzYTIxOTQ3MWE3YTZlMzA5MjI3YTY3ODMwY2I1MjJmMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxYmQ5MzI1YzE4YTZlZDg4OGQ1NDI0MjE3ZTRiNGVjMDlkMDA2MmVjZDQ3OTk4NDEwNWE0NDFhYzg3YjM0NzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_73636264f3914f4c81d3afab0eb0fcde",
+      "statement": "The prod compose project is named nepocorp, producing containers nepocorp-postgres-1, nepocorp-backend-1, nepocorp-frontend-1 — the exact names the deploy and prod-migrate targets docker exec/cp/restart — and every service publishes loopback-only host ports (3090 backend, 3000 frontend, 8080 profile-gated adminer) with the host nginx as the single public entrypoint; postgres uses pgvector/pgvector:pg16 for the vector(1536) FAQ cosine index.",
+      "evidence": [
+        {
+          "resource": "repo://deploy/docker-compose.prod.yml#L1-L80",
+          "version": "repo-lines-v1:sha256:6bb69e0857f8e1c72e0e6f81821789a89d29964b10badb26e95c01e4aaf672c4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNGJlNzI4OTMyZWUzOTY4NTQ1MzJiYTg3YjNmMGI1OWNhOGQ3MDc0MjY0Y2UyYWY3NDJlZDAzNjc5NWM0NWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyZTYxNmRkNDBkZGIyNjg1NjM5OGY2Yzk1NThiODIyNjJkMjhjMzk0YzkwNTQwMGU2OWQ5OTMxODYzOGVlZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d6b06999cae44d14a42911ee5a96d798",
+      "statement": "Host nginx (deploy/nginx-host.conf for prod, nginx-host-demo.conf for demo) is the public entrypoint: /api/ proxies to the backend loopback port (60s read timeout, 20m upload limit), the /socket.io/ block must sit above location / with WebSocket upgrade headers and 300s read/send timeouts or the assistant's polling handshake receives SPA HTML and the chatbot never connects, /uploads/ is served from the data directory, and / proxies to the frontend container; Certbot adds the TLS block on first run and those lines must not be hand-edited afterwards.",
+      "evidence": [
+        {
+          "resource": "repo://deploy/nginx-host-demo.conf#L31-L67",
+          "version": "repo-lines-v1:sha256:a50be990a90731de132719ef30c483a02e783e89bdc6cf826278d9088905dca1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmY2EwNGNkOTc5ZDRhNTAyMDMzYzE1NGZhNzViNWE1ODIxYTFiNjY1ODM2MzlkYmQwN2IzZThkNzFhNGU4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjNDg3YTc4ZmJkMjhhODUxNWNlNTU2MTk5MWJlYjczZGYxZWIzYTM0NTA5MmQzZDE4YjVlMjkyMWYwZDdiMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://deploy/nginx-host.conf#L28-L66",
+          "version": "repo-lines-v1:sha256:be4b73d84a9db3614c400563e6f0577512a8a4ea69c19ce4a40bc9c997564099:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmY2EwNGNkOTc5ZDRhNTAyMDMzYzE1NGZhNzViNWE1ODIxYTFiNjY1ODM2MzlkYmQwN2IzZThkNzFhNGU4ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjNDg3YTc4ZmJkMjhhODUxNWNlNTU2MTk5MWJlYjczZGYxZWIzYTM0NTA5MmQzZDE4YjVlMjkyMWYwZDdiMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://docs/deployment-guide.md#L150-L177",
+          "version": "repo-lines-v1:sha256:eb385c6f1a43843faae076cf2162939818db56a62cf67230eb22b8aa63953741:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmOTA3NTcyZmU3OTU3ODdkYjlhODUxODYwMzNjZmQxNTQwZTMxY2EwOTZiN2RlYmZlMDk2NzhhYWQwMWQ5NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMGFkMzc1YmMwMmY2Nzk0ZmU1NWQ1MTY5YjcwZmI0YzA4YzAxMDRkZDdlZTYzMThlMDI2MDhjYTFjZmZiNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYzEyNDNiZjdlMTNlMGMyN2NlYzJjYzFkM2FjM2QyNGQ3MGZjNjJhMjYzYmQyMjFjMTc4NTU2MDg2OWU5MjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4ZGZkYWFiNDNlMDNmNzZkNjk2NGJkMWJkNTUzNDYzNTc0Yzc5MzA4MTk4OWVhY2ZmMzY0ZDRmYTA3M2FiZTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_69d3a235a4de4b0bb9bc3a6b2e2f1ed5",
+      "statement": "deploy/setup-server.sh is one-time production droplet provisioning piped over ssh: it installs Docker/nginx/certbot, restricts UFW to SSH+HTTP+HTTPS, creates /opt/nepocorp/{data/postgres,data/redis,data/uploads,deploy}, and generates /opt/nepocorp/deploy/.env with a random JWT_SECRET and DB_PASSWORD (chmod 600).",
+      "evidence": [
+        {
+          "resource": "repo://deploy/setup-server.sh#L1-L10",
+          "version": "repo-lines-v1:sha256:fb88dff109547bafe493288aa38aa61ac6c986bfb7bf5805cc0f7f26351097c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjOTE3MWU1ZTMzNDk3M2Y5NjJmYWMxYWE1MDc5MGNiZmU3ZTZkNWZiN2IyMTMxOTk5ZGE1NGE1NDdjMDhhZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5YWQzODAxYTc1MTQwN2EyZDQyNGU1OTA2MDUxNjU4MDg4MzNlYWQ2Mjc1ZjY1NjY3NjNhYzIzNTUwYjQ4MDcifQ"
+        },
+        {
+          "resource": "repo://deploy/setup-server.sh#L35-L72",
+          "version": "repo-lines-v1:sha256:9397e24f5956138ba886da7afbe98bfc9f960cf285e42eea08934d5be573de2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNGMxYmE2MzM0YTVjODYyNDgxNGVlNDIwMjhiNzkwMTZjMzRiZjRkMjFmYmI4YzYyZDU2NWMxMDhiNzk2NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YzkyODI1OGM3MTMwMDZkY2UwZmI0YTQ4MjY3NzczZDhkZDg5MmM0MjI5YTI2ODBjOTE1NjFhY2JhYWIyNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYzdlNWEzMzlkOTMxYjQ2NDI5NTVlN2Y1ZTM1NDMxOWM3MTdjN2ZkOTA5MmJkMDRiYWVjMzEyNjY2Njc1NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwMzU4Yjc0MzY3ZjcxZTgzZDQyMzFkMDVhM2Y0YWI1NTRjZjdkM2ZlMTc3ZDlhN2JmZmZmMGYwYjI2ZDU5NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f44a551e78d4a86ad03c07eb27d7d9c",
+      "statement": "deploy/setup-demo-server.sh provisions demo staging strictly additively (nothing under /opt/vantai is touched): it creates the /opt/demo directory tree, generates /opt/demo/deploy/.env with a fresh JWT_SECRET and DB_PASSWORD plus integration keys (Google Maps, MiniMax/OpenRouter assistant, VAPID push) copied from the vantai stack env, issues the demo.tingting.vip certbot certificate, and starts only postgres + redis — backend/frontend start later against the loaded snapshot.",
+      "evidence": [
+        {
+          "resource": "repo://deploy/setup-demo-server.sh#L1-L20",
+          "version": "repo-lines-v1:sha256:0ae35bb86684a45ea7ee0a2d9ff8503dcdecfa4d361b8b0cc383b5a647ed9c24:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjOTE3MWU1ZTMzNDk3M2Y5NjJmYWMxYWE1MDc5MGNiZmU3ZTZkNWZiN2IyMTMxOTk5ZGE1NGE1NDdjMDhhZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0MTAwOWQzNTUyZmNjMTkxYjkwOTA0NThkZDFmNzg3MzliNjczZjk5OWZhNmNiYzAwNmI0YTUxMWRhNjRmMTkifQ"
+        },
+        {
+          "resource": "repo://deploy/setup-demo-server.sh#L55-L102",
+          "version": "repo-lines-v1:sha256:9031a079c581f2ba10988f68014784c343740a3fe260dabe15a27fbaded1b0dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2Y2Y2ZjU2YTE3NjNhZjM5MmFmZDE0N2ZlMmZkZWM5MGUyMWVhYzkyODk4MjExOTI4MDE1ZmZiMTViY2YxZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3MzEwZDA0MGU5NThmY2M1YWFkODRkMjQxMDVlYTVhYzM5MTRjYTlhZmZlZDViZDg4ZjlhNjdhZTI0ZGIwNzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4bd8365a47264fa1bd7a8046078c3ad7",
+      "statement": "make backup dumps production via pg_dump -U nepocorp nepocorp inside nepocorp-postgres-1, gzips the dump, aborts if the .sql.gz is empty, scp's it to the OneDrive backup dir as tingting_pg_backup_<timestamp>.sql.gz, and removes the server copy.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L211-L232",
+          "version": "repo-lines-v1:sha256:73d0c75b1e0058e0069f85170dcb3dd5fa4d67d3250f0fbfd700d9306abce01e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZjRlNWRiZTgwMDBkMzk2ZDc4ZWNiNDQ4ZjQ2YTIwOWI0NDI0NmM2MjgxMDYxYWFiOWU1YmQ1NDM5NWIwMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYjZjNzA3YWNkN2ZkNDE0ODNlMzJhNzE4ZTJjNmE3NjhlNDIyMTNjNDZiMzI2ZjUwYjkwZDE0OTA4NjRjNzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxNWUxMGU1MzY2MjgwYjlkMGFiNGQyZDE5YTQ5YjE4YjY5ZjA0ZjEwODk0ODE4NDg2ZGFmYTFlYWE3OGFiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5MzBkNTQ5NDM2YTcwYjdjZjIwMWE0MTZjNzQxODAxZTRjMWQ5YmM4NDc4ZjVmNzRmZTQ0MTNmOTI2N2VkMmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_367d5c7a368a4e4eb8f4609dd60ce5e4",
+      "statement": "make restore loads the newest OneDrive backup into the local dev 'tingting' database — terminating connections, dropping/recreating the database and the nepocorp role, restoring the dump — then resets every user's password_hash to a bcrypt hash of admin123 so restored production data is safely loggable locally.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L234-L260",
+          "version": "repo-lines-v1:sha256:1f13f29412e43d844e8a91b23bf72bbbf6a87be3fe7cfd4063923c101ed77f7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkOWVjNGM3OTgzZmY3ZjY5NjVjYTFmZTc2MDA2NjI5NjRiMTExNDFiNWMzMmE4OTQyOGVlMWM3NmJjZWJmNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ODIyMmVkOTNkYmMzOThjOWFjNGFiZjRmOWYwYmZmY2RlN2UzM2VjOTY4Yjg0MTgyMDZhNzQ2NmFiZmExM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2NDdhYTNhZGU2NTQ1Njc0MzY5NDdmZDBkMTFiMDhlMDVhMDQyYWVlNDhjOGUxMTJhNDUyY2MxNDgwOTc0ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MTQ0NDBkODg1ZTJhZDhmZmY0OGM1MmYzMGRiZmJiNTdlZjgyOGE5ZDIwZjAwYTgyZTZjNDMxODM1YzMxYWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_46193461fb0e4b779c02b012e478dca6",
+      "statement": "make adminer starts the profile-gated adminer container on prod bound to 127.0.0.1:8080 only (never public — the nginx /adminer/ block was removed from the prod vhost), waits up to 30s for the loopback listener, then holds an SSH tunnel from localhost:8082 to prod loopback; Ctrl-C closes the tunnel while the container may keep running on the prod loopback.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L11-L13",
+          "version": "repo-lines-v1:sha256:a80bad99b5c2c1fd0aac5b238736035c62b2bc6c383b0f3c4934e0bc6547d7f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY4OGU2NjRkYzEyOGQwZDZiOTI4NTE1Y2Y5NDAyY2Y1NzNhNGE2MmU1YWMxNTAwNGEwN2Y2YTQwMDI3YzlkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE5YWYyZDdiOGNmMTNhZGFlOTY4MDA1YTZjNzJmNmM2YmE5NjE0YjQ5YTZiNTYzZjNhNjVmN2MzYjhiOGM3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjgwNjkzNTJiNDk4YjQzYzI1YTA5ZGMyMzYxM2I3YzI1OThmNTQ0NDM3NjVhYjY1NjA5NDljODUzZDQ3NTNmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg5OTgyOWI3OWYzMTE4MmFiMTYyYmZmZmE1YWU1OTI2ZmJjZGRjODU0ZWM4YTcyNjgyYWRiNjYzMmU5ZTc4OSJ9"
+        },
+        {
+          "resource": "repo://Makefile#L262-L277",
+          "version": "repo-lines-v1:sha256:f6653a0ae4c6cf7e185ec643d43c176b20b0405b20c12bee56bd8fcc7413cc3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyZWJmZDUzMjZiNDAzMWY2NmVmYjM5ZjQ5MzI5YjMxNWRmYjRjMDgzOTk0ZDg1MWI3ZmNjYjU1YzRkOGY5NzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNjc3Zjg0MmJkZThhMTBkZTBjZmFjYmVjNGQ5ZWE5MzI1OWE2ZDNiNTc5NGY5M2JhMTNlNDI1NTdmNDUzZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZmM2ZTk1NGY1Y2I0MjQ1OWI0YWZiMjljYzg0Mzc3ZDIzNzBlNDNhNGRlZGNmYjViZjg2MWM4MGVhMzBlMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2YWEwNWNlMGIxMjE0YmRkNDJiOWJkMjIwMzVlNDU0NjU3MDg2ZmVlMThkMjkwN2I1NzUyMWE5MmY5ZTM0MjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c5d12dd8f8f42189fc200f9a9b52ccc",
+      "statement": "There is no deploy CI (.github/workflows only holds the OpenWiki docs job); because the push targets use the checkout as the buildx build context, releases must be cut from a detached worktree of the freeze commit (copying backend/.env for the include .env credentials), with release order local → demo → prod, an explicit user go-ahead required for every prod deploy, and agents never logging into prod (credential-free checks only).",
+      "evidence": [
+        {
+          "resource": "repo://docs/deployment-guide.md#L14-L15",
+          "version": "repo-lines-v1:sha256:272a1af6199305fb3e8ac8823f1bc4d09959e179c276f073abb8cf7000b86fac:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQ4NTlkZDQyNDQ5NjNjYjFlODMzNWNjZmQ4MzEzZjBmODAxZWRjZmI1OTIwZTQxM2Q4YTk2YTE4MWI4ZjIzZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzlhZjM5MGUxNTE3ZTIwMTM1ZTdmNzNjOTE0OTMzMGFlYjM4ZTJjYzllZjk4NGY3ZmY1YmFkNDFkNzU0MTNjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc2MmYyYjJhOTkxZGZjNzc1NmFiNGM2M2IxODE0MTdjZDczOGQ0NmRlYWNmZjk1YzBmMzY5NTYxNWMxNWQ3OCJ9"
+        },
+        {
+          "resource": "repo://docs/deployment-guide.md#L84-L106",
+          "version": "repo-lines-v1:sha256:f2350e296b90fd933e474aae83c9677aa1abf79fda4d100bd35e9c2281fb2193:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhYjg3NTE5MzQ2NTQzMjgwZDVjNWM5N2M4NjRkZjhmNDcyN2NmODUwMDIwMjAyNWE2NjZmNTlkMzNiZmU0ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiZWRiOThmZDRjYWIzOTg4ZmFlNTY3YmVmNDgyYWRkMmEwMTYzMjNhNjBmZGZhNTMyODJjOWU2NmNkNDQyZTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhYWVlOTRlZDY0OGI2ODU5ZWY0MGZjYjA1MDljNDhhYWQxMzJmNWU0ZTMxZmUzMDk0ZmJiN2ZjY2M5MDlmZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjZWNhN2E2OWU5NDYzYmVmODQ0ZjVjYWMzNGMzY2QzNTQwZGUyMjMxMzVjYTQ5ZjAzY2QxZWZlMzMyOTI0NTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9078688655b644b39e78bf9a2539d7e8",
+      "statement": "deploy/vantai/Makefile drives the separate vantai.tingting.vip stack (DEPLOY_PATH=/opt/vantai) reserved for the silversea build — a simpler variant of the same flow without the recreate-retry loop, migrations via compose exec -T backend npx drizzle-kit migrate, plain docker image prune -f, and a toggleable public /adminer/ route; it is not the current demo.",
+      "evidence": [
+        {
+          "resource": "repo://deploy/vantai/Makefile#L17-L33",
+          "version": "repo-lines-v1:sha256:3a8e03853f66ea944be37e0491533051d69b9f6af9a8d11985d0f6e62a4c352c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjZmNjNTNkZjU3Y2ViNzQyOWNlNjMxN2ExZWYxOGI1OTM5NDc1YTY5ODUxOTRlYWFmZTJmZmViY2UxMDdiMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYmY5NmUyZTVmNWRhNmMzOTM1OTUxNmM3NGZlNWIxNDJhZmFkZWMwYmE0NTMyNjBkNGYyNDc3NWQ2MmIyNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3ZmJhNzQyMjU4MDJkNTUxMWE0NGJkOGEyYjZlODI3NjFmZDlhZjZjZTdjMjBjMDEwZDY0NGEwMjcyNDY4MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5NmNlMzdiYmE3MzI5YjU0MzEwNjQ5OGY3ODJiMzc2YTViNDhlMzM4NjdkZDc3MGI4ZjM1NGNmODI3MWVmOTQifQ"
+        },
+        {
+          "resource": "repo://deploy/vantai/Makefile#L44-L52",
+          "version": "repo-lines-v1:sha256:c53f160f58384678c4600d6ec4e43ff969472e6ca58fdc0afd3118aab4a3e80f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTY3Y2ZkNWNkYmExZTUwNjIzODQ4YjA3NjZlOWNkMTM4ODc0ODU1MjVlYzFjZWQ3ZmJmZGE5NGYzY2RiOTUxZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFjNzQxNjg2OGIzMjg5ZWIzM2ZlMzlhZDRlN2JmZTc0YTM5ZjA3YzRmYzkwZGZmMGRkZTk5MWUxZDAzZDZjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzhlZmM2OTg2MjY4MzhjYWQ0YWUwMzg3MGFlYjJhYWRiNDM5Y2YxMzEyNzkzMzFiYTYyMjA3ZTQ3MGI1NGIxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTFlZjhjMWMzNTE0ZmFmNDhiNjkwYTM1ZjBjMjRlNTg4NDFjYjc3MGE1ZjdhMTUxNzNiZmNkYjFjZTZmMjIxZCJ9"
+        },
+        {
+          "resource": "repo://docs/deployment-guide.md#L148-L148",
+          "version": "repo-lines-v1:sha256:acef9e0fbf6ddf36a3281bff390f00fcbae0a751a0537825b55afd582cecf7b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWNlZjllMGZiZjZkZGYzNmEzMjgxYmZmMzkwZjAwZmNiYWUwYTc1MWEwNTM3ODI1YjU1YWZkNTgyY2VjZjdiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWNlZjllMGZiZjZkZGYzNmEzMjgxYmZmMzkwZjAwZmNiYWUwYTc1MWEwNTM3ODI1YjU1YWZkNTgyY2VjZjdiOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRlYTBjOWRjZmYwZWFiOGYxNTMwNmIyMjhmZGE1MjFjMzE2NTZiN2FiYmQ5ZjA5OTdhMmMyNThiYzYwYjEyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDk2YzI2MzMyYTdiYzQ0OGYwYTc4OGIwNWU4Yzk2NmQ4YjljY2VkOWJjZGM2YzA4MTYxNWRjY2RhN2UwOTVkMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b322073335e4962bde57664de8755dd",
+      "statement": "make dev starts the dev compose with --wait, blocks until Postgres answers on 5440, generates and applies Drizzle migrations, then runs the backend (tsx watch src/index.ts on :3090) and frontend (vite --port 7173) in parallel under a trap so both die together; make setup is the first-time path (infra + generate + migrate + seed, login admin/admin123), while make stop kills only the app processes and keeps the database running.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L16-L62",
+          "version": "repo-lines-v1:sha256:c458e071f68200b829b231fbd94d67b71422fb9c7a382c8996ded5455c45ff8d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZDU3MTkzOGI4MmU5NDdjNTg0ZjEzNGEyYzg4MzM0ZTRmMDc2YTAxY2RkYzU5OWI5NGI0MzlmMDc5OGVmYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZmIyNTYwNDE3Y2NlNjRkNjM0ZTdjOTg4Y2I5ZjA3MmEwMTM5MzE5OTQwNTcwY2M3MGMzOTE5MDcyMmIyOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhMWY5MGQwNGU4YmMxOWI5OGQ1MjI4ZjVlYWNkYTNlMDIxZTkzNmIyYjQwNTFjZTc0YWExZmYzYmIwYmFmYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MGFhYWU3NzBiYjAwNjg3M2ZkMzcyMDY1ZjljZmI3ZDE4MjgyNzI1Y2Q4YzRkNjNiZDJmZDk2M2UxMTY1YmMifQ"
+        },
+        {
+          "resource": "repo://Makefile#L79-L82",
+          "version": "repo-lines-v1:sha256:52631ab98a997b34a3ed86209c9e73108213545a41f8bae92d89708fa7e2d4e0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E2OTU3ZmUzOTI2MWM5MGMxZjNjNWY2NTQxYWI2NzBmN2I4NDE4OTUyMDU0OGVkY2EzMDc2M2I0ZjFlZjZiNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM5M2FhYzEyMGY1M2JkOTNjNTc0OTljMDhjNTY1ZmUzY2ExNzBhZDJkNWM3ZmY0NGNjMzU1ZTUwNmE0NzE3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2EwZjUyZTlhYTA1ZjRlMTRiMjUwNmUwNjI0M2ZlYzc2MDQ2ODFjN2YzY2U2NGRmOGU5ZjI0MWY4NmFjNzg3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTBhMDQzOTFjMWE5NzY0NjMyZmIwM2QyZWNmMGU4MTc3Y2IxMzk0MmZiODY1MDc0ZTRkMjA4MDBkNGE2ZTg3MCJ9"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:de663a6d534678da9239b60a1e29ba79126959f389753d2770b115c76dbf265c",
+  "pageVersion": "sha256:2feb05c7e3f6685df2beb96939056b189e5fcd1e34e7c64c38ffde641e0ce7dc",
   "claims": [
     {
       "id": "claim_2053e0a54dd0461189d1f67ba7a741f8",
@@ -8,29 +8,29 @@
       "evidence": [
         {
           "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "version": "repo-file-v1:sha256:e8a533ea7369229898bf92f1a6b44e49a0093f44ecc6f2c12c1d6870759ff382"
         },
         {
           "resource": "repo://shared/src/index.ts",
-          "version": "repo-file-v1:sha256:c455d4b2f193d1eb801395c9bc318e915a4e7e64d844c777110e3de858426f6f"
+          "version": "repo-file-v1:sha256:869a09e22630c2b152bccf8831e0d6ff0623d2325924cf2aab5968b4d9e97279"
         }
       ]
     },
     {
       "id": "claim_338600e25cca4a05a0e3b1353e0a9b73",
-      "statement": "All database access goes through Drizzle ORM with a single schema file at backend/src/db/schema.ts (pgEnums declared at top); migrations use pnpm db:generate / pnpm db:migrate, and production applies via make prod-migrate which excludes *.revert.sql (commit 45fbad3).",
+      "statement": "All database access goes through Drizzle ORM (postgres.js driver) with a single schema file at backend/src/db/schema.ts — pgEnums declared at the top of the file; migrations are generated and applied with drizzle-kit (pnpm db:generate / pnpm db:migrate; make dev also generates and applies on startup); production applies via make prod-migrate, which copies each backend/drizzle/*.sql into the prod Postgres container, applies it with psql --single-transaction -v ON_ERROR_STOP=1, and skips *.revert.sql dev-rollback pairs.",
       "evidence": [
         {
-          "resource": "repo://Makefile",
-          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+          "resource": "repo://Makefile#L180-L198",
+          "version": "repo-lines-v1:sha256:efbe9112f20b583bf250b892bbf52397a1bf28c4c8986674a8698cb58c628527:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NDg5NTY0Yjg4YzdjYWY2NmM3OWZjZDhhYTQ2MzZmZjkyNjY2ZWM0OTkzYzYyM2ZmZTczZmZlNWJlYjYwZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NWRkM2IyYTZjMzIxMDkwYmM0NGIxNDE1NTRjOGE2YmI0ZjdkOTlkMTNkZmI3YjNhMmU4ZmJlOWYxYWZjNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ODA2YzY4MjFlZGM5OTllMjgxMjdiNjUwNGM2M2I3N2IxMDliNWNlMmYxM2E1NGI2NDhiODVmMDgwMDZkNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4N2M4ZDMyMDJjNDAyNDdhYTAxYjJiYmE3M2MyZGU4NWJhYWZhMjk0MDZjMGYwZjc1MjBhNzgzNWVkNzhmMDgifQ"
         },
         {
-          "resource": "repo://backend/drizzle.config.ts",
-          "version": "repo-file-v1:sha256:b03cdf885464bef6d10a7e5aa72100fb33ee5e09714da0c64bdf7bae3a472e69"
+          "resource": "repo://backend/drizzle.config.ts#L1-L10",
+          "version": "repo-lines-v1:sha256:b03cdf885464bef6d10a7e5aa72100fb33ee5e09714da0c64bdf7bae3a472e69:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ODFlNWExZmIwYmRhZGQ5MGQwNDk3ZGZlNzhjYTI3NDhkYzg5Mjk5MGVhNmE4ZWNiNzg1NDEyZjE4MjI0N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://backend/src/db/schema.ts",
-          "version": "repo-file-v1:sha256:c0306ce968b7b9a49d574028d09d7d6b543c056cee5e3f5412114060342d80ae"
+          "resource": "repo://backend/src/db/schema.ts#L22-L37",
+          "version": "repo-lines-v1:sha256:8576183cefff22b13be595f72219d98b9c13a9a84faaa32460118f3ec559c6c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWZhMTI5ZDAyYmViY2MwMjJjMTBmODkyNDdhMzY3YmE2NjM0ODI0NzY1M2JkMTYyOTFlNzI2YjljOTU2ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNWU2MmE0MzYwNmFmN2ZhM2NmNDhjOTEzNTYxY2JmOWE0ZTc4Y2VjOWJkNWE4NjU1YTg4MTU5MjUyZjY4ZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhYjhmODg4MDQ3ZmUyN2NjZmNhYTA2MzU1ZWJhYTMwYzZiOTRhM2Y3M2ZiMDZlMTY0Yjk4OGRlMWY1ZDgxMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZTE2ZDVjYjNiNDY3OTVhYzY0ZTMxNmU2MzM3NTllMTk5NmMxY2ZjMTI5MjJjMTY0ZjQwZTM2MjU0MTg2NWUifQ"
         }
       ]
     },
@@ -40,7 +40,7 @@
       "evidence": [
         {
           "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "version": "repo-file-v1:sha256:e8a533ea7369229898bf92f1a6b44e49a0093f44ecc6f2c12c1d6870759ff382"
         },
         {
           "resource": "repo://shared/src/calculations/round.ts",
@@ -62,7 +62,7 @@
         },
         {
           "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "version": "repo-file-v1:sha256:e8a533ea7369229898bf92f1a6b44e49a0093f44ecc6f2c12c1d6870759ff382"
         }
       ]
     },
@@ -82,57 +82,263 @@
     },
     {
       "id": "claim_0fbd9561f3d340a88b407ac64dad5f84",
-      "statement": "Audit middleware emits one Vietnamese-language audit row per mutating API call (templates in backend/src/services/audit-templates.ts), regardless of how many tables the handler touches; user-facing copy is in Vietnamese and query endpoint is /api/audit-logs (ADMIN/MANAGER only).",
+      "statement": "Audit middleware emits one Vietnamese-language audit row per mutating API call (POST/PUT/PATCH/DELETE) regardless of how many tables the handler touches, with messages rendered from templates in backend/src/services/audit-templates.ts; rows record actor, event, entity type/id plus a natural business key (trip code, license plate, customer name) preferred over the raw id, IP, and sanitized payload. Query endpoint: GET /api/audit-logs gated by casbinAuthz('audit_logs') — policy.csv grants read to ADMIN (wildcard), MANAGER, and ACCOUNTANT (docs/code-standards.md's 'ADMIN/MANAGER only' understates this).",
       "evidence": [
         {
-          "resource": "repo://backend/src/middleware/audit.ts",
-          "version": "repo-file-v1:sha256:28a7490da34ad6d7a140c69b10761d9424b0bdfb05af1c6c9731c1661d0796d4"
+          "resource": "repo://backend/src/casbin/policy.csv#L1-L27",
+          "version": "repo-lines-v1:sha256:4d9bda8a868b6f370f4acd544fa14a41ec0bfbbfb8e136d6db628be841352ee4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZTY1ZTJlNzZhNGNhMmM3NmE1NGQ4ZGEyNWRiYjU5NjRlYzViMmM2ZmUyZGE0MTZlZjE1YTYxYjNmZWM5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMGVlZGIxYWEyZDVlZmM0ZTkxZTllZWI2Yjc3ZThmNTk2MmJiMjg3YTA3NzA3ZmU2N2RjM2UyMTU0MjU5YjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMWRjY2E1NzgwODU2Zjc4MzlhZGQ2OTNlMTE3MDJlYzQ2MmZjMGMwYWVmNjQ0NjJlZGMwNmRkMzE0ZGQ0YmMifQ"
         },
         {
-          "resource": "repo://backend/src/services/audit-templates.ts",
-          "version": "repo-file-v1:sha256:72f589c3ff345369002c155ee966078facb632c62e577790478e611ec3bbad1b"
+          "resource": "repo://backend/src/middleware/audit.ts#L125-L174",
+          "version": "repo-lines-v1:sha256:9fc1694afa72cc65a8ddc48c06df8288547214f7f3124eb1c0b050bdec63a039:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiN2U1OTE2NDdhNTkxMzAxZjY4OTc5ZGIxODY0OWZhZDc2NWI5NjhiY2ViMWMyZDU1OGZlMWM3MTZmNTE2YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMzQ2MjczNzY4NWZjNTRjZTI2ZjM0ZDI4MDM5YzRhN2FlY2YzZjg3NGI3NjEwYjdjZTViYzgwNjA2NTkzZjAifQ"
         },
         {
-          "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "resource": "repo://backend/src/routes/config.ts#L397-L407",
+          "version": "repo-lines-v1:sha256:9cc36e096d65295211d99b2e3cbde121da90f942be2972a9abf4d1830b44d7fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MDRkNGI1Yzc5NzZkNGFhOWYxZjExMzM1YTMwNjg4ZGFkNGMyMWVlNjEzZjgyOWJiZDM1ODcyYjkyYjM3M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNzQxZDJjMDhlNmY1MTBiN2U5YTI2NGYzNzhmOWNlMDA0OWE1MDRlMGU3ZWY1ZDY3Y2QzZWE4MTNmODU0NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3N2FkOWY0OGZjZThhMjVmNGExYzY3OWVmN2M5MDhmNmEwNjgzZTMzMjIxMDcwNDhmMTQyM2Y5Yzc1NjQ1YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhOWQ2ODAxZDMzMDUwZWNlYzJhNDNkOWU1NDY4MTkzZmQyZDI1ZGRhMTcyN2UzYTg3NTkzMDEwNzRkMzlkNWMifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/audit-templates.ts#L121-L162",
+          "version": "repo-lines-v1:sha256:8f0330d35a73ef152dd43be4edbe90e6db1ae0f59251113e3e5726f16dfe9c8c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ODQwMmYwN2NkMGY0NTQ5NDZmODA4OGFmMzgwMDI3ZmI0NzdmN2UwOGUxYjJmZjRkMWYwYjE3OGMzOGE2ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyNjcwNGIzMTFjMGE3OTllODIzZDhlNjAxZTc1MmY2YTNkZGFkMDI4NmFlMWVmN2EwZTFjZTY1YTVmMTkzZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_6bdb0beb70fe438786f417dcfb9b6838",
-      "statement": "Frontend conventions: Tailwind CSS v4 via @tailwindcss/vite (no tailwind.config); page-scoped CSS in frontend/src/styles/; no !important and no truncation of column values; the <Money> component renders VND with dong sign as subtitle-sized unit; statusStrip (3x20px color bar) appears on every status display; no raw DB IDs in UI text — only business labels.",
+      "statement": "Frontend style conventions: Tailwind CSS v4 via @tailwindcss/vite with no tailwind.config file (styles/tokens.css does @import \"tailwindcss\"; daisyUI 5 is loaded with every component class prefixed d- so it cannot collide with project classes); page-scoped CSS is co-located with its component while frontend/src/styles/ holds shared tokens/base/responsive, with responsive.css imported last so phone rules win the cascade; no !important outside global print/reduced-motion overrides in styles/; no truncation of column values; the <Money> component renders VND with the dong sign as a subtitle-sized unit (0.6em); StatusStrip is the canonical 3x20px status marker driven by --status-strip tokens on every status display; no raw DB IDs in UI text — business labels only.",
       "evidence": [
         {
-          "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "resource": "repo://frontend/src/components/shared/Money.tsx#L17-L37",
+          "version": "repo-lines-v1:sha256:75337fa5d3cf8f9257638db48ad0f6a2597faf97f2ee66ec7953759452d49266:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmMjkwM2RhMzUyODg4MmYxZjdiNGRmZGJjMmE1NDVjYjlkNGFiNzM2OTM2MTE1MDI0MGZkZGI5NzAyMTA0NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/vite.config.ts",
-          "version": "repo-file-v1:sha256:85ca43cb268ed117333951c4c3bd03aa6ccd53ff3e2c1cb4964093b0f970395a"
+          "resource": "repo://frontend/src/components/shared/StatusStrip.tsx#L15-L37",
+          "version": "repo-lines-v1:sha256:6cd4973becc882b29b521e31f2fbc365955df9543282c1e9b61047e35d13e508:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZDEzZjdmNTE2ZGE2ZGRkZGI2YTI0OThkZGQwMGYxOTEyNWRiZDRkOTEyMTJiODcxNzJjMDAyYTQ1MWI2MjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OTkwMjEzNzI1NTA3NTc1MTMzZGQwMDdmYTNiYmM1MjQ4ZjhjMWM3YjVkNmY5MzcxZDQ5ZGRiYjM0ZDc0MjYifQ"
+        },
+        {
+          "resource": "repo://frontend/src/index.css#L1-L35",
+          "version": "repo-lines-v1:sha256:d2b0a51e406d6b7e476956ad4fa2004cf9394530932e320ef791f94fe5f1888c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4ODk1MGIzMTc1ZDk1ZmJmNDBlMzRkYmI2MGUzMDhiOTQwNDcxOWQzZTM1ODAwNDhiOTE1NDBmMjIzNWJmNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlY2E0YzllMzYxMWRhMTljY2M4ODM1MWNjNmJjN2Q1ZWM5YzFiZjUwMGMxZjU0MjczNWQzY2NhOTg3MjA1YTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/vite.config.ts#L28-L38",
+          "version": "repo-lines-v1:sha256:7cd15dd19b2d0222d319e3e4dfaa55de5bbdf821be03b707a434b38958578a66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyY2VjYjE0NGE0NmY1ZGNmMTJhNjE2OWZjZWVkNzY5NWU4Mjk0YjA5MGRlNzZmMzY2MWNkZDAyNDkzMDAxNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNDBjZjEyNmU1YTQ3ZGQzZWViYTAyYzQ4MTdhM2RkMzZlMzQzNjU0MmJmY2MyZjUwODljODdjYjQ3NGY0YjQifQ"
         }
       ]
     },
     {
       "id": "claim_e4e6acbe2da7491fb888eec4e072af87",
-      "statement": "DRIVER and FORWARDER pages are mobile-first responsive with Tailwind responsive utilities; server state uses TanStack Query; there is no global state library — only React context (auth) and custom hooks like useAuth, useCatalogs, useAuditLogs, useClickOutside, useTripForm.",
+      "statement": "Server state uses TanStack Query with query keys from the qk.* factory in frontend/src/api/keys.ts — bare queryKey arrays are an ESLint error via the custom @tingting/no-bare-query-key rule; there is no global state management library — auth is React context (AuthProvider in hooks/useAuth.tsx, cached under qk.auth.me) and everything else is custom hooks (useCatalogs, useAuditLogs, useClickOutside, useTripForm, the use*Queries family).",
       "evidence": [
         {
-          "resource": "repo://docs/code-standards.md",
-          "version": "repo-file-v1:sha256:d6a8979a78e0fc3ab48db9f91cce91a547f1b3ccb27fa7deb58b22f28624e55a"
+          "resource": "repo://frontend/eslint.config.js#L150-L169",
+          "version": "repo-lines-v1:sha256:283622f4f092c4fb433810016b653cdd485799c2681d6c444a9716962226579b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0ODZhOWIzYzk4NGM1ZmFmMmZmOWQyMjM5Yjk5ODY3MTVlMDEyMjQ3NzMwMjdiNzIyNTQ1ZGNjMDBiNDg4OTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YWY1MWE0MDRjZTkwMzZjZWIwNDY5YzljM2MxZGVmNjA4ZjZlOTFiNjhlODkxMDU1OWI3YjBkMzUyZDhjNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1MGQxYWRmNTI3MWY3MDhkZDViYWJhY2UyNzNhOGNlNTUzMjNmY2NmZDAwMTkzNmFlMjMzMzk2OGU1ODQ2MDEifQ"
         },
         {
-          "resource": "repo://frontend/src/hooks/useAuth.tsx",
-          "version": "repo-file-v1:sha256:9e2cf82ec5ea72e0d4ec51d0d5fab621239fd9dfde1f2ee25c6227721d0add59"
+          "resource": "repo://frontend/src/api/keys.ts#L1-L24",
+          "version": "repo-lines-v1:sha256:2a78ec08e2bad764486fdf297bd213af4187ec4d86b7cc8df7cb5790d67c3055:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMTMzMmU5MzhlYTE2OTllZTcyZTRhZjI2NDY4YTFiOGE0NWY0MGQzNTAxNzAxNzY3NjIyMjU2M2U5OTdhZmIifQ"
         },
         {
-          "resource": "repo://frontend/src/hooks/useCatalogs.ts",
-          "version": "repo-file-v1:sha256:32e250407b65ea3d6cc8b210dc135d144eb406cc5ca455f0cdbb3079159285cf"
+          "resource": "repo://frontend/src/hooks/useAuth.tsx#L60-L98",
+          "version": "repo-lines-v1:sha256:94ba657e56513c089d03d6704349e615978952b780a6e403faec9e88701bb0cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxODdlNzM1MTUwZjJmNzRjMWVkODcxMjFhY2ZiZGYzYWQzOTFmMTQ1MWNkYWE4NmZiNGEyMTkzMzM4N2Q5N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzOTY3YzgyODUwMzc4MjYzMWEyMTM0NDM5MjIyMmRmNDdkNDdmYjlkOTlhNTI5MTU1NGU5YjYyMDYyZmM5NWEifQ"
+        },
+        {
+          "resource": "repo://frontend/src/hooks/useCatalogs.ts#L11-L17",
+          "version": "repo-lines-v1:sha256:f466c351d03c1ead3c81b666923054e9b2d34e47c35d78719c4def69a13d32e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYxYmViZDZiZGQ4YWFmZjIwYWUxNmU4MmIxMzU5MTU4ZGRjOWZkMGU2ZDE1YzQ3ZTQ4YmNiNWNkNjA3NGJkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTEyZTg0ZTkxMjZmMDE3NjBiOTg0OWE0ODQwNWU1OGZjMTM1OTAwOTEyYzFkNTYyMDA0ZTQ4MTU0NTM5NWNlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c01cc94b1bb44a79c8772e482511e4a",
+      "statement": "Every list endpoint reads paging through parsePagination from backend/src/routes/utils/pagination.ts — including createCrudRouter-generated catalog routes — with defaults page=1, limit=50, maxLimit=100; it clamps out-of-range values, supports limitParam 'pageSize' (used by the expenses router), and caps the page so the derived offset stays a safe integer. Routers tune per endpoint (maxLimit 10000 for the ledger, limit 200/maxLimit 1000 for the forwarder portal); backend/src/tests/pagination-parser.test.ts pins the clamping rules.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/routes/financial/ledger.routes.ts#L15-L20",
+          "version": "repo-lines-v1:sha256:0ebb8b3e4c9319bcb5d16ceb7d2373672da67a27a0822f4de84a7b9f986c0fb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQyNTM2NGViNjIwNTFhNDYxY2VlMzU5YmE4MDE3ZjAwYjg4NDcxNjliMTM2MTk2ODI1NjI3MDJlM2ZiMWUxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjUyMTEyNWQxODA4NTZlYTE0NTdjZTg2NjJkNDg4NzRkYTliZjkzNGMzZjQ2ZGUxOGRjZjkyNTg3MTJkNzYyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBjMGMzMDYxZTA1YjU2YjgxNWUzZWViZWMzOWExNmY5OGY3ODFiMTdhN2MyMjY0ZDMzYjhjMzJiNjkzNDdjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjk3MjAzNmNkMjNiZjA4ZjkzNzZiYTgxYmNkOTg4OGE2MzE0ODkyNDNhMTJkMTBhNmVkZWQ1OWZhOWMwOWZmMyJ9"
+        },
+        {
+          "resource": "repo://backend/src/routes/utils/crud-factory.ts#L89-L111",
+          "version": "repo-lines-v1:sha256:beaaf0dde15711a49729a437cb4c94cd764480af7d5473f851d5f20ae53d770d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmOTlmMGNhMTUyYmFiZjdmMmU2N2ZkMDVmZDgwOGUzOWRmNmZlZmM4ZWY1Njc4YjIyYTI3NWNmZWQ4N2Q1NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOTgzNTQ5OWU1YmE5MWY4NzI2N2M5NTJiNzhlYWVkZDZjNDY2Zjk1YjY4ODFiMDdiNDZjY2FlYzBjZGYxNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2ZDU1YjhmYzRlZjI0ZDM1NWUzZGQ1MmI5ZDY2YjdjNTBhZDUzNGY3ZTUyZGNiZGJhN2ZkZDYzNzYxNGVhNDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2NDhiZjY5MjA1M2JiY2NkYTVlY2Y2NzIwYTQ5YWQ5NmVkZGNmNTBiNmJmNjYyNGE5NjhlY2IwZGY0ZWYxNmQifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/utils/pagination.ts#L17-L36",
+          "version": "repo-lines-v1:sha256:fc5594d3f2e8ea5ad01d9e41c986950e49de835c24d79c091986ad627b385b03:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOTA1Y2Q5YmFmZmM4MTc5MTEwODQ4OTFjMGJmOWUzYmQ1YzU0ZGJhM2Y1NDNhNTk1YWMwYWM2MDY0NGRkNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhYTZmNmZhM2RkY2EwNDk1YWIyN2Y1ZDhmNDM5ZWE1MDA5Y2YxMjU0MzUxMzdlNGNkOTQzYzQwNDRhYjk1M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/src/tests/pagination-parser.test.ts#L9-L26",
+          "version": "repo-lines-v1:sha256:c2abcd4c0aba5136bd84796876a33ef3d320c4af9ed341deb77639c80981bd88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkYTZmMTcwOGFmM2IzMmZmMjc4NDFkMjViN2E4YjY4YjczMjVhYWJhNzFmMDk4YzkyZWNiYmZlMGE4Zjk3OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZWNhMGJhZjU4NGFlNzJlOGFhZWU5OGQ3ZDY4Y2I0OTJhYTNiZDgwMDJhYTNmYTQ5MjdhMjI5MGQ2OGExM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwNGJkNDU5NDE5MDA5NjRmNDJmNjQ2YzMyNmY4M2E5MzY1YWIxMTA3YmQyNjUwM2ZlMmVmMzA5MzBiYTk2MWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1OGFkOTVlOWU0MWFhZGU4N2ZhZmJkMTM4MDQ0ZWExOGZhZTllZTNmMmQ0MjQyZjkzNzZmN2VmODJhMzI5NjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d9722930b28c436997da2d3ee2fbce2b",
+      "statement": "Paginated list endpoints return the shared PaginatedResponse<T> envelope { items, total, page, pageSize } — not { data: [...] } — and the frontend auto-walks pages via fetchAllPaginated (pageSize 100, bounded concurrency 5, a failed page rejects the whole list) or tripClient.fetchAllTrips, concatenating items.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/routes/utils/crud-factory.ts#L103-L111",
+          "version": "repo-lines-v1:sha256:2d66a4e9ac308a3370f34e7f18019b870a9289311e061de2c69006d491c362f6:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY0OTIxYWYxZGFhMzMxOWVkYWNjNjZiNjUxMmEyYzM2OTZhODRmZjJlNjQ5ZjA3NjQ4YzM1OTgxNzE0YWViNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ5ODM1NDk5ZTViYTkxZjg3MjY3Yzk1MmI3OGVhZWRkNmM0NjZmOTViNjg4MWIwN2I0NmNjYWVjMGNkZjE0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA1OGE2NjczZjBlZDExYTEyMWQ5ZDI0YzQwMTA4MDg1MTMyYzU0ODg3MTc0YmI2NzM0MDk5OTE5Yjc0NWJlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODY0OGJmNjkyMDUzYmJjY2RhNWVjZjY3MjBhNDlhZDk2ZWRkY2Y1MGI2YmY2NjI0YTk2OGVjYjBkZjRlZjE2ZCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/lib/http/paginate.ts#L5-L25",
+          "version": "repo-lines-v1:sha256:8dd617ecab4d0ce03cb5650bf47fa775e6f1d0b3ab7faa41e6337f56a307a087:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NTNmNzM4NzlkZTgxOTA5NjNmNGM2ODE2NmRmZDJlODg0YWMxYTk3MzdlZTEzMzUyYzVjYTJjMGU1MjM0ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNTc3YTNjYWUzNjVhMTViYTY1ZDg5MDUxMjVhODZlMTU0YmZhMjJhNDQ5ZGI2Mzk4ZDY2ZDFhZWU3OTFlNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNDRmM2ZlOWQxNDcyODdlMzRjMjA2MTAxZTUxYjdkMDAwYzA0YThkZThkN2RhMzYzZTFjNjEyNDc0MzA4YzQifQ"
+        },
+        {
+          "resource": "repo://shared/src/types/index.ts#L1050-L1055",
+          "version": "repo-lines-v1:sha256:eebdce3e947e9ff78ebf2acd3e2ca1b5064bf0dd9c16af1633a70b62823dcfd2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA0MTZiNTU5N2I2ZTg2ZDI0ZTAwMzNjM2ViNWQ3ZGNiMDlhMmE3ZDVhOThiNmU0NmNkYTUxMzFmZTBhOGFkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWI5NGFhZWE0NWQ2MGQ0ZDVhYTQ4ODdlOGQ2NTBmNGM3YmRkYTUyNDkzNTdmMWQyMDUxMjUxOWJjNWFhNDRmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTA3MTM1NDljYjZiNzEzZjU3ZmM0MjAzZmNhNzdiMzY3ZTIxMzIxMGM5ZmY3NjkwMzZkMDhjYWVhN2I0MzE5MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7508d961418e485a82f721508b89a2ef",
+      "statement": "Case conventions: request bodies are camelCase validated by shared Zod schemas; database columns are snake_case mapped by Drizzle (fuel_price_applied ↔ fuelPriceApplied); list filters accept both query spellings ((req.query.dateFrom || req.query.date_from), likewise truckId/driverId/customerId/dateTo) in routes/trips.ts, routes/forwarder.ts, and the financial routers; responses are camelCase because there is no response serializer — the former middleware/serializer.ts snake_case rewriter has been removed from the middleware stack.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L312-L321",
+          "version": "repo-lines-v1:sha256:2164a7029d311b6415f23d01afafbb8ca401fb5fe5fd8483e9c864cc8ec4db42:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5MjE2MWNhY2FlZDkzOTVlNWRmNzA0ZGZlYzhjMGYxNjM3ZWUxNDVlNjk3M2ZkYjA0MjQ0YzYxMTUyYmRkOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MDMwMzZkZDVhMmQyZDA4MWJlZjY0YjAwMjkwYTZkMGNmN2EwMDk0YTFlZTQyZDc3YjQyODg4MTI5NGFiMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4NDE5NzMwMGI4ZmRiM2VmZGJkNGU5YjJkNzFiYWJiYTM5MzdkMjBiZDJiYTRhMDMxOWIxNWFiOWI2M2RlZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5OTBjOTAzZWMyMTRiNTMyNWUyOWNmMDJhMjQ2OGJmYTQ5MDgzODk5Mzc0NTViYmM2MmRkMjk0ODU1ZGMzZjQifQ"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L63-L85",
+          "version": "repo-lines-v1:sha256:dd4fca2085a7794fb76eb5f9ecf36f570e18b8dd3eecb311b43e33723f5c0c37:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MWExNGM2N2YzMmZhZDNiNDBhOTMwODcxNWQ3Mjk5N2Y0Zjc5OGNlYzlkY2UzNjQxYWY2NTYzMGE1NzI1OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNGRlMzE3YmFjYjU0YmJmOWIxZDgyNmY4NDBkNjZjODMwYTMyZGJmYzg1ZDEwNWQwMTE2MGJkMTg5ZTRiYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxNWQ1ZTg1ZDQ4YWU2NjM2MzMxZDA5NGU4ZGM0NmY0NTVmZDU4NmVhN2ZkZjJlNWY2OWI2YzhjNTk4NjU4NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzMjZkNWQxYmIxNzc1ZWM2NDE2YWMxY2E5NzAzZWU4OWY5N2UzMzE1MTk4YTg0YmJhNzQ4ZjI4MzZjMmMzZGYifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/trips.ts#L52-L72",
+          "version": "repo-lines-v1:sha256:b480faad81fdec8666434badb12854ef1d09b98b2bd1680303eda80e7ba316f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YjJjYTE2OTExNGJkNThmNWQzOGMxYzI2ZDVmZjVhYTdkODRhMTU2ZTFiNjk5OGRhYWZlYTkyZDI3ZDAyYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNzQxZDJjMDhlNmY1MTBiN2U5YTI2NGYzNzhmOWNlMDA0OWE1MDRlMGU3ZWY1ZDY3Y2QzZWE4MTNmODU0NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxNmFjY2FkZmYxYjVjMDI5MjExYTE5ZjAzZWU3NTUyNzUwNWMyODUyODA4YWUxZDAwNTE2M2Q4OWEwY2Q1ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkOWY5ZjJiYzEyYzdkYzYxNDkwMmZmMjMzNDlmYTgwMmRlMGQzZTA2YjYwYTllNmJjOTRmOWE3MmE0Njg5ZmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b02354cd5d704eadbb7f1f682d166b88",
+      "statement": "backend/src/middleware/errorHandler.ts is the single error-mapping point: Multer limits → 413/400, ZodError → 400 with a field-path message, ApiError → its statusCode, errors with a numeric .status → 400-599, PG unique violation 23505 → 409 'Dữ liệu đã tồn tại', fallback → 500 'Lỗi máy chủ' with stack details in development only — user-facing messages are fixed Vietnamese strings, so ApiError never leaks raw ids or stack traces to clients in production.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/errors.ts#L1-L14",
+          "version": "repo-lines-v1:sha256:05deaf1ec0a40c42afd7ab183a12a28d08213af4f8103f01550d6ee7ebbc78bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/src/lib/validation.ts#L8-L16",
+          "version": "repo-lines-v1:sha256:5e72344a3ff9f2fb48b0a4e640ff72d7556e0759b8cfc4cb65ab4db5635f67c2:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY4OGI3MTQ2YWNmOTQ4MmU0MzJkYmMzMTU4NjVlOGE0MDQ5YjdiNjYxYjMxMWVlMTRlNmQ4M2I4NzE5NGJjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDg4MDBiYmI5YzkyMzFiMzY5MTViZmExYWY0MDI4ZjE2Y2U5MzVkYWExNDU0NDI0MTI3ZmQ0ODEzZjZiYjE0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://backend/src/middleware/errorHandler.ts#L6-L66",
+          "version": "repo-lines-v1:sha256:743b20a1984688da50d538e3b06ee40285066af4ff1dcd2d270cfcd06939a5aa:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhZWNlYjJjMjlhY2Q1ZTMzYWExMGFmMDg4ZWNhMTE2NTM3MzNhNDYxMGI3NmNmNGVjNTg2YzZjYTMyM2E0ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkYjAzNjM4ZDk2N2MxMWVmYWI5M2NjN2FmY2ZjMGZlZmE2YWE4ODRiODM4ZDlhZTM3NzE2MzQxYWIzNDc3NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b10b4bf96e014025bfbf3b6d65cf9254",
+      "statement": "The audit write path is non-blocking and registry-driven: auditLogMiddleware intercepts res.json and emits via the internal event bus on res 'finish' (after the response is sent), routers register specific audit events at module load through registerAuditEvent with generic created/updated/deleted fallback, and sanitizeBody strips passwords and provider API keys before persisting; failed logins (401 on the login path) and 403 denials are audited as LOGIN_FAILED / ACCESS_DENIED.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/middleware/audit.ts#L125-L227",
+          "version": "repo-lines-v1:sha256:a9fb69e0b0f98ea58f07a1702a58e51b684249f6a008e65e0c30aacb4ce4058c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzYjdlNTkxNjQ3YTU5MTMwMWY2ODk3OWRiMTg2NDlmYWQ3NjViOTY4YmNlYjFjMmQ1NThmZTFjNzE2ZjUxNmIzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU4MGU5NjRmODNhNDczZjQzZDQ0Mzg0NjI5NDlkNjhiNTYwMGZkYTc4N2YxNjM3NDVkMDBkZTg5Y2JmMzZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://backend/src/routes/trips.ts#L25-L38",
+          "version": "repo-lines-v1:sha256:242a977dc642bedb4b90333ab089a4ebfb139b5595692cd79fb92c0380f90277:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMmY4Y2E5OWFlOThlMWIwN2YzYjM5NzI4ZGIyMjRiYzNkZDJkNDQzY2NiMThlZmM1NzY1YTYyNDIyMzRiZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NWY1YzU5NzBkNGU0ODU5ODcxYmE5NzMwMzMxNTczMTliYmNhOGE0MjI3ODlhYzJmYzBjMGZiZDkyODUxNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5NGFjZDY3ZjZlNDRhMWVkYzg1MjY2MmU2MzQ0NWZlNWZiOWU1M2U2MjBkMmZkYzcxY2E0NWFlMDE0ZDQ3ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNjQ4ODBiZWJiYmIyNWQwZGUwN2RhOTBiZWNjYWMzZDQzOTBkNWQ2N2E5YmRmZTM5ZDgwYjFmODQ2ZjQwMmYifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/audit-registry.ts#L1-L12",
+          "version": "repo-lines-v1:sha256:54010a3fa89028fea38aa2c5aaf2cff4f7cfdd72b5071257580fe1fe415e1ec2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYTNjYWZiOGFjYmNjYzc1OWZkY2JmYWMyZmQ5MDk4ZTg1MGFkMTRkODJjYWI3NTIyOTQ2OTNjODE0ODk3NzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_172a6b9af303423eb67c52bb10686f8c",
+      "statement": "shared/src/navigation/pageCatalog.ts (PAGE_CATALOG, re-exported through the shared barrel) is the single source for SPA paths, Vietnamese page titles, and agent-search descriptions, replacing four previously drifting copies; frontend/src/lib/routes.ts projects it (typed path builders + hand-ordered titleRules), App.tsx still owns the <Route> elements and role guards (the catalog deliberately carries no roles), and an entry is AI-navigable iff it has an agent sub-object with AGENT_ROUTE_KEYS compile-checked to equal exactly that set — adding a page means one catalog entry plus the App.tsx route.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/routes.ts#L1-L22",
+          "version": "repo-lines-v1:sha256:838c3b32fc053a8fc6ec7a322206568b950cb589aea13b54508b5d5a9310c024:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YzE3MDcxOTM4MGQzOGM0MDYzZTM0Nzk2OGRkNjNkM2YzMjgyZGU2YjVlNGFhZTE2NTcxYWQyNDhlNWI5ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYzBlZWM3NWY3Zjg1MTYxZmFiYWM5YTg5OTZmNTJlMTc2Njk2Zjk1OGRjMjRhMzhjNGFjYTAyYTVhYTM2ZTYifQ"
+        },
+        {
+          "resource": "repo://shared/src/index.ts#L58-L67",
+          "version": "repo-lines-v1:sha256:4e985a23e3f4ec3465e3ef72566c173d0c6a2e8d8f77753d185558ea31ef6d5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyMzA0MTM2MDM0OGFlMGNkNjIzNDVhZDZiYzllNjY2YzZiMTYyNWVkYmVjZTVjMDk4NjdkZDRjM2YyYTEwNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MTM1ODI4ZGFhMmU3YWZkN2JiNDkwOGNlYTVmYzQ2MGYyYmNhMGVlNWU0MGFlNTMxMWY4MjViOGFhZGQyYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxMWY5ODgyZDhhNWMxMzE5M2I5MDg5M2M3OWI1ZTY4MDcyN2U5NzA2MTBmZjVlNDQwNGMzMDZmYmNiYTNhMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZjVhZGNhZTYxNWQ3MDY1OGQzNDlmYjA1OThjYTYyYzY3NDY1OWFmNjg5Yzc1Y2Y3MjgyOTdjODY2ZWI3ZjMifQ"
+        },
+        {
+          "resource": "repo://shared/src/navigation/pageCatalog.ts#L1-L27",
+          "version": "repo-lines-v1:sha256:719a845a47f6ab545919512ac785de39c0690d0d6948ba6aaf6424fdc9939dc4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlZDAzNGUzNmY4ODU3ZDAyZTVjNGUyNjU1ZWMxOTQ2NmMzMDk2NzNmMGQ2ZTcxZTJkNWEwNDc4MGE1MmVkY2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_00d9670cf2cd4f5fb3e9ce3b7d04f6a0",
+      "statement": "The project's no-feature-flags stance: integrations turn on by key presence, not enable toggles — OpenRouter OCR activates only when OPENROUTER_API_KEY is set (falling back to Gemini on error) and the live-fleet endpoint degrades to empty without Bách Khoa credentials; the assistant bot's BOT_ENABLE + MINIMAX_API_KEY is the deliberate exception for cost exposure. Model names and base URLs are hardcoded constants in services (changed in code, not env), and all env parsing is Zod-validated in backend/src/config/index.ts with strict boolean flag parsing (only 'true'/'1'/'yes' enable).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/config/index.ts#L31-L57",
+          "version": "repo-lines-v1:sha256:df33712585dc804625ec80937eae02e20ac773aba770b1b82a3b717f643268ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZDEzYWQzYjU2MzAwOTJhMzFkNDJhNmRkNjI3NGRjOTdmMTZlMWQ5M2Y3ZWYxZDY2MDMwZWQ4ZGJhZjk0NzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjM5MTdhMGZjNTAzODY4Yjc4MDA2NDdkN2VjOWE1NjZhYTQxMTEwNzA0NThlNTkyMWQ1MjNjYjhmNzc4ZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2NWVkMGIwYzAzNzczMjBmMTMyNjUwODI0MDI2MjU5NWZlNzM5N2I2NzUyMGNlZGQxNWNkY2U0ODk2NmRlMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNmU3N2M3NzkzN2VjMWExYzM0MjcwYjEyMTkyNDIyMjE4ODQ4OGY1ODY3YjM5YWQ1ZWNjZGRlYzUxYzljZWUifQ"
+        },
+        {
+          "resource": "repo://backend/src/config/index.ts#L82-L92",
+          "version": "repo-lines-v1:sha256:dc948d1d8cbef41defb0d6ddcc11116ecc1b402347b35d36c257810ce1a5f2c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMjg4OTJmM2ExNmMwNDg4MjdkMTk4YjQ2YmNmMTE0NmJhMDNiNWFhZWM3YjVkMmVmZjc0NDZmYTliNTUzYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NDc3MzgyOWU2ZTI1YTlhMzQwMjQ1MDBjYmRkOWZhMWEwMGNmZjEyMzg4MTBmMjBhYjZlMzIyM2ZlNDhkZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2MzY1Y2I2OTk2ZmU2NWE3ZGMxMDc4MTU2ZjBmNDhlNzllOTcyMmE0MDJjNGZhODgxZTlkNjJhZjhiZGVjZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmNTlhZWM3YmI0MmI4ZDdmZmYwNjI2MmY5ZTZjZTg1MGJlZTJlMWQ5ODZhMzFlMGNhMmZhYzMzMDg3ZmFkYTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d21244bdf7764d91aecba9f81288acee",
+      "statement": "The only quality gates are manual — there is no CI pipeline and no pre-commit hook: pnpm lint (root ESLint 10; the frontend has its own config with React/TanStack rules), pnpm --dir frontend check:ui (UI contract: typography token scale, canonical 3x20px status strip tokens, high-contrast focus outlines, no hex colors in shared primitives, phone control scale, and a TS-AST check rejecting inline interactive minHeight under 36px) plus check:brand (TransTing identity and tagline, emerald #005A2D palette, sidebar gradient tokens, PWA metadata, and ImageMagick-verified asset geometry/safe zones), and build:strict (tsc -b + a 600 non-blank-line per-file budget + vite build).",
+      "evidence": [
+        {
+          "resource": "repo://docs/code-standards.md#L122-L129",
+          "version": "repo-lines-v1:sha256:8f1f96ef727a52fa0d010809eedb56824a49cfe2f68589a3ee606e4e116c99ec:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVlODZmNjg3ZWExZWEwNGJhOTZjYzg3OWYyZmY5MjkyODA0NTg1ZWZhNTg2ZTc2MDc4NjA3ODg1ZWM5MzAyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2MzOTQ1YzkzZTJkNDg4ZmNkY2U1OGIyMGJiNTE0ZDU1MWE0NTEyYjY3NTQ2OWY3MDI1ZWJhNDczMTAxZDA4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGVmYzFkNzAwZjExMTk3NzhiZDlmYzhiOWU0NTlmODcwZTQ3NmEwZWQ5M2RjZGY4MjM1MGI4ODQ2YzkyYTZkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzk5OTlmYjYwY2E5Mzc0ZjIzNGFlOTE1OGU3ZGZjNGUxMDRhNmNhYjM4ZTc5M2Y2ZWJiMmVmN2EwZjFjM2JiNiJ9"
+        },
+        {
+          "resource": "repo://frontend/scripts/check-brand-contract.mjs#L38-L69",
+          "version": "repo-lines-v1:sha256:d328f1612394c6ffc9511bdff921f68396dab05583b3cd32aeb9a4d6d3b30069:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZDQzOGNiYTYwY2M4NTVjMDgyZWI1YzJkNjE0NDdlNDhiNWU5MThiOGUwMDFjMDQzMzE4ZjMwZDFjNTAxODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiYTI4NTdiZDA0ZTM1ZjZmMjQzNThmYzgxZGZhNzA0NTVlNjZlOGEyNTllOWI3N2I0YjQzZWRhMWI2NTc1MTcifQ"
+        },
+        {
+          "resource": "repo://frontend/scripts/check-size.mjs#L1-L30",
+          "version": "repo-lines-v1:sha256:62139a82db0fead4155afb381bf50ce208d4296ff01acda46d9c38ffb64e95b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwM2RlMzYwYThiNzRjNjI4MTYwOGQ3NTMxM2IyZDAyOGFhYWM0NWNhYThiODBmZjMwNDRjYjRlZjM0YzYxMjUifQ"
+        },
+        {
+          "resource": "repo://frontend/scripts/check-ui-contract.mjs#L45-L75",
+          "version": "repo-lines-v1:sha256:601d24d924353cc2343983c01a383887ab7bd2edb65475433f5bb487aabd30ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNzM4NTdmMzA2ZjYxNTg0YzZhMTBkODNmZjE5ZTYyYTdiZWQ3NTFjNzk1NGYyMzJjYmViYmFhMGYzYmQwMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNWIxM2Y1ZDQ1YWExYTkzOTlhNzA1MzdiYWIwY2FjOTQ5ZjA5ZTk1OGFjZGJlZjdlNzQ0ZTM5NmI0OTNmYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0NjkyYzZiNzY1NzZlNDQzZGE4M2RmZjI1ZDEwMjMyZjdkZTM1OTc2OTFiNjIxMzhiZmY2YTUxMWE3Y2FlZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b2c6794cbb224e7698c5123ed633dff7",
+      "statement": "Vite runs on port 7173 with strictPort: true — the dev server fails fast when the port is already held instead of silently moving to 7174 (a second server once served a stale HMR bundle) — and the dev proxy forwards /api and the /socket.io WebSocket upgrade (ws: true) to http://localhost:3090.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/vite.config.ts#L39-L58",
+          "version": "repo-lines-v1:sha256:217774912032f61395b598f62c018746b55f00c0e8dbc80e20cea5fc482f320f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTY2YWZlMzEwMjMxZDJlNjA5MWE1ZDg5YTYzZTc0OTg1ZmM3YzAyMzY0YTg5OWI0Y2FjZjdmNTI3Mjk2NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTgwZjU4ZmYxYWQ3ZGYyZGZjY2NiZjM3YjhjNDA5Mzk3OWJlYThhZjhhYmRhOTEzNWM5ZDJjMGI1NWMyOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6ee14be911e04c298e7f12a5fefcced3",
+      "statement": "DRIVER and FORWARDER portals are mobile-first responsive through the shared breakpoint cascade in styles/responsive.css (tablet ≤1023px, phone ≤640px, narrow ≤420px) plus co-located page CSS rather than page-level Tailwind utility classes; the driver portal keeps a 44px touch floor via the .is-driver class set in Layout.tsx while the office workspace stays dense, and check:ui enforces the ≥36px inline touch-target floor and the phone control scale.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/scripts/check-ui-contract.mjs#L137-L171",
+          "version": "repo-lines-v1:sha256:ff08a6db36aaa8cdb587c632bc24c85bcd67b92224901838b8d678dde03e0d7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYTYwZWM1YjUyMGY5MjA1YjhkMmNlNmM2MjM2YWQwNDIzNzc5ZmQ2ZTc3MDQ5YmQ5ZGQwZmM1NzFjNDRiNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlOTE1YjMxZTU4Yzg4N2JkNTlmZmQzMzRmYjQ0YTc5MjViN2ZmNmQxOGRmZDhkZjM3ZjZiNWY4NmIzNTFiOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZWZhZmU2YmNjMWJlYTU5ZDJlYWQyYmJiN2JlYjNjZDNlY2M5YTc5MWY2YzAzMjdhZjk1YWViODQ1NmU1ZTUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/components/Layout.tsx#L369-L369",
+          "version": "repo-lines-v1:sha256:1702f1e1fa0cb6b838b0e6f61178253e9d30acbdd909232a092235c9ba10a6b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTcwMmYxZTFmYTBjYjZiODM4YjBlNmY2MTE3ODI1M2U5ZDMwYWNiZGQ5MDkyMzJhMDkyMjM1YzliYTEwYTZiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTcwMmYxZTFmYTBjYjZiODM4YjBlNmY2MTE3ODI1M2U5ZDMwYWNiZGQ5MDkyMzJhMDkyMjM1YzliYTEwYTZiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmY2ZGM2Njg5ZTQyYmUyY2IyZTYxYjhiZjJkNDEwN2Q1YWFhZWJiMjk0MTYyMjk5MDdhNmE0ODU0YWUxMzE2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzVkMTVlZDkxOGU4ZGM2NjUwMTVmOGRjODdkNzE5ZTU0ZDZmMjM2Mzc2YzZmMTQ2MWJiZjZhNWRiYzJjNzhiNSJ9"
+        },
+        {
+          "resource": "repo://frontend/src/styles/responsive.css#L1-L19",
+          "version": "repo-lines-v1:sha256:285afb44919138e634b63677af1b2601cb6d32c550263d04027d5f8bc89aac06:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMzAzZjcwZTI1MWE0MjZmNzZjMzVlYzdhM2M0OGM0YjRlNzVjYTNlZTEyMjI1MGMxYTEyMWFkZjQ1NzUxM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZjcwZjk4NWQ3ZjAzZTRmZTAzZjBlNDBlNjRkOTA3OGMzZmU4NjQzZmQ2YjhkYjMxMTc1YjIwMjZjZDM0MTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhZDI1ZWRlZmFjM2M0MGE3MjIxZWJlMzg0YzlkOTQwNGNiNzA5NWRkZTM0ZjUxMWZmNGQ5YjBiNmQ4MWM1MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9787c0ac891c47988ec7cf867b346595",
+      "statement": "The frontend translates backend error bodies into Vietnamese at the transport layer: ApiError.fromResponse runs the response through formatErrorMessage with the FIELD_VI/MSG_VI maps (Zod issue paths mapped to Vietnamese field labels, leg indices rendered as 'Chặng N'), so components surface the message as-is in toasts and inline errors.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/lib/api/errors.ts#L25-L92",
+          "version": "repo-lines-v1:sha256:32663f34fe3b2171c0beb1a800793f99fa83b817109eb69b2e148ce5bef6c04c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMWIzNTdlZWEzYjlmZGFkYmM5NTc0OWE0NmM4Y2MwNmFmNTI1OGJjMjE2OGU1M2E5NmM4NWZkMzM3NGExYzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5YmJjMjQwZjkxYmUwYjE5ZTJlMDQwYzg5MmYxYzdlNmNlNjY0MTYxNzgzNDlmNWZlMjM5ZjVjZWY0NzQwMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYzYxZTAzZDc4NTIzMGVkMWJiOTdkNjdiMzliNDRkNmM5ZGZhMDUxNzFhYTI1NTU2NzZlNmNkOTlmZWNkOTgifQ"
+        },
+        {
+          "resource": "repo://frontend/src/lib/api/errors.ts#L94-L117",
+          "version": "repo-lines-v1:sha256:80bdd4ec8268b1afe7ec98f974e4d6247ce4ea55060a4578e2eb4786874e545c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MDZlMTY1ZTI3ZDU0NWIzY2JkZWY4Y2Q1ZTI2MjU4ZTY5MjFhMWZlMDc0MGY0N2NiMjc3MDNkYzAyOTQyZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzOTRiMGQwYTUyNWFlOTQ3YzFlYTlhMmI3M2E4OGU5YTE5ZjgzNTk5ZDlkMWY2YzdmYmJjYzdkNzk5Yjg2ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

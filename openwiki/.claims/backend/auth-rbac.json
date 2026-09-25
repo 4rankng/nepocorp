@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9706d7cd64cacb5bdfafa5bb6d87dcccfa72cd1a575bd5e0a6fa72a0f7311055",
+  "pageVersion": "sha256:da757e850370d78bdeb0f64648416922ad8def7032371ac2190e8ef30e0a279c",
   "claims": [
     {
       "id": "claim_cba0677dddbd472187062001d6315e8d",
@@ -18,15 +18,19 @@
     },
     {
       "id": "claim_f3224bbad7a34855917971fe2c71136d",
-      "statement": "Five roles exist with Vietnamese labels — ADMIN (Quản trị), MANAGER (Giám đốc), ACCOUNTANT (Kế toán), DRIVER (Lái xe), FORWARDER — defined in @tingting/shared/constants ROLE_LABELS and used both in Casbin policies and React route guards.",
+      "statement": "Five roles exist — ADMIN, MANAGER, ACCOUNTANT, DRIVER, FORWARDER — with Vietnamese labels in shared/src/constants/index.ts ROLE_LABELS (Quản trị viên, Quản lý, Kế toán, Lái xe, Giao nhận). The same file exports FINANCIAL_ROLES ([ADMIN, MANAGER, ACCOUNTANT]) and isFinancialRole, used by the notification push audience filter; role strings are the Casbin subjects in policy.csv and the values compared by React route guards.",
       "evidence": [
         {
           "resource": "repo://backend/src/casbin/policy.csv",
           "version": "repo-file-v1:sha256:b5ae669700f08f1f632ef277f8df0f9e2f4ab1b2df96dea6e16a6a49f3a5cf79"
         },
         {
-          "resource": "repo://shared/src/constants/index.ts",
-          "version": "repo-file-v1:sha256:57ba8fa883100539c742659ffdbebdbfb5cd8f70b42451816aa42291c742dc80"
+          "resource": "repo://shared/src/constants/index.ts#L180-L186",
+          "version": "repo-lines-v1:sha256:dfe5859f6a2147edb9702c34e834cba00cf425ad33ff033d4fa190d3efb8e315:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhiMTZkOTk2MDVkZmIwNzEyOWIxNjhkMTc0ZGE1YmZiNDNlYmFkM2U0N2Q5ODhkMTE4M2I0YzViOTg2MzY1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzAwMGRmNjBlNTNiNGFmZGIyZjE3OGQwMzdkZGJmMjM4MTlhMGM1YjFmZTEwYjZkNDEwYmVmNWU3NWYwM2FhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTFjYWJmMjBkOWI3OTU0YmNmZTQwYTIwOGRmM2I4MDdlZWY1MGNkYTU0MjQwN2Y1MDQ5ODhkOTdlNzYzMTZkMCJ9"
+        },
+        {
+          "resource": "repo://shared/src/constants/index.ts#L27-L41",
+          "version": "repo-lines-v1:sha256:b7d48ad4055b529e62cfbf148621e39f1cad24668a63f223d11adc75723272e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZDg2NzIzNDAwMGM5NjVjZThkM2ZkYWE4NDljM2IzNjdkMmFjZDNiMGYyNzcxNzJhNzc1YmQ4MTY5OWNjNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjZjY1MmFiMTRhNjY1NWY1MTBlYmY2MmYxYzdjODg1MmI4MGUzNDEzNjFmMzIwYWQ4ZWFjMWE0MjhmMjE3ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5ZjQyNTY3ZTUxMmM0OWMyNjVjY2IxMjYxMTQzOTk1NjRjOTlmM2ZmOGI3YTMxMjAzZTNiYTZmODg3Yzc5NGIifQ"
         }
       ]
     },
@@ -93,10 +97,188 @@
           "version": "repo-lines-v1:sha256:d76126a43f733aace38e49bcead719b2237f1a799c7e5c484d1edac1a1449abc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4YzA1MmVlMmE4YmU2MjE5MDJlODY4ZmQ0NTk1MjVlYjViYWJlNDFkODg4ZThhYzdkMDljYmExNzE2YWU5MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0ZGNkZmU0Y2I4Mzk3MmNjMjFjOTk1ZDU5MGEwZTZmN2I5MjIzYmQ0ZmU0ZDBhOWNjYTBjM2NiYzk1YWI0MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkNjE4NTJhYjkxMGI2MDJkYTExMGE2YTUwYjZiNGI3MTU2MWE5MWRiN2Y0YmVkODA3ZDllZjRiNWFiYTQ1MDYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_07dbe8950433432ca1ad99eb4593c9c5",
+      "statement": "Login accepts identifier = username OR email OR phone (loginSchema {identifier, password}), rejects non-ACTIVE/soft-deleted users with a generic 401, and signs a JWT containing {userId, username, email, fullName, role, jti} with jti = crypto.randomUUID(). Logout and change-password blacklist the token's jti in Redis under blacklist:<jti> with EX = remaining seconds; isTokenBlacklisted fails closed (Redis error → treat as blacklisted).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/lib/redis.ts#L122-L142",
+          "version": "repo-lines-v1:sha256:3f0e03ad9071c93c7ef86690848f1518f9d50662affbcf8e1fc867906eecde7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlYWQ0NDZjZDUzMDcyYTNhYmExMmQ3ZjkxYzY2YTVkZTJmMTJlMjllYTcxNGNkMWFhZTE3MzU0MGMyNjkxM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3NWQ2NGY1NmMzOGE5NDQ5MWJjOTg5NjExNzRiOGY3OWY2ODhlMTk4N2FiZmEwMDNhMjkyOWY3NzBjZjQ2M2YifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/auth.ts#L27-L55",
+          "version": "repo-lines-v1:sha256:6f7f9e508f9b26448e650c69b520bd9d1a4f436dd1c6844239fda59c2b1247e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhODllMWVmZjU0YWVkNjViNmViY2RhYzMwZjgzMDcwOTFkNWE4YTBkYTFlZjdjNmM1ZmRlNTAzYWFhZWFkNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNzQxZDJjMDhlNmY1MTBiN2U5YTI2NGYzNzhmOWNlMDA0OWE1MDRlMGU3ZWY1ZDY3Y2QzZWE4MTNmODU0NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmNjQ4ODBiZWJiYmIyNWQwZGUwN2RhOTBiZWNjYWMzZDQzOTBkNWQ2N2E5YmRmZTM5ZDgwYjFmODQ2ZjQwMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMzI1NWMyMDc5ZTcwMDMyNzAzY2JmZDkwYzJjNzdkMDY5MDk0ZGM2NTg5OGIwNWUwNDRkNjY2NTEwNjU3NjYifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/user.service.ts#L59-L76",
+          "version": "repo-lines-v1:sha256:4bf98c62eef99be8707d6d6c7219b1b65e9c95f346b5b8e866d6a6100d6814c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4YTJiMTg1YmViYzEzOWExMmIwYTdhZjQ4MzFlZDhlMGI0MDQ4NWE2MDhkODQ2OTVmMTYxYjg5MDIwODU0MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMmZkYjY4MGUxNDM2M2YwZTRmODMyYjQwNTk0YWRlYzhjZWNhNzAyZjE4YjdhNWIwOTFmNzdjZDRiMjk0MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ZWVkNWZhZDVmM2JmNGY2Zjc0ZTJiYjMzMGQyYmY3YWJlMzM0M2M2YjZjOTFkYzlmN2NlNWU3NDgxNjgxMjEifQ"
+        },
+        {
+          "resource": "repo://shared/src/schemas/index.ts#L510-L513",
+          "version": "repo-lines-v1:sha256:b05f8f77915ad2f0b08ba9dcae3f4f780103ebfb57c4761a94191f0aa65187e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjMzYTYxZTI0Yzk5MDEzYjExMmM1MTRkYmMxYjFlODQ0ZDk3NzQ4YjNkNWVkZDFiNmNiOGQzZTE3YjRkZjg4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZlYWI4NWE2YjNhNDViMGVjZmIwNzVhNzM3YWYzOWUzZTI1NjRmN2Y2NjAwYzM3ZGYwZWNmNjhlMjU0Yzk5NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZmZWJhMDE5YmUyNzllYzg5MGViZDdiMmRiZDc3NTcyMDQ2MTlkY2U2MGM3ZDdlMDk4OTlkZmUwMzlkY2JjZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_878962ce732845f4af16c310ebc7b71f",
+      "statement": "The socket.io /agent namespace authenticates in its handshake middleware (agentSocket.ts registerAuth): it reads auth.token, runs jwt.verify with config.jwtSecret and the same Redis jti blacklist check as authMiddleware, stores socket.data.user, and rejects with the same Vietnamese messages. The client caches one socket per token and reconnects (re-handshakes) whenever the token changes.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/agentSocket.ts#L111-L127",
+          "version": "repo-lines-v1:sha256:9c71f4f83080c8096058ca304feb476a1bc5963c5a9ce520899fc6977485cff7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkOGRmMDIyMjM0OWMzOWI2MTE1MDRiOThlMjgyY2NkM2Y0N2U5MGQ3ODM3Y2U1YzhmZmIwOGE4MzE1M2FlZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiOGY5ODgxY2YwMTZkZDYyNTFkYjM0YWNiZjUyNGFhMWQxMjVhNmU3N2ZjMDZlOGMzMmI3YTk2ZDg2MDlhNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxOTMzMTQ5NDFkNGQ1MGRjMzNmNjRjNzAzODRiZGQzZDIzZjQ1Mzc0OTg3YWNlOWU4NTQ5MzQ1YTNmYzI4ZjAifQ"
+        },
+        {
+          "resource": "repo://backend/src/middleware/auth.ts#L25-L72",
+          "version": "repo-lines-v1:sha256:44b4c111ecb6c408ac4119a8a559269c6d77337adc6453e732f6af969a9e885d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2YTVmOWE5NjY1N2JjZTFkNTM0YTZjZjFiMDE5ZWNmNGJlNjEwYzhlZDEzY2FlOWFjYTA5ZDlhZGE5MjkzODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/api/agentClient.ts#L96-L121",
+          "version": "repo-lines-v1:sha256:ace521d64992ca2d370924c5ba56ceeb70c8e6470c9878df664189c0785dac0b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwOThiOTQyNWQ5MjIxMDcwYWU1ZTgxNGZkYjY1MDQyZDliZTczMGZlZDE0YWI3ZjBmODE0ZGM2YjdlOGUzMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MGU0MmZlZmEwMzRlMmRmNDQyZWEyMjU4OGYxMmZlNGYwYzE0ZTg0Njg5Zjc2NjcxYTczNzU0NmQ3ZTllMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe285596e597455b8954c126649321fb",
+      "statement": "Beyond handshake auth, the agent socket re-checks the OFFICE_ROLES gate ([ADMIN, MANAGER, ACCOUNTANT]) and the DB-backed botEnabled switch at connection, and re-checks botEnabled on every agent:chat message; GET /api/auth/me compares the token role to the current DB role and returns 401 'Vai trò đã thay đổi, vui lòng đăng nhập lại' on drift, so role changes surface at the next /me read rather than at token expiry.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/agentSocket.ts#L129-L155",
+          "version": "repo-lines-v1:sha256:c1a02a90e3f7dedbc8b70e13dc13fbd825db7b7a63e9086f3319b4f6d1514861:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNzUzZjFhMjkxMDc0NTcxNzNjMDI3MzBhZDQ0ZmYzZWZmYjNhYzg0ODA2MzhhNDNmMmJlZDY0MDU1NmY0MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYmZhNWVkZmVkMDhmNzkxYjMxMTNiMGJlMzI4ZmRjZDI3MGRhNDdiZDhkNWU5NjNjYWI4YzlkZWY3MTM0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNzg2OGVjZTkyMGRmN2YwNWZiODY1MDQwZWI4ZjJmZWM2ZjUxZmIwMTNmYmYwNDlmMjA3OThhZGM1YzdjYmYifQ"
+        },
+        {
+          "resource": "repo://backend/src/agentSocket.ts#L211-L238",
+          "version": "repo-lines-v1:sha256:14b222c5a3564db7336896569aaf9475a826f46384d1a5e5453c22c7aef1fa64:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2U5NmJiMjMxYjlmZmNjMzg2NGY5ZDY5MzE4N2E2ZDMwM2RmY2ZlMjIwMjY5ZDI2MWNmM2VmMTEwYjUxYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZjhiMWE2YWFmMzg3ZTQwM2Y5YzlhYmU2ZWVmMjM1N2NhNzQ2NGI5MmQyYjhkZWI2MDQwMjYyZWZmOTYwNzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhZjAwNzYzYmU5ZmYwN2U3YzFjNTdkYTNmMTg0ZThjZmIzYTNjMjBkY2JhZmM5YTI3Mjc1NWIxZGM2YWU5NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYTFlMTgyZDBmYjA1MTg0NGEyZWMzZWZjNjM4NWEwZDEzNDVlM2E1NzE5ZTJjMGY4YjVlNDdjYzBkODhkNzYifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/auth.ts#L59-L67",
+          "version": "repo-lines-v1:sha256:216a61f29a510aee8fd64fa2bf0e93f14ff33debd3ee9e5896ae20cb33b43c9c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBhZTczYzU1ODYxYTUxYjAwMTViM2RlMzJmMDliMWNlMzU0Y2ZjYWMwNmU0ODk2MGIwZGJiNDQ3ODQyYjE3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWI3NDFkMmMwOGU2ZjUxMGI3ZTlhMjY0ZjM3OGY5Y2UwMDQ5YTUwNGUwZTdlZjVkNjdjZDNlYTgxM2Y4NTQ3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWYzMjU1YzIwNzllNzAwMzI3MDNjYmZkOTBjMmM3N2QwNjkwOTRkYzY1ODk4YjA1ZTA0NGQ2NjY1MTA2NTc2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmE5N2IzNzA3M2FkMTQ4ZDEwYzQzMDM3OWJkNjAxYjNhNWQ5NDNlY2FkYjQ4NDE4ZWI1NmU2NjZiNmVmOTFmZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a95d0ee895a549a2bce642c368580ed6",
+      "statement": "The Casbin model is a flat ACL whose matcher is exact subject equality with wildcards only on object/action (m = r.sub == p.sub && (p.obj == \"*\" || r.obj == p.obj) && (p.act == \"*\" || r.act == p.act)) — there is no subject wildcard and no role hierarchy, so each role needs its own policy rows, with p, ADMIN, *, * as the single wildcard grant.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/casbin/model.conf#L10-L11",
+          "version": "repo-lines-v1:sha256:01e8a8443f02462402a941edb676448f5cc94c4ca9f8467915ccc5d6d1bdf713:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmMyMzRiMDllMzYzMDNmM2Y1NTJjZWFlMGI5YmM0YWU0NTdjMDRjZmRjZDY0Njk2ODdlOTgwYmVlZWJmZjMxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk3NTk5YWE2ZDdhMzY3NjQ3YmExYzY1ZDhlOGVhZTMzNTY5NDAxN2E4YzU3OTE4ZmY2NjhhOTE4YjIwYTFmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzY1OTE3OWFjNTk3N2VlZmU1NGY2MzBkMWM2MWM3MzJkYWFmMzM0MTYwZjU3NGFhM2ZiN2E1NzhkODBmMTI0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://backend/src/casbin/policy.csv",
+          "version": "repo-file-v1:sha256:b5ae669700f08f1f632ef277f8df0f9e2f4ab1b2df96dea6e16a6a49f3a5cf79"
+        },
+        {
+          "resource": "repo://backend/src/middleware/casbin.ts#L37-L58",
+          "version": "repo-lines-v1:sha256:66f2ccccdb811158179abf3606da998dda89ff9628a4fed89eab87d07c22150e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNjc2NGFiMjc4N2JlYjFmNzcwZjAwMDk4OTUyNDMxZjkzZjI4NTBlMDMzNmU2NmUxZjBiYjJlOWQyZTFkOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyYTJjYjI1YTEyMmI0NDIyMWE2MjM0ZWM2NjBhN2I1ZmI3ZjliZGU3YjNiOWUyYjNjNTU5YTBkOTZmYWM3MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MDdlZDcxMmZkZGM4NDQ4ZGQ4Zjc2M2FjNzliZjlkNzNlMGFiNjY0Y2M4OWVlNzcxNTNmODdmZWUwZjM1ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7358b92f82ab47e2b98bb8b338fcc9e2",
+      "statement": "initEnforcer() loads model.conf and policy.csv once, awaited at boot before the Express app starts; there is no reload API or watcher, so policy.csv edits require a process restart, and under tsx watch (which reloads only on source changes) a policy-only edit is not picked up until restart.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/casbin/enforcer.ts#L7-L24",
+          "version": "repo-lines-v1:sha256:0edf76bc4537fbbb52a36ed0437eb493696be9a5032f4469b116854e2890c2de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4MzdjMDhjN2VlNmRmODFiMzQ3YjQ2OTJjODA4Y2FjNDg2Y2FmMGY1YTc0ZWM1YWU3MDE1MGMzNzY5Mjg0NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzN2U5OTEzNjJiYmI5ODc0NDg4MWZiNTNlMzhkN2EyNzExYzQ0ZmU3OWRmZTM2Mzg2ZDZlZDRlYTdmZWE5NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L40-L43",
+          "version": "repo-lines-v1:sha256:c4356d634978edd2149654e044bf211ea17f2d65308962b2dcd15e3100419874:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQ4YjQzOTU2OWY2NWY5MTgzMTBlOTFiNmE5YjljOGUyODhkMDlhNmRhMjcxZmY4YzAxMWU1MGYzODM0MWEzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhZjBlNzE1OGIwMThkZjgxMDdlNzZlZjE4OTAzZmYxMTgyZTZhZjkyNzhhODFmNDJjZjdkYTk3ZmM4NWY0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMThiOWJjNWZjNjJlZjc4OWFlYzc4ODlhOWY1NTllYjZjMzgzZTZiODA5MmEwNDYzODY5MjRhYWFmZjU3MjIxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWMxZGE1MGNkZWNlOGI0OTg3MmEyMGE0YWE4MDgxNzRkOTVkNGU5MmJmZjFjZDVkMjExYmYyMDgyNzlhODkzNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2217dd5cd7a49619761a9b46fd01698",
+      "statement": "getCapabilities(role) uses the live Casbin enforcer to derive a UI-facing capability list: manage_users is granted only when enforce(role, 'users', 'write') succeeds AND the role is not ACCOUNTANT — accountants have scoped users write policy but must not receive full user-management UI.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/services/user.service.ts#L375-L385",
+          "version": "repo-lines-v1:sha256:afbf44bfa4d37bb0d451de7f7fe38a5f739c822b1ea261eac1a1aac6b586bffd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNDNiNmE4NTFiY2Y0MTU0NzFlZmQ2ODVkMzU2MjEyNTFiMzM2MDk0OWFkNDI2YTNkZjllMzQ1MDg4NTA0MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNmViNjFiN2EyOTVmM2Y4MzQ1YjRlYjBkY2MzYmNiZGZmMWFmYzY1Y2EyODk2YjJhNDBjMjk2YjhmOTI2NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_905f1c0d88fd4daa84671df51709cc48",
+      "statement": "Mount order in index.ts is load-bearing: configRoutes and financialRoutes are registered at the generic /api prefix before the /api 404 catch-all, so every specific router (admin/*, /api/driver/me, /api/forwarder/me, /api/ocr, catalogBootstrapRouter, etc.) must mount earlier or Express never reaches it; catalogBootstrapRouter and configRoutes are also ordered before the financial gate so FORWARDER can reach /api/catalogs/bootstrap.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L100-L105",
+          "version": "repo-lines-v1:sha256:24255d68bc37da25b3f84b0d0bb882dc170f14670a4773c9e71eaade9dded914:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDBhNzdmNGVlZGM0MzQ0MmViZGExNDNlMjcyOTY5ZDhiZThiYjdhMTlhMTM0ZmZjMWIyOWFkZTkwODU0Mzg2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmJiZWVmNTVjNGM1NTM1YjczNWEwY2Q5YjM0NzFmNGRlNzY2ZWE5Yjk5ZDg0ZTUyMzNlNzg5MDg1NzgxZGIwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmFkMTQ3MWI0YWU1NTRhYTM3MzZjZmY1NDRhMjg1OWQyOGViOTJjOTFjOTJkODFlZjNkNmMwYmE5NzhmNzc0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEyYWIyYWJhZWM0NDdlMTUxODlhMGEwM2U2ODY3NzVlNmZlOTlkYzVkYWFiMDY2YWQ2NDRiZWFkYWNiY2ViOCJ9"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L95-L149",
+          "version": "repo-lines-v1:sha256:6bb5d9771ab6a7fe3ede513a1ff19c5999460138bdefe9e5bb9ebf6a81c78293:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMWRkNGEyMmRiZDBlOTEwOTA0MTk4YTk4ZWJhYzQyZThiNjNhYmFkNjQyMTQ4NGZiNzZmZjgzNjFhNmQzMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYzNhNTk3N2FhNmQ4OWU4Y2IwN2U0ZGY3OTU2Yzc2Y2RiY2FkZDdiODRmZDg0MjBmMzc3ZTgzMGJhMjZjNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MTQxNzRiZjI4Zjk3NDJlZDI0M2Y3MTE4OGZjNjdmNmViZTczNGNkMTYyNDMzMjU1ZmI1NDRhMzMyNzg2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhMTk1MWRkNDIwZjgzODJiYjlhYTBhNDA4NzliOWU3OTkwYTMzNGIwMjhkMGZlYjQwNGNlZGE5YzRhMmE0Y2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7c1bb6d16a694af2a29107974c48f2fe",
+      "statement": "DRIVER and FORWARDER are portal-scoped: /api/driver/me is gated by casbinAuthz('driver_portal') with per-request ownership enforced by getDriverByUserId + trip-detail 404s, and /api/forwarder/me is gated by casbinAuthz('forwarder_portal') with resolveForwarder attaching req.forwarder (404 without a profile). Neither role has office policy rows, so office resources return 403 at the resource check.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L100-L105",
+          "version": "repo-lines-v1:sha256:24255d68bc37da25b3f84b0d0bb882dc170f14670a4773c9e71eaade9dded914:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDBhNzdmNGVlZGM0MzQ0MmViZGExNDNlMjcyOTY5ZDhiZThiYjdhMTlhMTM0ZmZjMWIyOWFkZTkwODU0Mzg2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmJiZWVmNTVjNGM1NTM1YjczNWEwY2Q5YjM0NzFmNGRlNzY2ZWE5Yjk5ZDg0ZTUyMzNlNzg5MDg1NzgxZGIwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmFkMTQ3MWI0YWU1NTRhYTM3MzZjZmY1NDRhMjg1OWQyOGViOTJjOTFjOTJkODFlZjNkNmMwYmE5NzhmNzc0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEyYWIyYWJhZWM0NDdlMTUxODlhMGEwM2U2ODY3NzVlNmZlOTlkYzVkYWFiMDY2YWQ2NDRiZWFkYWNiY2ViOCJ9"
+        },
+        {
+          "resource": "repo://backend/src/middleware/forwarder.ts#L20-L34",
+          "version": "repo-lines-v1:sha256:4f1a1c5973d7fde1f21b2a99dc3c2f30f02ea009746c9ba2ae8ea3a6f2ba430d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/driver.ts#L22-L50",
+          "version": "repo-lines-v1:sha256:9bb78f996ba39bca6c7180a937544e8f78a9de830d5db8efe16ce1aa224cdda3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhY2M2MDgwMTk1ZDYwMmU0MjRiMzdlN2MzYTQyNDA5Y2UxYzE2NzlmZDMxYzU5NWQxYTAwYmZiMWYwNTQzMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViNzQxZDJjMDhlNmY1MTBiN2U5YTI2NGYzNzhmOWNlMDA0OWE1MDRlMGU3ZWY1ZDY3Y2QzZWE4MTNmODU0NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmNjQ4ODBiZWJiYmIyNWQwZGUwN2RhOTBiZWNjYWMzZDQzOTBkNWQ2N2E5YmRmZTM5ZDgwYjFmODQ2ZjQwMmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzZDI3Mzc0NmYwN2U2MjZlYzM3ZTlkNWI4ZGRlMDI2N2ZkMzIxOGRiYTZhYmJlM2FlNTEzNThiOTM3MWVhMTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd73378180c64f63ba673cef205e0a8f",
+      "statement": "auditLogMiddleware (mounted globally at index.ts:85 before all routes) intercepts mutating requests, writes one Vietnamese audit row per successful call via res.on('finish') (never delaying the response), strips passwords/API keys via sanitizeBody, and additionally emits LOGIN_FAILED rows for 401 on /login and ACCESS_DENIED rows for any 403 from an authenticated user — RBAC denials are audited.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L85-L85",
+          "version": "repo-lines-v1:sha256:a14de317bacb54bbf9b1d826f840d66c830a32dbfc85d105d01160bd189e4baf:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE0ZGUzMTdiYWNiNTRiYmY5YjFkODI2Zjg0MGQ2NmM4MzBhMzJkYmZjODVkMTA1ZDAxMTYwYmQxODllNGJhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE0ZGUzMTdiYWNiNTRiYmY5YjFkODI2Zjg0MGQ2NmM4MzBhMzJkYmZjODVkMTA1ZDAxMTYwYmQxODllNGJhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTA5N2MyOTMwODIwYzE4ZGQ3YTA4YmYxN2Q1MDA4MjNjMDJlNzI0NzAyZWI0MzVlODM2NGU5YWE1N2E1OTYzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTMyNmQ1ZDFiYjE3NzVlYzY0MTZhYzFjYTk3MDNlZTg5Zjk3ZTMzMTUxOThhODRiYmE3NDhmMjgzNmMyYzNkZiJ9"
+        },
+        {
+          "resource": "repo://backend/src/middleware/audit.ts#L125-L227",
+          "version": "repo-lines-v1:sha256:a9fb69e0b0f98ea58f07a1702a58e51b684249f6a008e65e0c30aacb4ce4058c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzYjdlNTkxNjQ3YTU5MTMwMWY2ODk3OWRiMTg2NDlmYWQ3NjViOTY4YmNlYjFjMmQ1NThmZTFjNzE2ZjUxNmIzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYjU4MGU5NjRmODNhNDczZjQzZDQ0Mzg0NjI5NDlkNjhiNTYwMGZkYTc4N2YxNjM3NDVkMDBkZTg5Y2JmMzZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://backend/src/middleware/audit.ts#L57-L75",
+          "version": "repo-lines-v1:sha256:9b61f796ced3e270a141cd0448dcd8331d9b0955f53434239617f142c019579d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNTU3NzBkY2QwODNiNjU3MzY5NWRiNzgxNTMzZjllZmU2NjNkZmFjMDNkYjA2ZTJiMmM3OTZkNDU1NGE5ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhODc0ZjI4NTY1YzAyZjg1NGZhZGNhM2Y0YWVjNDYxMzY3YTk4MjI1YTQ3Yjc1ODg5NzY0OTU1ZDU1M2ZkMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzN2VkMzVjMDdmYzFiYzVjYjczNmVkYTZhOGUwOTFmOGE0Mzk2ODVjOWE2ODU4ZjA4MDBjM2YyNGI4ZjBkOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b9bb6b1d69743699e07bcd49c9458c8",
+      "statement": "RBAC-focused tests load the real shipped policy: gps-admin.rbac.test.ts builds a throwaway enforcer from the actual model.conf + policy.csv and asserts gps-admin write is ADMIN/MANAGER-allowed and ACCOUNTANT/DRIVER/FORWARDER-denied; photo-authz.test.ts covers forwarder-ownership scoping (active vs DISABLED forwarders, accountant-created rows) on the /api/photos surface.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/tests/gps-admin.rbac.test.ts",
+          "version": "repo-file-v1:sha256:d051d79be4f8fdd71aee026930c8a46e360208f3e85043fb0e53edafeb0d19ac"
+        },
+        {
+          "resource": "repo://backend/src/tests/photo-authz.test.ts",
+          "version": "repo-file-v1:sha256:fe40187ca12a004853c0448fec24f20ea4298a6f7dfdb582ed69cb5e835264c8"
+        }
+      ]
+    },
+    {
+      "id": "claim_834a53c56c94443294daf2046576ea80",
+      "statement": "The ADMIN wildcard idiom has two shapes in index.ts: chatbot-metrics relies on casbinAuthz alone (no policy row → only p, ADMIN, *, * matches), llm-settings and faq-admin stack casbinAuthz with requireRoles(Role.ADMIN) as belt-and-suspenders, while gps-settings and app-settings use requireRoles(Role.ADMIN) with no Casbin resource at all.",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/index.ts#L106-L121",
+          "version": "repo-lines-v1:sha256:4674168d271014f922364fb9919575ab85cfde7402989302afa50b56e0b86176:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMWQ0YmY1MTRlMGExZjY3MjYzOWIwYTYwMTVmZjQ4MTY2MDkyMjhiY2U2YTQ4MzgzZDEwYjA3NTg2YzA3YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTcyYmMwOGE1MmVjYTUzNzk4ZGYwMDg1ODA0YzFkNTJmZTY5NWVlNzNmNDFkZDM3ZWZhYzdjYTllZDU0NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0YTRkZjNlZGM5NjVjOTc0MDUxZjhiODgwN2Q4NzBlNDBlMDA4YWFkNGYwMmVkNGRjNThiNjRkMjViMzgzOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1NGQzMTE1NjhlOTQ5MTM2MTQwZTMzNGZlYzMyNGJmYTNiNzE2MDk5NzA5MjI5NDhmYzllYWE0NTIwZjNmZGEifQ"
+        },
+        {
+          "resource": "repo://backend/src/index.ts#L111-L116",
+          "version": "repo-lines-v1:sha256:e51c4509eadc0d360d8fa819e53bac924daa88d0bccc9c8754c3d724b1491e11:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IyYmYzODNmOGQyM2JkNzc3NTkyYTQ1MzE5YzY2ZmQ3MDQyYmYwNjZhNDE0NTM1MDdmZWU4ZDEzM2Y3Y2Q0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWVmYWE5NGRlZTJkZDAzYjE2NDljODBhZDg1ZWQwNmZhYmYyNWNmOTUxYmNlNTFjMmExNTJmZDZiMWZkM2VlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjIxMzY1MjcwM2VkZDhhZjE5ZjE1YmVkMTMyODM5OWI4MDczMjMwYzA4ODU2N2FkYzZmMmU2ODNkNzkyNTAxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODNlZTdhMDI4ZTNhNmZiZjRlNjNmNDIyYmVhZjM3MTg5MjI5NTBmNzZkZWZkNzcyOGY4NzkyZDRmZDk1NzRiOSJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }

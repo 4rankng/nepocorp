@@ -3,9 +3,6 @@ type: architecture-overview
 title: System Architecture
 description: End-to-end architecture of the NEPO Logistics platform — monorepo topology, runtime topology, request lifecycle, RBAC boundaries, and data flow between React, Express, Drizzle, and PostgreSQL.
 tags: [architecture, monorepo, request-flow, rbac]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-21T11:26:37.739Z
 sources:
   - id: openwiki-source-2a2dfd1bcd8735843534fafd
     resource: repo://backend/src/index.ts

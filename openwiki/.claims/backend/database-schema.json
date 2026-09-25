@@ -1,28 +1,36 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:41e5aab87bd5979c9e7f84530cf8c9dda99c44658b63e112108993872eb1c49c",
+  "pageVersion": "sha256:ca4199a000f1f530a76fe29e9845c9f5184bd1843adf0cd84b960e87ce551954",
   "claims": [
     {
       "id": "claim_677ada1ad8954e7ab10c0fb91630d38d",
-      "statement": "NEPO uses Drizzle ORM (postgres.js driver) against PostgreSQL with the schema in a single ~1300-line file backend/src/db/schema.ts and migrations under backend/src/db/migrations; all status/type fields use pgEnum declarations at the top of schema.ts (lines 23-48) covering trip_status, fuel_mode, loading_type, role, txn_type, trailer_type, truck/trailer/driver/customer status, penalty_status, vehicle_component, vehicle_schedule kind/status, advance_request/settlement status, notification_type, work_day_status, and salary_confirmation_status.",
+      "statement": "NEPO uses Drizzle ORM over the postgres.js driver against PostgreSQL: backend/src/db/index.ts creates the client from config.databaseUrl and exports db = drizzle(client, { schema }) from a single ~1300-line schema file backend/src/db/schema.ts. Migrations live under backend/drizzle/ (one NNNN_name.sql per migration plus meta/ holding the drizzle-kit journal and snapshots) — there is no backend/src/db/migrations directory. All status/type columns use pgEnum declarations at the top of schema.ts (lines 23-48; salary_confirmation_status is declared beside its table at line 620), covering trip_status, fuel_mode, loading_type, role, txn_type, trailer_type, truck/trailer/driver/customer status, penalty_status, vehicle_component, vehicle_schedule kind/status, advance_request/settlement status, notification_type, work_day_status, and salary_confirmation_status.",
       "evidence": [
         {
           "resource": "repo://backend/drizzle.config.ts",
           "version": "repo-file-v1:sha256:b03cdf885464bef6d10a7e5aa72100fb33ee5e09714da0c64bdf7bae3a472e69"
         },
         {
-          "resource": "repo://backend/src/db/schema.ts#L2-L48",
-          "version": "repo-lines-v1:sha256:c6f5de5bdd3e725d6ff130edc7f0f043d89bf3bf36b18c95bfc82593341fb3b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZTVlMzNiNDMxMDMwMjJjYjExMGNlODg0ZmQ0NjcwMzYwMWQyMmQ2ZDdkMzZjNWMzYzNhODQ2ZmY1NDU4MzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ODBlMDQ3ODhmNWZjMjE3MjhjOTYzMGQ2Y2FhZjNiYjFlNzYwNTMwYjE3NWM3MjBmM2FhZDU5YTljMzE1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoxLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MjAwOTY0YTk3ODYzNTUyMmIyYWIwOTBjNjUwNjVkOGVmOGU4NWM0NzMwYmIyZWIwNDYwZDM0YzY3N2RkYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwODg1MGZjMDQ3MGEzNTJhN2ZiNjU1NjBhNjE5ZWU2ZjhiM2M5ZGUwNDBhYzI2YWQ1MWRkZjk1MDcyNzM3Y2MifQ"
+          "resource": "repo://backend/src/db/index.ts",
+          "version": "repo-file-v1:sha256:6695655a09493630e8a50e0acd49d762fe54807d7076e49ad873c922bfa31d75"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L22-L48",
+          "version": "repo-lines-v1:sha256:b22a916ffc919bae64cf1aaadb688c685c9d244e5f36996ea706af2d130dafe6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWZhMTI5ZDAyYmViY2MwMjJjMTBmODkyNDdhMzY3YmE2NjM0ODI0NzY1M2JkMTYyOTFlNzI2YjljOTU2ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ODBlMDQ3ODhmNWZjMjE3MjhjOTYzMGQ2Y2FhZjNiYjFlNzYwNTMwYjE3NWM3MjBmM2FhZDU5YTljMzE1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhYjhmODg4MDQ3ZmUyN2NjZmNhYTA2MzU1ZWJhYTMwYzZiOTRhM2Y3M2ZiMDZlMTY0Yjk4OGRlMWY1ZDgxMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwODg1MGZjMDQ3MGEzNTJhN2ZiNjU1NjBhNjE5ZWU2ZjhiM2M5ZGUwNDBhYzI2YWQ1MWRkZjk1MDcyNzM3Y2MifQ"
         }
       ]
     },
     {
       "id": "claim_fc58fdd1581e41e89e534057dededc15",
-      "statement": "The ledger table (schema.ts:405) implements the project's loosely-coupled entity reference convention: entityType is a varchar(50) string (one of DRIVER/CLIENT/VENDOR/FORWARDER/...) and entityId is an integer — both deliberately without foreign keys so the ledger outlives the entity; balance is numeric(15, 0) for exact VND precision.",
+      "statement": "The ledger table (schema.ts:405) implements the project's loosely-coupled entity reference convention: entityType is a varchar(50) string — narrowed by the service layer to CUSTOMER | DRIVER | VENDOR | FORWARDER | CARRIER (external carriers live in customers, vendors in suppliers) — and entityId is an integer, both deliberately without foreign keys so the ledger outlives the entity. balance is numeric(15, 0) for exact VND precision. The same polymorphic pattern appears in billing_documents.entityType/entityId and expenses.truckId + vehicle_component, where integrity is maintained by service paths because Postgres cannot enforce a polymorphic FK.",
       "evidence": [
         {
           "resource": "repo://backend/src/db/schema.ts#L405-L426",
           "version": "repo-lines-v1:sha256:567fb32dd756d8ea3eea39af7bf7e980df24c0c0b8624145950c41137c38490a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNWE4ZjgyYmQ3Y2ZjNjEzZWQ3MTRmMzBkMGI0ZTU2ZTRhYjhjN2FjMDFiMWU1YmI5NGRmNTkxNzUzNTIzMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliNDI2MTQzM2QyOTM3MjIxZjIzNDM5ZjExNWE1ZTBhYTI0Nzk0YWIwMjUwMzIzYTRjYTEyZDA1M2E2MjliNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZGQ0ZmE0YzM3MTYxMmQwM2RmOWJmMjhkMTc4ODUxNmE5YTk1MDM5N2RkMzlmZDExMjQ2YWJkM2I3YTY4YTUifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L43-L44",
+          "version": "repo-lines-v1:sha256:08557be609311323e2f02b9e168a6d86021ebefc3b7827dd1aefc5e29e777458:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQwNWE4ZGRmMGJiYzNmMTQ3OWYwNmFiYzY4MTAzNmE1ZmRmN2JiZWEzYmNkZTg4MTA0NjgzNDE1MjFkZTdjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjIyYTA1NmRjMjAwM2RlNmE3ZjQxNjE2MDg0NDA5YjhjNTM4Yjg2NWQwMDNhZmQ4NDNkN2FjYWE3MjJkOTc3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmRhMDEyNjE5OTQ0NDE1MTA4YzZhZDYxYmJiZTBhMTAwZmViMzZmM2MwZTVlODM0ZmY4MTczMmQxODkwNTE3MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2MwMTVmNzUzOGUwM2QwMmU2NTAzYWM2ZWRkZDEyZDhjNDQ3NDFiNTVhMjc2ZmMwNTFmM2FmNzUwOTc4OTg4NiJ9"
         }
       ]
     },
@@ -38,49 +46,197 @@
     },
     {
       "id": "claim_6ed98109de184de0944cc9710df96ef8",
-      "statement": "Tables group into users/roles, fleet (trucks/trailers/tires/tire_positions/vehicle_schedules), catalogs (customers/routes/cargo_types/pricing_tables/road_allowances/fuel_config/fuel_price_history/penalty_reasons/company_info/management_fees/road_config/app_settings), suppliers/expenses, trips and legs/containers/expenses/photos, forwarder flow, ledger+receivables+billing+debit_note_templates, distribution+salary, audit+infra, GPS, agent/chatbot, and notifications.",
+      "statement": "Schema tables group into users/roles (users, drivers), fleet (trucks, trailers, tires, tire_positions, vehicle_schedules), catalogs (customers, routes, cargo_types, pricing_tables, road_allowances, fuel_config, fuel_price_history, penalty_reasons, management_fees, road_config, app_settings), suppliers/expenses, trips plus legs/fuel allocations/containers/seals/instructions/expenses/photos, forwarder flow (forwarder_expense_types, container_types, seal_types, ports, advance_requests, advance_settlements, advance_settlement_requests, settlement_expenses), ledger + receivables (ledger, debt_offsets, billing_documents, billing_document_lines, debit_note_templates), distribution + salary, audit + infra (audit_logs, trip_code_counters), GPS read models (route_polylines, trip_gps_tracks, vehicle_last_positions), agent/chatbot tables (agent_conversations, agent_messages, agent_turn_metrics, faq_entries, knowledge_chunks), and notifications + push_subscriptions. company_info is not a table — it is company.* key/value rows in app_settings assembled by company-info.service.ts; vehicle alerts and payables are likewise computed/derived, not stored.",
       "evidence": [
         {
-          "resource": "repo://backend/src/db/schema.ts#L51-L1299",
-          "version": "repo-lines-v1:sha256:e69c5094925b6b2719d6a2ff70c15a498f8398430b294dec087c268c34326926:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFiZWQ4MWQyOGExMDE1OTdjMDRjZTg2ZDU4ZjA5YzA2YmFiMmE3Zjc1YTk3ZWEwM2E4NzUzZjA0ZWQ5ZmNiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVlMjZjZDkyMzY2ZjYwZDhlZDkyZDAyMzlmMDdmZWY3NGNhYzE0YWE2OWFkZGY5YzJjYzBkMTFlYjAwYTQ2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmExYjk4ZTA1ODZhODE5N2NhYjQ3ZTE3NjBhZWM5ZTc1YWFlOTgwNDY3MWU3M2Y1Mjg2Zjg1NTQ1YTg1ZTI0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://backend/src/db/schema.ts#L49-L1299",
+          "version": "repo-lines-v1:sha256:481f358929129fdb17a91db992cd232d9685ecfba47b5fb118e709896026200b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI1MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ1ZWM3YmFlZTU5ZDhjZTRmMTY1OTAxYzI2ZGU5YWNhNmE5YmYzMDk0ZDdjNDMzMDRiODVmOWFmZWQ1ZWRmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVlMjZjZDkyMzY2ZjYwZDhlZDkyZDAyMzlmMDdmZWY3NGNhYzE0YWE2OWFkZGY5YzJjYzBkMTFlYjAwYTQ2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDFjMGUxMzMyNGU5OTRjODBkNTczYzZiZjlkODc3MjE3M2UzMDI1NmViYjU4NDlmNWZkNWVlN2ZhNjYwMzMwYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://backend/src/services/company-info.service.ts#L1-L24",
+          "version": "repo-lines-v1:sha256:8d49840212db1abce45d5c40215c1963fcaa376ff7222d4186724407389c8ac2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZDhlYjRiMTMyMGJlMWY2NWM5ZWRiNTA1YjFjNTdmYjI4ODI3OGIwZGNiZjlkNWM1YWVhNDNkOTQzODQ4MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NGVlOGE4ZDFhYTg0NTM5MWJjNjc5ZWI3MGNlN2Y0NmEzY2Q2ZmIyZDE2ZmNjYTY3ZmExNzhmNGY4YzFlMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMjM2ZWNjMDI1NmIzMDFhZmM0MDk4NzZkNTFmMzRkMmI3OGRlM2ZmMzEzZWRmNWE2MDM0YzgxMzYwY2JjMjkifQ"
         }
       ]
     },
     {
       "id": "claim_be5d685933fe42f7bcc9c231d9a296a6",
-      "statement": "Notable schema conventions: TEXT + CHECK is used for user-editable enum-like fields (e.g. truck_cap_table.participant) instead of pgEnum to avoid enum-migration cost; salary_periods.isDefault defaults are enforced transactionally in the route handler rather than via partial unique index; the project uses pgvector (vector(1536)) for FAQ embeddings via the vectorColumn1536 helper.",
+      "statement": "Notable schema conventions: TEXT + CHECK is used for enum-like values that would be costly as pgEnums — truck_cap_table.role is TEXT with truck_cap_role_check IN ('INVESTOR','DRIVER') (schema.ts:572-578), avoiding enum-migration cost and the name collision with the user-role pgEnum; single-default flags (salary_periods.isDefault, debit_note_templates.isDefault) are plain booleans whose exactly-one invariant is enforced transactionally in route handlers, not by a partial unique index; and pgvector vector(1536) columns for FAQ/knowledge embeddings are declared via the vectorColumn1536 customType helper (schema.ts:15-20).",
       "evidence": [
         {
-          "resource": "repo://backend/src/db/schema.ts#L2-L2",
-          "version": "repo-lines-v1:sha256:60e5e33b43103022cb110ce884fd46703601d22d6d7d36c5c3c3a846ff545835:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBlNWUzM2I0MzEwMzAyMmNiMTEwY2U4ODRmZDQ2NzAzNjAxZDIyZDZkN2QzNmM1YzNjM2E4NDZmZjU0NTgzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBlNWUzM2I0MzEwMzAyMmNiMTEwY2U4ODRmZDQ2NzAzNjAxZDIyZDZkN2QzNmM1YzNjM2E4NDZmZjU0NTgzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjEsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTgyMDA5NjRhOTc4NjM1NTIyYjJhYjA5MGM2NTA2NWQ4ZWY4ZTg1YzQ3MzBiYjJlYjA0NjBkMzRjNjc3ZGRiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDFlMmYwMzk0YjY0N2QxMzliOTg0OTM3NjJhOGNiY2M3OTQyYjQyYTAyZWI2NjY3ODZmZGVlZmQzMTRiNGFlNyJ9"
+          "resource": "repo://backend/src/db/schema.ts#L15-L20",
+          "version": "repo-lines-v1:sha256:91974184a47822da9cb3f79efcc21c7b9253f8ca5bf6d9089b06ae8261cda0e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmVjZmM1NGI1NzJhOWMxODI0NWUyMzEwNmUyZTAyMzM4Mjk0MmJiNzI4Y2UxMjk5NzYyZGMwNDdmZWU0YTUyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUwZDkyMWY2NGRiNmQ3OTcwNzczZjZiYzJlNjFlNDAzMmQyZGFlMTdmMGZlZmExOTdiZTZkMTE2NDVlZjJjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlkMDUzMWZmMjk3NjRjZTAzMjJjYTNhMGYzYmE0ZTkyNGI5Y2U4ZWFlY2UyM2MxMWMwYWFkZDczMmQ4ZDZhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ4YWU0NjU5NmU5YTVhNzYwMWY1NDcwMmNlMGIxMmI1NzA2NTg3YzU0NmQ3M2RhMTVkY2M4MzQ4Njk1MWI2NiJ9"
         },
         {
-          "resource": "repo://backend/src/db/schema.ts#L570-L570",
-          "version": "repo-lines-v1:sha256:664fb6f9c525d69a0cb9cca069dc90624486b4618477acd2a64b2dbb4ef5d1de:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY0ZmI2ZjljNTI1ZDY5YTBjYjljY2EwNjlkYzkwNjI0NDg2YjQ2MTg0NzdhY2QyYTY0YjJkYmI0ZWY1ZDFkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY0ZmI2ZjljNTI1ZDY5YTBjYjljY2EwNjlkYzkwNjI0NDg2YjQ2MTg0NzdhY2QyYTY0YjJkYmI0ZWY1ZDFkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTNlZjU4MDc5MWE4M2I4NTFhNTE3NTA2ZDM4NTE5ZDI4YjYxMmZkNWJjMDM4NWVhYmU1YmY3YTVmNzgwNTU0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGRjMzAwZDUxZTQzMTA3M2I0Y2QwMzc2NjhlNGMzMjZhMmU2MWE1YjcxYTE1ZTUzMTdhNjdmMzlkMWZhMjFlMSJ9"
+          "resource": "repo://backend/src/db/schema.ts#L563-L579",
+          "version": "repo-lines-v1:sha256:d52f14413818abcdd6c17d22a4f34b3098cd8387fade4b25f5b0a4521096cce7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZmFkNTdhMWM0ZDgwM2NhNjFiNWNmMTJjY2UwZTBjNGNlOGU1YWE2M2VmYmZmNzMyMGE1ZDBkMjdkZWE1YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTcwMmZmZjA2NjNlZmU3YWQ1MjFjNDcwZmRjMjUwYjc2ZDNhMTRkMWIzZjEzNDcxYTMyNWIzMzE5NTFiZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2MzIwM2NhMTA4MTQ5OTJjZGUzNGRiYTdkNWE1ODI5YTNiOTUzNWQ2YmZhNTI3YjA2ODY0NzlkOTlhY2M3MzYifQ"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L636-L652",
+          "version": "repo-lines-v1:sha256:679d0fcf6cc665aed573b2b121765ca7bf4819142b4a098546369dce9679163a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MWJiYWE2YTE0MDNjNjlhMTVlODJkZTI3ZGEwOGQ1Mzk2NzE0ZWEzYzE4YTI1M2Q1MTljMmQ2NTc4MGQwNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2YWRkYmZjYzg2YmE3NDczM2Y1ZjRkZDcyM2E4MDgxYWE5MDMzZGNkZGIyYTRlMjAzMTJiYzgzMmY2ODZiNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNGYyNzlmZTk1ZjE2Yzg0YTIzYjA1OTk3MDU1YTVjNTczNzNiZjhjZGNjNjRmMGM4YmFhMDQyYjY4MDVjYzYifQ"
         }
       ]
     },
     {
       "id": "claim_8617b351cd144af68b21e35124ba7331",
-      "statement": "Migrations are generated with pnpm db:generate (drizzle-kit generate, schema diff → new file under backend/drizzle/), applied with pnpm db:migrate, and inspected with pnpm db:studio; production migrations live under deploy/ and use a wrapper that excludes *.revert.sql files (commit 45fbad3).",
+      "statement": "Migrations are generated with pnpm db:generate / make generate (drizzle-kit generate diffs schema.ts into a new file under backend/drizzle/), applied with pnpm db:migrate / make migrate (drizzle-kit migrate follows meta/_journal.json), inspected with pnpm db:studio / make studio, and sample data is loaded with pnpm seed / make seed. Production migrations live in backend/drizzle/ (not deploy/) and are applied with make prod-migrate, which loops over backend/drizzle/*.sql in plain filename order, excludes *.revert.sql dev-rollback pairs, and pipes each file through scp → docker cp → psql --single-transaction inside the nepocorp-postgres-1 container; make prod-migrate-file FILE=... applies a single file the same way. Container deployments (make demo-backend, backend/Makefile deploy) instead run npx drizzle-kit migrate inside the backend container.",
       "evidence": [
         {
-          "resource": "repo://Makefile",
-          "version": "repo-file-v1:sha256:ebc6c61c4c6dc11fed4027c780a4d6a0b4894755a756c2030f4a5d7084cb9756"
+          "resource": "repo://Makefile#L180-L198",
+          "version": "repo-lines-v1:sha256:efbe9112f20b583bf250b892bbf52397a1bf28c4c8986674a8698cb58c628527:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NDg5NTY0Yjg4YzdjYWY2NmM3OWZjZDhhYTQ2MzZmZjkyNjY2ZWM0OTkzYzYyM2ZmZTczZmZlNWJlYjYwZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NWRkM2IyYTZjMzIxMDkwYmM0NGIxNDE1NTRjOGE2YmI0ZjdkOTlkMTNkZmI3YjNhMmU4ZmJlOWYxYWZjNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ODA2YzY4MjFlZGM5OTllMjgxMjdiNjUwNGM2M2I3N2IxMDliNWNlMmYxM2E1NGI2NDhiODVmMDgwMDZkNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4N2M4ZDMyMDJjNDAyNDdhYTAxYjJiYmE3M2MyZGU4NWJhYWZhMjk0MDZjMGYwZjc1MjBhNzgzNWVkNzhmMDgifQ"
         },
         {
-          "resource": "repo://backend/drizzle.config.ts",
-          "version": "repo-file-v1:sha256:b03cdf885464bef6d10a7e5aa72100fb33ee5e09714da0c64bdf7bae3a472e69"
+          "resource": "repo://backend/drizzle/0104_parallel_guardian.sql#L4-L8",
+          "version": "repo-lines-v1:sha256:6a9e5dd1f62d2b6ec396d247095b03c363c8dbc31838d94ad07942510ccc409a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBmZjRjYmViODJhNDRlMmJjOTE5YTYyY2MyNTQxYjQyNmZlZDliMDBlZjllYWYwZDVjOTE4ZDE4YmM0YjQ0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM1ZGY4ZjQyZTc5NDc3YWZhOGFmN2QwYmJkY2E0MjMwZGEyOGI3NzJmMzcxZDRiMjQxNjZmN2ViYzcwMTU0NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzg1YTAxZDgyMGRiZDBlMjIzNTg3ZTFhNzhiMWU0YWE0MTFkYjFiYTMxYmU4MjgxYTk1ZmFmNjdjNGY5NmEyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEzMDgxNTZiYjE1OTUzNWRhZTgzYzdhYjFiZDJmODBjN2U5OGQwNWE0YzIwYjAwOWJmM2Y1MzJiYmI5ODM2MSJ9"
         },
         {
-          "resource": "repo://backend/package.json",
-          "version": "repo-file-v1:sha256:72ae663548d1dd9bfb487fd62267919805b68f53b86936f4c08600d729520fbd"
+          "resource": "repo://backend/drizzle/meta/_journal.json",
+          "version": "repo-file-v1:sha256:eb9a195c8fe9680122fc0a20d78ff630ce7fc2c3c25fdc993c56fc39228a27fb"
+        }
+      ]
+    },
+    {
+      "id": "claim_361a3516b9484fbbbef11e1d7d3c8d0d",
+      "statement": "pgvector support exists only through a Drizzle customType: schema.ts declares vectorColumn1536 whose SQL type is vector(1536) (JS representation is the pgvector literal '[0.1,0.2,...]'). It types faq_entries.embedding and knowledge_chunks.embedding, and because the type is opaque to Drizzle all vector reads and writes go through raw SQL (faq-fast-lane.ts cosine queries with <=>, backfill-faq-embeddings.ts UPDATE ... ::vector). Migration 0104_faq_knowledge_base.sql runs CREATE EXTENSION IF NOT EXISTS vector and creates the partial HNSW cosine index (WHERE embedding IS NOT NULL AND is_active = TRUE); 0107 repeats the pattern for knowledge_chunks. Both dev (docker-compose.dev.yml) and prod (deploy/docker-compose.prod.yml) therefore run the pgvector/pgvector:pg16 image — upstream postgres:16 plus the extension — because stock postgres:16-alpine lacks it.",
+      "evidence": [
+        {
+          "resource": "repo://backend/drizzle/0104_faq_knowledge_base.sql#L16-L38",
+          "version": "repo-lines-v1:sha256:cbfdfb257961abbe7f04c51885e1596d360c0b6ab1bcfe685fa6bb3562148a57:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOWIyY2ZlYzQ3NTE5ZjQ5ZWU3M2NiNTMzYzQ1OWUyMmY4Y2E1NGZlNWJhMWNiZWM1OWYzZDU4ODNmZTE5MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjZWE5YzczMWRkNjg3N2FhNTYyY2UwMzlhOWEwNDgxNTA5OTQ2MmQ1NDU0YzE4YWNhMjE1N2MyOGE2ZjlmMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjNjk0NDgyNWZkZTk3OTBlMzlkYmU3MDI1YjNlNzYzODdjOTQwZDgwYzI4ZDU4NmJkMmM0OTNjODQ5MTdkNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MDdhMTkyYmIyZjhlN2FhYTkyYTNkY2FmMzM2ZTFkMDVmMGM2ODA0ZThlMThkMTczY2ZhNjZiYjBjOTY3OWUifQ"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L8-L20",
+          "version": "repo-lines-v1:sha256:77d07d4fe3af047857350b885bce3d81c9746e8c1a0e72ff45e21ec61bed4f57:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMTZhNDQ4NzY2NmNhODExMDU3Mjg5ZGZkMDZhOGY4MzEzMjE5ZmZiNmEyMTlmMjlhYTMxMzk5Yzg4MTUyNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMGQ5MjFmNjRkYjZkNzk3MDc3M2Y2YmMyZTYxZTQwMzJkMmRhZTE3ZjBmZWZhMTk3YmU2ZDExNjQ1ZWYyYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiZDMyNGQ3NDk5ZmMwYTQzNjM4ZmI4ODU2NTlhNjkxMzIzZjgwNDNmOWZlZDhmYjBlZmRmZTRhN2MyMTNhMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkOGFlNDY1OTZlOWE1YTc2MDFmNTQ3MDJjZTBiMTJiNTcwNjU4N2M1NDZkNzNkYTE1ZGNjODM0ODY5NTFiNjYifQ"
+        },
+        {
+          "resource": "repo://deploy/docker-compose.prod.yml#L4-L7",
+          "version": "repo-lines-v1:sha256:59c72c70b5b58223f9a5b62477f664ae530b876e35c35d11e8dd00107b4dfa2a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODBmOGRjODNhOWQxMDc3NDFlNTM2NGFlMGNmNmY0ODU5NTcwMjIwOTAzMTEyMjBhYWY5MDE4Yjg3NzBmZTE2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZhOWVlZmZjYzJmOTBjMjJmYmRiYWM5YzliYjA5ZjkwN2JhN2M2OTllYTM0MjA5M2E1OWY1NjU5YWNlMDI3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E0OGFjYTFjYzQ0Zjc0M2VkNTQ5YWExNTcwMGYzYTlmZTYyODAyM2I0ZjhiYjM1MGJmNWVlNjhiOWVhOTgxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ4YjhlZjI0OTM0OGQ1ZTYxNTg4MWFjMmI1Njg3ZGRmOTU3OWJmYTYyZDU5YzY3OGNjNmQ1NWJhMGFlZmI1NSJ9"
+        },
+        {
+          "resource": "repo://docker-compose.dev.yml#L2-L6",
+          "version": "repo-lines-v1:sha256:2583ee11ba8c5bffea1cbacd9af4d6075303268ee933df88bfeaec1f97e2a303:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmYzNGY1ZjRlMWYwYmVlNzkzMDA3NzQwMzdmNTNmZmFkZTFkZDhlODhiNTJjMDExOWEyZTM3YTY3ZmJhYmViZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZhOWVlZmZjYzJmOTBjMjJmYmRiYWM5YzliYjA5ZjkwN2JhN2M2OTllYTM0MjA5M2E1OWY1NjU5YWNlMDI3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjEsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE3M2ZjY2RjOTllYTgzNTk2N2M3ZGVlN2VmYmVkMWYzY2E4NzI2MGQ5MjkzMTg1MGZkZDY2ZGE4Y2IxMmYxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmJjODRkODhmOTQyOTIwNGM1ZmQ2N2EzNzhkZDA1MjhlNDEyMzlhOTA4NGZkZmMyMDRmNmRjNzI3MDJmODk0ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_937130cd12cc4f2bbc8765648d6051a5",
+      "statement": "The forwarder_expense_type pgEnum was removed in favor of the forwarder_expense_types config table: 0014 created the enum, 0023 created the config table and recast trip_expenses.expense_type to varchar(50) referencing config codes, and 0026 dropped the enum type. schema.ts:38-39 documents the swap — user-extensible vocabularies are config rows validated by code instead of database enums that require a migration per new value.",
+      "evidence": [
+        {
+          "resource": "repo://backend/drizzle/0014_steady_dust.sql#L3-L54",
+          "version": "repo-lines-v1:sha256:e5264e00e18821b4e92f01dbbe1bf6170954086d3da5bb717551cd7c1953e6b3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNjliMTNhOGM0ZTUxZTQzMjg1MDI2NmMwYTY3MDhiMDUzMTk2ZjQ5YTcxZTIxMTg4ZjNjM2Y2MWMxMzI1NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4N2U4MmUyMDg5ZmM0YTYzNGMyMGJhZjE3NDdmNTAyNGM1MDc2MjdlMDM0ODY4YThlNDhiYjJhMzg2YTAzNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3MGVkNTBkNjQ5OTZiNjRmYTZmNGUzOWIyNDUxMDFmMzRkZTkyMDlkOGVhNWJkYWM5NTI1MmMwMzZkYTU5NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ZTY0MjY2ZTc1OGIwMWQ3ZGFhNmRjYTg4MzYzODQ1NmFkZmU1NDJhYWI3YTFkMzAxY2FkZThiMjdjODI5ZGUifQ"
+        },
+        {
+          "resource": "repo://backend/drizzle/0023_fast_the_captain.sql#L1-L12",
+          "version": "repo-lines-v1:sha256:6486eb6d4aa3e47ba89476aab4a73bae78e0f2562f8365b02158abd02b4fb07f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjgyYzE4NzhlZjc0MjQyM2I1OTE3OTQzMjE0MGQwNWY4ZDA5MDIzMWY1OTA5ZGE2YTJlZjYwNTYwZTFkN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZGM0YTdhOTcxYWUxZDFhZjE2OWM4ZGFhYTlmOGRmNDNjZGEwZjM5NDMxYjRkMzMzMmMxYjllZGFjMTljYmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://backend/drizzle/0026_absurd_sphinx.sql#L10-L10",
+          "version": "repo-lines-v1:sha256:8ccd91a199e2fc781b552d8cce13ff821221a794e67896f9060bf81f9b66f788:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNjZDkxYTE5OWUyZmM3ODFiNTUyZDhjY2UxM2ZmODIxMjIxYTc5NGU2Nzg5NmY5MDYwYmY4MWY5YjY2Zjc4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNjZDkxYTE5OWUyZmM3ODFiNTUyZDhjY2UxM2ZmODIxMjIxYTc5NGU2Nzg5NmY5MDYwYmY4MWY5YjY2Zjc4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Y1ZjcxMzYzZDNkYzE3OWIwNzM2NmFhMWM0ZjUyYzlmODU4MDEyNmQ1M2UxNzg3Zjg3MjZmZWM2MTdhMjU2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L38-L39",
+          "version": "repo-lines-v1:sha256:02f968154988e58fce87f1902162c0dea0fdae369ac0c20115ab236bd9014390:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDNmNzQ1OTVlMDExMDJkMTg1ZjFhNWIzZjNkZjMyYTYwZDNlNjg1NjUyODIwYTRmZGMxYjY1MDkyNTBkNzI4MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJiZTNjOGM2NTFiMjFiZjA0NjE2NTlkNzA0Zjg2NWExMmVhNjAyMDhmY2M0YmI3ZmMxNzJmNTIwNGQ2NzQ1OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjIyYTk0ZDVlYzk2M2RkZjM3Y2I2M2JkYzdiYTY4ZjBkM2VhZjlkMjFkMGVjODFjYzNmZmY1NzhmNWIxYzc1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2MwOTRiN2M2YTIwNTlkNjAyYWU4NzMwMzIyNTU3YjIxN2FkMDYzMmU1YmFiYWI1MTI1ZTNhNDE1YTI4NGZhYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_45331efb739f4404b7c6b3831163f54e",
+      "statement": "Migration numbering in backend/drizzle/ has deliberate collisions and gaps — several numbers carry two distinct forward migrations (0050, 0051, 0062, 0079, 0104, 0106), some pair a migration with a same-numbered *.revert.sql rollback file (0048 through 0053), and numbers like 0060 and 0089-0093 are skipped (the journal jumps 0088 to 0094). Never renumber by hand: make prod-migrate applies files in lexicographic filename order and drizzle-kit migrate follows the journal, and both orderings already account for the existing names. Applying SQL manually also desyncs drizzle-kit's snapshot — 0104_parallel_guardian.sql records that a duplicate CREATE TABLE faq_entries had to be stripped from a generated migration for exactly this reason.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L180-L198",
+          "version": "repo-lines-v1:sha256:efbe9112f20b583bf250b892bbf52397a1bf28c4c8986674a8698cb58c628527:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NDg5NTY0Yjg4YzdjYWY2NmM3OWZjZDhhYTQ2MzZmZjkyNjY2ZWM0OTkzYzYyM2ZmZTczZmZlNWJlYjYwZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NWRkM2IyYTZjMzIxMDkwYmM0NGIxNDE1NTRjOGE2YmI0ZjdkOTlkMTNkZmI3YjNhMmU4ZmJlOWYxYWZjNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ODA2YzY4MjFlZGM5OTllMjgxMjdiNjUwNGM2M2I3N2IxMDliNWNlMmYxM2E1NGI2NDhiODVmMDgwMDZkNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4N2M4ZDMyMDJjNDAyNDdhYTAxYjJiYmE3M2MyZGU4NWJhYWZhMjk0MDZjMGYwZjc1MjBhNzgzNWVkNzhmMDgifQ"
+        },
+        {
+          "resource": "repo://backend/drizzle/0104_parallel_guardian.sql#L4-L8",
+          "version": "repo-lines-v1:sha256:6a9e5dd1f62d2b6ec396d247095b03c363c8dbc31838d94ad07942510ccc409a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBmZjRjYmViODJhNDRlMmJjOTE5YTYyY2MyNTQxYjQyNmZlZDliMDBlZjllYWYwZDVjOTE4ZDE4YmM0YjQ0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM1ZGY4ZjQyZTc5NDc3YWZhOGFmN2QwYmJkY2E0MjMwZGEyOGI3NzJmMzcxZDRiMjQxNjZmN2ViYzcwMTU0NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzg1YTAxZDgyMGRiZDBlMjIzNTg3ZTFhNzhiMWU0YWE0MTFkYjFiYTMxYmU4MjgxYTk1ZmFmNjdjNGY5NmEyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEzMDgxNTZiYjE1OTUzNWRhZTgzYzdhYjFiZDJmODBjN2U5OGQwNWE0YzIwYjAwOWJmM2Y1MzJiYmI5ODM2MSJ9"
+        },
+        {
+          "resource": "repo://backend/drizzle/meta/_journal.json",
+          "version": "repo-file-v1:sha256:eb9a195c8fe9680122fc0a20d78ff630ce7fc2c3c25fdc993c56fc39228a27fb"
+        }
+      ]
+    },
+    {
+      "id": "claim_56a8358b5acc4800a72621758b3d78c8",
+      "statement": "deletedAt soft delete is the default convention: most business tables carry a nullable deleted_at, queries filter deletedAt IS NULL, and uniqueness under soft delete uses partial unique indexes (e.g. customers_active_name_tax_code_uniq_idx applies WHERE deleted_at IS NULL). Tires are the deliberate exception: migration 0084_hard_delete_tires.sql purges soft-deleted tire rows and the /fleet/tires CRUD router passes deleteMode: 'hard', so user cleanup frees the unique serial number while business history is carried by status DISPOSED. Append-only/infra tables (ledger, audit_logs, agent_*) have no soft delete by design.",
+      "evidence": [
+        {
+          "resource": "repo://backend/drizzle/0084_hard_delete_tires.sql",
+          "version": "repo-file-v1:sha256:aa927521b100a87ebd65b11df0abed037c2561708e1e10671ff30f17c6f8ff21"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L193-L203",
+          "version": "repo-lines-v1:sha256:3eed4f8aba864db89feba8524c7916e482e899096de07a3ac0826aee0536c82e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1YzQ4YmQxZGZiNjk5Y2I2MWE5ZTJkYzQ5NmIxYWYxNDdjNTgxMjEwYzI5ZDE4NmM4NDVmOWU1ZjkxOGEzODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2YWJmMTMxMDNhNDI5NWU4ODE5ZDY5MjFhNDgzZWQ3MmNkNTEwNmQ3MmZmMTQyZTU4MTk1Y2Y2ZjY3ODc0Y2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlOThjZWM2MmZjMjJmNTJlOTVhYzk3YzJmZDNjZWExYTg5MzRlZTg5NjhlOTllMzA4MTE5YTMzM2U5NzkwMmIifQ"
+        },
+        {
+          "resource": "repo://backend/src/routes/config.ts#L165-L168",
+          "version": "repo-lines-v1:sha256:a2c1d1d0758ec3880a76fef4bee6486596469ae40eb27882053b926d3054dda1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdkOWRiMGI0MzA2ODk4OTU1YjY4ZmZjYWIzZjU5MzY2MmQzMGRiMGM5YTcyNjkyYmRhN2QxYjlhODI5OWEzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVjODg5ZjgyMzc3YjNlYWUxYmMzZTdkOGQ1ZjRlOWIyYmU0NmQ0MGJkNGVlMGExZjgzNGIzYjI0NWRhM2FjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc1NjJjNWMxNDhmMTZjZDY4MDcwZGIzN2U5ZTY4NmZkYjIxZTI1NWZkMWEwZjk0MTU3YWI3YTNiYThlZjQ0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2QzMTU2M2FmOWI5ZTA3OGM3OGU5ZDRmM2RlNjczNjY5YjEwY2RhNGY5MTJjNzUzMjkzZWQ3NTViNWE1MzNlMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1630e27ac0fc418aa1d274608afc3b22",
+      "statement": "users.fullName exists so audit lines show a human actor label: the audit middleware persists actorName = req.user.fullName ?? req.user.username into audit_logs.actor_name (schema comment gives the example of 'Quản lý Lê Văn Tài khóa chuyến' instead of an email), and read paths fall back with COALESCE(actor_name, users.full_name, users.username).",
+      "evidence": [
+        {
+          "resource": "repo://backend/src/db/schema.ts#L56-L59",
+          "version": "repo-lines-v1:sha256:eb550925f5ddd776f90af72957b100655f3afb9f222b6b237a8f8731fd480cb8:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2E0ZDE3MTdkNjUzNjM1N2NkZmI0NDc1ZTNlODhiYjNkZGM3NzgxM2NkZjBmMDdlZTE3NmIxMDJhODc1Y2ExYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVhZTA5ZDIzMTkwMTZhNmQwYzU1ODFjMDI0ODg5ZjJiYTRhODRmYzI3OWU4NWJlNjMxNTRjZmJmMTE4NDkzZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmFmZjgxMTc2N2IyZDhhY2Y2ZTk3NTJmOWNmZTJlMTYwZTIzNDkyYjBlNTQzYzY2NGQwNmQ0ODk5ZTJiOTA3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGU1NWIxYTY1ZGE2MTQ3NWNlNGM1YTllZDA2YTEwMGJmY2I2NjZkNGVmZDdmMWU1MGI0YjAyNGExNDE5OTBlNCJ9"
+        },
+        {
+          "resource": "repo://backend/src/middleware/audit.ts#L158-L174",
+          "version": "repo-lines-v1:sha256:b515c5cc83df1adbe4303b2d0aee080a736a5bf2794b13bc953fd2da24e813e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNDVhNGM3MGQyNWYwMmRmYzNkNTU5NDIwOThmM2I0MDQ0M2I3ZjdjZjYxYjhiM2FjNWI4NWE4YTZmZjE2ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxN2FmMTEwMWM5N2I3YzJmNTI1NDA3ODJlNjM0Y2M0NDQwZjBlOTcwMzQxZTUyZjk3NTIzMTFkNzhiN2Q3ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzNDRlMjU2YzhlYmM3ZjE4ZTczNjJkOTljNjBhZTYwYTBmMmZjZGZkNDhkMjNlNjdiYmM0ZWMwOTU2MGVmZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiMzQ2MjczNzY4NWZjNTRjZTI2ZjM0ZDI4MDM5YzRhN2FlY2YzZjg3NGI3NjEwYjdjZTViYzgwNjA2NTkzZjAifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/audit-query.service.ts#L42-L42",
+          "version": "repo-lines-v1:sha256:09191f158c854236ff638855a8153f238bccecd0c549a24a90ff1f926086662d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDkxOTFmMTU4Yzg1NDIzNmZmNjM4ODU1YTgxNTNmMjM4YmNjZWNkMGM1NDlhMjRhOTBmZjFmOTI2MDg2NjYyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDkxOTFmMTU4Yzg1NDIzNmZmNjM4ODU1YTgxNTNmMjM4YmNjZWNkMGM1NDlhMjRhOTBmZjFmOTI2MDg2NjYyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmE1MDlkZDcxZjAzMGRhM2Y2ZGZkYTMxOWRiMmQzMzY1NTVkMzI1YTYwZTk5MWZiOTI1OTIxOTY4Y2I0Y2NhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWYyMDBmNzZjMGZlMTExYzdmZmViYTQ2ZTY5OGRhNmM0ODM5NmMzZjUxZTZmNGFhZWY5YWQ2Zjg1M2RkYjY1MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8cd779fa7ea34c58b386c3e5cb1a8788",
+      "statement": "Migration 0117_fuel_allocation_unit_price_multi_row.sql enables multi-row fuel purchases per trip: it drops the trip_fuel_allocations_supplier_once_idx and _cash_once_idx partial unique indexes (which had allowed one supplier purchase and one cash purchase per trip) and adds a nullable unit_price numeric(12,2). NULL means legacy/derive-at-read — the row is priced with the trip's effective price (fuelActualUnitPrice otherwise fuelPriceApplied) — while rows with an explicit unitPrice are priced at that price in ledger.service.ts. The table's CHECK constraints still hold per row: liters > 0, CREDIT rows must carry a supplierId, CASH rows must have none.",
+      "evidence": [
+        {
+          "resource": "repo://backend/drizzle/0117_fuel_allocation_unit_price_multi_row.sql",
+          "version": "repo-file-v1:sha256:69ffcec305ca3164ce52a7c71085ca0a6c65af938839fd9a59474a296b419a33"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L364-L388",
+          "version": "repo-lines-v1:sha256:a9b50ced4f6540e69d9793a7f6d04e1eb358c66884f7978c0d386ad85e7580a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyNjA5NWZjMjBlY2QzYzAwYWQ2NTliY2E4N2I5YWM5Y2RiOTAxMTk0NDgxMTI0NWFiMjcxMTViZjdjMDYwOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZWQxZTlmNDcyMTY0NmM3ZmFlN2Y3ZjNkNDg3NTNiOGU5ZDBhZWE0MmM3MzRkMjQ4ODIyNWI2NDFjYWY1MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YmM3NDUzN2Q0ODMxNDkzZWRkMmM0OTc3ZTcyZTNhZDNlYTljOWQxYmFkYWRlNDY4ZTY3OTZlZTFlMGJiNDAifQ"
+        },
+        {
+          "resource": "repo://backend/src/services/ledger.service.ts#L203-L221",
+          "version": "repo-lines-v1:sha256:46ceb52aa16623feebbfc0146d5e158c2f3221c82628212eb85f9f42b1736536:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MGJkM2IyMjExNWE4YzFlZWYxYzgwY2I2NTRmMzRjYjFlOGFlMGI2M2I2Y2FhYjcxNTZiMTFlM2FhNWY5OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5MDMzMTUzNTFjZDJlMzg3ZGQwZTU3YmM1Zjk1ZDZmN2JmNTUyN2M3ZDNhN2JhYjFlMDBiZTQzZWMwZTlmNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5OTAxOWZlYjZmZjE4MjU5MGQwOWY5YjU3YWEwYTI5NWNkZDA0MjM4NmJlMzQwZTI4MjQyNWYzN2UxNjBhMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f897b89800a54d21adfe75ad24aa5644",
+      "statement": "Migration 0116_reclassify_two_point_road_allowance.sql is an idempotent data migration: it folds two_point_delivery_bonus into total_road_allowance for OWN, non-canceled trips whose total still equals the old formula, so re-running skips already-reclassified rows; total_cost and gross_profit are intentionally unchanged because it moves money between components rather than adding cost.",
+      "evidence": [
+        {
+          "resource": "repo://backend/drizzle/0116_reclassify_two_point_road_allowance.sql",
+          "version": "repo-file-v1:sha256:b00782293ba212fd4551e6258808a12272f1dfa23700a34eab73059462ec3dda"
+        }
+      ]
+    },
+    {
+      "id": "claim_8be5970ceb6f4e88bae32dceb9f4de27",
+      "statement": "Migration 0062_billing_documents.sql introduces billing_documents and billing_document_lines for debit notes (DEBIT_NOTE) and payment statements (PAYMENT_STATEMENT): documents carry a frozen debitNoteTemplateSnapshot jsonb so historical documents re-render identically after template edits/deletes, and a separate ledger_adjustment_amount so an edit posts only the difference and repeated saves stay idempotent. A partial unique index (billing_documents_active_period_unique, WHERE deleted_at IS NULL AND type = 'DEBIT_NOTE') enforces one active debit note per entity+period.",
+      "evidence": [
+        {
+          "resource": "repo://backend/drizzle/0062_billing_documents.sql",
+          "version": "repo-file-v1:sha256:4b7559bf91e19607902e0108812d9453319042d1fc40be8f53d7b819b3fe5f15"
+        },
+        {
+          "resource": "repo://backend/src/db/schema.ts#L477-L505",
+          "version": "repo-lines-v1:sha256:bce5bba34dc22917483c8ba2e53c7fe483c394a77e1c24a05a0890d5f8e3bd19:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MGJkMGI0NjA0MDlkZGI3MTAzMDA3NTQ1N2NjZjMyNjcyN2I0ODlhMDQ2MDk2ZmEwMmM2NzFhNmE3ZmQ4YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTI2Y2Q5MjM2NmY2MGQ4ZWQ5MmQwMjM5ZjA3ZmVmNzRjYWMxNGFhNjlhZGRmOWMyY2MwZDExZWIwMGE0NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNWJlYWVhZDRmZTQzMGY4YjNjZWIxZjI5MGMzMDJlZjc1ODhjODExMGNjN2JjNjczNzRlZWViNGEzZWNkNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmNDNlMDY2ZTlmMGVjZDBmNDMyMTBjODJjMWRhNjBjNDQ2ZTZjYmJjYzZmZjcxMjkyZGI2NzMzN2UwZmI2YjEifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-21T11:26:37.739Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-24T15:30:51.512Z"
   }
 }
