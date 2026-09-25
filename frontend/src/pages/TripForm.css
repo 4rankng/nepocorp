@@ -170,6 +170,18 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: 16px;
 }
+/* A wrapping label must never push one control below its row neighbour:
+   fields borrow the parent row's label/control/hint tracks via subgrid, so
+   both cells of a pair start their control on the same line regardless of
+   label length. Engines without subgrid keep the previous top-aligned
+   behaviour (labels align, controls may step). */
+@supports (grid-template-rows: subgrid) {
+  .tc-form-row > .field {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 3;
+  }
+}
 .tc-form-row--three { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
 .tc-form-row--split-3-2 { grid-template-columns: 1.4fr 1fr; }
 
