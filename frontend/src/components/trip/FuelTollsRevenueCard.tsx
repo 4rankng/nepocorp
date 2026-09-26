@@ -31,36 +31,56 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
       <FuelModeToggle value={form.fuelMode} onChange={form.setFuelMode} />
 
       {form.fuelMode === 'FLAT_RATE' && (
-        <div className="field">
-          <label>Số lít dầu khoán</label>
-          <InputWithPrefix value={form.fuelLitersOverride} onChange={form.setFuelLitersOverride} placeholder="VD: 55" prefix="L" type="number" />
+        <div className="tc-form-row">
+          <div className="field">
+            <label>Số lít dầu khoán</label>
+            <InputWithPrefix value={form.fuelLitersOverride} onChange={form.setFuelLitersOverride} placeholder="VD: 55" prefix="L" type="number" />
+          </div>
+          <div className="field">
+            <label>Số lít bổ sung</label>
+            <InputWithPrefix value={form.fuelSupplementLiters} onChange={form.setFuelSupplementLiters} placeholder="0" prefix="L" type="number" />
+          </div>
+          <div className="field">
+            <label>Lý do bổ sung</label>
+            <input className="input" type="text" placeholder="VD: Chạy máy lạnh kéo dài" value={form.fuelSupplementReason} onChange={(e) => form.setFuelSupplementReason(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Đơn giá nhiên liệu thực tế (₫/lít)</label>
+            <InputWithPrefix
+              value={form.fuelActualUnitPrice}
+              onChange={form.setFuelActualUnitPrice}
+              placeholder="Để trống = dùng giá cấu hình"
+              prefix="₫"
+              type="money"
+              mono
+            />
+          </div>
         </div>
       )}
 
-      {/* One grid for the supplement block: litres, reason and the actual unit
-          price share a row. The placeholder already says what an empty price
-          means, so the sentence that repeated it is gone. */}
-      <div className="tc-form-row">
-        <div className="field">
-          <label>Số lít bổ sung</label>
-          <InputWithPrefix value={form.fuelSupplementLiters} onChange={form.setFuelSupplementLiters} placeholder="0" prefix="L" type="number" />
+      {form.fuelMode !== 'FLAT_RATE' && (
+        <div className="tc-form-row">
+          <div className="field">
+            <label>Số lít bổ sung</label>
+            <InputWithPrefix value={form.fuelSupplementLiters} onChange={form.setFuelSupplementLiters} placeholder="0" prefix="L" type="number" />
+          </div>
+          <div className="field">
+            <label>Lý do bổ sung</label>
+            <input className="input" type="text" placeholder="VD: Chạy máy lạnh kéo dài" value={form.fuelSupplementReason} onChange={(e) => form.setFuelSupplementReason(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>Đơn giá nhiên liệu thực tế (₫/lít)</label>
+            <InputWithPrefix
+              value={form.fuelActualUnitPrice}
+              onChange={form.setFuelActualUnitPrice}
+              placeholder="Để trống = dùng giá cấu hình"
+              prefix="₫"
+              type="money"
+              mono
+            />
+          </div>
         </div>
-        <div className="field">
-          <label>Lý do bổ sung</label>
-          <input className="input" type="text" placeholder="VD: Chạy máy lạnh kéo dài" value={form.fuelSupplementReason} onChange={(e) => form.setFuelSupplementReason(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Đơn giá nhiên liệu thực tế (₫/lít)</label>
-          <InputWithPrefix
-            value={form.fuelActualUnitPrice}
-            onChange={form.setFuelActualUnitPrice}
-            placeholder="Để trống = dùng giá cấu hình"
-            prefix="₫"
-            type="money"
-            mono
-          />
-        </div>
-      </div>
+      )}
 
       {form.carrierType === 'OWN' && (
         <FuelAllocationEditor />
