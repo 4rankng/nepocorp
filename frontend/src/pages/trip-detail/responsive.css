@@ -87,14 +87,12 @@
     max-width: 100%;
   }
 
-  /* Action buttons wrap onto their own row below the title. Right-aligned
-     with top/bottom padding so they don't touch the title above or the
-     content below. The desktop .header-actions is `flex` (single row) —
-     on phones we keep the buttons at their natural size and let them
-     flow into multiple rows if the viewport is narrow. */
+  /* Action buttons wrap onto their own row below the title. All visible
+     actions share ONE row (20260926_3): main buttons split the width,
+     the kebab keeps a fixed 44px square. */
   .td-page-head .header-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px;
+    display: flex;
+    align-items: center;
     width: 100%;
     gap: 8px;
     padding-top: 8px;
@@ -102,18 +100,17 @@
   }
 
   .td-page-head .header-actions .btn {
+    flex: 1 1 0;
     width: auto;
     min-width: 0;
     justify-content: center;
     min-height: 44px;
-    padding: 8px 14px;
-
+    padding: 8px 10px;
     line-height: 1.35;
   }
 
   .td-page-head .header-actions .header-overflow {
-    grid-column: 2;
-    grid-row: 1;
+    flex: 0 0 44px;
     margin-left: 0;
   }
 
@@ -131,10 +128,6 @@
     padding: 8px 14px;
     font-size: var(--fs-control);
     line-height: 1.35;
-  }
-
-  .td-page-head .header-actions .btn--primary {
-    grid-column: 1 / -1;
   }
 
   /* Tighter title on phones */
@@ -244,11 +237,13 @@
   }
 }
 
-/* Very narrow phones (≤ 420px) — three buttons per row get cramped, so
-   drop to 2 per row by giving each button a slightly larger basis. */
+/* Very narrow phones (≤ 420px) — all visible actions still share one row
+   (20260926_3); buttons split the width and tighten padding instead of
+   stacking back into full-width rows. */
 @media (max-width: 420px) {
   .td-page-head .header-actions .btn {
-    flex: 1 1 100%;
+    flex: 1 1 0;
+    padding: 8px 8px;
   }
 
   /* .btn--ghost has no background by default (it's designed for desktop
