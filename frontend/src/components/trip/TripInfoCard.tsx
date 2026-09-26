@@ -196,7 +196,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
           </>
         )}
 
-        <Field label="Ngày khởi hành" required controlId="departureDate">
+        <Field label="Ngày khởi hành" required controlId="departureDate" className="trip-info-card__field--full">
           <input id="departureDate" name="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
         </Field>
         <div className="trip-info-card__group">Container &amp; thuế</div>
@@ -213,7 +213,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
         </div>
 
         {/* VAT rate */}
-        <Field label="Thuế VAT" controlId="vatRate">
+        <Field label="Thuế VAT" controlId="vatRate" className="trip-info-card__field--full">
           <select
             id="vatRate"
             name="vatRate"

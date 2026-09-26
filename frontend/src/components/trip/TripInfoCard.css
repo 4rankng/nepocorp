@@ -80,6 +80,11 @@
     grid-column: 1 / -1;
     gap: 10px;
   }
+  /* Odd-count fields (departure date, VAT) claim the row ON PURPOSE — a
+     deliberate full row beats an accidental half row with dead space. */
+  .trip-info-card__field--full {
+    grid-column: 1 / -1;
+  }
   /* Field hints flow UNDER their control on phones (subgrid track 3): the
      old top-right pin collided with wrapped labels and force-truncated
      every hint past ~9 characters. */
