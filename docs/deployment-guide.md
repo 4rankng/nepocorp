@@ -11,7 +11,7 @@
 | **Production** | `nepo.tingting.vip` | `/opt/nepocorp/` | Manual (`make deploy`) — user go-ahead required |
 | **Vantai (separate)** | `vantai.tingting.vip` | `/opt/vantai/` | Own stack, reserved for the silversea build |
 
-There is **no deploy workflow in CI** — `.github/workflows/` only holds the OpenWiki docs job. Deploys are the `make` targets below, cut from a clean detached worktree so uncommitted work never reaches an image.
+There is **no deploy workflow in CI** — `.github/workflows/` holds no workflows. Deploys are the `make` targets below, cut from a clean detached worktree so uncommitted work never reaches an image.
 
 Every environment runs backend + frontend as Docker containers alongside PostgreSQL and Redis.
 

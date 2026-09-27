@@ -8,6 +8,17 @@
       ],
       "cwd": "/Volumes/LexarSSD/projects/nepocorp",
       "type": "stdio"
+    },
+    "repowise": {
+      "type": "stdio",
+      "command": "repowise",
+      "args": [
+        "mcp",
+        "/Volumes/LexarSSD/projects/nepocorp",
+        "--transport",
+        "stdio"
+      ],
+      "description": "repowise: codebase intelligence \u2014 docs, graph, git signals, dead code, decisions"
     }
   }
 }

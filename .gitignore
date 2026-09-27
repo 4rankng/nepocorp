@@ -76,3 +76,6 @@ kanban/
 
 # npm lockfile — this is a pnpm workspace (pnpm-lock.yaml is authoritative)
 package-lock.json
+
+# repowise local index (machine-local artifact)
+.repowise/

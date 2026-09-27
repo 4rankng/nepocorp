@@ -40,7 +40,7 @@ Backend `.env` required (see `backend/.env.example`): `PORT`, `DATABASE_URL`, `J
 
 Ports: PostgreSQL **5440**, Redis **6390**, Backend **3090**, Frontend **7173**.
 
-Lint with `pnpm lint` (ESLint 10, root `eslint.config.mjs`). There is no build/test CI: the only workflow is `.github/workflows/openwiki-update.yml`, which opens a docs PR for the generated `openwiki/` wiki. Gates are manual — see the kanban-work skill's Git discipline block.
+Lint with `pnpm lint` (ESLint 10, root `eslint.config.mjs`). There is no build/test CI and no GitHub Actions workflows. Gates are manual — see the kanban-work skill's Git discipline block.
 
 ## Architecture
 
@@ -162,20 +162,11 @@ This is a Vietnamese logistics domain with specific business rules. Read `CONTEX
 - **Tests**: `cd backend && pnpm test` (tsx `--test`, `src/tests/*.test.ts`) and `pnpm --dir frontend test` (vitest). Backend suites need the local DB migrated first.
 - **Linting**: `pnpm lint` (ESLint 10, root config). No pre-commit hook and no CI gate — run the gates manually.
 
-## Knowledge Base (OpenWiki)
+## Knowledge Base (repowise)
 
-This project maintains a generated agent wiki in `openwiki/` via [langchain-ai/openwiki](https://github.com/langchain-ai/openwiki) — an Open Knowledge Format (OKF) bundle of Markdown pages with versioned, evidence-backed Claims, refreshed from repository changes. It replaces the previous local knowledge-graph plugin and its `.ua/` data, which are no longer installed anywhere (repo hooks and machine-level install both removed).
+This project is indexed by [repowise](https://github.com/repowise-dev/repowise) — a self-hosted codebase-intelligence layer: dependency graph, git history, code health, dead code, architectural decisions and a generated wiki (index lives in `.repowise/`). Query it through the repowise MCP tools (`get_answer`, `get_context`, `get_overview`, `get_risk`, …) or the CLI (`repowise ask`, `repowise search`, `repowise health`). Source code and tests stay authoritative.
 
-**Reading it:** `openwiki/` is just-in-time context, not required startup reading. Source code and tests stay authoritative; a brief's unknowns and review items are verification gaps, not automatic requirements. Prefer the narrowest quiet validation that proves the changed behavior, and preserve complete failure output.
-
-**Setup (one-time per machine):** the CLI is installed globally with `npm install -g openwiki` (requires Node.js ≥ 22.22.0). Host integrations are user-level and reusable from any repo: `openwiki integrations install omp` (Oh My Pi, under `~/.omp/agent`), `openwiki integrations install claude`, `openwiki integrations install opencode`. Check status with `openwiki integrations list`. Host-driven runs use the coding agent's own model session, so no OpenWiki provider key is needed; the CLI-launched path (used by CI) needs `OPENWIKI_PROVIDER` + the provider key.
-
-**Agent maintenance contract:**
-
-- **Do not hand-edit generated OpenWiki pages** (`openwiki/`, including `openwiki/.claims/`). Update source code and docs instead, then let OpenWiki regenerate: `openwiki code --update --print` locally, or the scheduled GitHub Actions workflow (`.github/workflows/openwiki-update.yml`, daily 08:00 UTC) which opens a docs PR.
-- `openwiki --init` regenerates the wiki from scratch and **replaces** the existing generated pages; it preserves the user-authored `openwiki/INSTRUCTIONS.md` brief. Prefer `--update` unless a full regeneration is intended.
-- `openwiki/.run.json` is transient run state (resumable page queue); it is removed by CI after each run and should not be committed.
-- Generated docs land via PR, never by pushing straight to `main`; the wiki is a docs artifact, not a code landing.
+**Maintenance:** `repowise update` refreshes the index incrementally — run it after meaningful waves (or install the post-commit hook via `repowise hook install`). `repowise init --no-prose -y` rebuilds from scratch without an API key; model-written prose pages are opt-in later (`repowise init --prose -y --provider anthropic`).
 
 <skills_system priority="1">
 
@@ -269,21 +260,6 @@ Usage notes:
 <!-- SKILLS_TABLE_END -->
 
 </skills_system>
-
-## Imported Claude Cowork project instructions
-
-<!-- OPENWIKI:START -->
-
-## OpenWiki
-
-This repository has a generated `openwiki/` evidence index. It is optional just-in-time context, not required startup reading.
-
-- Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
-- Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
-
-The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
-
-<!-- OPENWIKI:END -->
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

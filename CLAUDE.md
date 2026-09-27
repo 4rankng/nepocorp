@@ -73,14 +73,6 @@ shared/      Shared types, schemas, constants, calculations
 - `docs/flows/DELIVERY_TRIP_LIFECYCLE.md` — Trip lifecycle QA guide + user manual
 - `docs/company-files/` — Original Vietnamese business documents (fuel norms, allowances, vehicle data)
 
-<!-- OPENWIKI:START -->
-
-## OpenWiki
-
-@AGENTS.md
-
-<!-- OPENWIKI:END -->
-
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 
