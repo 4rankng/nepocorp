@@ -168,8 +168,11 @@ export function getMissingIndicators(trip: TripDetail): MissingIndicator[] {
   const missing: MissingIndicator[] = [];
   const revenue = Number(trip.revenue ?? 0);
   if (!revenue) missing.push({ icon: Banknote, label: 'Chưa nhập doanh thu' });
-  const fuel = Number(trip.fuelLiters ?? 0);
-  if (!fuel) missing.push({ icon: Fuel, label: 'Chưa khai báo dầu' });
+  // An external trip buys the truck and driver as one freight cost, so the
+  // company supplies no fuel for it to declare.
+  if (trip.carrierType !== 'EXTERNAL' && !Number(trip.fuelLiters ?? 0)) {
+    missing.push({ icon: Fuel, label: 'Chưa khai báo dầu' });
+  }
   return missing;
 }
 
@@ -201,6 +204,13 @@ export function isTripToday(departureDate: string | null | undefined, now: Date 
  * the container numbers, the partner assigns the truck), so they are not
  * "missing" while the plan is still open. From IN_TRANSIT onwards those same
  * fields plus the financial figures count as missing.
+ *
+ * The financial half is carrier-specific, matching the EXTERNAL branch of the
+ * dashboard's missing-data count in
+ * `backend/src/services/dashboard-stats.service.ts`: an external trip is
+ * hired as a single freight cost, so it has no company fuel, no road allowance
+ * and no trip salary to ask for. `getDataCompleteness` reads the same fields —
+ * keep the two in step.
  */
 export function getMissingPlanFields(trip: TripDetail): string[] {
   if (trip.status === TripStatus.CANCELED) return [];
@@ -227,15 +237,26 @@ export function getMissingPlanFields(trip: TripDetail): string[] {
   }
   if (!containers.some((c) => (c.containerNumber ?? '').trim())) missing.push('Số container');
   if (!Number(trip.revenue ?? 0)) missing.push('Doanh thu');
-  if (!Number(trip.fuelLiters ?? 0)) missing.push('Dầu');
-  if (!Number(trip.totalRoadAllowance ?? 0)) missing.push('Tiền đi đường');
-  if (!Number(trip.driverSalary ?? 0)) missing.push('Lương chuyến');
+  if (trip.carrierType !== 'EXTERNAL') {
+    if (!Number(trip.fuelLiters ?? 0)) missing.push('Dầu');
+    if (!Number(trip.totalRoadAllowance ?? 0)) missing.push('Tiền đi đường');
+    if (!Number(trip.driverSalary ?? 0)) missing.push('Lương chuyến');
+  }
   return missing;
 }
 
+/**
+ * Row colour signal: are the numbers a trip owes the books all in?
+ *
+ * Same carrier split as `getMissingPlanFields` — an external trip counts as
+ * complete once it has revenue and the freight cost it was hired for.
+ */
 export function getDataCompleteness(trip: TripDetail): DataCompleteness {
   if (trip.status === TripStatus.CREATED || trip.status === TripStatus.CANCELED) return 'na';
   const revenue = Number(trip.revenue ?? 0);
+  if (trip.carrierType === 'EXTERNAL') {
+    return revenue > 0 && Number(trip.externalFreightCost ?? 0) > 0 ? 'complete' : 'incomplete';
+  }
   const fuel = Number(trip.fuelLiters ?? 0);
   const road = Number(trip.totalRoadAllowance ?? 0);
   const salary = Number(trip.driverSalary ?? 0);

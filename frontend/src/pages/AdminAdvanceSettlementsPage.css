@@ -215,16 +215,22 @@
   background: color-mix(in srgb, var(--brand) 5%, var(--surface));
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+  /* The action column is the only variable part of this bar: the container
+     query below reads its real width instead of guessing from the viewport. */
+  container-type: inline-size;
+  container-name: as-settlement-summary;
 }
 
 /* Settlement-level actions live on the header, not repeated per child row
-   (kanban 20260922_34). */
+   (kanban 20260922_34). The two decisions are one row, never a stack: the
+   column gives way first (icon-only fallback below), because a stack hides the
+   second decision from a scanning accountant. */
 .as-page .as-settlement-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .as-page .as-batch-action {
   display: inline-flex;
@@ -244,6 +250,17 @@
 .as-page .as-batch-action:disabled { opacity: 0.55; cursor: default; }
 .as-page .as-batch-action--approve { border-color: color-mix(in srgb, var(--accent) 40%, var(--line-2)); color: var(--accent-700, #0A6E3A); }
 .as-page .as-batch-action--reject { border-color: color-mix(in srgb, var(--danger) 35%, var(--line-2)); color: var(--danger); }
+.as-page .as-batch-action__label { white-space: nowrap; }
+
+/* At or below the ledger's 1015px floor there is no room for both labels next
+   to the money columns (2026-09-26: the buttons wrapped into a two-row stack).
+   The decisions keep their icons and drop the text, so the row stays one line
+   at every width. */
+@container as-settlement-summary (max-width: 1035px) {
+  .as-page .as-batch-action__label {
+    display: none;
+  }
+}
 
 /* Narrow screens: the four stat cells stack, and the actions take their own row. */
 @media (max-width: 900px) {
@@ -268,6 +285,9 @@
   justify-content: space-between;
   gap: 10px;
   min-width: 0;
+  /* When a settlement carries unusually long amounts, the label/value pair
+     wraps instead of widening the track and starving the action column. */
+  flex-wrap: wrap;
 }
 .as-page .as-settlement-summary span {
   color: var(--ink-3);
@@ -768,10 +788,15 @@
 /* Mobile action buttons */
 .as-page .as-mcard__actions {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
+}
+/* The sheet CTA takes its own row; approve/reject share the row below it, so
+   the two decisions always read as a pair (2026-09-26). */
+.as-page .as-mcard__actions > :first-child {
+  grid-column: 1 / -1;
 }
 .as-page .as-mcard__actions .btn {
   justify-content: center;

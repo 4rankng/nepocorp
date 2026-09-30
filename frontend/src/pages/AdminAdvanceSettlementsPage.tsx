@@ -114,7 +114,7 @@ export function SettlementGridRow({
               aria-label={`Duyệt cả phiếu ${s.code}`}
             >
               {isApproving ? <Loader2 size={15} className="spin" /> : <CheckCircle2 size={15} aria-hidden="true" />}
-              Duyệt
+              <span className="as-batch-action__label">Duyệt</span>
             </button>
             <button
               type="button"
@@ -124,7 +124,7 @@ export function SettlementGridRow({
               aria-label={`Từ chối cả phiếu ${s.code}`}
             >
               {isRejecting ? <Loader2 size={15} className="spin" /> : <XCircle size={15} aria-hidden="true" />}
-              Từ chối
+              <span className="as-batch-action__label">Từ chối</span>
             </button>
           </div>
         )}

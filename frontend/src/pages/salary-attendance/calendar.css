@@ -197,11 +197,15 @@
   color: var(--danger);
 }
 
-/* ─── Calendar Grid ─── */
+/* ─── Calendar Grid ───
+ * Container, not viewport: a tile's real width is seven columns of whatever
+ * this month grid gets next to the salary sidebar, so the tile tiers live in
+ * container queries at the end of this file. */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
+  container-type: inline-size;
 }
 
 /* ─── Calendar Day Cell ─── */
@@ -283,9 +287,15 @@
   border-radius: 3px;
   margin-top: 2px;
   max-width: 90%;
-  overflow: visible;
+  min-width: 0;
+  /* The chip is three lines at most, so its background always ends on a line
+     boundary: the cell's overflow can never slice the tint in half. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  line-height: 1.2;
   overflow-wrap: anywhere;
-  white-space: normal;
   font-family: var(--font-mono);
 }
 
@@ -426,4 +436,35 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+/* ─── Tile content tiers ───
+ * A 15-char code (TRP-YYYYMM-NNNN) needs ~95px to paint inside the square next
+ * to the status glyph, and a square tile only gets that when the month grid
+ * gets ~700px beside the salary sidebar. Narrower tiles used to clip: the code
+ * ran past the cell and its chip was sliced by the cell's overflow
+ * (26/09/2026). The tile now drops its lesser content instead — glyph first,
+ * then the code — so nothing is ever half-painted. */
+@container (max-width: 715px) {
+  /* Code wins over glyph: the tile tint already carries the status. */
+  .cal-cell:has(.cal-cell-trip-code) .cal-cell-icon-wrap {
+    display: none;
+  }
+}
+
+@container (max-width: 519px) {
+  /* Too narrow for a legible code at all: back to the status glyph. */
+  .cal-cell-trip-code {
+    display: none;
+  }
+
+  .cal-cell:has(.cal-cell-trip-code) .cal-cell-icon-wrap {
+    display: flex;
+  }
+
+  /* 44px squares cannot hold a day number plus a glyph either. */
+  .cal-cell {
+    aspect-ratio: auto;
+    min-height: 56px;
+  }
 }
