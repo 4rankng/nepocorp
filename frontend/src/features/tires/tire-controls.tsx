@@ -7,7 +7,7 @@ import { ConfirmDialog, useConfirmShortcuts } from "../../components/UI";
 import { useToast } from "../../components/shared/Toast";
 import { useDialogFocus } from "../../components/shared/useDialogFocus";
 import { formatErrorMessage } from "../../lib/api";
-import { cleanText, normalizedCatalogLabel, positionPayloadFromLabel, supplierIdFromText, textMatches } from "../../features/tires/tireUtils";
+import { cleanText, normalizedCatalogLabel, positionPayloadFromLabel, supplierIdFromText, textMatches, todayISO } from "../../features/tires/tireUtils";
 import "../../pages/TruckTiresPage.css";
 
 export type PositionManagerOpener = (onSelect?: (value: string) => void) => void;
@@ -25,7 +25,7 @@ export function AddTireForm({
   suppliers: Supplier[];
   saving: boolean;
   onManagePositions: PositionManagerOpener;
-  onsave: (d: { serial: string; position: string | null; size: string | null; supplierId: number | null; cost: number; purchasedAt: string | null }) => Promise<unknown> | void;
+  onsave: (d: { serial: string; position: string | null; size: string | null; supplierId: number | null; cost: number; purchasedAt: string | null; installedAt?: string | null }) => Promise<unknown> | void;
 }) {
   const [serial, setSerial] = useState("");
   const [positionText, setPositionText] = useState("");
@@ -33,6 +33,7 @@ export function AddTireForm({
   const [supplierText, setSupplierText] = useState("");
   const [cost, setCost] = useState("");
   const [purchasedAt, setPurchasedAt] = useState("");
+  const [installedAt, setInstalledAt] = useState(todayISO());
 
   const submit = async () => {
     if (!serial.trim()) return;
@@ -45,6 +46,7 @@ export function AddTireForm({
         supplierId: supplierIdFromText(suppliers, supplierText),
         cost: cost ? Number(cost) : 0,
         purchasedAt: purchasedAt || null,
+        installedAt: installedAt || null,
       });
       setSerial("");
       setPositionText("");
@@ -52,6 +54,7 @@ export function AddTireForm({
       setSupplierText("");
       setCost("");
       setPurchasedAt("");
+      setInstalledAt(todayISO());
     } catch {
       // Error handled by parent
     }
@@ -82,6 +85,10 @@ export function AddTireForm({
       <div className="ttp-field">
         <label htmlFor="tire-purchased-at">Ngày mua</label>
         <input id="tire-purchased-at" name="purchasedAt" className="input" type="date" value={purchasedAt} onChange={(e) => setPurchasedAt(e.target.value)} />
+      </div>
+      <div className="ttp-field">
+        <label htmlFor="tire-installed-at">Ngày lắp</label>
+        <input id="tire-installed-at" name="installedAt" className="input" type="date" value={installedAt} onChange={(e) => setInstalledAt(e.target.value)} title="Mặc định hôm nay — chọn lại ngày thật khi nhập lốp cũ đang gắn trên xe" />
       </div>
       <button className="btn btn--primary ttp-add-submit" disabled={saving || !serial.trim()} onClick={submit}>
         {saving ? "Đang lưu…" : "Thêm lốp"}

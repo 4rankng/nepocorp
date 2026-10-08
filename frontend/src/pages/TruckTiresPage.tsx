@@ -194,7 +194,7 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
                 await createMut.mutateAsync({
                   ...d,
                   status: "IN_USE",
-                  installedAt: todayISO(),
+                  installedAt: d.installedAt || todayISO(),
                   ...(isTruck ? { truckId: vehicleId } : { trailerId: vehicleId }),
                 });
                 toast({ kind: "success", message: "Đã thêm lốp thành công" });

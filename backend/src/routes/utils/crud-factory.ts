@@ -54,6 +54,12 @@ function apiErrorFromUniqueConstraint(err: unknown): ApiError | null {
   const detail = e.cause?.detail || e.detail || '';
   const fieldMatch = detail.match(/Key \(([^)]+)\)/);
   const field = fieldMatch ? fieldMatch[1] : 'trường';
+  // A conflict on the internal primary key is meaningless to users — `id` is
+  // system-generated, nothing they typed (classic cause: a drifted identity
+  // sequence, see migration 0119). Name the record, not the column.
+  if (field === 'id') {
+    return new ApiError(409, 'Bản ghi đã tồn tại (trùng mã hệ thống) — vui lòng thử lại');
+  }
   return new ApiError(409, `${field} đã tồn tại`);
 }
 
