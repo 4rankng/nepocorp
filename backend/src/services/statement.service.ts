@@ -2,7 +2,7 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
-import type { PeriodSummary } from '@tingting/shared';
+import type { PeriodSummary, SupplierFuelStatement, SupplierFuelStatementRow } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
@@ -62,6 +62,7 @@ export interface CustomerStatementData {
   totalOutstanding: number;
   unpaidTrips: Array<{ tripId: number; date: string; outstanding: number; note: string }>;
   agingBuckets: Array<{ range: string; amount: number }>;
+  latestActivityDate?: string | null;
   periodSummary?: PeriodSummary;
 }
 
@@ -70,6 +71,8 @@ export interface SupplierStatementData {
   ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
   agingBuckets: Array<{ range: string; amount: number }>;
+  hasFuelExpenses?: boolean;
+  latestActivityDate?: string | null;
   periodSummary?: PeriodSummary;
 }
 
@@ -350,6 +353,13 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   // date filter so we can read the stored `balance` of the last pre-period row.
   const periodSummary = computePeriodSummary(ledgerRows, dateFrom, dateTo, 'CUSTOMER');
 
+  // Latest activity across the WHOLE ledger (pre-filter) — the detail pages
+  // use it to default the period filter to the month that actually has data
+  // instead of the current month (which is often empty).
+  const latestActivityDate = ledgerRows.length > 0
+    ? ledgerRows.reduce((max, r) => r.timestamp > max ? r.timestamp : max, ledgerRows[0].timestamp).toISOString().slice(0, 10)
+    : null;
+
   // Optional date range filter — used by frontend /debt/:id "Bộ lọc khoảng thời gian"
   // (Flow 04 §2.4.1 + PRODUCT-SPECS §4.10: "Bộ lọc khoảng thời gian: 2 ô date picker")
   if (dateFrom || dateTo) {
@@ -563,6 +573,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     ledgerRows: enrichedLedgerRows,
     totalOutstanding,
     unpaidTrips,
+    latestActivityDate,
     agingBuckets: [
       { range: '0-30 ngày', amount: aging.current },
       { range: '31-60 ngày', amount: aging.d30 },
@@ -611,6 +622,15 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
   if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
 
   let ledgerRows: EnrichedLedgerRow[] = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+
+  // Whole-ledger facts computed before any date filtering: the fuel-supplier
+  // marker (drives the "Bảng kê xăng dầu" button) and the latest activity
+  // date (drives the period filter default on the detail page).
+  const hasFuelExpenses = ledgerRows.some((row) => row.txnType === TxnType.FUEL_EXPENSE);
+  const latestActivityDate = ledgerRows.length > 0
+    ? ledgerRows.reduce((max, r) => r.timestamp > max ? r.timestamp : max, ledgerRows[0].timestamp).toISOString().slice(0, 10)
+    : null;
+
   const periodSummary = computePeriodSummary(ledgerRows, dateFrom, dateTo, 'VENDOR');
   if (dateFrom || dateTo) {
     const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
@@ -717,6 +737,8 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
     supplier,
     ledgerRows,
     totalOutstanding,
+    hasFuelExpenses,
+    latestActivityDate,
     agingBuckets: [
       { range: '0-30 ngày', amount: aging.current },
       { range: '31-60 ngày', amount: aging.d30 },
@@ -725,6 +747,393 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
     ],
     ...(periodSummary ? { periodSummary } : null),
   };
+}
+
+/**
+ * Bảng kê xăng dầu — per-trip fuel statement for a fuel supplier.
+ *
+ * Reconciliation surface for fuel vendors (e.g. Petrolimex): the ledger books
+ * fuel at trip-lock time while the accountant reconciles per delivery month,
+ * so a posting-date-only view never matches her book. This view keeps the
+ * ledger's posting-date filter (balances stay untouched) but groups rows per
+ * trip (net of unlock reversals), shows BOTH the trip date and the posting
+ * date, and reports the two totals side by side: Σ by posting date and Σ by
+ * trip-departure month.
+ */
+export async function getSupplierFuelStatement(
+  supplierId: number,
+  dateFrom?: string,
+  dateTo?: string,
+): Promise<SupplierFuelStatement> {
+  const [supplier] = await db.select({
+    id: s.suppliers.id,
+    name: s.suppliers.name,
+    phone: s.suppliers.phone,
+    contactPerson: s.suppliers.contactPerson,
+  }).from(s.suppliers).where(eq(s.suppliers.id, supplierId)).limit(1);
+  if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
+
+  const allRows = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+  const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
+  const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
+  const isFuelRow = (r: LedgerRow) =>
+    r.txnType === TxnType.FUEL_EXPENSE || r.txnType === TxnType.UNLOCK_REVERSAL;
+  const inRange = (r: LedgerRow) => {
+    const t = new Date(r.timestamp).getTime();
+    return (fromTs === null || t >= fromTs) && (toTs === null || t <= toTs);
+  };
+
+  // Balances follow computePeriodSummary's convention (AP grows with credit,
+  // shrinks with debit; opening derived from rows strictly before dateFrom —
+  // never from the stored running balance, which follows insertion order).
+  let openingBalance = 0;
+  let fuelNet = 0;
+  let otherDebits = 0;
+  let otherCredits = 0;
+  for (const r of allRows) {
+    const debit = Number(r.debit ?? 0) || 0;
+    const credit = Number(r.credit ?? 0) || 0;
+    const t = new Date(r.timestamp).getTime();
+    if (fromTs !== null && t < fromTs) {
+      openingBalance += credit - debit;
+      continue;
+    }
+    if (!inRange(r)) continue;
+    if (isFuelRow(r)) {
+      fuelNet += credit - debit;
+    } else {
+      otherDebits += debit;
+      otherCredits += credit;
+    }
+  }
+  const closingBalance = openingBalance + fuelNet + otherCredits - otherDebits;
+
+  // Group the in-range fuel rows per trip. txnId carries the trip id (fuel
+  // rows always link to trips — verified against prod). Trip-less groups
+  // surface under tripId 0 so Σ rows always reconciles with fuelNet.
+  interface TripGroup {
+    amount: number;
+    hadReversal: boolean;
+    firstPostedAt: Date | null;
+    lastPostedAt: Date | null;
+  }
+  const groups = new Map<number, TripGroup>();
+  for (const r of allRows) {
+    if (!inRange(r) || !isFuelRow(r)) continue;
+    const tripId = r.txnId ?? 0;
+    const g = groups.get(tripId) ?? {
+      amount: 0, hadReversal: false, firstPostedAt: null, lastPostedAt: null,
+    };
+    g.amount += Number(r.credit ?? 0) - Number(r.debit ?? 0);
+    if (r.txnType === TxnType.UNLOCK_REVERSAL) g.hadReversal = true;
+    if (g.firstPostedAt === null || r.timestamp < g.firstPostedAt) g.firstPostedAt = r.timestamp;
+    if (g.lastPostedAt === null || r.timestamp > g.lastPostedAt) g.lastPostedAt = r.timestamp;
+    groups.set(tripId, g);
+  }
+
+  // Trip context for every fuel-linked trip in the whole ledger: the in-range
+  // groups need it for the row list, and the trip-month totals need trips
+  // whose postings may fall entirely outside the range.
+  const allFuelTripIds = Array.from(new Set(
+    allRows.filter((r) => isFuelRow(r) && r.txnId).map((r) => r.txnId as number),
+  ));
+  const tripContextById = new Map<number, {
+    tripCode: string | null; departureDate: string;
+    licensePlate: string | null; routeName: string | null; liters: number | null;
+  }>();
+  if (allFuelTripIds.length > 0) {
+    // Same liters subquery as getSupplierStatement: Σ the supplier's
+    // allocation rows, falling back to the trip's total when unallocated.
+    const tripRows = await db.select({
+      id: s.trips.id,
+      tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      licensePlate: s.trucks.licensePlate,
+      routeName: s.routes.name,
+      liters: sql<string | null>`coalesce((select sum(a.liters) from trip_fuel_allocations a where a.trip_id = ${s.trips.id} and a.supplier_id = ${supplierId}), ${s.trips.fuelLiters})`,
+    }).from(s.trips)
+      .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+      .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .where(inArray(s.trips.id, allFuelTripIds));
+    for (const t of tripRows) {
+      const liters = t.liters != null && t.liters !== '' ? Number(t.liters) : null;
+      tripContextById.set(t.id, {
+        tripCode: t.tripCode,
+        departureDate: t.departureDate,
+        licensePlate: t.licensePlate,
+        routeName: t.routeName,
+        liters: liters != null && Number.isFinite(liters) && liters > 0 ? liters : null,
+      });
+    }
+  }
+
+  const rows: SupplierFuelStatementRow[] = Array.from(groups.entries())
+    .map(([tripId, g]) => {
+      const trip = tripContextById.get(tripId) ?? null;
+      const liters = trip?.liters ?? null;
+      const unitPrice = liters != null && liters > 0
+        ? Math.round((g.amount / liters) * 100) / 100
+        : null;
+      return {
+        tripId,
+        tripCode: trip?.tripCode ?? null,
+        departureDate: trip?.departureDate ?? null,
+        firstPostedAt: g.firstPostedAt ? g.firstPostedAt.toISOString().slice(0, 10) : '',
+        lastPostedAt: g.lastPostedAt ? g.lastPostedAt.toISOString().slice(0, 10) : '',
+        licensePlate: trip?.licensePlate ?? null,
+        routeName: trip?.routeName ?? null,
+        liters,
+        unitPrice,
+        amount: Math.round(g.amount),
+        hadReversal: g.hadReversal,
+      };
+    })
+    // Pure churn (reversed then re-posted to the same amount) nets to zero and
+    // carries no liability — dropping those lines keeps the sheet tickable
+    // against the accountant's book without touching the totals.
+    .filter((row) => row.amount !== 0)
+    .sort((a, b) =>
+      (a.departureDate ?? '9999').localeCompare(b.departureDate ?? '9999')
+      || (a.tripCode ?? '').localeCompare(b.tripCode ?? ''));
+
+  const totalLiters = rows.some((row) => row.liters != null)
+    ? Math.round(rows.reduce((sum, row) => sum + (row.liters ?? 0), 0))
+    : null;
+
+  // Σ per trip-departure month across ALL postings (any date) for trips whose
+  // departure falls inside the period — the supplier-invoice view of the same
+  // period, which is what the accountant's book tracks.
+  const tripMonthTotals: Array<{ tripMonth: string; amount: number }> = [];
+  if (dateFrom && dateTo) {
+    const netByTripAllTime = new Map<number, number>();
+    for (const r of allRows) {
+      if (!isFuelRow(r) || !r.txnId) continue;
+      netByTripAllTime.set(
+        r.txnId,
+        (netByTripAllTime.get(r.txnId) ?? 0) + Number(r.credit ?? 0) - Number(r.debit ?? 0),
+      );
+    }
+    const byMonth = new Map<string, number>();
+    for (const [tripId, net] of netByTripAllTime) {
+      const trip = tripContextById.get(tripId);
+      if (!trip?.departureDate) continue;
+      if (trip.departureDate < dateFrom || trip.departureDate > dateTo) continue;
+      const month = trip.departureDate.slice(0, 7);
+      byMonth.set(month, (byMonth.get(month) ?? 0) + net);
+    }
+    for (const [tripMonth, amount] of Array.from(byMonth.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+      tripMonthTotals.push({ tripMonth, amount: Math.round(amount) });
+    }
+  }
+
+  return {
+    supplier,
+    dateFrom: dateFrom ?? null,
+    dateTo: dateTo ?? null,
+    openingBalance: Math.round(openingBalance),
+    closingBalance: Math.round(closingBalance),
+    fuelNet: Math.round(fuelNet),
+    otherDebits: Math.round(otherDebits),
+    otherCredits: Math.round(otherCredits),
+    rows,
+    totalAmount: Math.round(fuelNet),
+    totalLiters,
+    tripMonthTotals,
+  };
+}
+
+/**
+ * XLSX builder for the fuel statement. Layout mirrors the supplier's own
+ * book (BẢNG KÊ XĂNG DẦU): opening balance → per-trip lines with a horizontal
+ * THÀNH TIỀN column → totals by posting date AND by trip-departure month →
+ * closing balance.
+ */
+export async function exportSupplierFuelStatementXlsx(
+  data: SupplierFuelStatement,
+  dateStr: string,
+  writable: import('stream').Writable,
+): Promise<void> {
+  const ExcelJSMod = await import('exceljs');
+  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
+    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
+    : ExcelJSMod;
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Bảng kê xăng dầu');
+  sheet.views = [{ showGridLines: true }];
+
+  const borderStyle = {
+    top: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    left: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    bottom: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    right: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+  };
+  const green = 'FF00702F';
+  const fmtInt = '#,##0';
+  const fmtPrice = '#,##0.##';
+
+  sheet.columns = [
+    { width: 12 }, { width: 12 }, { width: 18 }, { width: 14 },
+    { width: 34 }, { width: 10 }, { width: 13 }, { width: 16 }, { width: 26 },
+  ];
+
+  // Title (row 1)
+  sheet.mergeCells('A1:I1');
+  const titleCell = sheet.getCell('A1');
+  titleCell.value = `BẢNG KÊ XĂNG DẦU — ${data.supplier.name}`.toUpperCase();
+  titleCell.font = { name: 'Segoe UI', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: green } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  sheet.getRow(1).height = 34;
+
+  // Meta rows
+  sheet.mergeCells('A2:I2');
+  sheet.getCell('A2').value =
+    `Kỳ đối chiếu: ${data.dateFrom ?? 'đầu'} → ${data.dateTo ?? 'nay'}   ·   Ngày xuất: ${dateStr}`;
+  sheet.getCell('A2').font = { name: 'Segoe UI', size: 10, color: { argb: 'FF4B5563' } };
+
+  // Opening balance
+  sheet.getCell('A3').value = 'NỢ ĐẦU KỲ:';
+  sheet.getCell('A3').font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF374151' } };
+  sheet.mergeCells('A3:D3');
+  sheet.getCell('E3').value = data.openingBalance;
+  sheet.getCell('E3').numFmt = fmtInt;
+  sheet.getCell('E3').font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF374151' } };
+  sheet.getRow(3).height = 20;
+
+  // Section header
+  sheet.mergeCells('A5:I5');
+  const sectionCell = sheet.getCell('A5');
+  sectionCell.value = 'CHI TIẾT THEO CHUYẾN (ròng sau hoàn tác)';
+  sectionCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+  sectionCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: green } };
+  sectionCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  sheet.getRow(5).height = 24;
+
+  // Table header (row 6)
+  const headers = [
+    'NGÀY CHUYẾN', 'NGÀY ĐĂNG', 'MÃ CHUYẾN', 'ĐẦU KÉO', 'TUYẾN',
+    'SỐ LÍT', 'ĐƠN GIÁ (Đ/LÍT)', 'THÀNH TIỀN (Đ)', 'GHI CHÚ',
+  ];
+  headers.forEach((h, i) => {
+    const cell = sheet.getCell(6, i + 1);
+    cell.value = h;
+    cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+    cell.alignment = { vertical: 'middle', horizontal: i >= 5 && i <= 7 ? 'right' : 'left', wrapText: true };
+    cell.border = borderStyle;
+  });
+  sheet.getRow(6).height = 26;
+
+  // Data rows
+  let lastRow = 6;
+  if (data.rows.length === 0) {
+    sheet.mergeCells('A7:I7');
+    sheet.getCell('A7').value = 'Không có phát sinh xăng dầu trong kỳ.';
+    sheet.getCell('A7').font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF6B7280' } };
+    sheet.getCell('A7').border = borderStyle;
+    lastRow = 7;
+  } else {
+    data.rows.forEach((row, i) => {
+      const rowIdx = 7 + i;
+      const note = [
+        row.hadReversal ? 'có hoàn tác, đã ròng' : null,
+        row.firstPostedAt !== row.lastPostedAt ? `đăng ${row.firstPostedAt}→${row.lastPostedAt}` : null,
+      ].filter(Boolean).join(' · ');
+      const values: Array<string | number | null> = [
+        row.departureDate ?? '—', row.firstPostedAt, row.tripCode ?? '—',
+        row.licensePlate ?? '—', row.routeName ?? '—',
+        row.liters, row.unitPrice, row.amount, note || null,
+      ];
+      values.forEach((v, c) => {
+        const cell = sheet.getCell(rowIdx, c + 1);
+        cell.value = v ?? null;
+        cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF111827' } };
+        cell.border = borderStyle;
+        if (c === 5) cell.numFmt = fmtInt;
+        if (c === 6) cell.numFmt = fmtPrice;
+        if (c === 7) {
+          cell.numFmt = fmtInt;
+          cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: row.amount < 0 ? 'FF16A34A' : 'FF111827' } };
+        }
+        if (c >= 5 && c <= 7) cell.alignment = { vertical: 'middle', horizontal: 'right' };
+      });
+    });
+    lastRow = 6 + data.rows.length;
+  }
+
+  // Totals row
+  const totalRow = lastRow + 1;
+  sheet.mergeCells(`A${totalRow}:E${totalRow}`);
+  const totalLabel = sheet.getCell(`A${totalRow}`);
+  totalLabel.value = 'TỔNG PHÁT SINH (theo ngày đăng)';
+  totalLabel.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: green } };
+  totalLabel.alignment = { vertical: 'middle', horizontal: 'right' };
+  const litersCell = sheet.getCell(`F${totalRow}`);
+  litersCell.value = data.totalLiters;
+  litersCell.numFmt = fmtInt;
+  litersCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: green } };
+  litersCell.alignment = { horizontal: 'right' };
+  const amountCell = sheet.getCell(`H${totalRow}`);
+  amountCell.value = data.totalAmount;
+  amountCell.numFmt = fmtInt;
+  amountCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: green } };
+  amountCell.alignment = { horizontal: 'right' };
+  for (let c = 1; c <= 9; c++) sheet.getCell(totalRow, c).border = borderStyle;
+  sheet.getRow(totalRow).height = 22;
+
+  let current = totalRow + 2;
+
+  // Trip-month reconciliation block
+  if (data.tripMonthTotals.length > 0) {
+    sheet.mergeCells(`A${current}:I${current}`);
+    const monthHeader = sheet.getCell(`A${current}`);
+    monthHeader.value = 'ĐỐI CHIẾU THEO THÁNG CHUYẾN (mọi ngày đăng — đối chiếu hoá đơn hãng dầu)';
+    monthHeader.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: green } };
+    monthHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4EA' } };
+    sheet.getRow(current).height = 22;
+    current++;
+    for (const m of data.tripMonthTotals) {
+      sheet.mergeCells(`A${current}:G${current}`);
+      sheet.getCell(`A${current}`).value = `Chuyến tháng ${m.tripMonth}`;
+      sheet.getCell(`A${current}`).font = { name: 'Segoe UI', size: 10, color: { argb: 'FF374151' } };
+      const monthCell = sheet.getCell(`H${current}`);
+      monthCell.value = m.amount;
+      monthCell.numFmt = fmtInt;
+      monthCell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF111827' } };
+      monthCell.alignment = { horizontal: 'right' };
+      current++;
+    }
+    current++;
+  }
+
+  // Payments / other entries
+  const otherNet = data.otherDebits - data.otherCredits;
+  if (otherNet !== 0) {
+    sheet.mergeCells(`A${current}:G${current}`);
+    sheet.getCell(`A${current}`).value = 'Đã thanh toán & khoản khác trong kỳ (−):';
+    sheet.getCell(`A${current}`).font = { name: 'Segoe UI', size: 10, color: { argb: 'FF374151' } };
+    const otherCell = sheet.getCell(`H${current}`);
+    otherCell.value = otherNet;
+    otherCell.numFmt = fmtInt;
+    otherCell.alignment = { horizontal: 'right' };
+    current++;
+  }
+
+  // Closing balance
+  current++;
+  sheet.mergeCells(`A${current}:G${current}`);
+  const closingLabel = sheet.getCell(`A${current}`);
+  closingLabel.value = 'CỌN NỢ CUỐI KỲ (= Nợ đầu kỳ + phát sinh − thanh toán):';
+  closingLabel.font = { name: 'Segoe UI', size: 12, bold: true, color: { argb: 'FFDC2626' } };
+  closingLabel.alignment = { vertical: 'middle', horizontal: 'right' };
+  const closingCell = sheet.getCell(`H${current}`);
+  closingCell.value = data.closingBalance;
+  closingCell.numFmt = fmtInt;
+  closingCell.font = { name: 'Segoe UI', size: 12, bold: true, color: { argb: 'FFDC2626' } };
+  closingCell.alignment = { horizontal: 'right' };
+  sheet.getRow(current).height = 24;
+
+  await workbook.xlsx.write(writable);
 }
 
 export async function getCarrierPayableStatement(

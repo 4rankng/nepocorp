@@ -6,7 +6,7 @@ import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { emitNotification } from '../../services/notification.service';
 import * as financialService from '../../services/financial.service';
-import { getCarrierPayableStatement, getSupplierStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, attachmentDisposition, normalizeDateParam } from '../../services/statement.service';
+import { getCarrierPayableStatement, getSupplierStatement, getSupplierFuelStatement, exportSupplierStatementXlsx, exportSupplierStatementHtml, exportSupplierFuelStatementXlsx, attachmentDisposition, normalizeDateParam } from '../../services/statement.service';
 import { formatLocalDate } from '../../lib/format';
 import { invalidateReportCaches } from '../../lib/redis';
 import { getPayablesSummary } from '../../services/payables.service';
@@ -82,9 +82,23 @@ router.get('/ledger/suppliers/:id/statement/export', requireRoles(Role.ADMIN, Ro
   const dateFrom = normalizeDateParam((req.query.dateFrom || req.query.date_from) as string | undefined);
   const dateTo = normalizeDateParam((req.query.dateTo || req.query.date_to) as string | undefined);
   const format = (req.query.format as string) || 'xlsx';
-  const data = await getSupplierStatement(supplierId, dateFrom, dateTo);
+  const type = (req.query.type as string) || 'ledger';
 
   const dateStr = formatLocalDate();
+
+  // Bảng kê xăng dầu — per-trip fuel reconciliation for fuel suppliers.
+  if (type === 'fuel') {
+    if (format === 'pdf') {
+      return res.status(400).json({ error: 'Bảng kê xăng dầu chỉ hỗ trợ xuất Excel (.xlsx)' });
+    }
+    const data = await getSupplierFuelStatement(supplierId, dateFrom, dateTo);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', attachmentDisposition(`bang-ke-xang-dau-${data.supplier.name}-${dateStr}.xlsx`));
+    await exportSupplierFuelStatementXlsx(data, dateStr, res);
+    return;
+  }
+
+  const data = await getSupplierStatement(supplierId, dateFrom, dateTo);
 
   if (format === 'pdf') {
     const html = exportSupplierStatementHtml(data, dateStr);

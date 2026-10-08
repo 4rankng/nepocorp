@@ -227,3 +227,20 @@ export function initialPeriodState() {
     dateTo: toIso(lastDay),
   };
 }
+
+/**
+ * Period state aligned to the month of the ledger's latest activity. The
+ * detail pages call this once their statement loads so the filter opens on
+ * the month that actually has data — the current month is often empty and
+ * reads as "Không có giao dịch".
+ * Returns null when there is no activity (leave the default untouched).
+ */
+export function periodFromLatestActivity(
+  latestActivityDate: string | null | undefined,
+): { mode: PeriodMode; month: number; year: number; dateFrom: string; dateTo: string } | null {
+  if (!latestActivityDate || !/^\d{4}-\d{2}-\d{2}/.test(latestActivityDate)) return null;
+  const [year, month] = latestActivityDate.split('-').map(Number);
+  if (!year || !month || month < 1 || month > 12) return null;
+  const range = monthToRange(year, month);
+  return { mode: 'month', month, year, ...range };
+}

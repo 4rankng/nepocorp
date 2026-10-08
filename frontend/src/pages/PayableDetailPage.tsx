@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency } from '../lib/format';
@@ -8,7 +8,7 @@ import type {
   LedgerEntry,
   VendorPaymentRequest,
 } from '@tingting/shared';
-import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText, Fuel } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
@@ -18,7 +18,8 @@ import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { qk } from '../api/keys';
 import { useClickOutside } from '../hooks/useClickOutside';
-import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch } from '../components/debt/PeriodFilter';
+import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity } from '../components/debt/PeriodFilter';
+import { buildStatementExportUrl, statementExportFilename } from '../lib/statementExport';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import './DebtDetailPage.css';
@@ -66,6 +67,21 @@ export default function PayableDetailPage() {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { rootRef } = usePageAnimations({ ready: !loading });
 
+  // Align the period filter to the month with actual ledger activity — once,
+  // on first load, and only while the user hasn't touched the filter. The
+  // current-month default is usually empty and reads as "Không có giao dịch".
+  const periodTouchedRef = useRef(false);
+  const latestActivityDate = typedStatement?.latestActivityDate;
+  useEffect(() => {
+    if (!latestActivityDate || periodTouchedRef.current) return;
+    const aligned = periodFromLatestActivity(latestActivityDate);
+    if (aligned) {
+      setPeriod(aligned);
+      setAppliedPeriod(aligned);
+    }
+  }, [latestActivityDate]);
+  const markPeriodTouched = () => { periodTouchedRef.current = true; };
+
   const handleBack = () => navigate(backPath);
   useBackShortcut(handleBack);
 
@@ -85,19 +101,31 @@ export default function PayableDetailPage() {
   const [paymentReceiptId, setPaymentReceiptId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const downloadExport = async (format: string) => {
+  const downloadExport = async (format: string, opts: { fuel?: boolean } = {}) => {
     setShowExportMenu(false);
     try {
-      const blob = await api.getBlob(`${FINANCIAL.SUPPLIER_STATEMENT_EXPORT(Number(id))}?format=${format}`);
-      const url = URL.createObjectURL(blob);
-      if (format === 'pdf') {
-        window.open(url, '_blank');
+      // Mirror the on-screen period into the export — the scoped file replaces
+      // the old whole-history dump ("kéo tới tháng 6").
+      const url = buildStatementExportUrl(
+        FINANCIAL.SUPPLIER_STATEMENT_EXPORT(Number(id)),
+        format,
+        appliedPeriodRange,
+        { fuel: opts.fuel },
+      );
+      const blob = await api.getBlob(url);
+      const objectUrl = URL.createObjectURL(blob);
+      if (format === 'pdf' && !opts.fuel) {
+        window.open(objectUrl, '_blank');
       } else {
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `sao-ke-ncc-${id}.xlsx`;
+        a.href = objectUrl;
+        a.download = statementExportFilename(
+          opts.fuel ? 'bang-ke-xang-dau' : 'sao-ke-ncc',
+          typedStatement?.supplier.name ?? String(id),
+          appliedPeriodRange,
+        );
         a.click();
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(objectUrl);
       }
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất sao kê' });
@@ -266,7 +294,7 @@ export default function PayableDetailPage() {
                   position: 'absolute', right: 0, top: '100%', marginTop: 4,
                   background: 'var(--surface)', border: '1px solid var(--line)',
                   borderRadius: 8, boxShadow: 'var(--sh-lg)',
-                  zIndex: 50, minWidth: 180, overflow: 'hidden',
+                  zIndex: 50, minWidth: 210, overflow: 'hidden',
                 }}>
                   <button className="dd-export-btn" onClick={() => downloadExport('xlsx')}>
                     <FileSpreadsheet size={14} style={{ color: '#16a34a' }} />
@@ -276,6 +304,16 @@ export default function PayableDetailPage() {
                     <FileText size={14} style={{ color: '#dc2626' }} />
                     PDF (In)
                   </button>
+                  {typedStatement.hasFuelExpenses && (
+                    <button
+                      className="dd-export-btn"
+                      onClick={() => downloadExport('xlsx', { fuel: true })}
+                      title="Bảng kê xăng dầu theo chuyến: lít, đơn giá, thành tiền — đối chiếu hoá đơn hãng dầu"
+                    >
+                      <Fuel size={14} style={{ color: '#b45309' }} />
+                      Bảng kê xăng dầu
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -328,13 +366,13 @@ export default function PayableDetailPage() {
         {/* Period filter + period summary (số dư đầu kỳ / phát sinh / cuối kỳ) */}
         <PeriodFilter
           mode={period.mode}
-          onModeChange={(m) => setPeriod(p => applyModeSwitch(p, m))}
+          onModeChange={(m) => { markPeriodTouched(); setPeriod(p => applyModeSwitch(p, m)); }}
           month={period.month}
           year={period.year}
-          onMonthYearChange={({ month, year }) => setPeriod(p => ({ ...p, month, year }))}
+          onMonthYearChange={({ month, year }) => { markPeriodTouched(); setPeriod(p => ({ ...p, month, year })); }}
           dateFrom={period.dateFrom}
           dateTo={period.dateTo}
-          onRangeChange={(next) => setPeriod(p => ({ ...p, ...next }))}
+          onRangeChange={(next) => { markPeriodTouched(); setPeriod(p => ({ ...p, ...next })); }}
           onApply={() => setAppliedPeriod(period)}
           isApplying={isStatementFetching}
           isApplyDisabled={!isPeriodDirty || isStatementFetching}

@@ -618,8 +618,53 @@ export interface SupplierStatement {
   ledgerRows: LedgerEntry[];
   totalOutstanding: number;
   agingBuckets: AgingBucket[];
+  /** True when the vendor has any FUEL_EXPENSE ledger entry (all time). */
+  hasFuelExpenses?: boolean;
+  /** Date (yyyy-mm-dd) of the most recent ledger entry, regardless of period. */
+  latestActivityDate?: string | null;
   /** Only present when the request was scoped to a date range. */
   periodSummary?: PeriodSummary;
+}
+
+/** One per-trip line of the supplier fuel statement (Bảng kê xăng dầu). */
+export interface SupplierFuelStatementRow {
+  tripId: number;
+  tripCode: string | null;
+  /** Ngày chuyến (departure) — the date the fuel was actually drawn. */
+  departureDate: string | null;
+  /** Ngày đăng — first/last posting date of the trip's fuel rows in the period. */
+  firstPostedAt: string;
+  lastPostedAt: string;
+  licensePlate: string | null;
+  routeName: string | null;
+  liters: number | null;
+  /** Derived: amount ÷ liters — keeps Đơn giá × Lít ≡ Thành tiền consistent. */
+  unitPrice: number | null;
+  /** Net amount (FUEL_EXPENSE credits − UNLOCK_REVERSAL debits) for the trip. */
+  amount: number;
+  hadReversal: boolean;
+}
+
+export interface SupplierFuelStatement {
+  supplier: Pick<Supplier, 'id' | 'name' | 'phone' | 'contactPerson'>;
+  dateFrom: string | null;
+  dateTo: string | null;
+  openingBalance: number;
+  closingBalance: number;
+  /** Net fuel movement in the period (Σ credits − Σ debits of fuel rows). */
+  fuelNet: number;
+  /** Non-fuel debits in the period (payments, adjustments) — reduce the debt. */
+  otherDebits: number;
+  /** Non-fuel credits in the period (misc payables) — increase the debt. */
+  otherCredits: number;
+  rows: SupplierFuelStatementRow[];
+  /** = fuelNet. Σ of the Thành tiền column. */
+  totalAmount: number;
+  totalLiters: number | null;
+  /** Net fuel per trip-departure month (all postings, any date) for trips
+   *  departing inside the period — the reconciliation against the supplier's
+   *  delivery-month invoice. */
+  tripMonthTotals: Array<{ tripMonth: string; amount: number }>;
 }
 
 export interface RenewalReminder {
@@ -1151,6 +1196,8 @@ export interface CustomerStatement {
   agingBuckets: AgingBucket[];
   totalOutstanding: number;
   unpaidTrips: UnpaidTrip[];
+  /** Date (yyyy-mm-dd) of the most recent ledger entry, regardless of period. */
+  latestActivityDate?: string | null;
   /** Only present when the request was scoped to a date range. */
   periodSummary?: PeriodSummary;
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDate } from '../lib/format';
@@ -16,7 +16,8 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { qk } from '../api/keys';
 import './DebtDetailPage.css';
 import { normalizeAging, money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
-import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch } from '../components/debt/PeriodFilter';
+import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity } from '../components/debt/PeriodFilter';
+import { buildStatementExportUrl, statementExportFilename } from '../lib/statementExport';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import { matchLinkedSupplierStatement } from './linked-supplier-statement';
 import { DebtDetailHeader } from '../features/debt/debtHeader';
@@ -71,6 +72,20 @@ export default function DebtDetailPage() {
   const error = profileQueryError ? (profileQueryError as Error).message : null;
   const { rootRef } = usePageAnimations({ ready: !isProfileLoading && !!profileStatement });
 
+  // Align the period filter to the month with actual ledger activity — once,
+  // on first profile load, and only while the user hasn't touched the filter.
+  const periodTouchedRef = useRef(false);
+  const latestActivityDate = profileStatement?.latestActivityDate;
+  useEffect(() => {
+    if (!latestActivityDate || periodTouchedRef.current) return;
+    const aligned = periodFromLatestActivity(latestActivityDate);
+    if (aligned) {
+      setPeriod(aligned);
+      setAppliedPeriod(aligned);
+    }
+  }, [latestActivityDate]);
+  const markPeriodTouched = () => { periodTouchedRef.current = true; };
+
   const handleBack = () => navigate(backPath);
   useBackShortcut(handleBack);
 
@@ -114,16 +129,27 @@ export default function DebtDetailPage() {
 
   const downloadExport = async (format: string) => {
     try {
-      const blob = await api.getBlob(`/ledger/customers/${id}/statement/export?format=${format}`);
-      const url = URL.createObjectURL(blob);
+      // Mirror the on-screen period into the export so the file matches the
+      // ledger tab instead of pulling the whole history.
+      const url = buildStatementExportUrl(
+        `/ledger/customers/${id}/statement/export`,
+        format,
+        appliedPeriodRange,
+      );
+      const blob = await api.getBlob(url);
+      const objectUrl = URL.createObjectURL(blob);
       if (format === 'pdf') {
-        window.open(url, '_blank');
+        window.open(objectUrl, '_blank');
       } else {
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `sao-ke-${profileStatement?.customer.name}-${new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }).replace(/\//g, '-')}.xlsx`;
+        a.href = objectUrl;
+        a.download = statementExportFilename(
+          'sao-ke-kh',
+          profileStatement?.customer.name ?? String(id),
+          appliedPeriodRange,
+        );
         a.click();
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(objectUrl);
       }
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất sao kê' });
@@ -477,13 +503,13 @@ export default function DebtDetailPage() {
               {/* Period filter + period summary (số dư đầu kỳ / phát sinh / cuối kỳ) */}
               <PeriodFilter
                 mode={period.mode}
-                onModeChange={(m) => setPeriod(p => applyModeSwitch(p, m))}
+                onModeChange={(m) => { markPeriodTouched(); setPeriod(p => applyModeSwitch(p, m)); }}
                 month={period.month}
                 year={period.year}
-                onMonthYearChange={({ month, year }) => setPeriod(p => ({ ...p, month, year }))}
+                onMonthYearChange={({ month, year }) => { markPeriodTouched(); setPeriod(p => ({ ...p, month, year })); }}
                 dateFrom={period.dateFrom}
                 dateTo={period.dateTo}
-                onRangeChange={(next) => setPeriod(p => ({ ...p, ...next }))}
+                onRangeChange={(next) => { markPeriodTouched(); setPeriod(p => ({ ...p, ...next })); }}
                 onApply={() => setAppliedPeriod(period)}
                 isApplying={isStatementFetching}
                 isApplyDisabled={!isPeriodDirty || isStatementFetching}
