@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, sql, desc, isNull, gte, lte } from 'drizzle-orm';
+import { eq, and, or, sql, desc, isNull, gte, lte } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -229,8 +229,23 @@ export async function listExpenses(dbOrTx: typeof db | Tx, filters: ExpenseListF
   const pageSize = Math.min(100, filters.pageSize ?? 20);
   const conditions = [isNull(s.expenses.deletedAt)];
 
+  // Filter by vehicle unit: the truck itself plus the rơ-moóc currently
+  // coupled to it. truck_id is polymorphic (trailer id when
+  // vehicle_component='TRAILER'), so both branches must gate on
+  // vehicleComponent — an unqualified `truck_id = X` would also match a
+  // trailer whose id happens to equal X.
   if (filters.truckId !== undefined) {
-    conditions.push(eq(s.expenses.truckId, filters.truckId));
+    const [truck] = await dbOrTx.select({ currentTrailerId: s.trucks.currentTrailerId })
+      .from(s.trucks)
+      .where(eq(s.trucks.id, filters.truckId))
+      .limit(1);
+    const vehicleFilter = or(
+      and(eq(s.expenses.vehicleComponent, 'TRUCK'), eq(s.expenses.truckId, filters.truckId)),
+      truck?.currentTrailerId
+        ? and(eq(s.expenses.vehicleComponent, 'TRAILER'), eq(s.expenses.truckId, truck.currentTrailerId))
+        : undefined,
+    );
+    if (vehicleFilter) conditions.push(vehicleFilter);
   }
   if (filters.supplierId !== undefined) {
     conditions.push(eq(s.expenses.supplierId, filters.supplierId));
@@ -373,17 +388,22 @@ export async function getExpense(dbOrTx: typeof db | Tx, id: number) {
 }
 
 export async function getRenewalReminders(dbOrTx: typeof db | Tx) {
+  // truck_id is polymorphic — trailer id when vehicle_component='TRAILER' —
+  // so both plate joins are gated by component and the plate is picked from
+  // the vehicle the expense actually belongs to.
   const rows = await dbOrTx.select({
     expenseId: s.expenses.id,
     categoryId: s.expenseCategories.id,
     categoryName: s.expenseCategories.name,
-    truckId: s.expenses.truckId,
-    truckPlate: s.trucks.licensePlate,
+    vehicleComponent: s.expenses.vehicleComponent,
+    storedVehicleId: s.expenses.truckId,
+    truckPlate: sql<string | null>`case when ${s.expenses.vehicleComponent} = 'TRAILER' then ${s.trailers.licensePlate} else ${s.trucks.licensePlate} end`,
     validTo: s.expenses.validTo,
     reminderLeadDays: s.expenseCategories.reminderLeadDays,
   }).from(s.expenses)
     .innerJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
-    .leftJoin(s.trucks, eq(s.expenses.truckId, s.trucks.id))
+    .leftJoin(s.trucks, and(eq(s.expenses.truckId, s.trucks.id), eq(s.expenses.vehicleComponent, 'TRUCK')))
+    .leftJoin(s.trailers, and(eq(s.expenses.truckId, s.trailers.id), eq(s.expenses.vehicleComponent, 'TRAILER')))
     .where(and(
       isNull(s.expenses.deletedAt),
       eq(s.expenseCategories.isRenewable, true),
@@ -391,9 +411,12 @@ export async function getRenewalReminders(dbOrTx: typeof db | Tx) {
     ))
     .orderBy(s.expenses.truckId, s.expenses.categoryId, desc(s.expenses.validTo));
 
+  // Key includes vehicleComponent: a truck and a trailer can share the same
+  // numeric id (separate tables), and their renewals must not collapse into
+  // one reminder group.
   const latestByGroup = new Map<string, typeof rows[0]>();
   for (const row of rows) {
-    const key = `${row.truckId ?? 'company'}-${row.categoryId}`;
+    const key = `${row.vehicleComponent ?? 'COMPANY'}-${row.storedVehicleId ?? 'company'}-${row.categoryId}`;
     if (!latestByGroup.has(key)) {
       latestByGroup.set(key, row);
     }
@@ -428,7 +451,7 @@ export async function getRenewalReminders(dbOrTx: typeof db | Tx) {
         expenseId: row.expenseId,
         categoryId: row.categoryId,
         categoryName: row.categoryName,
-        truckId: row.truckId,
+        truckId: row.storedVehicleId,
         truckPlate: row.truckPlate ?? null,
         validTo: row.validTo instanceof Date ? row.validTo.toISOString().slice(0, 10) : row.validTo ? String(row.validTo) : '',
         reminderLeadDays: row.reminderLeadDays ?? 30,

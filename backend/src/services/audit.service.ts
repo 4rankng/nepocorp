@@ -3,7 +3,7 @@ import { renderAuditMessage } from './audit-templates';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { auditLogs } from '../db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import type { AuditPayload } from './audit-types';
 
 // Inlined event bus — sole consumer is this module.
@@ -34,20 +34,29 @@ async function enrichEntityKey(payload: AuditEntry): Promise<string | undefined>
   // Expenses entity
   if (payload.entityType === 'expenses' && payload.entityId) {
     try {
+      // truck_id is polymorphic (trailer id when vehicle_component='TRAILER'),
+      // so both plate joins are gated by component — an unqualified join would
+      // name whatever truck shares the trailer's id.
       const [expense] = await db.select({
         amount: s.expenses.amount,
         categoryName: s.expenseCategories.name,
         supplierName: s.suppliers.name,
+        vehicleComponent: s.expenses.vehicleComponent,
         truckPlate: s.trucks.licensePlate,
+        trailerPlate: s.trailers.licensePlate,
       }).from(s.expenses)
         .leftJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
         .leftJoin(s.suppliers, eq(s.expenses.supplierId, s.suppliers.id))
-        .leftJoin(s.trucks, eq(s.expenses.truckId, s.trucks.id))
+        .leftJoin(s.trucks, and(eq(s.expenses.truckId, s.trucks.id), eq(s.expenses.vehicleComponent, 'TRUCK')))
+        .leftJoin(s.trailers, and(eq(s.expenses.truckId, s.trailers.id), eq(s.expenses.vehicleComponent, 'TRAILER')))
         .where(eq(s.expenses.id, payload.entityId))
         .limit(1);
       if (expense) {
         const amt = Number(expense.amount).toLocaleString('vi-VN') + ' ₫';
-        return `chi phí ${expense.categoryName} với số tiền ${amt} (Nhà cung cấp: ${expense.supplierName}${expense.truckPlate ? `, Xe: ${expense.truckPlate}` : ''})`;
+        const vehiclePart = expense.vehicleComponent === 'TRAILER' && expense.trailerPlate
+          ? `, Rơ-moóc: ${expense.trailerPlate}`
+          : expense.truckPlate ? `, Xe: ${expense.truckPlate}` : '';
+        return `chi phí ${expense.categoryName} với số tiền ${amt} (Nhà cung cấp: ${expense.supplierName}${vehiclePart})`;
       }
     } catch (e) { console.warn('[audit] enrich expenses failed:', e); }
   }

@@ -7,7 +7,7 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, sql, gte, inArray, ne } from 'drizzle-orm';
+import { eq, and, or, isNull, sql, gte, inArray, ne } from 'drizzle-orm';
 import { computeExVatAmount, TripStatus } from '@tingting/shared';
 import { cacheGet } from '../lib/redis';
 import { salaryPeriodDateRange } from './reporting-shared';
@@ -154,9 +154,16 @@ export async function getPnlReport(month: number, year: number) {
       note: string | null;
     }>>();
     if (truckIds.length > 0) {
+      // expenses.truck_id is polymorphic: it stores trailers.id when
+      // vehicle_component='TRAILER' (see db/schema.ts). Bucketing by the raw
+      // column attributes a rơ-moóc repair to whatever truck happens to share
+      // the trailer's id. ownerTruckId resolves the *owning* truck: the
+      // expense's own truck for TRUCK rows, and the truck the rơ-moóc is
+      // currently coupled to (trucks.current_trailer_id) for TRAILER rows.
       const componentRows = await db.select({
         id: s.expenses.id,
         truckId: s.expenses.truckId,
+        ownerTruckId: sql<number | null>`case when ${s.expenses.vehicleComponent} = 'TRAILER' then ${s.trucks.id} else ${s.expenses.truckId} end`,
         expenseDate: s.expenses.expenseDate,
         categoryName: s.expenseCategories.name,
         supplierName: s.suppliers.name,
@@ -166,20 +173,33 @@ export async function getPnlReport(month: number, year: number) {
       }).from(s.expenses)
         .leftJoin(s.expenseCategories, eq(s.expenses.categoryId, s.expenseCategories.id))
         .leftJoin(s.suppliers, eq(s.expenses.supplierId, s.suppliers.id))
-        .where(and(isNull(s.expenses.deletedAt), inArray(s.expenses.truckId, truckIds), expenseDateFilter));
+        .leftJoin(s.trucks, and(
+          eq(s.trucks.currentTrailerId, s.expenses.truckId),
+          eq(s.expenses.vehicleComponent, 'TRAILER'),
+          isNull(s.trucks.deletedAt),
+        ))
+        .where(and(
+          isNull(s.expenses.deletedAt),
+          or(
+            and(eq(s.expenses.vehicleComponent, 'TRUCK'), inArray(s.expenses.truckId, truckIds)),
+            and(eq(s.expenses.vehicleComponent, 'TRAILER'), inArray(s.trucks.id, truckIds)),
+          ),
+          expenseDateFilter,
+        ));
 
       for (const row of componentRows) {
-        if (!row.truckId) continue;
+        const ownerId = row.ownerTruckId ?? row.truckId;
+        if (!ownerId) continue;
         const amount = parseFloat(row.amount);
-        const comp = maintenanceByComponent.get(row.truckId) ?? { truck: 0, trailer: 0 };
+        const comp = maintenanceByComponent.get(ownerId) ?? { truck: 0, trailer: 0 };
         if (row.vehicleComponent === 'TRAILER') {
           comp.trailer += amount;
         } else {
           comp.truck += amount;
         }
-        maintenanceByComponent.set(row.truckId, comp);
-        maintenanceExpensesByTruck.set(row.truckId, (maintenanceExpensesByTruck.get(row.truckId) ?? 0) + amount);
-        const items = maintenanceItemsByTruck.get(row.truckId) ?? [];
+        maintenanceByComponent.set(ownerId, comp);
+        maintenanceExpensesByTruck.set(ownerId, (maintenanceExpensesByTruck.get(ownerId) ?? 0) + amount);
+        const items = maintenanceItemsByTruck.get(ownerId) ?? [];
         items.push({
           id: row.id,
           expenseDate: row.expenseDate,
@@ -189,7 +209,7 @@ export async function getPnlReport(month: number, year: number) {
           amount,
           note: row.note,
         });
-        maintenanceItemsByTruck.set(row.truckId, items);
+        maintenanceItemsByTruck.set(ownerId, items);
       }
     }
 
