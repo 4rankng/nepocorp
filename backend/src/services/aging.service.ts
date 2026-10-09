@@ -89,6 +89,31 @@ async function fetchLedgerGrouped(
         like(s.ledger.note, 'Cước thuê ngoài%'),
       ),
     )!);
+    // Drop the legacy CUSTOMER copy of a carrier charge for any trip the CARRIER
+    // ledger already carries — otherwise a trip that was posted before the
+    // CUSTOMER→CARRIER split and re-posted after is charged twice in the payable
+    // (kanban 091026165500). Mirrors getCarrierPayableStatement, which does the
+    // same at the statement level. CUSTOMER rows for trips with no CARRIER
+    // counterpart are the only record of that charge and stay.
+    conditions.push(sql`not (
+      ${s.ledger.entityType} = 'CUSTOMER'
+      and (
+        ${s.ledger.txnType} = ${TxnType.EXTERNAL_CARRIER_COST}
+        or (
+          ${s.ledger.txnType} = ${TxnType.UNLOCK_REVERSAL}
+          and ${s.ledger.note} like 'Cước thuê ngoài%'
+        )
+      )
+      and exists (
+        select 1 from ${s.ledger} c
+        where c.entity_type = 'CARRIER'
+          and c.txn_id = ${s.ledger.txnId}
+          and (
+            c.txn_type = ${TxnType.EXTERNAL_CARRIER_COST}
+            or (c.txn_type = ${TxnType.UNLOCK_REVERSAL} and c.note like 'Cước thuê ngoài%')
+          )
+      )
+    )`);
   } else if (opts.txnTypes && opts.txnTypes.length > 0) {
     conditions.push(inArray(s.ledger.txnType, opts.txnTypes));
   }
