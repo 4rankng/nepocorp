@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, like, count, sql } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import type { Tx } from './trip-shared';
 
@@ -246,6 +246,43 @@ export class LedgerService {
    * Returns the ids of ancillary fees that were skipped (non-strict mode only);
    * in strict mode (default) a bad fee throws before any posting occurs.
    */
+  /**
+   * True when this trip already carries an unreversed carrier charge on the
+   * CARRIER ledger for this carrier.
+   *
+   * postTripLock() is a seam that runs on every lock transition, and a trip can
+   * reach it twice without an intervening unlock (a re-lock after an edit, a
+   * retried transition). Posting blindly appended a second EXTERNAL_CARRIER_COST
+   * row, so one trip showed up as two identical debts — the "0071 bị trùng
+   * công nợ" report (kanban 091026165500). Keeping the charge idempotent means
+   * one trip yields at most one active carrier charge, while a proper
+   * lock→unlock→lock sequence still nets to a single charge.
+   */
+  private static async hasActiveCarrierCharge(
+    tx: Tx,
+    tripId: number,
+    carrierId: number,
+  ): Promise<boolean> {
+    const [costRow] = await tx.select({ n: count() })
+      .from(s.ledger)
+      .where(and(
+        eq(s.ledger.txnType, TxnType.EXTERNAL_CARRIER_COST),
+        eq(s.ledger.txnId, tripId),
+        eq(s.ledger.entityType, 'CARRIER'),
+        eq(s.ledger.entityId, carrierId),
+      ));
+    const [reversalRow] = await tx.select({ n: count() })
+      .from(s.ledger)
+      .where(and(
+        eq(s.ledger.txnType, TxnType.UNLOCK_REVERSAL),
+        eq(s.ledger.txnId, tripId),
+        eq(s.ledger.entityType, 'CARRIER'),
+        eq(s.ledger.entityId, carrierId),
+        like(s.ledger.note, 'Cước thuê ngoài%'),
+      ));
+    return Number(costRow?.n ?? 0) - Number(reversalRow?.n ?? 0) > 0;
+  }
+
   static async postTripLock(
     tx: Tx,
     trip: TripLedgerParams,
@@ -331,16 +368,23 @@ export class LedgerService {
     }
 
     // ── 4. EXTERNAL: carrier payable on its isolated CARRIER ledger ──
+    // Idempotent: a trip must never accumulate two live carrier debts. The
+    // statement view de-duplicates across ledgers, but the row itself should
+    // never be created twice (kanban 091026165500).
     if (carrierType === 'EXTERNAL' && trip.externalCarrierId && Number(trip.externalFreightCost || 0) > 0) {
-      await this.postEntry(tx, {
-        txnType: TxnType.EXTERNAL_CARRIER_COST,
-        txnId: trip.id,
-        entityType: 'CARRIER',
-        entityId: trip.externalCarrierId,
-        debit: 0,
-        credit: Number(trip.externalFreightCost),  // credit → negative balance = we owe them
-        note: label ? `Cước thuê ngoài chuyến ${label}` : 'Cước thuê ngoài',
-      });
+      const carrierId = trip.externalCarrierId;
+      const alreadyCharged = await this.hasActiveCarrierCharge(tx, trip.id, carrierId);
+      if (!alreadyCharged) {
+        await this.postEntry(tx, {
+          txnType: TxnType.EXTERNAL_CARRIER_COST,
+          txnId: trip.id,
+          entityType: 'CARRIER',
+          entityId: carrierId,
+          debit: 0,
+          credit: Number(trip.externalFreightCost),  // credit → negative balance = we owe them
+          note: label ? `Cước thuê ngoài chuyến ${label}` : 'Cước thuê ngoài',
+        });
+      }
     }
 
     // ── 5. Ancillary fees — sell side only (customer AR for phí chi hộ) ──

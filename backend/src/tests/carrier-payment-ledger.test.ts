@@ -5,6 +5,7 @@ import { TxnType } from '@tingting/shared';
 import { client, db } from '../db';
 import * as s from '../db/schema';
 import { recordCarrierPayment } from '../services/financial.service';
+import { LedgerService } from '../services/ledger.service';
 import {
   getCarrierPayableStatement,
   getStatementData,
@@ -202,5 +203,76 @@ describe('carrier payment ledger isolation', () => {
     const statement = await getCarrierPayableStatement(carrier.id);
     assert.equal(statement.ledgerRows.length, 1);
     assert.equal(statement.totalOutstanding, 2_200_000);
+  });
+
+  // The statement-level dedup only hides a double charge. The charge itself must
+  // be idempotent at posting time: locking the same trip twice without an
+  // intervening unlock must not append a second carrier debt (kanban 091026165500).
+  test('postTripLock is idempotent — a second lock does not double-charge the carrier', async () => {
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const [carrier] = await db.insert(s.customers)
+      .values({ name: `Carrier idempotent ${suffix}`, isCarrier: true })
+      .returning();
+    createdCarrierIds.push(carrier.id);
+    const [route] = await db.insert(s.routes)
+      .values({ name: `Route idem ${suffix}` })
+      .returning({ id: s.routes.id });
+    createdRouteIds.push(route.id);
+    const [cargoType] = await db.insert(s.cargoTypes)
+      .values({ name: `Cargo idem ${suffix}` })
+      .returning({ id: s.cargoTypes.id });
+    createdCargoTypeIds.push(cargoType.id);
+
+    const [trip] = await db.insert(s.trips)
+      .values({
+        tripCode: `IDEM-${suffix}`.slice(0, 50),
+        customerId: carrier.id,
+        routeId: route.id,
+        cargoTypeId: cargoType.id,
+        status: 'LOCKED',
+        departureDate: '2026-07-20',
+        revenue: '0',
+        totalCost: '0',
+        carrierType: 'EXTERNAL',
+        externalCarrierId: carrier.id,
+        externalFreightCost: '14540000',
+      })
+      .returning({ id: s.trips.id, tripCode: s.trips.tripCode });
+    createdTripIds.push(trip.id);
+
+    const lockArgs = {
+      id: trip.id,
+      tripCode: trip.tripCode,
+      customerId: carrier.id,
+      driverId: null,
+      revenue: '0',
+      driverSalary: '0',
+      carrierType: 'EXTERNAL',
+      externalCarrierId: carrier.id,
+      externalFreightCost: '14540000',
+      ancillaryFees: [],
+    };
+    await db.transaction(tx => LedgerService.postTripLock(tx, lockArgs));
+    await db.transaction(tx => LedgerService.postTripLock(tx, lockArgs));
+
+    const costRows = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.EXTERNAL_CARRIER_COST),
+      eq(s.ledger.txnId, trip.id),
+    ));
+    assert.equal(costRows.length, 1, 'the carrier is charged once despite two locks');
+
+    // An unlock then a re-lock is a legitimate cycle and must leave one charge.
+    await db.transaction(tx => LedgerService.postTripUnlock(tx, lockArgs));
+    await db.transaction(tx => LedgerService.postTripLock(tx, lockArgs));
+
+    const afterCycle = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.EXTERNAL_CARRIER_COST),
+      eq(s.ledger.txnId, trip.id),
+    ));
+    assert.equal(afterCycle.length, 2, 're-locking after an unlock posts a fresh charge');
+
+    const statement = await getCarrierPayableStatement(carrier.id);
+    // Two charges minus the one reversal still owed = a single live debt.
+    assert.equal(statement.totalOutstanding, 14_540_000);
   });
 });
