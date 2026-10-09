@@ -1524,6 +1524,17 @@
   white-space: nowrap;
 }
 
+/* Secondary date line inside a ledger date cell (e.g. "chạy 04/10" — the trip
+   departure under a posting-basis ledger row). Muted so the posting date stays
+   the dominant, filter-matching value. */
+.dd-td-sub {
+  font-family: var(--font-sans, inherit);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-4);
+  line-height: 1.35;
+}
+
 .dd-group-toggle {
   width: 24px;
   height: 24px;

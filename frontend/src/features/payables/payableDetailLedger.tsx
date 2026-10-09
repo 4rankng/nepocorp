@@ -40,10 +40,26 @@ export function FuelLedgerRow({ row }: { row: LedgerEntry }) {
   const balance = parseFloat(row.balance) || 0;
   const amount = Number(detail?.amount ?? row.credit) || 0;
   const reference = row.tripCode || row.note || 'Chuyến chưa có mã';
+  // The ledger table is POSTING basis (filtered by the posting date, ties to the
+  // period summary and the billing-document export), so the date column shows
+  // the posting date. The trip's departure date is shown beside it — the two
+  // differ whenever a trip is locked after departure, and showing only the
+  // departure date made an out-of-period September trip read as an October line
+  // (kanban 091026135120).
+  const departureDate = detail?.departureDate ?? null;
+  const departsDiffers = !!departureDate
+    && departureDate.slice(0, 10) !== row.timestamp.slice(0, 10);
 
   return (
     <tr className="dd-fuel-row">
-      <td className="dd-td-date">{formatDate(detail?.departureDate ?? row.timestamp)}</td>
+      <td className="dd-td-date">
+        {formatDate(row.timestamp)}
+        {departsDiffers && (
+          <div className="dd-td-sub" title="Ngày chạy của chuyến (khác ngày ghi sổ)">
+            chạy {formatDate(departureDate!)}
+          </div>
+        )}
+      </td>
       <td className="dd-fuel-vehicle">{detail?.truckPlate || '—'}</td>
       <td className="dd-fuel-route">{detail?.routeName || '—'}</td>
       <td className="dd-num">{detail?.liters ? `${formatNumber(Number(detail.liters))} lít` : '—'}</td>
@@ -131,12 +147,21 @@ export function FuelLedgerCard({ row }: { row: LedgerEntry }) {
   const detail = row.fuelDetails;
   const amount = Number(detail?.amount ?? row.credit) || 0;
   const reference = row.tripCode || row.note || 'Chuyến chưa có mã';
+  // Posting date is primary (matches the filter); departure date is secondary.
+  const departureDate = detail?.departureDate ?? null;
+  const departsDiffers = !!departureDate
+    && departureDate.slice(0, 10) !== row.timestamp.slice(0, 10);
 
   return (
     <li className="dd-ledger-mobile-card dd-fuel-card d-card d-card-border bg-base-100">
       <div className="dd-ledger-mobile-card__head">
-        <time dateTime={detail?.departureDate ?? row.timestamp}>
-          {formatDate(detail?.departureDate ?? row.timestamp)}
+        <time dateTime={row.timestamp}>
+          {formatDate(row.timestamp)}
+          {departsDiffers && (
+            <small className="dd-td-sub" style={{ display: 'block' }}>
+              chạy {formatDate(departureDate!)}
+            </small>
+          )}
         </time>
         <span className={TXN_META[TxnType.FUEL_EXPENSE].pill}>Chi phí nhiên liệu</span>
       </div>

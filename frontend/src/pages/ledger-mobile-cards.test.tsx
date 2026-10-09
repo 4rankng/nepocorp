@@ -116,7 +116,11 @@ describe('mobile ledger cards', () => {
   ])('shows the complete fuel purchase detail on $layout', ({ component }) => {
     render(component);
 
-    expect(screen.getByText('24/7/2026')).toBeTruthy();
+    // The ledger table is POSTING basis, so the date column leads with the
+    // posting date (matches the period filter) and shows the trip departure as
+    // a secondary "chạy" line (kanban 091026135120).
+    expect(screen.getByText('19/7/2026')).toBeTruthy();
+    expect(screen.getByText('chạy 24/7/2026')).toBeTruthy();
     expect(screen.getByText('15C-136.31')).toBeTruthy();
     expect(screen.getByText('Hải Phòng – Hà Nội')).toBeTruthy();
     expect(screen.getByText('160 lít')).toBeTruthy();
