@@ -321,8 +321,8 @@ export function UserTable({
 /* ── Desktop table (inside panel) ─────────────────────────────────────────── */
 
 function DesktopTable({
-  filtered, canManage, canDelete: _canDelete, canEditDriversOnly, truckMap, deleting: _deleting, currentUserId,
-  onEdit, onDelete: _onDelete,
+  filtered, canManage, canDelete, canEditDriversOnly, truckMap, deleting, currentUserId,
+  onEdit, onDelete,
   sortBy, sortOrder, onSort,
 }: {
   filtered: UserRow[];
@@ -366,12 +366,13 @@ function DesktopTable({
                   {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
                 </button>
               </th>
+              <th style={{ width: 84, textAlign: 'right' }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <div className="users-empty">
                     <img src={resolveEmptyIllustration('empty-users')} alt="" aria-hidden="true" className="users-empty__illustration" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <p className="users-empty__title">Không tìm thấy tài khoản</p>
@@ -438,6 +439,22 @@ function DesktopTable({
                   </td>
                   <td style={{ color: 'var(--ink-3)', fontSize: 'var(--fs-body)', whiteSpace: 'nowrap' }}>
                     {formatDate(u.createdAt)}
+                  </td>
+                  <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                    {canManage && canDelete && (
+                      <button
+                        type="button"
+                        className="users-row-action users-row-action--danger"
+                        aria-label={`Xoá tài khoản ${u.fullName || u.username || `#${u.id}`}`}
+                        disabled={!!deleting || isMe}
+                        title={isMe ? 'Không thể xoá tài khoản đang đăng nhập' : 'Xoá tài khoản'}
+                        onClick={() => { if (!isMe) onDelete(u.id); }}
+                        style={{ opacity: isMe ? 0.4 : 1 }}
+                      >
+                        {deleting === u.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
+                        <span>Xoá</span>
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
