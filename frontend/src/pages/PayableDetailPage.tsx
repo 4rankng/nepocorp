@@ -296,7 +296,7 @@ export default function PayableDetailPage() {
             {hasDebt ? (
               <span className="dd-tag dd-tag--warn dd-tag--dot">Còn nợ</span>
             ) : hasCredit ? (
-              <span className="dd-tag dd-tag--warn dd-tag--dot">Đã trả thừa {formatCurrency(overpaymentAmount).replace(' ₫', '')}đ</span>
+              <span className="dd-tag dd-tag--warn dd-tag--dot">Đã trả thừa {formatCurrency(overpaymentAmount)}</span>
             ) : (
               <span className="dd-tag dd-tag--ok dd-tag--dot">Đã thanh toán đủ</span>
             )}

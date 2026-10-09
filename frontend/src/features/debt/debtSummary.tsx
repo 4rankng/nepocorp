@@ -122,7 +122,7 @@ export function DebtAgingSummary({
                 {range.label}
               </div>
               <div className={`dd-ac-val${amt === 0 ? ' dd-ac-val--zero' : ''}`}>
-                {formatCurrency(amt).replace(' ₫', '')}đ
+                {formatCurrency(amt)}
               </div>
               <div className="dd-ac-share">
                 {amt > 0 ? `${pct}% tổng công nợ` : 'Không phát sinh'}

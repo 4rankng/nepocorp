@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import { formatCurrency } from '../../lib/format';
+import { formatCurrency, moneyParts } from '../../lib/format';
 import { AGING_RANGES } from './payableDetailUtils';
 
 interface PayableSummarySectionProps {
@@ -29,10 +29,15 @@ export function PayableSummarySection({
         <div>
           <div className="dd-sum-label">TỔNG CỘNG NỢ</div>
           <div className={`dd-sum-total ${hasDebt ? '' : ' dd-sum-total--clear'}`}>
-            {hasDebt
-              ? <>{formatCurrency(totalOutstanding).replace(' ₫', '')}<span className="dd-cur">đ</span></>
-              : <>0<span className="dd-cur">đ</span></>
-            }
+            {/* `moneyParts` splits the amount and its unit so the unit can be
+                set smaller. The old inline `.replace(' ₫', '')` + `<span>đ</span>`
+                ran the two together with no space and swapped the ₫ sign for a
+                plain "đ", so this card read "331.451.555đ" while every table
+                read "331.451.555 ₫" (kanban 091026235520). */}
+            {(() => {
+              const { num, unit } = moneyParts(hasDebt ? totalOutstanding : 0, false);
+              return <>{num}<span className="dd-cur"> {unit}</span></>;
+            })()}
           </div>
           {hasDebt && (
             <div className="dd-sum-note">
@@ -46,7 +51,7 @@ export function PayableSummarySection({
           {hasCredit && (
             <div className="dd-sum-note" style={{ marginTop: 4 }}>
               <AlertTriangle size={17} style={{ color: 'var(--warning)', flexShrink: 0 }} />
-              Đã trả thừa {formatCurrency(overpaymentAmount).replace(' ₫', '')}đ — nhà cung cấp đang nợ lại công ty
+              Đã trả thừa {formatCurrency(overpaymentAmount)} — nhà cung cấp đang nợ lại công ty
             </div>
           )}
         </div>
@@ -80,7 +85,7 @@ export function PayableSummarySection({
                 {range.label}
               </div>
               <div className={`dd-ac-val${amt === 0 ? ' dd-ac-val--zero' : ''}`}>
-                {formatCurrency(amt).replace(' ₫', '')}đ
+                {formatCurrency(amt)}
               </div>
               <div className="dd-ac-share">
                 {amt > 0 ? `${pct}% tổng công nợ` : 'Không phát sinh'}

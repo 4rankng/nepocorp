@@ -6,7 +6,7 @@ import { useToast } from '../shared/Toast';
 import { downloadBlob } from '../../lib/download';
 import { AssetIcon } from '../AssetIcon';
 import { api } from '../../lib/api';
-import { formatCurrency } from '../../lib/format';
+import { formatAmount } from '../../lib/format';
 import { moneyInputToNumber } from '../../lib/moneyInput';
 import { InputWithPrefix } from '../trip/InputWithPrefix';
 import { financialClient } from '../../api/financialClient';
@@ -401,7 +401,7 @@ export default function BillingDocumentBuilder({
                                 </div>
                                 <div className="billing-builder__route-metrics">
                                   <span>{group.visibleCount}/{group.lines.length} dòng</span>
-                                  <strong className="mono">{formatCurrency(group.subtotal).replace(' ₫', '')}</strong>
+                                  <strong className="mono">{formatAmount(group.subtotal)}</strong>
                                 </div>
                               </div>
                             </td>
@@ -415,7 +415,7 @@ export default function BillingDocumentBuilder({
                                     <span>{containerGroup.visibleCount}/{containerGroup.lines.length} khoản</span>
                                   </div>
                                 </td>
-                                <td className="billing-builder__subtotal mono">{formatCurrency(containerGroup.subtotal).replace(' ₫', '')}</td>
+                                <td className="billing-builder__subtotal mono">{formatAmount(containerGroup.subtotal)}</td>
                                 <td />
                               </tr>
                               {containerGroup.lines.map(({ line, index }) => {
@@ -497,14 +497,14 @@ export default function BillingDocumentBuilder({
                               </>
                             )}
                           </div>
-                          <strong className="mono">{formatCurrency(group.subtotal).replace(' ₫', '')}</strong>
+                          <strong className="mono">{formatAmount(group.subtotal)}</strong>
                         </div>
                         <div className="billing-builder__mobile-items">
                           {containerGroups.map((containerGroup) => (
                             <section className="billing-builder__mobile-container" key={`${group.key}-${containerGroup.key}-mobile`}>
                               <div className="billing-builder__mobile-container-head">
                                 <strong>{containerGroup.label}</strong>
-                                <b className="mono">{formatCurrency(containerGroup.subtotal).replace(' ₫', '')}</b>
+                                <b className="mono">{formatAmount(containerGroup.subtotal)}</b>
                               </div>
                               {containerGroup.lines.map(({ line, index }) => {
                                 const amount = line.amountOverride != null ? line.amountOverride : line.baseAmount;

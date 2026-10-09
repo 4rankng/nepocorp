@@ -51,6 +51,26 @@ export function moneyParts(amount: number, compact: boolean): MoneyParts {
   return { num: fmt(amount), unit: '₫', format: fmt };
 }
 
+/**
+ * The digits only — no unit.
+ *
+ * For columns and subtotals whose header already carries the unit ("Số tiền
+ * (₫)", "Thành tiền"), so repeating ₫ on every row is noise.
+ *
+ * This replaces the long-standing `formatCurrency(n).replace(' ₫', '')`
+ * string-surgery, which broke in two ways: it silently depended on
+ * `formatCurrency` keeping that exact space-₫ pair, and callers that then
+ * appended their own `'đ'` produced amounts glued to the unit with the wrong
+ * glyph — "331.451.555đ" beside tables reading "331.451.555 ₫"
+ * (kanban 091026235520).
+ */
+export function formatAmount(n: number | string | null): string {
+  if (n == null) return '—';
+  const num = typeof n === 'string' ? parseFloat(n) : n;
+  if (isNaN(num)) return '—';
+  return num.toLocaleString('vi-VN');
+}
+
 export function formatDate(d: string | null): string {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });

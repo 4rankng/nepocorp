@@ -8,7 +8,7 @@ import {
 } from '@tingting/shared';
 import { splitRoute } from '../../lib/route';
 import { formatDayMonth } from '../../lib/date';
-import { formatCurrency } from '../../lib/format';
+import { formatAmount } from '../../lib/format';
 import {
   buildTripCode, calcConsumption, getMissingIndicators, getDataCompleteness, getMissingPlanFields, isTripToday,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
@@ -17,7 +17,7 @@ import {
 import { XeNgoaiBadge } from './XeNgoaiBadge';
 
 const formatMoney = (n: number): string =>
-  formatCurrency(n).replace(' ₫', '').replace('₫', '').trim();
+  formatAmount(n);
 
 export interface TripQuickEditDraft {
   fuelLiters: string;

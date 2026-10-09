@@ -342,7 +342,7 @@ export function splitRouteTitle(title: string): { origin: string; destination: s
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function money(value: number): string {
-  return formatCurrency(value).replace(' ₫', '') + 'đ';
+  return formatCurrency(value);
 }
 
 export function routeContainers(items: LedgerDisplayRow[]): string[] {
