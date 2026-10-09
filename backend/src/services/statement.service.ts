@@ -1384,14 +1384,34 @@ export async function getCarrierPayableStatement(
 
   const historicalRows = await LedgerService.getEntriesByEntity('CUSTOMER', carrierId);
   const currentRows = await LedgerService.getEntriesByEntity('CARRIER', carrierId);
-  let ledgerRows: EnrichedLedgerRow[] = [...historicalRows, ...currentRows]
+
+  // Carrier costs used to post to the CUSTOMER ledger; they now live on an
+  // isolated CARRIER projection. A trip carrying a cost on BOTH ledgers (posted
+  // before the split, then re-posted after) would otherwise render twice here —
+  // one trip showing as two identical "Cước thuê ngoài" lines with the same
+  // amount. The CARRIER row is the authoritative one, so drop the CUSTOMER copy
+  // for every trip the CARRIER ledger already knows about. CUSTOMER rows for
+  // trips with no CARRIER counterpart are genuinely historical and stay.
+  const isCarrierRow = (row: LedgerRow) =>
+    row.txnType === TxnType.EXTERNAL_CARRIER_COST
+    || (
+      row.txnType === TxnType.UNLOCK_REVERSAL
+      && row.note?.startsWith('Cước thuê ngoài')
+    );
+  const tripsOnCarrierLedger = new Set(
+    currentRows
+      .filter(isCarrierRow)
+      .map(row => row.txnId)
+      .filter((id): id is number => id != null),
+  );
+  const historicalRowsDeduped = historicalRows.filter(
+    row => !(isCarrierRow(row) && row.txnId != null && tripsOnCarrierLedger.has(row.txnId)),
+  );
+
+  let ledgerRows: EnrichedLedgerRow[] = [...historicalRowsDeduped, ...currentRows]
     .filter(row =>
-      row.txnType === TxnType.EXTERNAL_CARRIER_COST
+      isCarrierRow(row)
       || row.txnType === TxnType.VENDOR_PAYMENT
-      || (
-        row.txnType === TxnType.UNLOCK_REVERSAL
-        && row.note?.startsWith('Cước thuê ngoài')
-      )
     );
 
   const tripIds = Array.from(new Set(
