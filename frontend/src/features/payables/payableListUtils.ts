@@ -7,6 +7,8 @@ export interface PayablesResponse {
   totalOutstanding: string;
   totalSuppliers: number;
   overdueSuppliers: number;
+  /** Per-category supplier counts (unfiltered response only) — drives chip visibility. */
+  categoryCounts?: Record<PayablesCategory, number>;
 }
 
 export interface PayablesAgingTotals {

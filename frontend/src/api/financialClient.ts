@@ -101,6 +101,7 @@ export const financialClient = {
       totalOutstanding: string;
       totalSuppliers: number;
       overdueSuppliers: number;
+      categoryCounts?: Record<PayablesCategory, number>;
     }>(`${REPORTS.PAYABLES_SUMMARY}${toQuery({ category })}`),
 
   postCommission: (data: { supplierId: number; amount: number; tripId?: number; note?: string }) =>

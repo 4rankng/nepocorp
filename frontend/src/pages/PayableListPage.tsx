@@ -167,6 +167,22 @@ function CommissionModal({
 export default function PayableListPage() {
   const [category, setCategory] = useState<PayablesCategory | undefined>(undefined);
   const { data, isLoading: loading, error: queryError } = usePayablesSummary(category);
+  // Per-category counts live on the unfiltered response; keep it subscribed so
+  // the chip row stays stable while a category is active, and hide any chip
+  // that would open an empty table (kanban 091026135140). When `category` is
+  // undefined this is the same query as `data`, so it costs no extra request.
+  const { data: countsData } = usePayablesSummary(undefined);
+  const categoryCounts = (countsData as unknown as PayablesResponse | undefined)?.categoryCounts;
+  const visibleChips = useMemo(
+    () => CATEGORY_CHIPS.filter(chip =>
+      chip.value === undefined
+      // Keep the active chip visible even if its count just dropped to zero,
+      // so the table it labels is never left without a selected tab.
+      || chip.value === category
+      || !categoryCounts
+      || (categoryCounts[chip.value] ?? 0) > 0),
+    [category, categoryCounts],
+  );
   const payables = useMemo(
     () => (data as unknown as PayablesResponse | undefined)?.items ?? [],
     [data],
@@ -312,7 +328,7 @@ export default function PayableListPage() {
       <div className="payables-data-card">
         {/* Category chips */}
         <div className="payables-category-chips" role="tablist" aria-label="Lọc theo loại công nợ">
-          {CATEGORY_CHIPS.map(chip => {
+          {visibleChips.map(chip => {
             const isActive = chip.value === category;
             return (
               <button

@@ -413,6 +413,12 @@ type PayablesSummaryResult = {
   totalOutstanding: number;
   totalSuppliers: number;
   overdueSuppliers: number;
+  /**
+   * Suppliers each category chip would list; present only on the unfiltered
+   * response. Lets the list page hide a chip that would open an empty table
+   * (kanban 091026135140).
+   */
+  categoryCounts?: Record<PayablesCategory, number>;
 };
 
 async function getPayablesForScope(
@@ -535,16 +541,9 @@ export async function getPayablesSummary(opts: { asOfDate?: string; category?: P
     kind: 'carrier',
   };
 
-  if (!opts.category) {
-    const summaries = await Promise.all([
-      getPayablesForScope(vendorScope, opts.asOfDate),
-      getPayablesForScope(carrierScope, opts.asOfDate),
-    ]);
-    return mergePayablesSummaries(summaries);
-  }
-
-  const scope: PayablesScope = (() => {
-    switch (opts.category) {
+  /** The scope behind each category chip. */
+  const categoryScope = (category: PayablesCategory): PayablesScope => {
+    switch (category) {
       case 'fuel':
         return { ...vendorScope, txnTypes: [TxnType.FUEL_EXPENSE] };
       case 'ancillary':
@@ -554,7 +553,24 @@ export async function getPayablesSummary(opts: { asOfDate?: string; category?: P
       case 'carrier':
         return carrierScope;
     }
-  })();
+  };
 
-  return getPayablesForScope(scope, opts.asOfDate);
+  if (!opts.category) {
+    // The unfiltered view also reports how many suppliers each category chip
+    // would show, so the page can hide a chip that would open an empty table
+    // (kanban 091026135140). Those scoped aggregates are cached, so a later
+    // chip switch is a cache hit, not a re-aggregation.
+    const categories: PayablesCategory[] = ['fuel', 'ancillary', 'commission', 'carrier'];
+    const [vendor, carrier, ...categoryResults] = await Promise.all([
+      getPayablesForScope(vendorScope, opts.asOfDate),
+      getPayablesForScope(carrierScope, opts.asOfDate),
+      ...categories.map(c => getPayablesForScope(categoryScope(c), opts.asOfDate)),
+    ]);
+    const categoryCounts = Object.fromEntries(
+      categories.map((c, i) => [c, categoryResults[i].totalSuppliers]),
+    ) as Record<PayablesCategory, number>;
+    return { ...mergePayablesSummaries([vendor, carrier]), categoryCounts };
+  }
+
+  return getPayablesForScope(categoryScope(opts.category), opts.asOfDate);
 }
