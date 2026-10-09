@@ -18,6 +18,7 @@ function setup() {
     driverCount={1} inactiveCount={0} filter="all" search=""
     canManage canDelete canEditDriversOnly={false} deleting={null} currentUserId={1}
     onEdit={onEdit} onDelete={onDelete} onAdd={vi.fn()}
+    onExport={vi.fn()} exporting={false}
     onFilterChange={vi.fn()} onSearchChange={vi.fn()} sortBy={null} sortOrder="asc"
     onSort={vi.fn()} currentPage={1} pageSize={10} onPageChange={vi.fn()}
   />);

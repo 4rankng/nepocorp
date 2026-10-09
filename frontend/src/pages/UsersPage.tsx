@@ -10,6 +10,9 @@ import { useUserMutations } from '../features/users/hooks/useUserMutations';
 import { UserTable } from '../features/users/components/UserTable';
 import { AddPanel, EditPanel } from '../features/users/components/UserForm';
 import type { UserRow, FilterKey } from '../features/users/utils';
+import { ROLE_LABELS } from '../features/users/utils';
+import { downloadCSV } from '../lib/csv';
+import { userClient } from '../api/userClient';
 import { usePageAnimations } from '../hooks/animations';
 import '../features/users/users.css';
 
@@ -99,6 +102,44 @@ export default function UsersPage() {
 
   const openEdit = (u: UserRow) => { clearPanelError(); setEditingUser(u); setShowAdd(false); };
   const openAdd  = () => { clearPanelError(); setShowAdd(true); setEditingUser(null); };
+
+  // Xuất Excel (kanban 101026003230): /users was the only list page without an
+  // export. It exports the CURRENT filtered set (search + role tab + sort), not
+  // just the page on screen, so the file matches what the list claims to show.
+  const [exporting, setExporting] = useState(false);
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const all = await userClient.getUsers({
+        page: 1,
+        limit: Math.max(filteredTotal, 1),
+        search: debouncedSearch || undefined,
+        filter,
+        sortBy: sortBy ?? undefined,
+        sortOrder,
+      });
+      await downloadCSV(
+        `nguoi-dung-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        ['Họ và tên', 'Username', 'Email', 'Số điện thoại', 'Vai trò', 'Trạng thái'],
+        all.items.map((u) => [
+          u.fullName ?? '',
+          u.username ?? '',
+          u.email ?? '',
+          u.phone ?? '',
+          ROLE_LABELS[u.role] ?? u.role,
+          u.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khoá',
+        ]),
+        {
+          title: 'Danh sách người dùng',
+          subtitle: `${all.total} tài khoản · ${ROLE_LABELS[filter as Role] ?? 'Tất cả vai trò'}`,
+          columnTypes: ['text', 'text', 'text', 'text', 'text', 'text'],
+        },
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const closeAdd  = () => { setShowAdd(false); clearPanelError(); };
   const closeEdit = () => { setEditingUser(null); clearPanelError(); };
 
@@ -162,6 +203,8 @@ export default function UsersPage() {
         onEdit={openEdit}
         onDelete={doDelete}
         onAdd={openAdd}
+        onExport={handleExport}
+        exporting={exporting}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSort={handleSort}

@@ -1,6 +1,6 @@
 import {
   Users, ShieldCheck, UserCog, Lock, Plus, Pencil, Trash2,
-  Loader2, KeyRound, Mail, Phone, UserX, MoreVertical,
+  Loader2, KeyRound, Mail, Phone, UserX, MoreVertical, Download,
   ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -38,6 +38,8 @@ interface UserTableProps {
   onEdit: (u: UserRow) => void;
   onDelete: (id: number) => void;
   onAdd: () => void;
+  onExport: () => void;
+  exporting: boolean;
   // Sort props
   sortBy: 'name' | 'role' | 'status' | 'date' | null;
   sortOrder: 'asc' | 'desc';
@@ -88,6 +90,7 @@ export function UserTable({
   filter, search, canManage, canDelete = canManage, canEditDriversOnly = false,
   truckMap, deleting, currentUserId,
   onFilterChange, onSearchChange, onEdit, onDelete, onAdd,
+  onExport, exporting,
   sortBy, sortOrder, onSort,
   currentPage, pageSize, onPageChange,
 }: UserTableProps) {
@@ -99,15 +102,26 @@ export function UserTable({
         iconName="users-hr"
         description={`${total} tài khoản · ${staffCount} nhân sự · ${driverCount} lái xe`}
         action={
-          canManage ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
-              className="btn btn--primary"
-              onClick={onAdd}
+              className="btn btn--secondary"
+              onClick={onExport}
+              disabled={exporting || filteredTotal === 0}
               style={{ display: 'flex', alignItems: 'center', gap: 8 }}
             >
-              <Plus size={14} /> Thêm tài khoản
+              {exporting ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+              {exporting ? 'Đang chuẩn bị…' : 'Xuất Excel'}
             </button>
-          ) : null
+            {canManage && (
+              <button
+                className="btn btn--primary"
+                onClick={onAdd}
+                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+              >
+                <Plus size={14} /> Thêm tài khoản
+              </button>
+            )}
+          </div>
         }
       />
 
