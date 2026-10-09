@@ -63,14 +63,35 @@ const nonNegNumeric = z.union([z.number(), z.string()]).transform((val, ctx) => 
 
 const fullNameField = z.string().max(255).or(z.literal('')).optional();
 
+/**
+ * Plausible floor for a diesel pump price (₫/lít). Vietnamese diesel runs roughly
+ * 25,000–35,000₫/L, so anything under 1,000₫ is a data-entry slip — in practice
+ * the liters value typed into the price column (a 225 L pump-out saved at
+ * 225₫/L produced a nonsense 50,625₫ fuel cost, kanban 091026135130). Guarding
+ * at save time keeps that class of typo out of the ledger instead of letting
+ * accounting discover it in a statement months later.
+ */
+export const MIN_FUEL_UNIT_PRICE_VND = 1_000;
+
+const fuelUnitPriceMessage =
+  `Đơn giá nhiên liệu phải từ ${MIN_FUEL_UNIT_PRICE_VND.toLocaleString('vi-VN')}₫/lít trở lên — có thể đã nhập nhầm số lít vào ô đơn giá`;
+
+/** A fuel unit price with the plausibility floor applied. */
+const fuelUnitPrice = positiveNumeric
+  .nullable()
+  .optional()
+  .refine((v) => v == null || v >= MIN_FUEL_UNIT_PRICE_VND, {
+    message: fuelUnitPriceMessage,
+  });
+
 // ─── Trip ────────────────────────────────────────────────────────────────────
 
 export const tripFuelAllocationSchema = z.object({
   supplierId: z.coerce.number().int().positive().nullable(),
   liters: positiveNumeric,
   // Per-purchase pump price (VND/lít). Null/omitted = priced with the trip's
-  // effective price. Positive, with a generous sanity cap against garbage.
-  unitPrice: z.coerce.number().positive().max(1_000_000_000).nullable().optional(),
+  // effective price. Positive, with a sanity floor and cap against garbage.
+  unitPrice: z.coerce.number().positive().min(MIN_FUEL_UNIT_PRICE_VND, fuelUnitPriceMessage).max(1_000_000_000).nullable().optional(),
   paymentMethod: z.enum(['CREDIT', 'CASH']),
 }).superRefine((allocation, ctx) => {
   if (Math.abs(allocation.liters * 100 - Math.round(allocation.liters * 100)) > 1e-8) {
@@ -125,8 +146,9 @@ export const createTripSchema = z.object({
   fuelSupplierId: z.coerce.number().int().positive().optional().nullable(),
   // Per-trip actual pump price (₫/lít). Optional — when blank the trip falls
   // back to the config snapshot (see fuelPriceApplied). Lets a manager record
-  // the real station price at creation instead of only on edit.
-  fuelActualUnitPrice: positiveNumeric.nullable().optional(),
+  // the real station price at creation instead of only on edit. Guarded by a
+  // plausibility floor against liters-typed-as-price typos.
+  fuelActualUnitPrice: fuelUnitPrice,
   vatRate: z.number().min(0).max(0.5).optional().default(0),
   carrierType: z.enum(['OWN', 'EXTERNAL']).optional().default('OWN'),
   externalCarrierId: z.number().int().positive().nullable().optional(),
@@ -187,7 +209,7 @@ export const updateTripFiguresSchema = z.object({
   fuelLitersOverride: nonNegNumeric.nullable().optional(),
   fuelSupplementLiters: nonNegNumeric.optional(),
   fuelSupplementReason: z.string().optional(),
-  fuelActualUnitPrice: positiveNumeric.nullable().optional(),
+  fuelActualUnitPrice: fuelUnitPrice,
   fuelSupplierId: z.coerce.number().int().positive().nullable().optional(),
   fuelAllocations: tripFuelAllocationsSchema.optional(),
   tollsDiscount: nonNegNumeric.optional(),

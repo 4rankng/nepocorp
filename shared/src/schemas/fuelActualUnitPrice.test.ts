@@ -21,8 +21,9 @@ const validLegs = [
 ];
 const base = { legs: validLegs, fuelMode: FuelMode.AUTO };
 
-// Awkward values: the two the user cited, the config default, plus boundaries.
-const AWKWARD = [23530, 23528, 27650, 100000, 1, 99999];
+// Awkward but REALISTIC prices: the two the user cited, the config default,
+// plus upper boundaries. Every value here must survive the round-trip exactly.
+const AWKWARD = [23530, 23528, 27650, 100000, 99999];
 
 for (const price of AWKWARD) {
   test(`updateTripFiguresSchema preserves fuelActualUnitPrice=${price} (number input)`, () => {
@@ -35,6 +36,17 @@ for (const price of AWKWARD) {
     const r = updateTripFiguresSchema.safeParse({ ...base, fuelActualUnitPrice: String(price) });
     assert.strictEqual(r.success, true);
     if (r.success) assert.strictEqual(r.data.fuelActualUnitPrice, price);
+  });
+}
+
+// A liters value typed into the price column is now rejected at save time
+// (kanban 091026135130: a 225 L pump-out stored at 225₫/L). The coercion
+// invariant above is unaffected — this is a business-plausibility floor, not a
+// transformation, so every legitimate price still round-trips unchanged.
+for (const badPrice of [225, 1, 999]) {
+  test(`updateTripFiguresSchema rejects implausible fuelActualUnitPrice=${badPrice}`, () => {
+    const r = updateTripFiguresSchema.safeParse({ ...base, fuelActualUnitPrice: badPrice });
+    assert.strictEqual(r.success, false, 'liters-like price must be rejected');
   });
 }
 
