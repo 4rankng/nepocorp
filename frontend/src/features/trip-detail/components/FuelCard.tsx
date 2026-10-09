@@ -106,7 +106,7 @@ export function FuelCard({ trip, derived, fuelPriceConfig }: FuelCardProps) {
                   : (effectiveFuelPrice ?? 0);
                 const amount = Math.round(liters * price);
                 return (
-                  <div className="pl-row" key={allocation.id}>
+                  <div className="pl-row fuel-alloc-row" key={allocation.id}>
                     <span className="k">{allocation.supplierName}</span>
                     <span className="v fuel-supplier-name">
                       {price > 0
