@@ -1,6 +1,15 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, notLike } from 'drizzle-orm';
+
+/**
+ * Ledger note prefix used when an advance is booked against a TRIP
+ * ("Chi hộ DV chuyến TRP-…") rather than an advance request. Both rows share
+ * txn_type=FORWARDER_ADVANCE and entity_type=FORWARDER, and the trip id space
+ * overlaps advance_requests ids, so this prefix is what separates them.
+ */
+const TRIP_ADVANCE_NOTE_PREFIX = 'Chi hộ%';
+
 import { createAdvanceSettlementSchema, TxnType, updateAdvanceSettlementSchema } from '@tingting/shared';
 import { db, client } from '../db';
 import * as s from '../db/schema';
@@ -189,8 +198,20 @@ describe('forwarder settlement streamlined workflow', () => {
       await db.delete(s.advanceSettlementRequests).where(inArray(s.advanceSettlementRequests.settlementId, ids.settlements));
       await db.delete(s.advanceSettlements).where(inArray(s.advanceSettlements.id, ids.settlements));
     }
+    // `txn_id` is a polymorphic reference — a FORWARDER_ADVANCE row can point at
+    // either an advance_requests row or a trips row, and the two id spaces
+    // overlap. Scope by entity_type so teardown can never delete a trip's own
+    // advance entry that happens to share an id.
+    // `txn_id` here is polymorphic AND shares an id space: a FORWARDER_ADVANCE
+    // row may point at an advance_requests row *or* at a trips row, and both
+    // carry entity_type='FORWARDER' (a trip's "Chi hộ DV" advance is owed by the
+    // same forwarder). Scoping on txnId alone therefore matched real trip rows
+    // and teardown deleted them. Trip-origin rows are told apart by their note
+    // prefix, so exclude those.
     if (ids.requests.length) await db.delete(s.ledger).where(and(
       eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+      eq(s.ledger.entityType, 'FORWARDER'),
+      notLike(s.ledger.note, TRIP_ADVANCE_NOTE_PREFIX),
       inArray(s.ledger.txnId, ids.requests),
     ));
     if (ids.expenses.length) {
@@ -353,8 +374,15 @@ describe('forwarder settlement streamlined workflow', () => {
       forwarderId,
       advanceRequestIds: [carryForward.id],
     });
+    // Same polymorphic-id caveat as the teardown: without entity_type this
+    // also matches a trip's advance row when the ids collide, which is what
+    // made this assertion report a phantom double-post.
     const carryLedgerRows = await db.select().from(s.ledger).where(and(
-      eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE), eq(s.ledger.txnId, carryForward.id),
+      eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+      eq(s.ledger.entityType, 'FORWARDER'),
+      eq(s.ledger.txnId, carryForward.id),
+      // Same id-space collision as the teardown: a trip row can share this id.
+      notLike(s.ledger.note, TRIP_ADVANCE_NOTE_PREFIX),
     ));
     assert.equal(carryLedgerRows.length, 1);
     assert.equal(carryLedgerRows[0].credit, '20000');

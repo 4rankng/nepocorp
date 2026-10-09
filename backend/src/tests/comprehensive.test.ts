@@ -46,6 +46,7 @@ let truckId: number;
 let routeId: number;
 let cargoTypeId: number;
 let containerTypeId: number;
+let fuelSupplierId: number;
 let adminUserId: number;
 let tripId: number;
 let allTrucks: typeof s.trucks.$inferSelect[];
@@ -95,6 +96,15 @@ before(async () => {
     await db.insert(s.fuelConfig).values({ loadedNorm: '43', emptyNorm: '25', unitPrice: '25000' });
   }
   await cacheInvalidate('config:fuel');
+  // A trip that draws fuel but names no supplier cannot be completed —
+  // LedgerService keys the fuel entry on fuel_supplier_id and silently drops
+  // the cost when it is null (see fuel-supplier-required.test.ts). These E2E
+  // trips run AUTO fuel mode, so they always carry fuel and need a supplier.
+  let [fuelSup] = await db.select().from(s.suppliers).where(eq(s.suppliers.isFuelSupplier, true)).limit(1);
+  if (!fuelSup) {
+    [fuelSup] = await db.insert(s.suppliers).values({ name: 'NCC dầu E2E', isFuelSupplier: true }).returning();
+  }
+  fuelSupplierId = fuelSup.id;
   const [containerType] = await db.select().from(s.containerTypes).limit(1);
   if (!containerType) {
     const [created] = await db.insert(s.containerTypes).values({ code: '40HC', name: "40'HC" }).returning();
@@ -307,6 +317,9 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
       cargoTypeId,
       containerTypeId,
       departureDate: '2026-06-10',
+      // AUTO fuel mode always books fuel, and a trip with fuel but no supplier
+      // is refused at completion (the cost would post to no payable ledger).
+      fuelSupplierId,
       notes: 'Comprehensive E2E test trip'
     })
   });
@@ -385,6 +398,11 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
       version: updatedVersion,
       fuelMode: FuelMode.AUTO,
       legs: [{ sequence: 1, origin: 'Hà Nội', destination: 'Hải Phòng', km: 120, loadingType: LoadingType.HANG }],
+      // The trip books fuel against a named supplier, so the actuals must carry
+      // an allocation for the whole load (55 base + 5 supplement = 60 lít) or
+      // the service rejects the mismatch.
+      fuelSupplierId,
+      fuelAllocations: [{ supplierId: fuelSupplierId, liters: 60, paymentMethod: 'CREDIT' }],
       fuelSupplementLiters: 5, // supplementary liters
       fuelSupplementReason: 'Kẹt xe đường tránh kéo dài',
       tollsDiscount: 0,
