@@ -23,7 +23,6 @@ import type { CustomerAging } from '../hooks/useQueries';
 import {
   usePageAnimations,
   useListAnimations,
-  useCounterAnimation,
 } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { AssetIcon } from '../components/AssetIcon';
@@ -132,26 +131,6 @@ export default function DebtListPage() {
     ready: !loading,
     selectors: ['.hero-kpi-card', '.hero-kpi-mini', '.debt-aging-card', '.debt-data-card'],
   });
-  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 300, stagger: 80 });
-
-  /* ── Counter refs ── */
-  const counterRefs = useRef<{
-    heroTotal: HTMLSpanElement | null;
-    overdueCount: HTMLSpanElement | null;
-    highRiskCount: HTMLSpanElement | null;
-    currentAmount: HTMLSpanElement | null;
-    d30Amount: HTMLSpanElement | null;
-    d60Amount: HTMLSpanElement | null;
-    over90Amount: HTMLSpanElement | null;
-  }>({
-    heroTotal: null,
-    overdueCount: null,
-    highRiskCount: null,
-    currentAmount: null,
-    d30Amount: null,
-    d60Amount: null,
-    over90Amount: null,
-  });
 
   /* ── Data processing (preserved exactly) ── */
   const customerDebts = useMemo<CustomerDebtInfo[]>(() => {
@@ -221,23 +200,15 @@ export default function DebtListPage() {
 
   const { rootRef: listRef } = useListAnimations({ itemSelector: '.m-card, table tbody tr', deps: [filteredDebts] });
 
-  /* ── Counter animation trigger ── */
-  useEffect(() => {
-    if (loading || prefersReduced) return;
-
-    const r = counterRefs.current;
-    animateCounters([
-      { el: r.heroTotal, value: totals.total, format: moneyParts(totals.total, false).format },
-      { el: r.overdueCount, value: totals.overdueCount, suffix: '' },
-      { el: r.highRiskCount, value: totals.highRiskCount, suffix: '' },
-      { el: r.currentAmount, value: totals.current, format: moneyParts(totals.current, compact).format },
-      { el: r.d30Amount, value: totals.d30, format: moneyParts(totals.d30, compact).format },
-      { el: r.d60Amount, value: totals.d60, format: moneyParts(totals.d60, compact).format },
-      { el: r.over90Amount, value: totals.over90, format: moneyParts(totals.over90, compact).format },
-    ]);
-  }, [loading, totals, prefersReduced, animateCounters, compact]);
-
   /* ── Helpers ── */
+  // No count-up animation on the money figures. The hero card and the four
+  // aging buckets used to be filled in by an anime.js counter that wrote
+  // textContent out-of-band of React over ~1.2s with a per-bucket stagger, so
+  // a reload caught the page mid-animation: the card briefly showed 0₫ and the
+  // buckets did not sum to it. The counters are removed here for the same
+  // reason as on /payables — money must render authoritatively from React so
+  // the card and the buckets can never describe two different totals
+  // (kanban 091026010100, re-verified as 091026211500 on /debt).
   const heroMoney = moneyParts(totals.total, false);
 
   const handleBucketClick = (bucket: AgingBucket) => {
@@ -289,8 +260,8 @@ export default function DebtListPage() {
               Tổng công nợ phải thu
             </span>
             <div className="hero-kpi-card__amount debt-hero__amount">
-              <span ref={(el) => { counterRefs.current.heroTotal = el; }}>
-                {prefersReduced ? heroMoney.num : '0'}
+              <span>
+                {heroMoney.num}
               </span>
               <span className="debt-hero__currency">{heroMoney.unit}</span>
             </div>
@@ -313,8 +284,8 @@ export default function DebtListPage() {
           <div className="hero-kpi-mini debt-kpi-mini--danger">
             <div className="hero-kpi-mini__body">
               <span className="hero-kpi-mini__value">
-                <span ref={(el) => { counterRefs.current.overdueCount = el; }}>
-                  {prefersReduced ? totals.overdueCount : 0}
+                <span>
+                  {totals.overdueCount}
                 </span>
               </span>
               <span className="hero-kpi-mini__label">quá hạn</span>
@@ -326,8 +297,8 @@ export default function DebtListPage() {
           <div className="hero-kpi-mini debt-kpi-mini--warning">
             <div className="hero-kpi-mini__body">
               <span className="hero-kpi-mini__value">
-                <span ref={(el) => { counterRefs.current.highRiskCount = el; }}>
-                  {prefersReduced ? totals.highRiskCount : 0}
+                <span>
+                  {totals.highRiskCount}
                 </span>
               </span>
               <span className="hero-kpi-mini__label">rủi ro cao</span>
@@ -372,13 +343,8 @@ export default function DebtListPage() {
                 <span className="debt-aging-card__label">{bucket.label}</span>
               </div>
               <div className="debt-aging-card__amount">
-                <span ref={(el) => {
-                  if (bucket.amountKey === 'current') counterRefs.current.currentAmount = el;
-                  else if (bucket.amountKey === 'd30') counterRefs.current.d30Amount = el;
-                  else if (bucket.amountKey === 'd60') counterRefs.current.d60Amount = el;
-                  else if (bucket.amountKey === 'over90') counterRefs.current.over90Amount = el;
-                }}>
-                  {prefersReduced ? money.num : '0'}
+                <span>
+                  {money.num}
                 </span>
                 <span className="debt-aging-card__unit">{money.unit}</span>
               </div>
