@@ -326,7 +326,11 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
   const [username, setUsername] = useState('');
   const [email, setEmail]       = useState('');
   const [phone, setPhone]       = useState('');
-  const [role, setRole]         = useState<Role>(Role.DRIVER);
+  // No preselect: the generic "Thêm tài khoản" entry point must not open as a
+  // driver form. The role is chosen first, and the driver-only fields appear
+  // only once DRIVER is picked (kanban 091026134710).
+  const [role, setRole]         = useState<Role | ''>('');
+  const [roleTouched, setRoleTouched] = useState(false);
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
   const [baseSalary, setBaseSalary]           = useState('');
@@ -336,7 +340,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
   useEffect(() => {
     if (isOpen) {
       setFullName(''); setUsername(''); setEmail('');
-      setPhone(''); setRole(Role.DRIVER);
+      setPhone(''); setRole(''); setRoleTouched(false);
       setPassword(''); setShowPw(false);
       setBaseSalary(''); setSocialInsurance(''); setAssignedTruckId(null);
     }
@@ -351,6 +355,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
   const pwError = password.length > 0 && !pwValid;
 
   const handleSubmit = async () => {
+    if (!role) { setRoleTouched(true); return; }
     const payload: CreateData = { fullName, username, email, phone, role, password };
     if (role === Role.DRIVER) {
       payload.baseSalary = baseSalary;
@@ -361,14 +366,14 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
     if (ok) onClose();
   };
 
-  const title = role === Role.DRIVER ? 'Thêm lái xe' : 'Tạo tài khoản mới';
+  const title = role === Role.DRIVER ? 'Thêm lái xe' : 'Thêm tài khoản';
 
   return (
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      subtitle={role === Role.DRIVER ? 'Tài khoản đăng nhập + hồ sơ lái xe' : 'Điền thông tin bên dưới'}
+      subtitle={role === '' ? 'Chọn vai trò và điền thông tin' : role === Role.DRIVER ? 'Tài khoản đăng nhập + hồ sơ lái xe' : 'Điền thông tin bên dưới'}
       onConfirm={handleSubmit}
       footer={
         <>
@@ -440,8 +445,13 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
       {/* Role & Password */}
       <div className="users-form-section__title"><ShieldCheck size={12} /> Quyền & Mật khẩu</div>
       <div className="row-2">
-        <FormGroup label="Vai trò">
-          <select className="input" value={role} onChange={e => setRole(e.target.value as Role)}>
+        <FormGroup label="Vai trò *" error={roleTouched && !role ? 'Vui lòng chọn vai trò' : undefined}>
+          <select
+            className="input"
+            value={role}
+            onChange={e => { setRole(e.target.value as Role | ''); setRoleTouched(true); }}
+          >
+            <option value="">— Chọn vai trò —</option>
             {Object.values(Role).map(r => (
               <option key={r} value={r}>{ROLE_LABELS[r]}</option>
             ))}
