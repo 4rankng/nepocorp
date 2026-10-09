@@ -100,6 +100,7 @@ export const CONFIG = {
 // requireRoles MANAGER/ACCOUNTANT/ADMIN.
 export const TIRES = {
   LIST: '/fleet/tires',
+  IMPORT: '/fleet/tires/import',
   DETAIL: (id: number) => `/fleet/tires/${id}`,
   INSTALL: (id: number) => `/fleet/tires/${id}/install`,
   REMOVE: (id: number) => `/fleet/tires/${id}/remove`,

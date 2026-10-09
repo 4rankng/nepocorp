@@ -70,6 +70,9 @@ describe('create trip recovery', () => {
     { legs: [{ ...validLegs[0], destination: '' }], state: {} },
     { legs: [{ ...validLegs[0], km: '-1' }], state: {} },
     { legs: validLegs, state: { fuelSupplementLiters: '5', fuelSupplementReason: '' } },
+    // A fat-fingered pump price (225 thay vì 22.500) would book a nonsense
+    // fuel payable — kanban 081026232520.
+    { legs: validLegs, state: { fuelActualUnitPrice: '225' } },
   ])('validates optional data before creating the plan: %j', async (props) => {
     const { result } = setup(props);
     await act(async () => { await result.current.handleSubmit(); });

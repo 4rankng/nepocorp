@@ -34,10 +34,18 @@ export interface ExpenseUpdateInput {
   note?: string | null;
 }
 
+export type ExpenseVehicleComponent = 'COMPANY' | 'TRUCK' | 'TRAILER';
+
 export interface ExpenseListFilters {
   truckId?: number;
   supplierId?: number;
   categoryId?: number;
+  /**
+   * Loại chi phí filter (kanban 081026232570). 'COMPANY' is the absence of a
+   * vehicle — the row stores vehicle_component = NULL there, not a 'COMPANY'
+   * enum value, so it must be queried with IS NULL.
+   */
+  vehicleComponent?: ExpenseVehicleComponent;
   fromDate?: string;
   toDate?: string;
   page?: number;
@@ -252,6 +260,11 @@ export async function listExpenses(dbOrTx: typeof db | Tx, filters: ExpenseListF
   }
   if (filters.categoryId !== undefined) {
     conditions.push(eq(s.expenses.categoryId, filters.categoryId));
+  }
+  if (filters.vehicleComponent === 'COMPANY') {
+    conditions.push(isNull(s.expenses.vehicleComponent));
+  } else if (filters.vehicleComponent) {
+    conditions.push(eq(s.expenses.vehicleComponent, filters.vehicleComponent));
   }
   if (filters.fromDate) {
     conditions.push(gte(s.expenses.expenseDate, filters.fromDate));

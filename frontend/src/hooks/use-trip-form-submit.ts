@@ -11,6 +11,7 @@ import type { UseTripFormStateReturn, ContainerFormRow, SealFormRow } from './us
 import { resolveContainerCount } from './tripFormDispatchUtils';
 import { buildContainerBatchPayload } from '../components/trip/container-instance-helpers';
 import { moneyInputToNumber } from '../lib/moneyInput';
+import { fuelPriceSanityError } from './tripFuelPriceGuard';
 
 function moneyOrZero(value: string): number { return moneyInputToNumber(value) ?? 0; }
 function moneyOrUndefined(value: string): number | undefined { return moneyInputToNumber(value); }
@@ -166,6 +167,9 @@ const handleSubmit = useCallback(
         focusAndScroll("fuelSupplementReason");
         return;
       }
+      // A fat-fingered pump price would book a nonsense fuel payable (081026232520).
+      const priceErr = fuelPriceSanityError(moneyInputToNumber(s.fuelActualUnitPrice));
+      if (priceErr) { s.setError(priceErr); showToast({ kind: 'error', message: priceErr }); focusAndScroll("fuelActualUnitPrice"); return; }
     }
 
     // An allocation exists only when its litres field has a value. The form

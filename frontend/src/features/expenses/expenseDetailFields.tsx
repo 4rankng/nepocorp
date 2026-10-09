@@ -5,7 +5,7 @@
  * second copy of the form.
  */
 
-interface VehicleOption { id: number; licensePlate: string }
+interface VehicleOption { id: number; licensePlate: string; currentTrailerId?: number | null }
 
 /** Display-only thousands grouping for the amount input (vi-VN). */
 const formatAmountDisplay = (val: string) => {
@@ -44,6 +44,13 @@ export function ExpenseDetailFields({
   receiptId, onReceiptIdChange, note, onNoteChange,
   errors,
 }: DetailFieldsProps) {
+  const selectedTrailerId = expenseType === 'TRAILER' ? truckId : '';
+  const trailerPairing = (() => {
+    if (selectedTrailerId === '') return null;
+    const owner = trucks.find(t => t.currentTrailerId === selectedTrailerId);
+    return owner ? owner.licensePlate : null;
+  })();
+
   return <>
               <div className="expense-group">
                 <label htmlFor="expenseType" className="expense-label">Loại chi phí</label>
@@ -96,6 +103,21 @@ export function ExpenseDetailFields({
                       ))}
                   </select>
                   {errors.truckId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}
+                  {/* Which tractor is this trailer hooked to right now? Staff reported
+                      entering the rơ-moóc plate and not being able to see the paired
+                      truck anywhere, which made it look like the plate jumped to the
+                      wrong vehicle. The pairing already lives on trucks.currentTrailerId,
+                      and both catalogs are on this page, so it resolves locally. */}
+                  {trailerPairing && (
+                    <p className="expense-vehicle-hint">
+                      Đang ghép với xe đầu kéo: <strong>{trailerPairing}</strong>
+                    </p>
+                  )}
+                  {selectedTrailerId !== '' && !trailerPairing && (
+                    <p className="expense-vehicle-hint expense-vehicle-hint--muted">
+                      Rơ-moóc này hiện chưa ghép với xe đầu kéo nào.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -122,6 +144,14 @@ export function ExpenseDetailFields({
 
               {showValidityFields && (
                 <>
+                  {/* Hiệu lực belongs to the CATEGORY's renewal cycle (đăng kiểm,
+                      phí đường bộ…), not to the vehicle. Staff read it as an
+                      unexplained required field on a plain chi phí, so spell out
+                      what the window means (kanban 081026232570). */}
+                  <p className="expense-validity-hint" style={{ gridColumn: '1 / -1' }}>
+                    Hạng mục này có tính gia hạn định kỳ — nhập khoảng thời gian khoản chi có hiệu lực
+                    (ví dụ: phí đường bộ 1 năm) để hệ thống nhắc khi gần hết hạn.
+                  </p>
                   <div className="expense-group">
                     <label htmlFor="validFrom" className="expense-label">Hiệu lực từ <span style={{ color: 'var(--danger)' }}>*</span></label>
                     <input

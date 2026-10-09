@@ -1,6 +1,6 @@
 import { api } from '../lib/api';
 import { TIRES } from '@tingting/shared';
-import type { Tire, PaginatedResponse } from '@tingting/shared';
+import type { Tire, PaginatedResponse, TireImportRow, TireImportResult } from '@tingting/shared';
 
 /** Editable tire fields shared by create + update payloads. */
 export type TireWritePayload = Partial<{
@@ -58,4 +58,11 @@ export const tireClient = {
 
   /** Dispose of (thanh lý) a tire with a reason. */
   dispose: (id: number, reason: string) => api.post<Tire>(TIRES.DISPOSE(id), { reason }),
+
+  /**
+   * Bulk import (kanban 081026215220). Reports per-row outcomes so a partly-bad
+   * sheet keeps its good rows instead of rolling back the whole batch.
+   */
+  importTires: (rows: TireImportRow[]) =>
+    api.post<TireImportResult>(TIRES.IMPORT, { rows }),
 };

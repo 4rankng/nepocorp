@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tireClient, type TireWritePayload } from '../api/tireClient';
 import { qk } from '../api/keys';
-import type { Tire } from '@tingting/shared';
+import type { Tire, TireImportRow } from '@tingting/shared';
 
 /** All non-deleted tires; callers filter client-side by truckId / trailerId. */
 export function useTires() {
@@ -43,6 +43,15 @@ export function useDeleteTire() {
   const invalidate = useInvalidateTires();
   return useMutation({
     mutationFn: (id: number) => tireClient.delete(id),
+    onSuccess: invalidate,
+  });
+}
+
+/** Bulk import (kanban 081026215220) — one sheet, per-row outcome report. */
+export function useImportTires() {
+  const invalidate = useInvalidateTires();
+  return useMutation({
+    mutationFn: (rows: TireImportRow[]) => tireClient.importTires(rows),
     onSuccess: invalidate,
   });
 }

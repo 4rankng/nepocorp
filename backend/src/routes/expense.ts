@@ -12,7 +12,7 @@ import {
   getRenewalReminders,
   getExpense,
 } from '../services/expense.service';
-import type { ExpenseUpdateInput } from '../services/expense.service';
+import type { ExpenseUpdateInput, ExpenseVehicleComponent } from '../services/expense.service';
 import { asyncHandler } from '../middleware/asyncHandler';
 import multer from 'multer';
 import sharp from 'sharp';
@@ -47,10 +47,16 @@ router.get('/reports/renewals', asyncHandler(async (_req: Request, res: Response
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const { page, limit: pageSize } = parsePagination(req, { limit: 20, limitParam: 'pageSize' });
+  const rawComponent = req.query.vehicleComponent as string | undefined;
+  const vehicleComponent: ExpenseVehicleComponent | undefined =
+    rawComponent === 'COMPANY' || rawComponent === 'TRUCK' || rawComponent === 'TRAILER'
+      ? rawComponent
+      : undefined;
   const filters = {
     truckId: req.query.truckId ? Number(req.query.truckId) : undefined,
     supplierId: req.query.supplierId ? Number(req.query.supplierId) : undefined,
     categoryId: req.query.categoryId ? Number(req.query.categoryId) : undefined,
+    vehicleComponent,
     fromDate: req.query.fromDate as string | undefined,
     toDate: req.query.toDate as string | undefined,
     page,

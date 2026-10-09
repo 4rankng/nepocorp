@@ -209,36 +209,76 @@ select.expense-input {
   background: var(--accent-soft);
 }
 
-/* Action buttons */
+/* Action buttons.
+   Xóa / Hủy / Cập nhật sit stacked in a column, so they read as a set only if
+   they share a height. Each button used to set its own padding (8 / 12 / 13px)
+   and the cancel set its own font-size, which rendered three visibly different
+   heights. One shared rule owns the box now; per-button rules only style the
+   surface. */
 .expense-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.expense-btn-cancel {
-  padding: 12px 20px;
-  font-size: var(--fs-sm);
+.expense-actions .btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 48px;
+  padding: 13px 20px;
+  font-size: var(--fs-body);
   border-radius: 10px;
+}
+
+.expense-btn-cancel {
   border: 1px solid var(--line-3);
   background: transparent;
-  font-weight: 600;
   color: var(--ink-2);
-  cursor: pointer;
-  text-align: center;
-  width: 100%;
 }
 .expense-btn-cancel:hover {
   background: var(--bg-2);
 }
 
-/* Save button — uses Global .btn--primary (components/Button.css). Only the
-   full-width layout modifier (.expense-btn-submit) is defined here. */
+/* Read-only pairing hint shown under the rơ-moóc picker. */
+.expense-vehicle-hint {
+  margin-top: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  color: var(--ink-2);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+.expense-vehicle-hint--muted {
+  color: var(--ink-4);
+  font-style: italic;
+}
 
+/* Explains the category-driven "Hiệu lực từ/đến" window so it does not read
+   as an unexplained required field on a plain phiếu chi. */
+.expense-validity-hint {
+  margin: 0 0 4px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--bg-2);
+  color: var(--ink-3);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+
+/* Underlying reason behind a failed catalog load, so a retry is diagnosable
+   instead of re-firing the same request into the same blank banner. */
+.expense-load-error-detail {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--ink-4);
+  word-break: break-word;
+}
+
+/* Save button — uses Global .btn--primary (components/Button.css). Only the
+   layout modifier is defined here; sizing comes from .expense-actions .btn. */
 .expense-btn-submit {
-  width: 100%;
   justify-content: center;
-  padding: 13px 24px;
 }
 
 /* ── Mobile responsive ── */
@@ -256,10 +296,9 @@ select.expense-input {
     font-size: var(--fs-md); /* prevents iOS zoom */
     min-height: 44px;
   }
-  .expense-btn-submit,
-  .expense-btn-cancel {
-    min-height: 44px;
-  }
+  /* No min-height override here: .expense-actions .btn already sets 48px,
+     which clears the 44px touch target and keeps all three buttons equal on
+     phones as well as desktop. */
   .expense-upload-zone {
     min-height: 100px;
   }

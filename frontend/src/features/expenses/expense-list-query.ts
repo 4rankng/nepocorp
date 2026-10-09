@@ -4,6 +4,8 @@ export interface ExpenseListQuery {
   supplierId?: number;
   categoryId?: number;
   truckId?: number;
+  /** 'COMPANY' = no vehicle, 'TRUCK' = xe đầu kéo, 'TRAILER' = rơ-moóc. */
+  vehicleComponent?: 'COMPANY' | 'TRUCK' | 'TRAILER';
   dateFrom?: string;
   dateTo?: string;
 }
@@ -21,6 +23,7 @@ export function buildExpenseListSearchParams(params: ExpenseListQuery): URLSearc
   if (params.supplierId) qs.set('supplierId', String(params.supplierId));
   if (params.categoryId) qs.set('categoryId', String(params.categoryId));
   if (params.truckId) qs.set('truckId', String(params.truckId));
+  if (params.vehicleComponent) qs.set('vehicleComponent', params.vehicleComponent);
   if (params.dateFrom) qs.set('fromDate', params.dateFrom);
   if (params.dateTo) qs.set('toDate', params.dateTo);
   return qs;

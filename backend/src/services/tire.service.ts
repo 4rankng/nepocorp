@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, ne } from 'drizzle-orm';
+import { eq, and, isNull, ne, inArray } from 'drizzle-orm';
 import { TIRE_STATUS_LABELS, type TireStatus } from '@tingting/shared';
 import { ApiError } from '../errors';
 
@@ -328,4 +328,163 @@ export async function disposeTire(tireId: number, input: DisposeTireInput) {
 /** Typed accessor for routes to rethrow HttpError-shaped status codes. */
 export function isHttpError(e: unknown): e is HttpError {
   return e instanceof HttpError;
+}
+
+/** One row of a bulk tire import (kanban 081026215220). */
+export interface TireImportRowInput {
+  serial?: unknown;
+  /** Biển số đầu kéo hoặc rơ-moóc; blank = lốp dự phòng. */
+  plate?: unknown;
+  position?: unknown;
+  size?: unknown;
+  installedAt?: unknown;
+  purchasedAt?: unknown;
+}
+
+export interface TireImportOutcome {
+  row: number;
+  serial: string;
+  status: 'created' | 'skipped' | 'error';
+  message?: string;
+}
+
+export interface TireImportSummary {
+  total: number;
+  created: number;
+  skipped: number;
+  errors: number;
+  results: TireImportOutcome[];
+}
+
+/**
+ * Accept yyyy-mm-dd, dd/mm/yyyy and Excel's "m/d/yy" so a pasted sheet
+ * round-trips instead of failing validation on the way in.
+ */
+function normalizeImportDate(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  const raw = String(value).trim();
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(raw);
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/.exec(raw);
+  if (m) {
+    const year = Number(m[3]) < 70 ? `20${m[3]}` : `19${m[3]}`;
+    return `${year}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+  return null;
+}
+
+/**
+ * Bulk tire import (kanban 081026215220).
+ *
+ * Staff back-filling the fleet's existing tires was doing it one form submit at
+ * a time. This accepts a parsed sheet and reports per-row outcomes rather than
+ * failing the whole batch: a partially bad sheet is the normal case when
+ * transcribing real inventory, and losing 40 good rows to one typo is not
+ * acceptable.
+ *
+ * The plate column is the operator-facing field — nobody types truck/trailer
+ * surrogate keys — so a plate resolves against BOTH catalogs and is ambiguous
+ * if it exists as both. Rows without a plate land in the spare inventory.
+ */
+export async function importTiresFromRows(rawRows: TireImportRowInput[]): Promise<TireImportSummary> {
+  // One plate lookup for the whole batch instead of per row.
+  const plates = Array.from(new Set(
+    rawRows
+      .map(r => String(r?.plate ?? '').trim())
+      .filter(Boolean),
+  ));
+  const [truckRows, trailerRows] = await Promise.all([
+    plates.length > 0
+      ? db.select({ id: s.trucks.id, licensePlate: s.trucks.licensePlate })
+        .from(s.trucks).where(and(inArray(s.trucks.licensePlate, plates), isNull(s.trucks.deletedAt)))
+      : Promise.resolve([] as Array<{ id: number; licensePlate: string }>),
+    plates.length > 0
+      ? db.select({ id: s.trailers.id, licensePlate: s.trailers.licensePlate })
+        .from(s.trailers).where(and(inArray(s.trailers.licensePlate, plates), isNull(s.trailers.deletedAt)))
+      : Promise.resolve([] as Array<{ id: number; licensePlate: string }>),
+  ]);
+  const truckByPlate = new Map(truckRows.map(t => [t.licensePlate, t.id]));
+  const trailerByPlate = new Map(trailerRows.map(t => [t.licensePlate, t.id]));
+
+  const results: TireImportOutcome[] = [];
+  const insertable: Array<typeof s.tires.$inferInsert> = [];
+
+  rawRows.forEach((raw, i) => {
+    const rowNo = i + 1;
+    const r = (raw ?? {}) as Record<string, unknown>;
+    const serial = String(r.serial ?? '').trim();
+    if (!serial) {
+      results.push({ row: rowNo, serial: '', status: 'error', message: 'Thiếu số serial' });
+      return;
+    }
+    const plate = String(r.plate ?? '').trim();
+    const truckId = truckByPlate.get(plate) ?? null;
+    const trailerId = trailerByPlate.get(plate) ?? null;
+    if (plate && !truckId && !trailerId) {
+      results.push({ row: rowNo, serial, status: 'error', message: `Không tìm thấy biển số ${plate}` });
+      return;
+    }
+    if (truckId && trailerId) {
+      results.push({ row: rowNo, serial, status: 'error', message: `Biển số ${plate} tồn tại ở cả đầu kéo và rơ-moóc` });
+      return;
+    }
+    const size = String(r.size ?? '').trim() || null;
+    const position = String(r.position ?? '').trim() || null;
+    const installedAt = normalizeImportDate(r.installedAt);
+    const purchasedAt = normalizeImportDate(r.purchasedAt);
+    if (r.installedAt && !installedAt) {
+      results.push({ row: rowNo, serial, status: 'error', message: `Ngày lắp không hợp lệ: ${String(r.installedAt)}` });
+      return;
+    }
+    if (r.purchasedAt && !purchasedAt) {
+      results.push({ row: rowNo, serial, status: 'error', message: `Ngày mua không hợp lệ: ${String(r.purchasedAt)}` });
+      return;
+    }
+    insertable.push({
+      serial,
+      truckId,
+      trailerId,
+      position,
+      size,
+      installedAt,
+      purchasedAt,
+      cost: '0',
+      // A row that names a vehicle is mounted; a blank plate means a spare.
+      status: (truckId || trailerId) ? 'IN_USE' : 'IN_STOCK',
+    });
+    results.push({ row: rowNo, serial, status: 'created' });
+  });
+
+  if (insertable.length > 0) {
+    // Serials that already exist are filtered in SQL so they report as
+    // "skipped" rather than rolling back the whole batch on a unique violation.
+    const duplicates = (await db.select({ serial: s.tires.serial }).from(s.tires)
+      .where(inArray(s.tires.serial, insertable.map(r => r.serial))))
+      .map(r => r.serial);
+    const dupSet = new Set(duplicates);
+    const toInsert = insertable.filter(r => !dupSet.has(r.serial));
+
+    for (const r of results) {
+      if (r.status === 'created' && dupSet.has(r.serial)) {
+        r.status = 'skipped';
+        r.message = 'Serial đã tồn tại trong hệ thống';
+      }
+    }
+    if (toInsert.length > 0) {
+      await db.insert(s.tires).values(toInsert);
+    }
+  }
+
+  return {
+    total: results.length,
+    created: results.filter(r => r.status === 'created').length,
+    skipped: results.filter(r => r.status === 'skipped').length,
+    errors: results.filter(r => r.status === 'error').length,
+    results,
+  };
 }

@@ -47,6 +47,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <div className="field">
             <label>Đơn giá nhiên liệu thực tế (₫/lít)</label>
             <InputWithPrefix
+              id="fuelActualUnitPrice"
               value={form.fuelActualUnitPrice}
               onChange={form.setFuelActualUnitPrice}
               placeholder="Để trống = dùng giá cấu hình"
@@ -71,6 +72,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           <div className="field">
             <label>Đơn giá nhiên liệu thực tế (₫/lít)</label>
             <InputWithPrefix
+              id="fuelActualUnitPrice"
               value={form.fuelActualUnitPrice}
               onChange={form.setFuelActualUnitPrice}
               placeholder="Để trống = dùng giá cấu hình"

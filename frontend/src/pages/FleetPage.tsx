@@ -4,6 +4,7 @@ import { Truck, Container, UserCheck, Download, CheckCircle, CalendarPlus } from
 import { downloadCSV } from "../lib/csv";
 import { PageHeader, Btn, KPI } from "../components/UI";
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { SkeletonKPIs } from '../components/shared/Skeleton';
 import { useCRUD } from "../hooks/useCRUD";
 import { useTrucksAndDrivers } from "../hooks/useCatalogQueries";
 import { usePageAnimations } from "../hooks/animations";
@@ -48,12 +49,16 @@ export default function FleetPage() {
   } | null>(null);
   const queryClient = useQueryClient();
   const { rootRef } = usePageAnimations({ ready: true });
-  const { data: fleetData } = useTrucksAndDrivers();
-  const { data: trailers = [] } = useQuery({
+  const { data: fleetData, isLoading: fleetLoading } = useTrucksAndDrivers();
+  const { data: trailers = [], isLoading: trailersLoading } = useQuery({
     queryKey: qk.catalogs.trailers,
     queryFn: () => configClient.getTrailers(),
     staleTime: 60_000,
   });
+  // Until both catalogs resolve, every count reads 0 — which staff read as "no
+  // trucks" rather than "not loaded yet" (kanban 081026232570). Render the
+  // shared KPI skeleton instead of a zeroed strip.
+  const fleetKpiLoading = fleetLoading || trailersLoading;
   const trucks = useMemo(() => fleetData?.trucks ?? [], [fleetData?.trucks]);
   const drivers = useMemo(() => fleetData?.drivers ?? [], [fleetData?.drivers]);
   const {
@@ -180,6 +185,9 @@ export default function FleetPage() {
       />
 
       {/* KPI Strip */}
+      {fleetKpiLoading ? (
+        <SkeletonKPIs count={4} />
+      ) : (
       <div className="kpi-grid">
         <KPI
           label="Xe đầu kéo"
@@ -275,6 +283,7 @@ export default function FleetPage() {
           }
         />
       </div>
+      )}
 
       {scheduleLoadFailed ? (
         <div className="fleet-schedule-load-error" role="status">

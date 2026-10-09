@@ -24,6 +24,16 @@ export function yoyPct(current: number, previous: number): string {
   return `${Number(pct) >= 0 ? '+' : ''}${pct}%`;
 }
 
+/**
+ * Full YoY delta label. When there is no prior-year figure `yoyPct` returns
+ * "Mới", and naively appending " so cùng kỳ" rendered "Mớiso cùng kỳ" with the
+ * words fused (kanban 081026232570).
+ */
+export function yoyDeltaLabel(current: number, previous: number): string {
+  const pct = yoyPct(current, previous);
+  return pct === 'Mới' || pct === '—' ? pct : `${pct} so cùng kỳ`;
+}
+
 export function yoyClass(current: number, previous: number): string {
   if (previous == null) return '';
   return current >= previous ? 'pnl-row__pct--up' : 'pnl-row__pct--down';

@@ -176,6 +176,32 @@ export interface TirePosition {
   deletedAt: string | null;
 }
 
+/** One row of a bulk tire import (kanban 081026215220). */
+export interface TireImportRow {
+  serial: string;
+  /** Biển số xe đầu kéo hoặc rơ-moóc; blank = lốp dự phòng (IN_STOCK). */
+  plate?: string | null;
+  position?: string | null;
+  size?: string | null;
+  installedAt?: string | null;
+  purchasedAt?: string | null;
+}
+
+export interface TireImportRowResult {
+  row: number;
+  serial: string;
+  status: 'created' | 'skipped' | 'error';
+  message?: string;
+}
+
+export interface TireImportResult {
+  total: number;
+  created: number;
+  skipped: number;
+  errors: number;
+  results: TireImportRowResult[];
+}
+
 export interface Route {
   id: number;
   name: string;
@@ -624,6 +650,16 @@ export interface SupplierStatement {
   latestActivityDate?: string | null;
   /** Only present when the request was scoped to a date range. */
   periodSummary?: PeriodSummary;
+  /**
+   * Outstanding debt across the WHOLE ledger, independent of any date filter.
+   *
+   * `totalOutstanding` is derived from the date-filtered rows, so on a
+   * period-scoped request it reports that period's net movement — not what the
+   * counterparty actually owes. Summary headers must use this field instead.
+   */
+  currentTotalOutstanding?: number;
+  /** Aging as of the period end; null when the request had no end date. */
+  agingAsOfPeriodEnd?: AgingBucket[] | null;
 }
 
 /** One per-trip line of the supplier fuel statement (Bảng kê xăng dầu). */
@@ -645,6 +681,24 @@ export interface SupplierFuelStatementRow {
   hadReversal: boolean;
 }
 
+/**
+ * A trip that drew fuel inside the period but was never attributed to any
+ * supplier, so its cost never reached a payable ledger.
+ *
+ * These are invisible to every fuel statement by construction — the statement
+ * is built FROM ledger rows, and a trip with no supplier posts none. Surfacing
+ * them is the only way the accountant learns a delivery is missing.
+ */
+export interface SupplierFuelStatementUnassignedTrip {
+  tripId: number;
+  tripCode: string | null;
+  departureDate: string | null;
+  licensePlate: string | null;
+  routeName: string | null;
+  liters: number | null;
+  totalFuelCost: number | null;
+}
+
 export interface SupplierFuelStatement {
   supplier: Pick<Supplier, 'id' | 'name' | 'phone' | 'contactPerson'>;
   dateFrom: string | null;
@@ -657,10 +711,23 @@ export interface SupplierFuelStatement {
   otherDebits: number;
   /** Non-fuel credits in the period (misc payables) — increase the debt. */
   otherCredits: number;
+  /**
+   * Main detail table — grouped by trip, filtered on the trip's DEPARTURE date.
+   * This is the basis the fuel supplier bills on, so it is the one the
+   * accountant reconciles against.
+   */
   rows: SupplierFuelStatementRow[];
-  /** = fuelNet. Σ of the Thành tiền column. */
+  /** Same grouping, filtered on POSTING date — kept for the variance block. */
+  postingRows: SupplierFuelStatementRow[];
+  /** = fuelNet. Σ of the Thành tiền column of `postingRows`. */
   totalAmount: number;
+  /** Σ of the Thành tiền column of `rows` (departure basis). */
+  departureTotalAmount: number;
+  /** fuelNet − departureTotalAmount: fuel drawn in one month, posted in another. */
+  crossingMonthAmount: number;
   totalLiters: number | null;
+  /** Trips in the period with fuel but no supplier — absent from this statement. */
+  unassignedTrips: SupplierFuelStatementUnassignedTrip[];
   /** Net fuel per trip-departure month (all postings, any date) for trips
    *  departing inside the period — the reconciliation against the supplier's
    *  delivery-month invoice. */
@@ -1200,6 +1267,10 @@ export interface CustomerStatement {
   latestActivityDate?: string | null;
   /** Only present when the request was scoped to a date range. */
   periodSummary?: PeriodSummary;
+  /** See {@link SupplierStatement.currentTotalOutstanding}. */
+  currentTotalOutstanding?: number;
+  /** See {@link SupplierStatement.agingAsOfPeriodEnd}. */
+  agingAsOfPeriodEnd?: AgingBucket[] | null;
 }
 
 export interface DebtOffset {

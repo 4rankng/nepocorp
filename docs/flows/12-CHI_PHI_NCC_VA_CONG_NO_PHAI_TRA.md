@@ -81,7 +81,7 @@ Form nhập:
 5. **Xe** — chọn xe đầu kéo, **hoặc để trống** (chi phí chung). Khi chọn xe, đánh dấu chi phí thuộc **đầu kéo** hay **rơ-mooc** (dropdown `vehicle_component`: "Đầu kéo" / "Rơ-mooc", mặc định "Đầu kéo"). Chi phí rơ-mooc tự gộp vào lãi gộp của đầu kéo ghép cặp; phân loại chỉ dùng cho báo cáo phân tách.
 6. **Số tiền** (bắt buộc, VND)
 7. **Trạng thái:** Trả ngay (PAID) / Ghi nợ (UNPAID)
-8. **Hiệu lực từ – đến** (`valid_from`/`valid_to`) — **chỉ hiện khi hạng mục là định kỳ**
+8. **Hiệu lực từ – đến** (`valid_from`/`valid_to`) — **chỉ hiện khi hạng mục là định kỳ**. Đây là khoảng thời gian khoản chi có hiệu lực (theo chu kỳ gia hạn của hạng mục, ví dụ phí đường bộ 1 năm), không phải ngày hiệu lực của xe. Dòng gợi ý ngay trên trường giải thích rõ mục đích để tránh hiểu nhầm là trường bắt buộc vô nghĩa với một phiếu chi thường.
 9. **Ghi chú**, **Ảnh hóa đơn** (upload)
 10. **`commission_type`** (chỉ với `COMMISSION_PAYABLE`): `PARTNER_REFERRAL` (chi phí bán hàng) hoặc `CUSTOMER_REBATE` (giảm doanh thu). Hạch toán khác nhau (xem `PRODUCT-SPECS §4.15`).
 
@@ -92,6 +92,7 @@ Form nhập:
 ### 2.4 Công nợ phải trả (/payables, /payables/:id)
 
 - `/payables`: danh sách NCC kèm số dư nợ + tuổi nợ (4 bucket: 0–30 / 31–60 / 61–90 / 90+), giống màn Công nợ phải thu.
+- `/expenses`: thanh lọc gồm NCC, hạng mục, xe và **Loại chi phí** (Chi phí công ty / Xe (Đầu kéo) / Rơ-moóc). Lọc "Chi phí công ty" trả về các phiếu không gắn xe (`vehicle_component` NULL). Bộ lọc ngày lọc theo **ngày phát sinh** — đúng cột đang hiển thị.
 - `/payables/:id`: mở trực tiếp bảng chi tiết NCC với các cột Phát sinh phải trả, Đã thanh toán và Số dư chạy + nút **Ghi thanh toán** (một ô số tiền — không khớp từng phiếu). Công cụ tạo Bảng kê nằm phía dưới bảng chi tiết để không che khuất dữ liệu đối chiếu.
 - `/payables/:id?kind=carrier`: sổ phải trả riêng cho nhà vận chuyển thuê ngoài. Chỉ cước thuê ngoài và các khoản chi trả tương ứng được tính; không được chuyển sang hoặc trộn với sổ phải thu của khách hàng dù đối tác dùng chung danh mục khách hàng.
 - Tại `/payables/:id?kind=carrier`, nhấn **Tạo bảng kê**, chọn **Từ ngày – Đến ngày**, bấm **Lọc lại**, kiểm tra các chuyến rồi **Lưu và xuất Excel**. Bảng kê được lưu với phạm vi `CARRIER`, tách khỏi Bảng kê phải thu `CUSTOMER` của cùng đối tác.
@@ -147,6 +148,20 @@ Kế toán/giám đốc duyệt **phiếu yêu cầu hoàn ứng** theo từng c
 |--------|-------------|---------------------------|
 | **D1 — Dropdown hạng mục/NCC cũ** | Kế toán mở form nhập phiếu chi, danh sách NCC hoặc hạng mục không chứa NCC/hạng mục vừa tạo | Cache client hoặc chưa invalidate query. Form nhập phiếu phải `queryClient.invalidateQueries` cho `['suppliers']` và `['expense-categories']` khi mount. Refresh trang một lần cũng khắc phục tạm thời. |
 | **D2 — Upload ảnh hóa đơn lỗi** | Kế toán tải ảnh lên phiếu chi, báo lỗi dù ảnh đã giảm dung lượng | Kế toán đang dùng sai endpoint. Phiếu chi (expense) dùng `/api/expense-photos/upload` (hoặc tương đương), **không** dùng `/api/trip-photos/upload` (chỉ dành cho ảnh container/seal trên chuyến). Kiểm tra FE form wiring. |
+
+### 2.10 Đối chiếu bảng kê xăng dầu với file NCC
+
+Khi file bảng kê của NCC (ví dụ `Tha_ng_9.xls`) **không có dòng tổng tiền** (các dòng "T.Tiền" = 0), kế toán vẫn đối chiếu được bằng chính bảng kê hệ thống — không cần tự cộng tay:
+
+1. Mở `/payables/:id` của NCC nhiên liệu → **Xuất sao kê → Bảng kê xăng dầu** (XLSX).
+2. File xuất ra đặt **hai tổng cạnh nhau ở đầu sheet** để chọn đúng mốc đối chiếu:
+   - **Tổng theo NGÀY CHUYẾN** — gom theo ngày chuyến đi, **đây là mốc khớp với sổ của hãng dầu** (hãng xuất hóa đơn theo ngày lấy dầu).
+   - **Tổng theo NGÀY GHI SỔ** — gom theo ngày hạch toán, khớp với sổ kế toán của NEPO.
+   - **Chênh lệch** = phần dầu lấy tháng này nhưng ghi sổ tháng sau. Đây là lý do hai tổng không bằng nhau và là câu trả lời cho câu hỏi "đối chiếu theo mốc nào".
+3. Bảng chi tiết bên dưới gom theo **ngày chuyến**; cột **NGÀY GHI SỔ** cho biết chuyến nào đã ghi sổ sang tháng khác.
+4. Mục **"chuyến lấy dầu nhưng chưa gán NCC"** liệt kê các chuyến có số lít dầu nhưng không gắn nhà cung cấp nhiên liệu — các chuyến này **không vào bảng kê và không vào công nợ** (bút toán nhiên liệu dựa trên `fuel_supplier_id`). Xử lý: gán NCC nhiên liệu cho chuyến rồi chốt lại.
+
+> Nếu số dư đầu kỳ trên màn `/payables/:id` khác file NCC: kiểm tra bảng kê đang tổng hợp theo mốc nào (mục 2) và xác nhận với kế toán con số của họ tính theo ngày chuyến hay ngày ghi sổ.
 
 ---
 

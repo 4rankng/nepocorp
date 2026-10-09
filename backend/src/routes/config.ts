@@ -24,7 +24,7 @@ import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelP
 import { cacheInvalidatePattern } from '../lib/redis';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
-import { installTire, removeTire, disposeTire, transferTire, isHttpError, assertTireSerialAvailable } from '../services/tire.service';
+import { installTire, removeTire, disposeTire, transferTire, isHttpError, assertTireSerialAvailable, importTiresFromRows } from '../services/tire.service';
 import {
   getSalaryPeriodDefault,
   updateSalaryPeriodDefault,
@@ -188,6 +188,27 @@ router.use('/fleet/tires', createCrudRouter(s.tires, tireSchema, {
 // Lifecycle endpoints — MANAGER/ACCOUNTANT/ADMIN only (writes). The mount-level
 // config Casbin gate already restricts broadly; requireRoles tightens write actions.
 export const tireLifecycleRouter = Router();
+
+/**
+ * Bulk tire import (kanban 081026215220) — the per-row logic lives in
+ * `importTiresFromRows` so it is unit-testable without an HTTP layer; this
+ * handler owns only the request guards and the cache invalidation.
+ */
+tireLifecycleRouter.post('/import', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as { rows?: unknown };
+  const rawRows = Array.isArray(body?.rows) ? body.rows : [];
+  if (rawRows.length === 0) {
+    return res.status(400).json({ error: 'Không có dòng lốp nào để nhập' });
+  }
+  if (rawRows.length > 1000) {
+    return res.status(400).json({ error: 'Tối đa 1.000 dòng mỗi lần nhập' });
+  }
+  const summary = await importTiresFromRows(rawRows as Parameters<typeof importTiresFromRows>[0]);
+  if (summary.created > 0) {
+    await cacheInvalidatePattern('catalogs:*');
+  }
+  res.json(summary);
+}));
 tireLifecycleRouter.post('/:id/install', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string, 10);
   if (!id || id < 1) return res.status(400).json({ error: 'ID không hợp lệ' });

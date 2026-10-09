@@ -31,6 +31,7 @@ export function FuelSection() {
     <div className="field">
       <label style={labelStyle}>Đơn giá thực tế (đ/lít)</label>
       <InputWithPrefix
+        id="fuelActualUnitPrice"
         placeholder="Để trống = dùng giá cấu hình"
         value={fuelActualUnitPrice}
         onChange={setFuelActualUnitPrice}

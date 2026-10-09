@@ -39,6 +39,7 @@ export function useExpenses(params: {
   supplierId?: number;
   categoryId?: number;
   truckId?: number;
+  vehicleComponent?: 'COMPANY' | 'TRUCK' | 'TRAILER';
   dateFrom?: string;
   dateTo?: string;
 }) {
@@ -60,6 +61,7 @@ export default function ExpenseListPage() {
   const [supplierId, setSupplierId] = useState<number | ''>('');
   const [categoryId, setCategoryId] = useState<number | ''>('');
   const [truckId, setTruckId] = useState<number | ''>('');
+  const [vehicleComponent, setVehicleComponent] = useState<'' | 'COMPANY' | 'TRUCK' | 'TRAILER'>('');
   const [isExporting, setIsExporting] = useState(false);
   const [dateRange, setDateRange] = useState(() => ({
     monthKey,
@@ -81,6 +83,7 @@ export default function ExpenseListPage() {
     supplierId: supplierId || undefined,
     categoryId: categoryId || undefined,
     truckId: truckId || undefined,
+    vehicleComponent: vehicleComponent || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
@@ -123,6 +126,7 @@ export default function ExpenseListPage() {
     setSupplierId('');
     setCategoryId('');
     setTruckId('');
+    setVehicleComponent('');
     setDateRange({ monthKey, dateFrom: monthRange.start, dateTo: monthRange.end });
     setPage(1);
   };
@@ -134,6 +138,7 @@ export default function ExpenseListPage() {
         supplierId: supplierId || undefined,
         categoryId: categoryId || undefined,
         truckId: truckId || undefined,
+        vehicleComponent: vehicleComponent || undefined,
         dateFrom,
         dateTo,
       };
@@ -182,7 +187,7 @@ export default function ExpenseListPage() {
     return { totalAmount, unpaidCount: unpaidItems.length, unpaidAmount, paidCount: paidItems.length, paidAmount };
   }, [expenseData]);
 
-  const hasFilters = supplierId || categoryId || truckId || dateFrom !== monthRange.start || dateTo !== monthRange.end;
+  const hasFilters = supplierId || categoryId || truckId || vehicleComponent || dateFrom !== monthRange.start || dateTo !== monthRange.end;
   const kpiTotal = splitKpi(stats.totalAmount);
 
   const renderStatusBadge = (status: string) => status === 'PAID' ? (
@@ -320,12 +325,26 @@ export default function ExpenseListPage() {
           ))}
         </select>
 
+        {/* Loại chi phí — company-level rows store vehicle_component = NULL,
+            so 'Chi phí công ty' maps to a dedicated backend filter branch. */}
+        <select
+          className="expense-filter-bar__select"
+          value={vehicleComponent}
+          aria-label="Loại chi phí"
+          onChange={e => { setVehicleComponent(e.target.value as '' | 'COMPANY' | 'TRUCK' | 'TRAILER'); setPage(1); }}
+        >
+          <option value="">Tất cả loại chi phí</option>
+          <option value="COMPANY">Chi phí công ty</option>
+          <option value="TRUCK">Xe (Đầu kéo)</option>
+          <option value="TRAILER">Rơ-moóc</option>
+        </select>
+
         <div className="expense-filter-bar__divider" />
 
         <input
           type="date"
           name="expenseDateFrom"
-          aria-label="Từ ngày"
+          aria-label="Từ ngày phát sinh"
           className="expense-filter-bar__date"
           value={dateFrom}
           min={monthRange.start}
@@ -336,7 +355,7 @@ export default function ExpenseListPage() {
         <input
           type="date"
           name="expenseDateTo"
-          aria-label="Đến ngày"
+          aria-label="Đến ngày phát sinh"
           className="expense-filter-bar__date"
           value={dateTo}
           min={monthRange.start}

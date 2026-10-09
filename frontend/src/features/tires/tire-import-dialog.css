@@ -1,0 +1,82 @@
+/* Bulk tire import dialog (kanban 081026215220). */
+
+.tip-hint {
+  margin: 0 0 12px;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.tip-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.tip-file__name {
+  font-size: var(--fs-body);
+  color: var(--ink-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tip-error {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--danger-soft, #fef2f2);
+  color: var(--danger, #b91c1c);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+
+.tip-preview__count,
+.tip-result__summary {
+  margin: 0 0 8px;
+  font-size: var(--fs-body);
+  color: var(--ink-2);
+}
+
+.tip-ok { color: #16a34a; }
+.tip-skip { color: #b45309; }
+.tip-err { color: #dc2626; }
+
+.tip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.tip-table th,
+.tip-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.tip-table th {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.tip-result__scroll {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.tip-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tip-spin {
+  animation: tip-spin 0.8s linear infinite;
+}
+
+@keyframes tip-spin {
+  to { transform: rotate(360deg); }
+}

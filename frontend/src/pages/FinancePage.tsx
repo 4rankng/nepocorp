@@ -11,7 +11,7 @@ import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable } from '../hoo
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
-import { compactNum, EMPTY_CAP, EMPTY_TRIPS, EMPTY_YEARLY, marginPct, useFinanceDerived, yoyClass, yoyPct } from './finance-derived';
+import { compactNum, EMPTY_CAP, EMPTY_TRIPS, EMPTY_YEARLY, marginPct, useFinanceDerived, yoyClass, yoyDeltaLabel, yoyPct } from './finance-derived';
 import { groupFinanceTripDetails } from './finance-trip-details';
 import { FinanceChartsRow } from '../features/finance/financeChartsRow';
 import { FinanceCategoryPanel } from '../features/finance/financeCategoryPanel';
@@ -124,7 +124,7 @@ export default function FinancePage() {
           <div className="pnl-kpi__label">Tổng doanh thu</div>
           <div className="pnl-kpi__value"><span ref={(el) => { kpiRefs.current.revenue = el; }}>{formatNumber(totalRevenue)}</span><span className="pnl-kpi__unit">₫</span></div>
           {prevReport
-            ? <div className={`pnl-kpi__delta ${totalRevenue >= totalRevenueLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(totalRevenue, totalRevenueLY)} so cùng kỳ</div>
+            ? <div className={`pnl-kpi__delta ${totalRevenue >= totalRevenueLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyDeltaLabel(totalRevenue, totalRevenueLY)}</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>
           }
           <AssetIcon name="cashflow" size={54} className="pnl-kpi__asset" />
@@ -133,7 +133,7 @@ export default function FinancePage() {
           <div className="pnl-kpi__label">Lợi nhuận gộp</div>
           <div className="pnl-kpi__value"><span ref={(el) => { kpiRefs.current.gross = el; }}>{formatNumber(grossProfit)}</span><span className="pnl-kpi__unit">₫</span></div>
           {prevReport
-            ? <div className={`pnl-kpi__delta ${grossProfit >= grossProfitLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(grossProfit, grossProfitLY)} so cùng kỳ</div>
+            ? <div className={`pnl-kpi__delta ${grossProfit >= grossProfitLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyDeltaLabel(grossProfit, grossProfitLY)}</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>
           }
           <AssetIcon name="profit" size={54} className="pnl-kpi__asset" />
@@ -152,7 +152,7 @@ export default function FinancePage() {
           <div className="pnl-kpi__label">Lợi nhuận ròng</div>
           <div className="pnl-kpi__value" style={{ color: netProfit < 0 ? 'var(--danger)' : undefined }}><span ref={(el) => { kpiRefs.current.net = el; }}>{formatNumber(netProfit)}</span><span className="pnl-kpi__unit">₫</span></div>
           {prevReport
-            ? <div className={`pnl-kpi__delta ${netProfit >= netProfitLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyPct(netProfit, netProfitLY)} so cùng kỳ</div>
+            ? <div className={`pnl-kpi__delta ${netProfit >= netProfitLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyDeltaLabel(netProfit, netProfitLY)}</div>
             : <div className="pnl-kpi__delta pnl-kpi__delta--neutral">—</div>
           }
           <AssetIcon name="paid" size={54} className="pnl-kpi__asset" />
