@@ -119,6 +119,29 @@ export default function UsersPage() {
           { label: 'Người dùng' },
         ]}
       />
+      {/* Non-admins cannot see ADMIN accounts (backend scopes the list). Say so
+          in the UI — the rule was invisible, so a manager reading "7 tài khoản"
+          next to admin's 9 read as a data-filtering bug (kanban 091026134750 /
+          091026223500). */}
+      {me?.role !== Role.ADMIN && (
+        <p
+          className="users-visibility-note"
+          style={{
+            margin: '0 0 12px',
+            padding: '8px 12px',
+            border: '1px solid var(--line)',
+            borderRadius: 8,
+            background: 'var(--surface-2)',
+            color: 'var(--ink-3)',
+            fontSize: 'var(--fs-body)',
+            lineHeight: 1.5,
+          }}
+        >
+          Tài khoản vai trò <strong>Quản trị viên</strong> được ẩn với vai trò của bạn — vì vậy
+          tổng số tài khoản ở đây ít hơn số quản trị viên nhìn thấy.
+        </p>
+      )}
+
       <UserTable
         paginated={users}
         filteredTotal={filteredTotal}
