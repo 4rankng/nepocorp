@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronRight, ChevronLeft, AlertTriangle, X, Loader2, Download } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, AlertTriangle, X, Loader2, Download, Printer } from 'lucide-react';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
@@ -23,7 +23,10 @@ import { qk } from '../api/keys';
 import { resolveExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import type { ExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import { buildExpenseListSearchParams } from '../features/expenses/expense-list-query';
-import { downloadCSV } from '../lib/csv';
+import { downloadCSV, type ColumnType } from '../lib/csv';
+import { printHtml, openBlobInNewTab } from '../lib/download';
+import { buildPrintableSheetHtml } from '../lib/printSheet';
+import { useToast } from '../components/shared/Toast';
 import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;
@@ -53,6 +56,7 @@ export function useExpenses(params: {
 
 export default function ExpenseListPage() {
   const navigate = useNavigate();
+  const { toast: showToast } = useToast();
   const { month, year } = useMonth();
   const monthRange = useMemo(() => getCalendarMonthRange(year, month), [month, year]);
   const monthKey = `${year}-${month}`;
@@ -131,47 +135,91 @@ export default function ExpenseListPage() {
     setPage(1);
   };
 
+  /** Every expense matching the current filters, not just the visible page. */
+  const fetchAllFilteredExpenses = async (): Promise<ExpenseWithRefs[]> => {
+    const query = {
+      supplierId: supplierId || undefined,
+      categoryId: categoryId || undefined,
+      truckId: truckId || undefined,
+      vehicleComponent: vehicleComponent || undefined,
+      dateFrom,
+      dateTo,
+    };
+    const first = await api.get<PaginatedResponse<ExpenseWithRefs>>(
+      `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: 1, pageSize: 100 })}`,
+    );
+    const pageCount = Math.ceil(first.total / first.pageSize);
+    const remaining = await Promise.all(
+      Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) => api.get<PaginatedResponse<ExpenseWithRefs>>(
+        `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: index + 2, pageSize: 100 })}`,
+      )),
+    );
+    return [first, ...remaining].flatMap(response => response.items);
+  };
+
+  const EXPENSE_SHEET_HEADERS = ['Ngày phát sinh', 'Nhà cung cấp', 'Hạng mục', 'Xe', 'Thành phần', 'Số tiền', 'Trạng thái', 'Ghi chú'];
+  const EXPENSE_SHEET_TYPES: ColumnType[] = ['date', 'text', 'text', 'text', 'text', 'currency', 'text', 'text'];
+
+  const expenseToSheetRow = (expense: ExpenseWithRefs) => [
+    formatDate(expense.expenseDate),
+    expense.supplier?.name ?? '—',
+    expense.category?.name ?? '—',
+    expense.vehicleComponent === 'TRAILER' ? expense.trailer?.licensePlate ?? '—' : expense.truck?.licensePlate ?? '—',
+    expense.vehicleComponent === 'TRAILER' ? 'Rơ-moóc' : expense.vehicleComponent === 'TRUCK' ? 'Đầu kéo' : '—',
+    formatCurrency(Number(expense.amount)),
+    expense.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Ghi nợ',
+    expense.note ?? '',
+  ];
+
+  const expenseSheetSubtitle = (count: number) =>
+    `Kỳ ${formatDate(dateFrom)} – ${formatDate(dateTo)} · ${count} khoản chi phí`;
+
   const downloadMonthlySummary = async () => {
     setIsExporting(true);
     try {
-      const query = {
-        supplierId: supplierId || undefined,
-        categoryId: categoryId || undefined,
-        truckId: truckId || undefined,
-        vehicleComponent: vehicleComponent || undefined,
-        dateFrom,
-        dateTo,
-      };
-      const first = await api.get<PaginatedResponse<ExpenseWithRefs>>(
-        `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: 1, pageSize: 100 })}`,
-      );
-      const pageCount = Math.ceil(first.total / first.pageSize);
-      const remaining = await Promise.all(
-        Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) => api.get<PaginatedResponse<ExpenseWithRefs>>(
-          `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: index + 2, pageSize: 100 })}`,
-        )),
-      );
-      const rows = [first, ...remaining].flatMap(response => response.items);
+      const expenses = await fetchAllFilteredExpenses();
       await downloadCSV(
         `tong-ket-chi-phi-${dateFrom}-${dateTo}.xlsx`,
-        ['Ngày phát sinh', 'Nhà cung cấp', 'Hạng mục', 'Xe', 'Thành phần', 'Số tiền', 'Trạng thái', 'Ghi chú'],
-        rows.map(expense => [
-          expense.expenseDate,
-          expense.supplier?.name ?? '—',
-          expense.category?.name ?? '—',
-          expense.vehicleComponent === 'TRAILER' ? expense.trailer?.licensePlate ?? '—' : expense.truck?.licensePlate ?? '—',
-          expense.vehicleComponent === 'TRAILER' ? 'Rơ-moóc' : expense.vehicleComponent === 'TRUCK' ? 'Đầu kéo' : '—',
-          Number(expense.amount),
-          expense.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Ghi nợ',
-          expense.note ?? '',
-        ]),
+        EXPENSE_SHEET_HEADERS,
+        expenses.map(expenseToSheetRow),
         {
           title: 'Tổng kết chi phí phát sinh',
-          subtitle: `Kỳ ${formatDate(dateFrom)} – ${formatDate(dateTo)} · ${first.total} khoản chi phí`,
-          columnTypes: ['date', 'text', 'text', 'text', 'text', 'currency', 'text', 'text'],
+          subtitle: expenseSheetSubtitle(expenses.length),
+          columnTypes: EXPENSE_SHEET_TYPES,
           totalsColumns: [5],
         },
       );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  /**
+   * Print the same sheet straight from the browser.
+   *
+   * The expense pages had no print control at all, only the .xlsx export
+   * (kanban 091026235500). Printing goes through `printHtml` rather than opening
+   * a blob tab so the button also works on iOS Safari and inside the installed
+   * PWA, where `window.open` is blocked (kanban 081026232560).
+   */
+  const printExpenseSheet = async () => {
+    setIsExporting(true);
+    try {
+      const expenses = await fetchAllFilteredExpenses();
+      const html = buildPrintableSheetHtml(
+        EXPENSE_SHEET_HEADERS,
+        expenses.map(expenseToSheetRow),
+        {
+          title: 'Tổng kết chi phí phát sinh',
+          subtitle: expenseSheetSubtitle(expenses.length),
+          columnTypes: EXPENSE_SHEET_TYPES,
+          totalsColumns: [5],
+        },
+      );
+      const printed = printHtml(html, () => openBlobInNewTab(new Blob([html], { type: 'text/html' })));
+      showToast(printed
+        ? { kind: 'success', message: 'Đã mở hộp thoại in — chọn "Lưu thành PDF" để xuất file .pdf.' }
+        : { kind: 'info', message: 'Đã mở bản xem trước. Dùng Cmd/Ctrl + P để in hoặc lưu thành PDF.' });
     } finally {
       setIsExporting(false);
     }
@@ -232,6 +280,10 @@ export default function ExpenseListPage() {
         description={`${total} khoản chi phí`}
         action={
           <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn--secondary" onClick={() => void printExpenseSheet()} disabled={isExporting}>
+              {isExporting ? <Loader2 size={15} className="spin" /> : <Printer size={15} />}
+              PDF (In)
+            </button>
             <button className="btn btn--secondary" onClick={() => void downloadMonthlySummary()} disabled={isExporting}>
               {isExporting ? <Loader2 size={15} className="spin" /> : <Download size={15} />}
               {isExporting ? 'Đang chuẩn bị…' : 'Tải tổng kết'}
