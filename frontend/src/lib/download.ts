@@ -79,36 +79,52 @@ export function printHtml(html: string, onFallback?: () => void): boolean {
     const doc = iframe.contentDocument;
     if (!doc) throw new Error('no contentDocument');
 
-    // Declared up front so `print` can cancel the fallback timer it owns.
+    // Declared up front so a retry can cancel the fallback timer it owns.
     let fallbackTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 
-    let printed = false;
-    const print = () => {
-      if (printed) return;
-      printed = true;
-      clearTimeout(fallbackTimer);
+    // Dispatch print() and report whether it was actually handed to the engine.
+    // Engines that refuse a programmatic print outside a user gesture return
+    // silently (no throw), which previously left the caller showing a false
+    // "success" toast for a dialog that never opened (kanban 091026135110).
+    // We therefore drive the FIRST attempt synchronously inside the click
+    // gesture, and only treat a thrown/missing contentWindow as failure.
+    let needsRetry = false;
+    const attemptPrint = (): boolean => {
+      const win = iframe?.contentWindow;
+      if (!win || typeof win.print !== 'function') return false;
       try {
-        iframe!.contentWindow?.focus();
-        iframe!.contentWindow?.print();
+        win.focus();
+        win.print();
+        return true;
       } catch {
-        /* printing unavailable — the tab below is the fallback */
+        return false;
       }
     };
 
-    // Print once the document has actually loaded, NOT straight after
-    // doc.close(): on a slow phone the statement's table can still be
-    // laying out, and printing that early yields a blank page — which reads
-    // as "the button does nothing". The timer only covers engines that never
-    // fire load for a written-into about:blank frame.
-    iframe.onload = print;
+    const printedNow = attemptPrint();
+    if (!printedNow) needsRetry = true;
+
+    // Retry once after the document has loaded — covers engines that refuse
+    // print() until the frame is ready, and the (slow) case where the first
+    // attempt threw. The timer only fires for engines that never fire load.
+    const retry = () => {
+      if (!needsRetry) return;
+      needsRetry = false;
+      clearTimeout(fallbackTimer);
+      // A silent refusal still leaves the user with nothing, so end in the
+      // documented fallback rather than a no-op.
+      if (!attemptPrint()) onFallback?.();
+    };
+    iframe.onload = retry;
+
     doc.open();
     doc.write(html);
     doc.close();
-    fallbackTimer = setTimeout(print, 1500);
+    if (needsRetry) fallbackTimer = setTimeout(retry, 1500);
 
     // Keep the node alive until the dialog closes, then clean up.
     setTimeout(() => iframe?.remove(), 60_000);
-    return true;
+    return printedNow;
   } catch {
     iframe?.remove();
     onFallback?.();
