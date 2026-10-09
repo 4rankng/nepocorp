@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
   Users,
@@ -17,7 +17,7 @@ import { Money } from '../components/shared/Money';
 import { useCapTable, useDistributionHistory, usePnlReport } from '../hooks/useQueries';
 import { useToast } from '../components/shared/Toast';
 import { useMonth } from '../hooks/useMonth';
-import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
+import { usePageAnimations } from '../hooks/animations';
 import { TruckCapRole, TRUCK_CAP_ROLE_LABELS } from '@tingting/shared';
 import './ProfitPage.css';
 
@@ -85,16 +85,10 @@ export default function ProfitPage() {
 
   const error = reportError || capError ? 'Không thể tải báo cáo phân chia lợi nhuận.' : null;
   const { rootRef } = usePageAnimations({ ready: !loading });
+  // The hero figure renders straight from the report. It used to be filled by an
+  // anime.js counter that wrote the element's text out-of-band of React over
+  // ~1.2s, so one look could read three different numbers (kanban 101026003200).
   const netProfit = report?.netProfit || 0;
-  const heroValueRef = useRef<HTMLSpanElement>(null);
-  const { animateCounters } = useCounterAnimation({ delay: 200 });
-
-  useEffect(() => {
-    if (!report || !heroValueRef.current) return;
-    animateCounters([
-      { el: heroValueRef.current, value: netProfit },
-    ]);
-  }, [report, netProfit, animateCounters]);
 
   const handlePreview = async () => {
     setPreviewing(true);
@@ -207,7 +201,7 @@ export default function ProfitPage() {
             <div className="profit-hero" style={{ height: '100%', marginBottom: 0 }}>
               <div className="profit-hero__label">Lợi nhuận ròng để phân chia · T{selectedMonth} / {selectedYear}</div>
               <div className="profit-hero__value" style={{ color: netProfit < 0 ? 'var(--danger)' : undefined }}>
-                <span ref={heroValueRef}>{Math.round(netProfit).toLocaleString('vi-VN')}</span>
+                <span>{Math.round(netProfit).toLocaleString('vi-VN')}</span>
                 <span className="profit-hero__currency">₫</span>
               </div>
               <div className="profit-hero__sub">

@@ -20,11 +20,10 @@ interface DashboardStatProps {
   label: string;
   delta?: React.ReactNode;
   value: string;
-  valueRef?: (element: HTMLSpanElement | null) => void;
   description: React.ReactNode;
 }
 
-function DashboardStat({ tone, icon, label, delta, value, valueRef, description }: DashboardStatProps) {
+function DashboardStat({ tone, icon, label, delta, value, description }: DashboardStatProps) {
   return (
     <div className={`d-stats d-card d-card-border bg-base-100 wf-kpi wf-kpi--${tone}`}>
       <StatusStrip color={DASHBOARD_STAT_STRIP_COLORS[tone]} />
@@ -37,7 +36,7 @@ function DashboardStat({ tone, icon, label, delta, value, valueRef, description 
           {delta}
         </div>
         <div className="d-stat-value val">
-          <span ref={valueRef}>{value}</span> <i>đ</i>
+          <span>{value}</span> <i>đ</i>
         </div>
         <div className="d-stat-desc foot">{description}</div>
       </div>
@@ -61,8 +60,6 @@ export interface DashboardKpiRowProps {
   netMoM: string | null;
   totalOutstanding: number;
   overdueCustomers: number;
-  /** KPI refs for counter animation — point to <span> wrapping just the number. */
-  kpiRefs: { current: Record<string, HTMLSpanElement | null> };
   onNavigate: (path: string) => void;
 }
 
@@ -73,7 +70,7 @@ export function DashboardKpiRow({
   grossProfit, grossMoM, grossMargin,
   netProfit, netMoM,
   totalOutstanding, overdueCustomers,
-  kpiRefs, onNavigate,
+  onNavigate,
 }: DashboardKpiRowProps) {
   return (
     <div className="wf-kpis" data-tour-id="dashboard-kpis">
@@ -83,7 +80,6 @@ export function DashboardKpiRow({
         label={`Doanh thu · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
         delta={<DeltaPill mom={revenueMoM} />}
         value={fmtVN(revenue)}
-        valueRef={element => { kpiRefs.current.revenue = element; }}
         description={<>Tháng trước · {formatNumber(prevRevenue)} đ</>}
       />
       <DashboardStat
@@ -92,7 +88,6 @@ export function DashboardKpiRow({
         label="Tổng chi phí"
         delta={<DeltaPill mom={costsMoM} />}
         value={fmtVN(costs)}
-        valueRef={element => { kpiRefs.current.costs = element; }}
         description={<>{costRatio.toFixed(1)}% doanh thu</>}
       />
       <DashboardStat
@@ -101,7 +96,6 @@ export function DashboardKpiRow({
         label="Lợi nhuận gộp"
         delta={<DeltaPill mom={grossMoM} />}
         value={fmtVN(grossProfit)}
-        valueRef={element => { kpiRefs.current.gross = element; }}
         description={<>Biên gộp · {grossMargin.toFixed(1)}%</>}
       />
       <DashboardStat
@@ -110,7 +104,6 @@ export function DashboardKpiRow({
         label="Lợi nhuận ròng"
         delta={<DeltaPill mom={netMoM} />}
         value={fmtVN(netProfit)}
-        valueRef={element => { kpiRefs.current.net = element; }}
         description={<>Sau phí quản lý · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/profit')}>Phân chia →</button></>}
       />
       <DashboardStat

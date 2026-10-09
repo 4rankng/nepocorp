@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, AlertTriangle, Download, Truck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -56,11 +56,12 @@ export default function DashboardPage() {
   const { month: currentMonth, year: currentYear } = useMonth();
   const [chartView, setChartView] = useState<'day' | 'month'>('day');
   const [showAllAttention, setShowAllAttention] = useState(false);
-  const countersAnimated = useRef(false);
 
-  // KPI refs for counter animation — point to <span> wrapping just the number
-  const kpiRefs = useRef<Record<string, HTMLSpanElement | null>>({});
-
+  // KPI figures are rendered straight from the data. They used to be filled in
+  // by an anime.js counter that wrote textContent out-of-band of React over
+  // ~1.2s (kanban 101026003200): every reload caught the row mid-count, so the
+  // same figures read differently from one look to the next with no user action.
+  // Same class as the aging card on /debt (091026211500) — same remedy.
   const {
     stats, loading, prevPnlReport,
     createdTripsCount,
@@ -72,7 +73,7 @@ export default function DashboardPage() {
   } = useDashboardData(currentMonth, currentYear);
 
   // Animation hook — must be after loading is defined
-  const { rootRef, animateCounters } = useDashboardAnimations(!loading);
+  const { rootRef } = useDashboardAnimations(!loading);
 
   const showApprovalQueue = canSeeApprovalQueue(user?.role);
   const { data: approvalQueue, isLoading: approvalQueueLoading } = useApprovalQueue(user?.role, user?.userId);
@@ -262,25 +263,6 @@ export default function DashboardPage() {
   );
   const visibleAttention = showAllAttention ? orderedAttention : orderedAttention.slice(0, 4);
 
-  // ── Trigger KPI counter animations once data loads ──
-  useEffect(() => {
-    if (loading || countersAnimated.current) return;
-    countersAnimated.current = true;
-
-    // Small delay to let entrance animations start first
-    const timer = setTimeout(() => {
-      const refs = kpiRefs.current;
-      animateCounters([
-        { el: refs.revenue!, value: revenue },
-        { el: refs.costs!, value: costs },
-        { el: refs.gross!, value: grossProfit },
-        { el: refs.net!, value: netProfit },
-      ].filter(t => t.el !== null));
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [loading, revenue, costs, grossProfit, netProfit, animateCounters]);
-
   // ── Loading state (must be AFTER all hooks) ────────────────────────────
   if (loading) {
     return (
@@ -386,7 +368,6 @@ export default function DashboardPage() {
         netMoM={netMoM}
         totalOutstanding={receivablesSummary?.totalOutstanding ?? 0}
         overdueCustomers={receivablesSummary?.overdueCustomers ?? 0}
-        kpiRefs={kpiRefs}
         onNavigate={navigate}
       />
 
