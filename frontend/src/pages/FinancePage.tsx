@@ -345,10 +345,13 @@ export default function FinancePage() {
           </div>
 
           <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', margin: '14px 0 24px', lineHeight: 1.5 }}>
-            * Lợi nhuận ròng kế toán: <strong>{formatNumber(netProfit)} ₫</strong>.
+            * Lợi nhuận ròng kế toán:{' '}
             {activeCapTable.length > 0
-              ? <> Sau khi kết chuyển chia cổ đông: {activeCapTable.map((p, i) => <span key={i}>{i > 0 ? ' và ' : ''}<strong>{formatNumber(netProfit * p.pct / 100)} ₫</strong> cho {p.name} ({p.pct}%)</span>)}.</>
-              : ' Chưa cấu hình bảng cổ phần.'
+              ? <>
+                  <strong>{formatNumber(netProfit)} ₫</strong>. Sau khi kết chuyển chia cổ đông:{' '}
+                  {activeCapTable.map((p, i) => <span key={i}>{i > 0 ? ' và ' : ''}<strong>{formatNumber(netProfit * p.pct / 100)} ₫</strong> cho {p.name} ({p.pct}%)</span>)}.
+                </>
+              : 'Chưa cấu hình bảng cổ phần.'
             }{' '}
             <Link to='/profit'
               style={{ color: 'var(--brand)', display: 'inline-flex', alignItems: 'center', fontWeight: 600, textDecoration: 'none' }}
