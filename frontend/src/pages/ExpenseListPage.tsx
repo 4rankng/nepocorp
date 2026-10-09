@@ -406,10 +406,9 @@ export default function ExpenseListPage() {
                   {renderStatusBadge(e.paymentStatus)}
                 </div>
                 <div className="m-card__meta">
-                  {formatDate(e.expenseDate)}
-                  {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10) && (
-                    <><span className="m-card__meta-sep">·</span><span style={{ color: 'var(--ink-4)' }}>nhập {formatDate(e.createdAt)}</span></>
-                  )}
+                  {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10)
+                    ? <>phát sinh {formatDate(e.expenseDate)}<span className="m-card__meta-sep">·</span><span style={{ color: 'var(--ink-4)' }}>nhập {formatDate(e.createdAt)}</span></>
+                    : formatDate(e.expenseDate)}
                   {e.category && <><span className="m-card__meta-sep">·</span>{e.category.name}</>}
                 </div>
                 <div className="expense-mobile-card__summary">
@@ -477,7 +476,9 @@ export default function ExpenseListPage() {
                   >
                     <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-2)', position: 'relative' }}>
                       <StatusStrip color={EXPENSE_STATUS_COLORS[e.paymentStatus] ?? '#999'} />
-                      {formatDate(e.expenseDate)}
+                      {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10)
+                        ? <>phát sinh {formatDate(e.expenseDate)}</>
+                        : formatDate(e.expenseDate)}
                       {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10) && (
                         <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-4)' }} title="Ngày nhập dữ liệu (khác ngày phát sinh = nhập luồng)">
                           nhập {formatDate(e.createdAt)}
