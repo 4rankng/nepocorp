@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, FileSpreadsheet, Pencil, Save, CheckCircle2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, FileSpreadsheet, Pencil, Save, CheckCircle2, Trash2, XCircle } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
 import { useConfirm } from '../components/confirm-dialog';
 import { useToast } from '../components/shared/Toast';
 import { downloadBlob } from '../lib/download';
-import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement } from '../hooks/useForwarderQueries';
+import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
@@ -115,6 +115,7 @@ export default function SettlementPrintPage() {
   const updateSettlement = useUpdateAdvanceSettlement();
   const updateMySettlement = useUpdateMyAdvanceSettlement();
   const approveSettlement = useApproveSettlement();
+  const rejectSettlement = useRejectSettlement();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { toast } = useToast();
   const [deleting, setDeleting] = useState(false);
@@ -175,6 +176,32 @@ export default function SettlementPrintPage() {
       toast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xóa phiếu' });
     } finally {
       setDeleting(false);
+    }
+  };
+  // Explicit approve/reject on the detail page (kanban 101026003210). The same
+  // two actions already existed on the /admin/advance-settlements list, but a
+  // manager who opened one phiếu had no way to act on it from the detail view.
+  const handleApproveSettlement = async () => {
+    const ok = await confirm(`Duyệt phiếu hoàn ứng ${s.code}?`, { confirmLabel: 'Duyệt phiếu' });
+    if (!ok) return;
+    try {
+      await approveSettlement.mutateAsync(s.id);
+      toast({ kind: 'success', message: `Đã duyệt phiếu ${s.code}` });
+    } catch (err) {
+      toast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi duyệt phiếu' });
+    }
+  };
+  const handleRejectSettlement = async () => {
+    const ok = await confirm(
+      `Từ chối phiếu hoàn ứng ${s.code}? Toàn bộ chi phí trong phiếu sẽ không được hoàn ứng.`,
+      { variant: 'danger', confirmLabel: 'Từ chối phiếu' },
+    );
+    if (!ok) return;
+    try {
+      await rejectSettlement.mutateAsync(s.id);
+      toast({ kind: 'success', message: `Đã từ chối phiếu ${s.code}` });
+    } catch (err) {
+      toast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi từ chối phiếu' });
     }
   };
   const expenses = s.linkedExpenses || [];
@@ -297,6 +324,24 @@ export default function SettlementPrintPage() {
               >
                 <FileSpreadsheet size={14} /> Excel
               </button>
+              {canEditExpenses && (
+                <>
+                  <button
+                    className="btn btn--primary btn--sm"
+                    disabled={approveSettlement.isPending || rejectSettlement.isPending}
+                    onClick={() => void handleApproveSettlement()}
+                  >
+                    {approveSettlement.isPending ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />} Duyệt
+                  </button>
+                  <button
+                    className="btn btn--danger btn--sm"
+                    disabled={approveSettlement.isPending || rejectSettlement.isPending}
+                    onClick={() => void handleRejectSettlement()}
+                  >
+                    {rejectSettlement.isPending ? <Loader2 size={14} className="spin" /> : <XCircle size={14} />} Từ chối
+                  </button>
+                </>
+              )}
             </div>
           }
         />

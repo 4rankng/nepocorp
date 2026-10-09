@@ -236,7 +236,11 @@ export function useApproveSettlement() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => forwarderClient.approveAdvanceSettlement(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      // The detail page can trigger this too (kanban 101026003210), so its own
+      // query must refresh — otherwise the header keeps the old status.
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementDetail(id) });
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementDetail(id) });
       qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
       qc.invalidateQueries({ queryKey: qk.adminForwarder.advanceRequestsAll });
       qc.invalidateQueries({ queryKey: qk.adminForwarder.advanceBalances });
@@ -306,7 +310,9 @@ export function useRejectSettlement() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => forwarderClient.rejectAdvanceSettlement(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementDetail(id) });
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementDetail(id) });
       qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
     },
   });
