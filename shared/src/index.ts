@@ -49,6 +49,7 @@ export type {
   DebitNoteTemplate, DebitNoteTemplateSnapshot,
   LiveFleetVehicle, LiveFleetResponse, LiveFleetStatus, LiveFleetDetails, LiveFleetLeg,
   GpsStop,
+  FuelReconcileStatus, FuelReconcileResult, FuelReconcileResultRow, FuelReconcileSummary, FuelReconcileResponse,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -95,6 +96,7 @@ export {
   ACKED_DIRECTIVE_KINDS,
   agentActionResultSchema,
   faqEntryCreateSchema, faqEntryUpdateSchema, FAQ_ADMIN_PATHS,
+  fuelReconcileRequestSchema,
 } from './schemas';
 
 export { appSettingsSchema } from './schemas/app-settings';
@@ -132,6 +134,7 @@ export type {
   AgentMessage, AgentConversation, AgentEvent, AgentRouteKey,
   AckedDirectiveKind, AgentActionResult,
   FaqEntry, FaqEntryCreate, FaqEntryUpdate, FaqEmbeddingStatus, FaqEntryMutationResponse,
+  FuelReconcileRowInput, FuelReconcileRequest,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

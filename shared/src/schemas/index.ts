@@ -1228,3 +1228,31 @@ export function parseBachKhoaResponse(raw: unknown): BachKhoaVehicle[] {
   );
 }
 export type BillingDocumentLineInput = z.infer<typeof billingDocumentLineSchema>;
+
+// ─── NCC fuel-file reconciliation (kanban 081026215250a) ─────────────────────
+// The supplier's own sheet never had an agreed column layout (sheet "NEPO",
+// 376 rows x 132 columns, organised by vehicle and oil type), so the operator
+// points at the columns at upload time instead of a format being fixed up
+// front. Rows arrive already mapped; raw date text is normalised server-side
+// because the file mixes dd/mm/yyyy with Excel serials.
+export const fuelReconcileRowSchema = z.object({
+  // Plate and date are allowed to be empty: the matcher classifies those rows as
+  // UNREADABLE_DATE and reports them, which is the honest outcome for a sheet
+  // whose cells are blank. Rejecting them here would fail the whole upload.
+  licensePlate: z.string().trim().max(40),
+  date: z.string().trim().max(40),
+  liters: z.union([z.number(), z.string()]).nullish(),
+  amount: z.union([z.number(), z.string()]).nullish(),
+  oilType: z.string().trim().max(80).nullish(),
+  sourceRow: z.coerce.number().int().nonnegative().optional(),
+});
+
+export const fuelReconcileRequestSchema = z.object({
+  supplierId: z.coerce.number().int().positive(),
+  dateFrom: billingDocumentDateSchema.optional(),
+  dateTo: billingDocumentDateSchema.optional(),
+  rows: z.array(fuelReconcileRowSchema).min(1).max(5000),
+});
+
+export type FuelReconcileRowInput = z.infer<typeof fuelReconcileRowSchema>;
+export type FuelReconcileRequest = z.infer<typeof fuelReconcileRequestSchema>;

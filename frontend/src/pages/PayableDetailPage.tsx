@@ -9,7 +9,7 @@ import type {
   LedgerEntry,
   VendorPaymentRequest,
 } from '@tingting/shared';
-import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText, Fuel } from 'lucide-react';
+import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText, Fuel, Scale } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
@@ -21,6 +21,7 @@ import { qk } from '../api/keys';
 import { AnchoredDropdown } from '../components/shared/AnchoredDropdown';
 import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity } from '../components/debt/PeriodFilter';
 import { buildStatementExportUrl, statementExportFilename } from '../lib/statementExport';
+import { FuelReconcileDialog } from '../features/payables/fuel-reconcile-dialog';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import './DebtDetailPage.css';
@@ -108,6 +109,7 @@ export default function PayableDetailPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showBillingDocumentBuilder, setShowBillingDocumentBuilder] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showReconcile, setShowReconcile] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
@@ -343,6 +345,16 @@ export default function PayableDetailPage() {
                       Bảng kê xăng dầu
                     </button>
                   )}
+                  {typedProfile.hasFuelExpenses && (
+                    <button
+                      className="dd-export-btn"
+                      onClick={() => { setShowExportMenu(false); setShowReconcile(true); }}
+                      title="Nạp bảng kê của hãng dầu rồi đối chiếu theo xe / ngày / số lít"
+                    >
+                      <Scale size={14} style={{ color: '#2563eb' }} />
+                      Đối chiếu file NCC
+                    </button>
+                  )}
               </AnchoredDropdown>
             </div>
           )}
@@ -518,6 +530,16 @@ export default function PayableDetailPage() {
         onReceiptIdChange={setPaymentReceiptId}
         onClose={() => setShowPaymentModal(false)}
         onConfirm={() => handlePaymentSubmit(false)}
+      />
+      <FuelReconcileDialog
+        isOpen={showReconcile}
+        onClose={() => setShowReconcile(false)}
+        supplierId={Number(id)}
+        dateFrom={appliedPeriodRange.dateFrom ?? null}
+        dateTo={appliedPeriodRange.dateTo ?? null}
+        periodLabel={appliedPeriodRange.dateFrom && appliedPeriodRange.dateTo
+          ? `${appliedPeriodRange.dateFrom} → ${appliedPeriodRange.dateTo}`
+          : 'toàn bộ sổ'}
       />
       {confirmDialog}
     </div>

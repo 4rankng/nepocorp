@@ -1656,3 +1656,54 @@ export interface LiveFleetDetails {
   // Camera
   cameraImage: string | null;       // latest snapshot URL
 }
+
+// ─── NCC fuel-file reconciliation (kanban 081026215250a) ─────────────────────
+// The supplier's sheet has no agreed layout, so the operator maps its columns at
+// upload time and the backend matches rows by (vehicle, day) on total liters.
+export type FuelReconcileStatus =
+  | 'MATCHED'
+  | 'LITERS_MISMATCH'
+  | 'AMOUNT_MISMATCH'
+  | 'ONLY_IN_FILE'
+  | 'ONLY_IN_SYSTEM'
+  | 'UNREADABLE_DATE';
+
+export interface FuelReconcileResultRow {
+  status: FuelReconcileStatus;
+  licensePlate: string;
+  date: string;
+  fileLiters: number | null;
+  systemLiters: number | null;
+  fileAmount: number | null;
+  systemAmount: number | null;
+  tripCodes: string[];
+  /** 1-based sheet rows that fed this line, so the operator can find them. */
+  fileRows: number[];
+  note: string;
+}
+
+export interface FuelReconcileSummary {
+  fileRows: number;
+  systemRows: number;
+  matched: number;
+  litersMismatch: number;
+  amountMismatch: number;
+  onlyInFile: number;
+  onlyInSystem: number;
+  unreadable: number;
+  fileTotalLiters: number;
+  systemTotalLiters: number;
+  fileTotalAmount: number;
+  systemTotalAmount: number;
+}
+
+export interface FuelReconcileResult {
+  rows: FuelReconcileResultRow[];
+  summary: FuelReconcileSummary;
+}
+
+export interface FuelReconcileResponse extends FuelReconcileResult {
+  supplier: { id: number; name: string };
+  dateFrom: string | null;
+  dateTo: string | null;
+}

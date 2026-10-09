@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { Role, generateBillingDocumentSchema, saveBillingDocumentSchema } from '@tingting/shared';
+import { Role, generateBillingDocumentSchema, saveBillingDocumentSchema, fuelReconcileRequestSchema } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import * as billingService from '../../services/billingDocument.service';
-import { attachmentDisposition } from '../../services/statement.service';
+import { getSupplierFuelStatement, attachmentDisposition } from '../../services/statement.service';
+import { reconcileFuelRows } from '../../services/fuel-reconcile.service';
 import { invalidateReportCaches } from '../../lib/redis';
 
 // Debit-note (AR) + payment-statement (AP) builder routes.
@@ -82,6 +83,29 @@ router.get('/finance/billing-documents/:id/export', requireRoles(...ROLES), asyn
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', attachmentDisposition(`${kind}-${name}.xlsx`));
   res.send(buffer);
+}));
+
+// POST /api/finance/fuel-reconcile — match an uploaded NCC sheet against the
+// system's fuel statement by vehicle/day/liters (kanban 081026215250a). The
+// sheet has no agreed column layout, so the operator maps the columns in the
+// browser and sends rows already labelled; this handler only loads the system
+// side and runs the pure matcher. Read-only: nothing is written.
+router.post('/finance/fuel-reconcile', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
+  const data = fuelReconcileRequestSchema.parse(req.body);
+  const statement = await getSupplierFuelStatement(data.supplierId, data.dateFrom, data.dateTo);
+  const systemRows = statement.rows.map((row) => ({
+    licensePlate: row.licensePlate,
+    departureDate: row.departureDate,
+    liters: row.liters,
+    amount: row.amount,
+    tripCode: row.tripCode,
+  }));
+  res.json({
+    supplier: { id: statement.supplier.id, name: statement.supplier.name },
+    dateFrom: statement.dateFrom,
+    dateTo: statement.dateTo,
+    ...reconcileFuelRows(data.rows, systemRows),
+  });
 }));
 
 export default router;
