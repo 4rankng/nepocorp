@@ -18,7 +18,7 @@ import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { qk } from '../api/keys';
-import { useClickOutside } from '../hooks/useClickOutside';
+import { AnchoredDropdown } from '../components/shared/AnchoredDropdown';
 import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity } from '../components/debt/PeriodFilter';
 import { buildStatementExportUrl, statementExportFilename } from '../lib/statementExport';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
@@ -109,7 +109,6 @@ export default function PayableDetailPage() {
   const [showBillingDocumentBuilder, setShowBillingDocumentBuilder] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
-  useClickOutside(exportMenuRef, () => setShowExportMenu(false), { escapeKey: true, enabled: showExportMenu });
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [paymentReceiptId, setPaymentReceiptId] = useState('');
@@ -320,13 +319,12 @@ export default function PayableDetailPage() {
                 <Download size={14} />
                 Xuất sao kê
               </button>
-              {showExportMenu && (
-                <div style={{
-                  position: 'absolute', right: 0, top: '100%', marginTop: 4,
-                  background: 'var(--surface)', border: '1px solid var(--line)',
-                  borderRadius: 8, boxShadow: 'var(--sh-lg)',
-                  zIndex: 50, minWidth: 210, overflow: 'hidden',
-                }}>
+              <AnchoredDropdown
+                open={showExportMenu}
+                anchorRef={exportMenuRef}
+                onDismiss={() => setShowExportMenu(false)}
+                minWidth={210}
+              >
                   <button className="dd-export-btn" onClick={() => downloadExport('xlsx')}>
                     <FileSpreadsheet size={14} style={{ color: '#16a34a' }} />
                     Excel (.xlsx)
@@ -345,8 +343,7 @@ export default function PayableDetailPage() {
                       Bảng kê xăng dầu
                     </button>
                   )}
-                </div>
-              )}
+              </AnchoredDropdown>
             </div>
           )}
           <button
