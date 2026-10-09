@@ -4,6 +4,7 @@ import { ArrowLeft, Printer, Loader2, FileSpreadsheet, Pencil, Save, CheckCircle
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
+import { downloadBlob } from '../lib/download';
 import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
@@ -249,11 +250,7 @@ export default function SettlementPrintPage() {
                 onClick={() => {
                   api.getBlob(settlementExportEndpoint(isPortal, s.id, 'xlsx'))
                     .then(blob => {
-                      const a = document.createElement('a');
-                      a.href = URL.createObjectURL(blob);
-                      a.download = `phieu-thanh-toan-${s.code}.xlsx`;
-                      a.click();
-                      URL.revokeObjectURL(a.href);
+                      downloadBlob(blob, `phieu-thanh-toan-${s.code}.xlsx`);
                     });
                 }}
               >

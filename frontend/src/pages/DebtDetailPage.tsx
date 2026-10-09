@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDate } from '../lib/format';
+import { downloadBlob, openBlobInNewTab } from '../lib/download';
 import { TxnType } from '@tingting/shared';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
@@ -137,19 +138,14 @@ export default function DebtDetailPage() {
         appliedPeriodRange,
       );
       const blob = await api.getBlob(url);
-      const objectUrl = URL.createObjectURL(blob);
       if (format === 'pdf') {
-        window.open(objectUrl, '_blank');
+        openBlobInNewTab(blob);
       } else {
-        const a = document.createElement('a');
-        a.href = objectUrl;
-        a.download = statementExportFilename(
+        downloadBlob(blob, statementExportFilename(
           'sao-ke-kh',
           profileStatement?.customer.name ?? String(id),
           appliedPeriodRange,
-        );
-        a.click();
-        URL.revokeObjectURL(objectUrl);
+        ));
       }
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất sao kê' });

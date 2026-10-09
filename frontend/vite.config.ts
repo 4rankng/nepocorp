@@ -38,6 +38,9 @@ export default defineConfig({
   },
   server: {
     port: 7173,
+    // Exposing dev through a tunnel (ngrok) arrives with an external Host header,
+    // which Vite's DNS-rebinding check rejects unless the domain is allowlisted.
+    allowedHosts: ['.ngrok-free.dev', '.ngrok.app'],
     // Fail fast when another dev server already holds the port: silently moving to
     // 7174 left a second Vite serving the same tree, and a tab opened against the
     // first one kept an old HMR bundle (kanban 20260923_17).

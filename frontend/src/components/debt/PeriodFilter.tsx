@@ -151,6 +151,18 @@ export function PeriodFilter(props: PeriodFilterProps) {
               </label>
             </div>
           )}
+          {/*
+            The month/year/range inputs are draft state: picking a new month
+            changes the pill immediately, but the data on screen is still the
+            last applied period until "Lọc dữ liệu" runs. Without this note the
+            two look like they already agree, and staff read a stale total as
+            the newly-picked month (kanban 081026232570c).
+          */}
+          {isApplyDisabled === false && !isApplying && (
+            <span className="text-xs font-medium text-warning" role="status">
+              Chưa áp dụng — bấm “Lọc dữ liệu” để tải kỳ đã chọn
+            </span>
+          )}
           <button
             type="button"
             className="d-btn d-btn-primary d-btn-sm w-full shrink-0 lg:w-auto"

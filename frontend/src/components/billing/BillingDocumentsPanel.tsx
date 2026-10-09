@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, FileText, Download, History, Pencil, Plus, Receipt, Trash2 } from 'lucide-react';
 import { useToast } from '../shared/Toast';
 import { api } from '../../lib/api';
+import { downloadBlob } from '../../lib/download';
 import { formatCurrency } from '../../lib/format';
 import { financialClient } from '../../api/financialClient';
 import { qk } from '../../api/keys';
@@ -78,12 +79,7 @@ export default function BillingDocumentsPanel({
   const exportDoc = async (doc: BillingDocument) => {
     try {
       const blob = await api.getBlob(financialClient.getBillingDocumentExportUrl(doc.id));
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke'}-${entityName}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `${type === 'DEBIT_NOTE' ? 'giay-bao-no' : 'bang-ke'}-${entityName}.xlsx`);
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất Excel' });
     }

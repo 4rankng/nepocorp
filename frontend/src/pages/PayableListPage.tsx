@@ -8,10 +8,7 @@ import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useAuth } from '../hooks/useAuth';
-import {
-  usePageAnimations,
-  useCounterAnimation,
-} from '../hooks/animations';
+import { usePageAnimations } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './PayableListPage.css';
 import '../components/shared/HeroKpiRow.css';
@@ -207,17 +204,6 @@ export default function PayableListPage() {
     ],
   });
 
-  /* ── Counter animation ── */
-  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
-
-  const heroTotalRef = useRef<HTMLSpanElement>(null);
-  const overdueRef = useRef<HTMLSpanElement>(null);
-  const activeSuppliersRef = useRef<HTMLSpanElement>(null);
-  const agingCurrentRef = useRef<HTMLSpanElement>(null);
-  const agingD30Ref = useRef<HTMLSpanElement>(null);
-  const agingD60Ref = useRef<HTMLSpanElement>(null);
-  const agingOver90Ref = useRef<HTMLSpanElement>(null);
-
   /* ── Derived data ── */
   const totals = useMemo(
     () => computeAgingTotals(payables, apiTotal, apiSupplierCount, apiOverdueCount),
@@ -236,20 +222,15 @@ export default function PayableListPage() {
     return result;
   }, [payables, search]);
 
-  /* ── Kick counter animations when data settles ── */
-  useEffect(() => {
-    if (loading || payables.length === 0 || prefersReduced) return;
-
-    animateCounters([
-      { el: heroTotalRef.current, value: totals.total, format: moneyParts(totals.total, false).format },
-      { el: overdueRef.current, value: totals.overdueCount },
-      { el: activeSuppliersRef.current, value: totals.supplierCount },
-      { el: agingCurrentRef.current, value: totals.current, format: moneyParts(totals.current, compact).format },
-      { el: agingD30Ref.current, value: totals.d30, format: moneyParts(totals.d30, compact).format },
-      { el: agingD60Ref.current, value: totals.d60, format: moneyParts(totals.d60, compact).format },
-      { el: agingOver90Ref.current, value: totals.over90, format: moneyParts(totals.over90, compact).format },
-    ]);
-  }, [loading, payables.length, totals, animateCounters, prefersReduced, compact]);
+  // No count-up animation on this page: the header ("Tổng nợ: …") and the hero
+  // card render from the same `totals.total`, but the card used to be filled in
+  // by an anime.js counter over ~1.6s, so staff reading the page during the
+  // count saw two different totals for the same number — QA logged an 8.244.831đ
+  // gap (kanban 081026232530). Money figures are now rendered authoritatively by
+  // React and there is no window in which they disagree with each other.
+  // `computeAgingTotals` also guarantees they agree: `total` is the server's
+  // aggregate, which equals the sum of the per-supplier rows and of the four
+  // aging buckets.
 
   /* ── Money display parts (hero always full; aging compact on narrow cards) ── */
   const heroMoney = moneyParts(totals.total, false);
@@ -316,10 +297,6 @@ export default function PayableListPage() {
       <PayableHeroKpiRow
         totals={totals}
         heroMoney={heroMoney}
-        prefersReduced={prefersReduced}
-        heroTotalRef={heroTotalRef}
-        overdueRef={overdueRef}
-        activeSuppliersRef={activeSuppliersRef}
       />
 
       {/* ── Zone 2: Aging Distribution ──────────────────────────────────── */}
@@ -329,11 +306,6 @@ export default function PayableListPage() {
         d30Money={d30Money}
         d60Money={d60Money}
         over90Money={over90Money}
-        prefersReduced={prefersReduced}
-        agingCurrentRef={agingCurrentRef}
-        agingD30Ref={agingD30Ref}
-        agingD60Ref={agingD60Ref}
-        agingOver90Ref={agingOver90Ref}
       />
 
       {/* ── Zone 3: Data Card ───────────────────────────────────────────── */}

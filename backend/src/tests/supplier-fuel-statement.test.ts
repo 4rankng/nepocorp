@@ -74,13 +74,15 @@ after(async () => {
 });
 
 describe('Bảng kê xăng dầu (supplier fuel statement)', () => {
-  test('per-trip rows net of reversals; liters/price from the trip', async () => {
+  test('detail rows use the DEPARTURE basis — an Aug trip posted in Sept is excluded', async () => {
     const data = await getSupplierFuelStatement(supplierId, '2098-09-01', '2098-09-30');
 
-    assert.equal(data.rows.length, 2, 'trip A churn + trip B; net-0 groups dropped');
+    // The fuel supplier invoices on the day the fuel was drawn, so the sheet has
+    // to cut on departure date. Trip B departed in August; showing it in a
+    // September statement was the root cause of the reconciliation gap.
+    assert.equal(data.rows.length, 1, 'only trip A departed in September');
     const rowA = data.rows.find(r => r.tripId === tripA.id);
-    const rowB = data.rows.find(r => r.tripId === tripB.id);
-    assert.ok(rowA && rowB);
+    assert.ok(rowA);
 
     assert.equal(rowA.amount, 2_850_000, 'net = repost − reversal');
     assert.equal(rowA.hadReversal, true);
@@ -89,16 +91,31 @@ describe('Bảng kê xăng dầu (supplier fuel statement)', () => {
     assert.equal(rowA.departureDate, '2098-09-05');
     assert.equal(rowA.firstPostedAt, '2098-09-05');
 
-    assert.equal(rowB.amount, 5_000_000, 'Aug trip posted in Sept stays in the posting-period rows');
-    assert.equal(rowB.departureDate, '2098-08-20', 'trip date still visible for invoice matching');
+    // ...and it is still reachable on the posting basis, which drives the ledger.
+    assert.equal(data.postingRows.length, 2, 'both trips posted inside September');
+    const postedB = data.postingRows.find(r => r.tripId === tripB.id);
+    assert.ok(postedB);
+    assert.equal(postedB.amount, 5_000_000);
+    assert.equal(postedB.departureDate, '2098-08-20', 'trip date still visible for invoice matching');
+  });
+
+  test('the two bases and their gap are all exposed for reconciliation', async () => {
+    const data = await getSupplierFuelStatement(supplierId, '2098-09-01', '2098-09-30');
+    assert.equal(data.departureTotalAmount, 2_850_000, 'matches Σ thành tiền of `rows`');
+    assert.equal(data.fuelNet, 7_850_000, 'posting basis = Σ of `postingRows`');
+    assert.equal(data.crossingMonthAmount, 5_000_000, 'the Aug-trip fuel that straddles the month');
+    assert.equal(
+      data.departureTotalAmount,
+      data.rows.reduce((sum, r) => sum + r.amount, 0),
+    );
   });
 
   test('balances reconcile: opening + fuel − payments = closing', async () => {
     const data = await getSupplierFuelStatement(supplierId, '2098-09-01', '2098-09-30');
     assert.equal(data.openingBalance, -1_000_000);
     assert.equal(data.fuelNet, 7_850_000);
-    assert.equal(data.totalAmount, 7_850_000);
-    assert.equal(data.totalLiters, 280);
+    assert.equal(data.totalAmount, 7_850_000, 'totalAmount tracks the posting basis (ledger)');
+    assert.equal(data.totalLiters, 100, 'liters follow the departure basis = trip A only');
     assert.equal(data.otherDebits, 3_000_000);
     assert.equal(data.closingBalance, 3_850_000);
     assert.equal(data.openingBalance + data.fuelNet - data.otherDebits, data.closingBalance);

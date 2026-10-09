@@ -107,6 +107,27 @@ export async function transitionTripStatus(
           'Chuyến xe ngoài cần biển số xe trước khi hoàn thành. Vui lòng bổ sung biển số.',
         );
       }
+
+      // Fuel without a supplier posts NOTHING to any payable ledger:
+      // LedgerService falls back to `trip.totalFuelCost` keyed on
+      // `trip.fuelSupplierId`, and a null id means the cost is silently
+      // dropped. TRP-202609-0048 slipped through on 18/09 with 152 lít and
+      // 4.550.880đ of fuel that reached no bảng kê at all.
+      //
+      // A trip that has an allocation row is exempt: a CASH allocation
+      // legitimately carries supplierId = NULL (enforced by a schema CHECK)
+      // and must not be forced into a credit purchase.
+      const [fuelAllocationCount] = await tx.select({ n: sql<number>`count(*)::int` })
+        .from(s.tripFuelAllocations)
+        .where(eq(s.tripFuelAllocations.tripId, trip.id));
+      const hasFuel = Number(trip.fuelLiters ?? 0) > 0 || Number(trip.fuelLitersOverride ?? 0) > 0;
+      if (hasFuel && !trip.fuelSupplierId && (fuelAllocationCount?.n ?? 0) === 0) {
+        throw new ApiError(
+          422,
+          'Chuyến đi có số lít dầu nhưng chưa gán nhà cung cấp, nên chi phí nhiên liệu sẽ không được ghi vào công nợ. '
+          + 'Vui lòng chọn nhà cung cấp hoặc ghi nhận số dầu mua bằng tiền mặt trước khi hoàn thành chuyến.',
+        );
+      }
       // B2: completion is permissive — a trip may be marked "Hoàn thành"
       // without photos, and photo evidence (CONTAINER/SEAL) can be added or
       // edited afterwards ("allow to complete, user can edit later"). The

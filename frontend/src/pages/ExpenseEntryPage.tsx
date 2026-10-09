@@ -349,6 +349,14 @@ export default function ExpenseEntryPage() {
     try {
       if (isEdit) {
         await api.put(`${FINANCIAL.EXPENSE(Number(id))}`, result.data);
+        // Invalidate the single-expense row too, not just the list.
+        // `main.tsx` sets a global staleTime of 5 minutes, so the
+        // `['expense', id]` snapshot read when this page mounted stayed "fresh"
+        // after navigating away — reopening the phiếu re-hydrated the form
+        // from the pre-edit values and the save looked lost even though the row
+        // was correctly written (kanban 081026232500). Invalidating `['expenses']`
+        // alone never matched this key.
+        await queryClient.invalidateQueries({ queryKey: qk.tripForm.expense(id!) });
         toast({ kind: 'success', message: 'Đã cập nhật chi phí.' });
       } else {
         await api.post(FINANCIAL.EXPENSES, result.data);
@@ -397,13 +405,48 @@ export default function ExpenseEntryPage() {
   }
 
   if (expenseError || expenseCatalogError) {
+    // "Thử lại" used to re-fire the same request and show the same dead end.
+    // The two cases need different answers: an expired session cannot be
+    // retried into success (staff reported being bounced to login on refresh),
+    // whereas a transient catalog failure genuinely can — but only if the
+    // underlying reason is on screen instead of a generic banner.
+    const rawError = (expenseError ?? expenseCatalogError) as { status?: number; message?: string } | null;
+    const status = rawError?.status;
+    const detail = rawError?.message?.trim();
+    // `assertCurrentSession` rejects with a plain Error when the token is
+    // swapped mid-flight — that is an auth problem too, not a catalog problem.
+    const isAuthError = status === 401 || status === 403
+      || detail?.includes('Phiên đăng nhập') === true;
     return (
       <div className="expense-page-wrap">
         <PageHeader title={isEdit ? 'Sửa chi phí' : 'Ghi nhận chi phí'} onBack={handleBack} iconName="expense" />
         <div className="empty-state" role="alert">
-          <h3 className="empty-state-title">{expenseError ? 'Không thể tải chi phí' : 'Không thể tải danh mục chi phí'}</h3>
-          <p className="empty-state-desc">Vui lòng tải lại dữ liệu trước khi tiếp tục nhập chi phí.</p>
-          <button type="button" className="btn btn--secondary" onClick={() => { if (isEdit) void refetchExpense(); void refetchExpenseCatalogs(); }}>Thử lại</button>
+          <h3 className="empty-state-title">
+            {isAuthError
+              ? 'Phiên đăng nhập đã hết hạn'
+              : expenseError ? 'Không thể tải chi phí' : 'Không thể tải danh mục chi phí'}
+          </h3>
+          <p className="empty-state-desc">
+            {isAuthError
+              ? 'Đăng nhập lại để tiếp tục nhập chi phí. Thử lại sẽ không có tác dụng cho tới khi đăng nhập.'
+              : 'Vui lòng tải lại dữ liệu trước khi tiếp tục nhập chi phí.'}
+          </p>
+          {detail && !isAuthError && (
+            <p className="empty-state-desc expense-load-error-detail">
+              Lý do: {detail}
+            </p>
+          )}
+          {isAuthError ? (
+            <button type="button" className="btn btn--primary" onClick={() => navigate('/login')}>Đăng nhập lại</button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={() => { if (isEdit) void refetchExpense(); void refetchExpenseCatalogs(); }}
+            >
+              Thử lại
+            </button>
+          )}
         </div>
       </div>
     );

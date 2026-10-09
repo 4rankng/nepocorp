@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, moneyParts } from '../lib/format';
 import { api } from '../lib/api';
+import { downloadBlob } from '../lib/download';
 import { useToast } from '../components/shared/Toast';
 import {
   Users,
@@ -106,12 +107,7 @@ export default function DebtListPage() {
     try {
       const q = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
       const blob = await api.getBlob(`/reports/receivables-aging/export${q}`);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cong-no-phai-thu-${new Date().toISOString().slice(0, 10)}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `cong-no-phai-thu-${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất báo cáo' });
     } finally {

@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency } from '../lib/format';
+import { downloadBlob, openBlobInNewTab, printHtml } from '../lib/download';
 import { TxnType, FINANCIAL } from '@tingting/shared';
 import type {
   SupplierStatement as SupplierStatementType,
@@ -51,17 +52,29 @@ export default function PayableDetailPage() {
     [appliedPeriod],
   );
 
+  // Two fetches, mirroring DebtDetailPage: the header is a CURRENT-state view
+  // and must not inherit the period filter. Before this split the page issued a
+  // single period-scoped call, so "TỔNG CÔNG NỢ" showed September's net
+  // movement (265tr) under a heading that claims it is the total owed.
+  const {
+    data: profileStatement,
+    isLoading: loading,
+    error: queryError,
+  } = useSupplierStatement(
+    id ? Number(id) : undefined,
+    undefined,
+    isCarrierPayable ? 'carrier' : 'vendor',
+  );
   const {
     data: statement,
-    isLoading: loading,
     isFetching: isStatementFetching,
-    error: queryError,
   } = useSupplierStatement(
     id ? Number(id) : undefined,
     appliedPeriodRange,
     isCarrierPayable ? 'carrier' : 'vendor',
   );
   const typedStatement = statement as SupplierStatementType | undefined;
+  const typedProfile = profileStatement as SupplierStatementType | undefined;
   const error = queryError ? (queryError as Error).message : null;
   const { toast: showToast } = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -71,7 +84,7 @@ export default function PayableDetailPage() {
   // on first load, and only while the user hasn't touched the filter. The
   // current-month default is usually empty and reads as "Không có giao dịch".
   const periodTouchedRef = useRef(false);
-  const latestActivityDate = typedStatement?.latestActivityDate;
+  const latestActivityDate = typedProfile?.latestActivityDate;
   useEffect(() => {
     if (!latestActivityDate || periodTouchedRef.current) return;
     const aligned = periodFromLatestActivity(latestActivityDate);
@@ -112,29 +125,34 @@ export default function PayableDetailPage() {
         appliedPeriodRange,
         { fuel: opts.fuel },
       );
-      const blob = await api.getBlob(url);
-      const objectUrl = URL.createObjectURL(blob);
       if (format === 'pdf' && !opts.fuel) {
-        window.open(objectUrl, '_blank');
-      } else {
-        const a = document.createElement('a');
-        a.href = objectUrl;
-        a.download = statementExportFilename(
-          opts.fuel ? 'bang-ke-xang-dau' : 'sao-ke-ncc',
-          typedStatement?.supplier.name ?? String(id),
-          appliedPeriodRange,
-        );
-        a.click();
-        URL.revokeObjectURL(objectUrl);
+        // The "PDF (In)" endpoint returns a printable HTML sheet, not a PDF.
+        // Print it directly so the browser print dialog opens — and so the
+        // action still works on iOS/PWA, where opening a blob tab is blocked.
+        // Fall back to a tab when an iframe is unavailable (kanban 081026232560).
+        const html = await api.getForText(url);
+        const printed = printHtml(html, () => openBlobInNewTab(new Blob([html], { type: 'text/html' })));
+        showToast(printed
+          ? { kind: 'success', message: 'Đã mở hộp thoại in — chọn "Lưu thành PDF" để xuất file .pdf.' }
+          : { kind: 'info', message: 'Đã mở bản xem trước. Dùng Cmd/Ctrl + P để in hoặc lưu thành PDF.' });
+        return;
       }
+      const blob = await api.getBlob(url);
+      downloadBlob(blob, statementExportFilename(
+        opts.fuel ? 'bang-ke-xang-dau' : 'sao-ke-ncc',
+        typedStatement?.supplier.name ?? String(id),
+        appliedPeriodRange,
+      ));
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất sao kê' });
     }
   };
 
+  // Header + aging describe the CURRENT position, so they read the unfiltered
+  // profile. Only the ledger table and the period cards follow the filter.
   const agingAmounts = useMemo(() =>
-    normalizeAging(typedStatement?.agingBuckets ?? []),
-    [typedStatement?.agingBuckets]
+    normalizeAging(typedProfile?.agingBuckets ?? []),
+    [typedProfile?.agingBuckets]
   );
 
   const filteredRows = useMemo(() => {
@@ -149,7 +167,11 @@ export default function PayableDetailPage() {
     return max > 0 ? idx : -1;
   }, [agingAmounts]);
 
-  const totalOutstanding = typedStatement?.totalOutstanding ?? 0;
+  // The real debt owed today. `totalOutstanding` on the period-scoped payload is
+  // that period's net movement, which is why this prefers the explicit field.
+  const totalOutstanding = typedProfile?.currentTotalOutstanding
+    ?? typedProfile?.totalOutstanding
+    ?? 0;
 
   async function handlePaymentSubmit(confirmOverpay = false) {
     if (!id || !paymentAmount) return;
@@ -201,7 +223,7 @@ export default function PayableDetailPage() {
     }
   }
 
-  if (loading && !typedStatement) {
+  if (loading && !typedProfile) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)' }}>
         Đang tải dữ liệu...
@@ -209,7 +231,7 @@ export default function PayableDetailPage() {
     );
   }
 
-  if (!typedStatement) {
+  if (!typedProfile) {
     return (
       <div className="debt-detail-page">
         <div className="dd-header">
@@ -227,9 +249,12 @@ export default function PayableDetailPage() {
     );
   }
 
-  const { supplier, ledgerRows } = typedStatement;
+  const { supplier } = typedProfile;
   const hasDebt = totalOutstanding > 0;
-  const lastLedgerRow = ledgerRows[0];
+  // Overpayment detection must read the newest row of the WHOLE ledger —
+  // taking it from the period slice would report a mid-period balance and
+  // flag phantom credit.
+  const lastLedgerRow = typedProfile?.ledgerRows[0];
   const actualBalance = lastLedgerRow ? parseFloat(lastLedgerRow.balance) : 0;
   const hasCredit = actualBalance < 0;
   const overpaymentAmount = hasCredit ? Math.abs(actualBalance) : 0;
@@ -304,7 +329,7 @@ export default function PayableDetailPage() {
                     <FileText size={14} style={{ color: '#dc2626' }} />
                     PDF (In)
                   </button>
-                  {typedStatement.hasFuelExpenses && (
+                  {typedProfile.hasFuelExpenses && (
                     <button
                       className="dd-export-btn"
                       onClick={() => downloadExport('xlsx', { fuel: true })}
@@ -337,7 +362,7 @@ export default function PayableDetailPage() {
         hasDebt={hasDebt}
         hasCredit={hasCredit}
         overpaymentAmount={overpaymentAmount}
-        ledgerCount={ledgerRows.length}
+        ledgerCount={typedProfile.ledgerRows.length}
       />
 
       {/* Ledger Card */}
@@ -378,7 +403,7 @@ export default function PayableDetailPage() {
           isApplyDisabled={!isPeriodDirty || isStatementFetching}
         />
         <PeriodSummaryCards
-          summary={typedStatement.periodSummary}
+          summary={typedStatement?.periodSummary}
           isLoading={isStatementFetching}
           entityType="VENDOR"
         />
@@ -471,7 +496,7 @@ export default function PayableDetailPage() {
             type="PAYMENT_STATEMENT"
             entityType={payableBillingDocumentEntityType(isCarrierPayable)}
             entityId={Number(id)}
-            entityName={typedStatement?.supplier.name ?? ''}
+            entityName={typedProfile?.supplier.name ?? ''}
             buttonLabel="Tạo bảng kê"
             createBuilderOpen={showBillingDocumentBuilder}
             onOpenCreate={() => setShowBillingDocumentBuilder(true)}

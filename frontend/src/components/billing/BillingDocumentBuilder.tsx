@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Download, Filter, Loader2, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useToast } from '../shared/Toast';
+import { downloadBlob } from '../../lib/download';
 import { AssetIcon } from '../AssetIcon';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/format';
@@ -238,12 +239,7 @@ export default function BillingDocumentBuilder({
       if (!saved) return;
 
       const blob = await api.getBlob(financialClient.getBillingDocumentExportUrl(saved.id, templateId));
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = documentFileName(type, entityName);
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, documentFileName(type, entityName));
       showToast({ kind: 'success', message: 'Đã lưu và xuất Excel.' });
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất Excel' });

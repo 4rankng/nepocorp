@@ -1,8 +1,8 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
-import type { PeriodSummary, SupplierFuelStatement, SupplierFuelStatementRow } from '@tingting/shared';
+import type { AgingBucket, PeriodSummary, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
@@ -60,6 +60,10 @@ export interface CustomerStatementData {
   customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null; isCarrier?: boolean };
   ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
+  /** Debt owed across the WHOLE ledger — independent of any date filter. */
+  currentTotalOutstanding?: number;
+  /** Aging frozen at the period end; null when the request had no end date. */
+  agingAsOfPeriodEnd?: AgingBucket[] | null;
   unpaidTrips: Array<{ tripId: number; date: string; outstanding: number; note: string }>;
   agingBuckets: Array<{ range: string; amount: number }>;
   latestActivityDate?: string | null;
@@ -70,6 +74,10 @@ export interface SupplierStatementData {
   supplier: { id: number; name: string; phone: string | null; contactPerson: string | null };
   ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
+  /** Debt owed across the WHOLE ledger — independent of any date filter. */
+  currentTotalOutstanding?: number;
+  /** Aging frozen at the period end; null when the request had no end date. */
+  agingAsOfPeriodEnd?: AgingBucket[] | null;
   agingBuckets: Array<{ range: string; amount: number }>;
   hasFuelExpenses?: boolean;
   latestActivityDate?: string | null;
@@ -321,6 +329,40 @@ const VENDOR_TXN_LABELS: Record<string, string> = {
   UNLOCK_REVERSAL: 'Hoàn tác khóa chuyến',
 };
 
+/**
+ * FIFO aging for a set of ledger rows, in the entity's own sign convention
+ * (CUSTOMER: outstanding grows with debit; VENDOR: with credit — the mirror of
+ * `computePeriodSummary`).
+ *
+ * Callers deliberately pass the FULL ledger when they need "what does this
+ * counterparty owe right now", and a date-truncated slice when they need the
+ * position as of a period end.
+ */
+function computeAgingFor(
+  rows: Array<{ timestamp: Date; debit: string | null; credit: string | null }>,
+  entityType: 'CUSTOMER' | 'VENDOR',
+  referenceDate: Date,
+): { total: number; buckets: AgingBucket[] } {
+  const sign = entityType === 'CUSTOMER' ? 1 : -1;
+  const { aging } = computeFifoAging(
+    rows.map((r) => ({
+      timestamp: r.timestamp.toISOString(),
+      debit: sign === 1 ? (r.debit ?? '0') : (r.credit ?? '0'),
+      credit: sign === 1 ? (r.credit ?? '0') : (r.debit ?? '0'),
+    })),
+    referenceDate,
+  );
+  return {
+    total: aging.current + aging.d30 + aging.d60 + aging.over90,
+    buckets: [
+      { range: '0-30 ngày', amount: aging.current },
+      { range: '31-60 ngày', amount: aging.d30 },
+      { range: '61-90 ngày', amount: aging.d60 },
+      { range: 'Trên 90 ngày', amount: aging.over90 },
+    ],
+  };
+}
+
 const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; max-width: 900px; margin: 24px auto; padding: 0 16px; }
   h1 { font-size: 18px; margin: 0 0 4px; }
   .meta { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
@@ -337,7 +379,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   const [customer] = await db.select().from(s.customers).where(eq(s.customers.id, customerId)).limit(1);
   if (!customer) return null;
 
-  let ledgerRows = withReceivableProjectionBalances(
+  const allLedgerRows = withReceivableProjectionBalances(
     (await LedgerService.getEntriesByEntity('CUSTOMER', customerId))
       .filter(row =>
         row.txnType !== TxnType.EXTERNAL_CARRIER_COST
@@ -348,6 +390,20 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
         )
       ),
   );
+  let ledgerRows = allLedgerRows;
+
+  const now = new Date();
+  // Debt owed TODAY, independent of the period filter. `totalOutstanding`
+  // below is derived from the period-filtered rows, so a scoped request would
+  // otherwise report the period's net movement as if it were the live balance.
+  const currentTotalOutstanding = computeAgingFor(allLedgerRows, 'CUSTOMER', now).total;
+  const agingAsOfPeriodEnd = dateTo
+    ? computeAgingFor(
+      allLedgerRows.filter((r) => new Date(r.timestamp).getTime() <= new Date(`${dateTo}T23:59:59.999`).getTime()),
+      'CUSTOMER',
+      new Date(`${dateTo}T23:59:59.999`),
+    ).buckets
+    : null;
 
   // Period summary (đầu kỳ / phát sinh / cuối kỳ) is computed BEFORE the
   // date filter so we can read the stored `balance` of the last pre-period row.
@@ -517,7 +573,6 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     };
   });
 
-  const now = new Date();
   const { aging, openInvoices } = computeFifoAging(
     enrichedLedgerRows.map((r) => ({
       timestamp: r.timestamp.toISOString(),
@@ -572,6 +627,8 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY', isCarrier: customer.isCarrier },
     ledgerRows: enrichedLedgerRows,
     totalOutstanding,
+    currentTotalOutstanding,
+    agingAsOfPeriodEnd,
     unpaidTrips,
     latestActivityDate,
     agingBuckets: [
@@ -621,7 +678,8 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
 
   if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
 
-  let ledgerRows: EnrichedLedgerRow[] = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+  const allLedgerRows: EnrichedLedgerRow[] = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
+  let ledgerRows = allLedgerRows;
 
   // Whole-ledger facts computed before any date filtering: the fuel-supplier
   // marker (drives the "Bảng kê xăng dầu" button) and the latest activity
@@ -629,6 +687,19 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
   const hasFuelExpenses = ledgerRows.some((row) => row.txnType === TxnType.FUEL_EXPENSE);
   const latestActivityDate = ledgerRows.length > 0
     ? ledgerRows.reduce((max, r) => r.timestamp > max ? r.timestamp : max, ledgerRows[0].timestamp).toISOString().slice(0, 10)
+    : null;
+
+  const now = new Date();
+  // The debt the supplier is owed TODAY, independent of the period filter —
+  // `/payables/:id` used to show the period's net movement under a "TỔNG CÔNG NỢ"
+  // heading instead, which made September read 265tr against a real 1.04bn.
+  const currentTotalOutstanding = computeAgingFor(allLedgerRows, 'VENDOR', now).total;
+  const agingAsOfPeriodEnd = dateTo
+    ? computeAgingFor(
+      allLedgerRows.filter((r) => new Date(r.timestamp).getTime() <= new Date(`${dateTo}T23:59:59.999`).getTime()),
+      'VENDOR',
+      new Date(`${dateTo}T23:59:59.999`),
+    ).buckets
     : null;
 
   const periodSummary = computePeriodSummary(ledgerRows, dateFrom, dateTo, 'VENDOR');
@@ -721,7 +792,6 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
     ledgerRows = attachSupplierExpenseDetailsToLedgerRows(ledgerRows, expenseRows);
   }
 
-  const now = new Date();
   const { aging } = computeFifoAging(
     ledgerRows.map((r) => ({
       timestamp: r.timestamp.toISOString(),
@@ -737,6 +807,8 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
     supplier,
     ledgerRows,
     totalOutstanding,
+    currentTotalOutstanding,
+    agingAsOfPeriodEnd,
     hasFuelExpenses,
     latestActivityDate,
     agingBuckets: [
@@ -808,41 +880,46 @@ export async function getSupplierFuelStatement(
   }
   const closingBalance = openingBalance + fuelNet + otherCredits - otherDebits;
 
-  // Group the in-range fuel rows per trip. txnId carries the trip id (fuel
-  // rows always link to trips — verified against prod). Trip-less groups
-  // surface under tripId 0 so Σ rows always reconciles with fuelNet.
+  // Net fuel per trip across the WHOLE ledger, net of unlock reversals. Keyed
+  // by trip so each one can be placed on either basis — the ledger posts when a
+  // trip is locked, which is often a different month from its departure.
   interface TripGroup {
     amount: number;
     hadReversal: boolean;
     firstPostedAt: Date | null;
     lastPostedAt: Date | null;
   }
-  const groups = new Map<number, TripGroup>();
+  const netByTripAllTime = new Map<number, TripGroup>();
+  const postingInRange = new Set<number>();
   for (const r of allRows) {
-    if (!inRange(r) || !isFuelRow(r)) continue;
+    if (!isFuelRow(r)) continue;
     const tripId = r.txnId ?? 0;
-    const g = groups.get(tripId) ?? {
+    const g = netByTripAllTime.get(tripId) ?? {
       amount: 0, hadReversal: false, firstPostedAt: null, lastPostedAt: null,
     };
     g.amount += Number(r.credit ?? 0) - Number(r.debit ?? 0);
     if (r.txnType === TxnType.UNLOCK_REVERSAL) g.hadReversal = true;
     if (g.firstPostedAt === null || r.timestamp < g.firstPostedAt) g.firstPostedAt = r.timestamp;
     if (g.lastPostedAt === null || r.timestamp > g.lastPostedAt) g.lastPostedAt = r.timestamp;
-    groups.set(tripId, g);
+    netByTripAllTime.set(tripId, g);
+    if (inRange(r)) postingInRange.add(tripId);
   }
 
-  // Trip context for every fuel-linked trip in the whole ledger: the in-range
-  // groups need it for the row list, and the trip-month totals need trips
-  // whose postings may fall entirely outside the range.
-  const allFuelTripIds = Array.from(new Set(
-    allRows.filter((r) => isFuelRow(r) && r.txnId).map((r) => r.txnId as number),
-  ));
+  // Trip context for every trip this supplier is attached to PLUS every trip the
+  // ledger references. Covering `fuel_supplier_id = supplierId` (rather than
+  // only ledger-linked trips) is what makes unposted trips detectable at all.
+  const ledgerTripIds = Array.from(netByTripAllTime.keys()).filter((id) => id !== 0);
+  const supplierTripIds = (await db.select({ id: s.trips.id })
+    .from(s.trips)
+    .where(eq(s.trips.fuelSupplierId, supplierId))).map((r) => r.id);
   const tripContextById = new Map<number, {
     tripCode: string | null; departureDate: string;
     licensePlate: string | null; routeName: string | null; liters: number | null;
+    fuelSupplierId: number | null; totalFuelCost: number | null;
   }>();
-  if (allFuelTripIds.length > 0) {
-    // Same liters subquery as getSupplierStatement: Σ the supplier's
+  const candidateTripIds = Array.from(new Set([...ledgerTripIds, ...supplierTripIds]));
+  if (candidateTripIds.length > 0) {
+    // Same liters subquery as getSupplierStatement: sum the supplier's
     // allocation rows, falling back to the trip's total when unallocated.
     const tripRows = await db.select({
       id: s.trips.id,
@@ -850,11 +927,13 @@ export async function getSupplierFuelStatement(
       departureDate: s.trips.departureDate,
       licensePlate: s.trucks.licensePlate,
       routeName: s.routes.name,
+      fuelSupplierId: s.trips.fuelSupplierId,
+      totalFuelCost: s.trips.totalFuelCost,
       liters: sql<string | null>`coalesce((select sum(a.liters) from trip_fuel_allocations a where a.trip_id = ${s.trips.id} and a.supplier_id = ${supplierId}), ${s.trips.fuelLiters})`,
     }).from(s.trips)
       .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
       .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
-      .where(inArray(s.trips.id, allFuelTripIds));
+      .where(inArray(s.trips.id, candidateTripIds));
     for (const t of tripRows) {
       const liters = t.liters != null && t.liters !== '' ? Number(t.liters) : null;
       tripContextById.set(t.id, {
@@ -863,38 +942,112 @@ export async function getSupplierFuelStatement(
         licensePlate: t.licensePlate,
         routeName: t.routeName,
         liters: liters != null && Number.isFinite(liters) && liters > 0 ? liters : null,
+        fuelSupplierId: t.fuelSupplierId,
+        totalFuelCost: t.totalFuelCost != null && t.totalFuelCost !== '' ? Number(t.totalFuelCost) : null,
       });
     }
   }
 
-  const rows: SupplierFuelStatementRow[] = Array.from(groups.entries())
-    .map(([tripId, g]) => {
-      const trip = tripContextById.get(tripId) ?? null;
-      const liters = trip?.liters ?? null;
-      const unitPrice = liters != null && liters > 0
-        ? Math.round((g.amount / liters) * 100) / 100
-        : null;
-      return {
-        tripId,
-        tripCode: trip?.tripCode ?? null,
-        departureDate: trip?.departureDate ?? null,
-        firstPostedAt: g.firstPostedAt ? g.firstPostedAt.toISOString().slice(0, 10) : '',
-        lastPostedAt: g.lastPostedAt ? g.lastPostedAt.toISOString().slice(0, 10) : '',
-        licensePlate: trip?.licensePlate ?? null,
-        routeName: trip?.routeName ?? null,
-        liters,
-        unitPrice,
-        amount: Math.round(g.amount),
-        hadReversal: g.hadReversal,
-      };
-    })
-    // Pure churn (reversed then re-posted to the same amount) nets to zero and
-    // carries no liability — dropping those lines keeps the sheet tickable
-    // against the accountant's book without touching the totals.
-    .filter((row) => row.amount !== 0)
-    .sort((a, b) =>
-      (a.departureDate ?? '9999').localeCompare(b.departureDate ?? '9999')
-      || (a.tripCode ?? '').localeCompare(b.tripCode ?? ''));
+  const buildRow = (tripId: number, g: TripGroup): SupplierFuelStatementRow => {
+    const trip = tripContextById.get(tripId) ?? null;
+    const liters = trip?.liters ?? null;
+    const unitPrice = liters != null && liters > 0
+      ? Math.round((g.amount / liters) * 100) / 100
+      : null;
+    return {
+      tripId,
+      tripCode: trip?.tripCode ?? null,
+      departureDate: trip?.departureDate ?? null,
+      firstPostedAt: g.firstPostedAt ? g.firstPostedAt.toISOString().slice(0, 10) : '',
+      lastPostedAt: g.lastPostedAt ? g.lastPostedAt.toISOString().slice(0, 10) : '',
+      licensePlate: trip?.licensePlate ?? null,
+      routeName: trip?.routeName ?? null,
+      liters,
+      unitPrice,
+      amount: Math.round(g.amount),
+      hadReversal: g.hadReversal,
+    };
+  };
+
+  // Pure churn (reversed then re-posted to the same amount) nets to zero and
+  // carries no liability — dropping those lines keeps the sheet tickable
+  // against the accountant's book without touching the totals.
+  const isMeaningful = (row: SupplierFuelStatementRow) => row.amount !== 0;
+  const sortRows = (a: SupplierFuelStatementRow, b: SupplierFuelStatementRow) =>
+    (a.departureDate ?? '9999').localeCompare(b.departureDate ?? '9999')
+    || (a.tripCode ?? '').localeCompare(b.tripCode ?? '');
+
+  /** True when the trip's departure date falls inside the requested period. */
+  const departureInRange = (tripId: number) => {
+    const trip = tripContextById.get(tripId);
+    if (!trip) return false;
+    if (dateFrom && trip.departureDate < dateFrom) return false;
+    if (dateTo && trip.departureDate > dateTo) return false;
+    return true;
+  };
+
+  // Detail table = DEPARTURE basis: the supplier bills on the day the fuel was
+  // drawn, so this is the only cut that reconciles with their statement.
+  const rows: SupplierFuelStatementRow[] = Array.from(netByTripAllTime.entries())
+    .filter(([tripId]) => departureInRange(tripId))
+    .map(([tripId, g]) => buildRow(tripId, g))
+    .filter(isMeaningful)
+    .sort(sortRows);
+
+  // Posting basis kept for the variance block at the top of the sheet.
+  const postingRows: SupplierFuelStatementRow[] = Array.from(postingInRange)
+    .map((tripId) => buildRow(tripId, netByTripAllTime.get(tripId)!))
+    .filter(isMeaningful)
+    .sort(sortRows);
+
+  const departureTotalAmount = rows.reduce((sum, row) => sum + row.amount, 0);
+  const crossingMonthAmount = fuelNet - departureTotalAmount;
+
+  // Trips that drew fuel inside the period but posted nothing for this supplier.
+  // With no supplier id, trip-lock writes no FUEL_EXPENSE row, so the cost is
+  // absent from every payable ledger — and from this statement.
+  //
+  // Queried separately rather than via tripContextById: those trips have
+  // fuel_supplier_id = NULL, so they are by definition not in this supplier's
+  // trip list and would never be loaded above. TRP-202609-0048 is the real
+  // case — 152 lít, never posted anywhere.
+  const unassignedTrips: SupplierFuelStatementUnassignedTrip[] = [];
+  if (dateFrom && dateTo) {
+    const unassigned = await db.select({
+      id: s.trips.id,
+      tripCode: s.trips.tripCode,
+      departureDate: s.trips.departureDate,
+      licensePlate: s.trucks.licensePlate,
+      routeName: s.routes.name,
+      liters: s.trips.fuelLiters,
+      totalFuelCost: s.trips.totalFuelCost,
+    }).from(s.trips)
+      // INNER join on trucks: a trip whose truck row is gone is orphaned data,
+      // not an un-invoiced delivery. Listing those would bury the real case —
+      // September had ~21 such rows against one genuine miss.
+      .innerJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+      .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+      .where(and(
+        isNull(s.trips.fuelSupplierId),
+        isNull(s.trucks.deletedAt),
+        sql`${s.trips.fuelLiters} > 0`,
+        gte(s.trips.departureDate, dateFrom),
+        lte(s.trips.departureDate, dateTo),
+      ))
+      .orderBy(s.trips.departureDate, s.trips.id);
+    for (const t of unassigned) {
+      const liters = t.liters != null && t.liters !== '' ? Number(t.liters) : null;
+      unassignedTrips.push({
+        tripId: t.id,
+        tripCode: t.tripCode,
+        departureDate: t.departureDate,
+        licensePlate: t.licensePlate,
+        routeName: t.routeName,
+        liters: liters != null && Number.isFinite(liters) && liters > 0 ? liters : null,
+        totalFuelCost: t.totalFuelCost != null && t.totalFuelCost !== '' ? Number(t.totalFuelCost) : null,
+      });
+    }
+  }
 
   const totalLiters = rows.some((row) => row.liters != null)
     ? Math.round(rows.reduce((sum, row) => sum + (row.liters ?? 0), 0))
@@ -905,19 +1058,12 @@ export async function getSupplierFuelStatement(
   // period, which is what the accountant's book tracks.
   const tripMonthTotals: Array<{ tripMonth: string; amount: number }> = [];
   if (dateFrom && dateTo) {
-    const netByTripAllTime = new Map<number, number>();
-    for (const r of allRows) {
-      if (!isFuelRow(r) || !r.txnId) continue;
-      netByTripAllTime.set(
-        r.txnId,
-        (netByTripAllTime.get(r.txnId) ?? 0) + Number(r.credit ?? 0) - Number(r.debit ?? 0),
-      );
-    }
     const byMonth = new Map<string, number>();
-    for (const [tripId, net] of netByTripAllTime) {
+    for (const [tripId, group] of netByTripAllTime) {
       const trip = tripContextById.get(tripId);
       if (!trip?.departureDate) continue;
       if (trip.departureDate < dateFrom || trip.departureDate > dateTo) continue;
+      const net = group.amount;
       const month = trip.departureDate.slice(0, 7);
       byMonth.set(month, (byMonth.get(month) ?? 0) + net);
     }
@@ -936,17 +1082,28 @@ export async function getSupplierFuelStatement(
     otherDebits: Math.round(otherDebits),
     otherCredits: Math.round(otherCredits),
     rows,
+    postingRows,
     totalAmount: Math.round(fuelNet),
+    departureTotalAmount,
+    crossingMonthAmount,
     totalLiters,
+    unassignedTrips,
     tripMonthTotals,
   };
 }
 
 /**
- * XLSX builder for the fuel statement. Layout mirrors the supplier's own
- * book (BẢNG KÊ XĂNG DẦU): opening balance → per-trip lines with a horizontal
- * THÀNH TIỀN column → totals by posting date AND by trip-departure month →
- * closing balance.
+ * XLSX builder for the fuel statement. Layout mirrors the supplier's own book
+ * (BẢNG KÊ XĂNG DẦU), and is ordered for reconciliation:
+ *
+ *   opening balance → the two bases side by side (departure vs posting) and the
+ *   gap between them → per-trip lines on the DEPARTURE basis (the supplier's
+ *   own basis) with a THÀNH TIỀN column → trips that never reached this ledger
+ *   → closing balance.
+ *
+ * The departure basis leads because that is what the supplier invoices on;
+ * September 2026 showed 251.9tr on it against a posted 265.6tr, the difference
+ * being fuel drawn one month and locked the next.
  */
 export async function exportSupplierFuelStatementXlsx(
   data: SupplierFuelStatement,
@@ -972,12 +1129,14 @@ export async function exportSupplierFuelStatementXlsx(
   const fmtPrice = '#,##0.##';
 
   sheet.columns = [
-    { width: 12 }, { width: 12 }, { width: 18 }, { width: 14 },
+    { width: 12 }, { width: 13 }, { width: 15 }, { width: 18 }, { width: 14 },
     { width: 34 }, { width: 10 }, { width: 13 }, { width: 16 }, { width: 26 },
   ];
 
+  const LAST_COL = 10; // A..J
+
   // Title (row 1)
-  sheet.mergeCells('A1:I1');
+  sheet.mergeCells(`A1:${String.fromCharCode(64 + LAST_COL)}1`);
   const titleCell = sheet.getCell('A1');
   titleCell.value = `BẢNG KÊ XĂNG DẦU — ${data.supplier.name}`.toUpperCase();
   titleCell.font = { name: 'Segoe UI', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -986,7 +1145,7 @@ export async function exportSupplierFuelStatementXlsx(
   sheet.getRow(1).height = 34;
 
   // Meta rows
-  sheet.mergeCells('A2:I2');
+  sheet.mergeCells(`A2:${String.fromCharCode(64 + LAST_COL)}2`);
   sheet.getCell('A2').value =
     `Kỳ đối chiếu: ${data.dateFrom ?? 'đầu'} → ${data.dateTo ?? 'nay'}   ·   Ngày xuất: ${dateStr}`;
   sheet.getCell('A2').font = { name: 'Segoe UI', size: 10, color: { argb: 'FF4B5563' } };
@@ -1000,44 +1159,80 @@ export async function exportSupplierFuelStatementXlsx(
   sheet.getCell('E3').font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF374151' } };
   sheet.getRow(3).height = 20;
 
+  // ── Reconciliation block ────────────────────────────────────────────────
+  // Placed ABOVE the trip table on purpose. The whole question when comparing
+  // against the supplier's book is "which of these two numbers do I match?",
+  // and the answer is the departure one. Previously this only appeared at the
+  // bottom, under a heading about the posting basis, so it was never found.
+  const basisRow = (row: number, label: string, value: number, bold: boolean, argb: string) => {
+    sheet.getCell(`A${row}`).value = label;
+    sheet.getCell(`A${row}`).font = { name: 'Segoe UI', size: 10, bold, color: { argb } };
+    sheet.getCell(`A${row}`).alignment = { vertical: 'middle', horizontal: 'right' };
+    sheet.mergeCells(`A${row}:D${row}`);
+    sheet.getCell(`E${row}`).value = value;
+    sheet.getCell(`E${row}`).numFmt = fmtInt;
+    sheet.getCell(`E${row}`).font = { name: 'Segoe UI', size: 10, bold, color: { argb } };
+    sheet.getCell(`E${row}`).alignment = { vertical: 'middle', horizontal: 'right' };
+    sheet.getRow(row).height = 18;
+  };
+  basisRow(5, 'Tổng theo NGÀY CHUYẾN (khớp sổ hãng dầu):', data.departureTotalAmount, true, 'FF166534');
+  basisRow(6, 'Tổng theo NGÀY GHI SỔ (khớp sổ kế toán):', data.fuelNet, false, 'FF374151');
+  basisRow(
+    7,
+    'Chênh lệch do chuyến lấy nhiên liệu tháng này, ghi sổ tháng sau:',
+    data.crossingMonthAmount,
+    false,
+    'FFB45309',
+  );
+  sheet.getCell('A8').value =
+    'Bảng chi tiết bên dưới gom theo NGÀY CHUYẾN — cùng cách hãng dầu tính. Cột NGÀY GHI SỔ cho biết chuyến nào đã ghi sổ sang tháng khác.';
+  sheet.getCell('A8').font = { name: 'Segoe UI', size: 9, italic: true, color: { argb: 'FF6B7280' } };
+  sheet.mergeCells('A8:H8');
+
+  const SECTION_ROW = 10;
+  const HEADER_ROW = 11;
+
   // Section header
-  sheet.mergeCells('A5:I5');
-  const sectionCell = sheet.getCell('A5');
-  sectionCell.value = 'CHI TIẾT THEO CHUYẾN (ròng sau hoàn tác)';
+  sheet.mergeCells(`A${SECTION_ROW}:${String.fromCharCode(64 + LAST_COL)}${SECTION_ROW}`);
+  const sectionCell = sheet.getCell(`A${SECTION_ROW}`);
+  sectionCell.value = 'CHI TIẾT THEO CHUYẾN — ròng sau hoàn tác';
   sectionCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
   sectionCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: green } };
   sectionCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  sheet.getRow(5).height = 24;
+  sheet.getRow(SECTION_ROW).height = 24;
 
-  // Table header (row 6)
+  // Table header
   const headers = [
-    'NGÀY CHUYẾN', 'NGÀY ĐĂNG', 'MÃ CHUYẾN', 'ĐẦU KÉO', 'TUYẾN',
+    'NGÀY CHUYẾN', 'NGÀY GHI SỔ', 'MÃ CHUYẾN', 'ĐẦU KÉO', 'TUYẾN',
     'SỐ LÍT', 'ĐƠN GIÁ (Đ/LÍT)', 'THÀNH TIỀN (Đ)', 'GHI CHÚ',
   ];
   headers.forEach((h, i) => {
-    const cell = sheet.getCell(6, i + 1);
+    const cell = sheet.getCell(HEADER_ROW, i + 1);
     cell.value = h;
     cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
     cell.alignment = { vertical: 'middle', horizontal: i >= 5 && i <= 7 ? 'right' : 'left', wrapText: true };
     cell.border = borderStyle;
   });
-  sheet.getRow(6).height = 26;
+  sheet.getRow(HEADER_ROW).height = 26;
 
-  // Data rows
-  let lastRow = 6;
+  // Data rows — `rows` is the DEPARTURE basis (see getSupplierFuelStatement).
+  const FIRST_DATA_ROW = HEADER_ROW + 1;
+  let lastRow = HEADER_ROW;
   if (data.rows.length === 0) {
-    sheet.mergeCells('A7:I7');
-    sheet.getCell('A7').value = 'Không có phát sinh xăng dầu trong kỳ.';
-    sheet.getCell('A7').font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF6B7280' } };
-    sheet.getCell('A7').border = borderStyle;
-    lastRow = 7;
+    sheet.mergeCells(`A${FIRST_DATA_ROW}:${String.fromCharCode(64 + LAST_COL)}${FIRST_DATA_ROW}`);
+    sheet.getCell(`A${FIRST_DATA_ROW}`).value = 'Không có phát sinh xăng dầu trong kỳ.';
+    sheet.getCell(`A${FIRST_DATA_ROW}`).font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF6B7280' } };
+    sheet.getCell(`A${FIRST_DATA_ROW}`).border = borderStyle;
+    lastRow = FIRST_DATA_ROW;
   } else {
     data.rows.forEach((row, i) => {
-      const rowIdx = 7 + i;
+      const rowIdx = FIRST_DATA_ROW + i;
+      const crossesMonth = !!row.departureDate && !!row.firstPostedAt
+        && row.departureDate.slice(0, 7) !== row.firstPostedAt.slice(0, 7);
       const note = [
+        crossesMonth ? 'lệch tháng so với ngày ghi sổ' : null,
         row.hadReversal ? 'có hoàn tác, đã ròng' : null,
-        row.firstPostedAt !== row.lastPostedAt ? `đăng ${row.firstPostedAt}→${row.lastPostedAt}` : null,
       ].filter(Boolean).join(' · ');
       const values: Array<string | number | null> = [
         row.departureDate ?? '—', row.firstPostedAt, row.tripCode ?? '—',
@@ -1058,14 +1253,14 @@ export async function exportSupplierFuelStatementXlsx(
         if (c >= 5 && c <= 7) cell.alignment = { vertical: 'middle', horizontal: 'right' };
       });
     });
-    lastRow = 6 + data.rows.length;
+    lastRow = HEADER_ROW + data.rows.length;
   }
 
-  // Totals row
+  // Totals row — the table above is departure-basis, so this total must be too.
   const totalRow = lastRow + 1;
   sheet.mergeCells(`A${totalRow}:E${totalRow}`);
   const totalLabel = sheet.getCell(`A${totalRow}`);
-  totalLabel.value = 'TỔNG PHÁT SINH (theo ngày đăng)';
+  totalLabel.value = 'TỔNG THEO NGÀY CHUYẾN';
   totalLabel.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: green } };
   totalLabel.alignment = { vertical: 'middle', horizontal: 'right' };
   const litersCell = sheet.getCell(`F${totalRow}`);
@@ -1074,14 +1269,51 @@ export async function exportSupplierFuelStatementXlsx(
   litersCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: green } };
   litersCell.alignment = { horizontal: 'right' };
   const amountCell = sheet.getCell(`H${totalRow}`);
-  amountCell.value = data.totalAmount;
+  amountCell.value = data.departureTotalAmount;
   amountCell.numFmt = fmtInt;
   amountCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: green } };
   amountCell.alignment = { horizontal: 'right' };
-  for (let c = 1; c <= 9; c++) sheet.getCell(totalRow, c).border = borderStyle;
+  for (let c = 1; c <= LAST_COL; c++) sheet.getCell(totalRow, c).border = borderStyle;
   sheet.getRow(totalRow).height = 22;
 
   let current = totalRow + 2;
+
+  // ── Trips that never reached this ledger ────────────────────────────────
+  // A trip with fuel but no supplier posts no FUEL_EXPENSE row, so it is
+  // missing from the statement AND from the payable total. Listing it here is
+  // the only way the accountant learns the delivery is unaccounted for.
+  if (data.unassignedTrips.length > 0) {
+    sheet.mergeCells(`A${current}:${String.fromCharCode(64 + LAST_COL)}${current}`);
+    const warnHeader = sheet.getCell(`A${current}`);
+    warnHeader.value = 'CÁC CHUYẾN CHƯA GÁN NHÀ CUNG CẤP — không có trong bảng kê này';
+    warnHeader.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF991B1B' } };
+    warnHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+    sheet.getRow(current).height = 22;
+    current++;
+    for (const t of data.unassignedTrips) {
+      sheet.mergeCells(`A${current}:D${current}`);
+      sheet.getCell(`A${current}`).value = `${t.tripCode ?? '—'} · ${t.departureDate ?? '—'}`;
+      sheet.getCell(`A${current}`).font = { name: 'Segoe UI', size: 10, color: { argb: 'FF374151' } };
+      sheet.mergeCells(`E${current}:F${current}`);
+      sheet.getCell(`E${current}`).value = t.licensePlate ?? '—';
+      sheet.getCell(`E${current}`).font = { name: 'Segoe UI', size: 10, color: { argb: 'FF374151' } };
+      const litCell = sheet.getCell(`G${current}`);
+      litCell.value = t.liters;
+      litCell.numFmt = fmtInt;
+      litCell.alignment = { horizontal: 'right' };
+      const costCell = sheet.getCell(`H${current}`);
+      costCell.value = t.totalFuelCost;
+      costCell.numFmt = fmtInt;
+      costCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF991B1B' } };
+      costCell.alignment = { horizontal: 'right' };
+      current++;
+    }
+    sheet.getCell(`A${current}`).value =
+      'Các chuyến trên đã lấy nhiên liệu nhưng chưa gán nhà cung cấp nên chưa được ghi vào công nợ. Vui lòng gán NCC và khoá lại chuyến.';
+    sheet.getCell(`A${current}`).font = { name: 'Segoe UI', size: 9, italic: true, color: { argb: 'FF991B1B' } };
+    sheet.mergeCells(`A${current}:${String.fromCharCode(64 + LAST_COL)}${current}`);
+    current += 2;
+  }
 
   // Trip-month reconciliation block
   if (data.tripMonthTotals.length > 0) {
@@ -1123,7 +1355,7 @@ export async function exportSupplierFuelStatementXlsx(
   current++;
   sheet.mergeCells(`A${current}:G${current}`);
   const closingLabel = sheet.getCell(`A${current}`);
-  closingLabel.value = 'CỌN NỢ CUỐI KỲ (= Nợ đầu kỳ + phát sinh − thanh toán):';
+  closingLabel.value = 'CÒN NỢ CUỐI KỲ (= Nợ đầu kỳ + phát sinh − thanh toán):';
   closingLabel.font = { name: 'Segoe UI', size: 12, bold: true, color: { argb: 'FFDC2626' } };
   closingLabel.alignment = { vertical: 'middle', horizontal: 'right' };
   const closingCell = sheet.getCell(`H${current}`);
