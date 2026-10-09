@@ -31,6 +31,9 @@ import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;
 
+/** Exports walk every filtered page, so they need more headroom than one query. */
+const EXPORT_TIMEOUT_MS = 30_000;
+
 const EXPENSE_STATUS_COLORS: Record<string, string> = {
   PAID: '#059669',
   UNPAID: '#D97706',
@@ -135,6 +138,23 @@ export default function ExpenseListPage() {
     setPage(1);
   };
 
+  /**
+   * Reject rather than hang forever.
+   *
+   * The export buttons share one "Đang chuẩn bị…" busy state, so a request that
+   * never settles leaves the page permanently disabled until a reload — the
+   * report in kanban 101026003010. A bounded wait turns that into an ordinary
+   * error the user can retry.
+   */
+  const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`${label} quá ${Math.round(ms / 1000)} giây — vui lòng thử lại.`)), ms);
+      promise.then(
+        value => { clearTimeout(timer); resolve(value); },
+        err => { clearTimeout(timer); reject(err); },
+      );
+    });
+
   /** Every expense matching the current filters, not just the visible page. */
   const fetchAllFilteredExpenses = async (): Promise<ExpenseWithRefs[]> => {
     const query = {
@@ -145,14 +165,25 @@ export default function ExpenseListPage() {
       dateFrom,
       dateTo,
     };
-    const first = await api.get<PaginatedResponse<ExpenseWithRefs>>(
-      `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: 1, pageSize: 100 })}`,
+    const first = await withTimeout(
+      api.get<PaginatedResponse<ExpenseWithRefs>>(
+        `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: 1, pageSize: 100 })}`,
+      ),
+      EXPORT_TIMEOUT_MS,
+      'Tải danh sách chi phí',
     );
-    const pageCount = Math.ceil(first.total / first.pageSize);
-    const remaining = await Promise.all(
-      Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) => api.get<PaginatedResponse<ExpenseWithRefs>>(
-        `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: index + 2, pageSize: 100 })}`,
-      )),
+    // `pageCount` must stay finite: a malformed total/pageSize would otherwise
+    // make `Array.from({ length: Infinity })` allocate forever and freeze the tab.
+    const pageSize = first.pageSize > 0 ? first.pageSize : 100;
+    const pageCount = Math.ceil((first.total || 0) / pageSize);
+    const remaining = await withTimeout(
+      Promise.all(
+        Array.from({ length: Math.max(0, Math.min(pageCount, 500) - 1) }, (_, index) => api.get<PaginatedResponse<ExpenseWithRefs>>(
+          `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: index + 2, pageSize: 100 })}`,
+        )),
+      ),
+      EXPORT_TIMEOUT_MS,
+      'Tải danh sách chi phí',
     );
     return [first, ...remaining].flatMap(response => response.items);
   };
@@ -189,6 +220,12 @@ export default function ExpenseListPage() {
           totalsColumns: [5],
         },
       );
+    } catch (err: unknown) {
+      // Previously a rejected fetch fell straight through to `finally`: both
+      // buttons re-enabled, nothing downloaded, and NO error was ever shown —
+      // which is exactly the silent failure reported as a button "kẹt" at
+      // "Đang chuẩn bị…" (kanban 101026003010).
+      showToast({ kind: 'error', message: `Không tải được chi phí để xuất: ${(err as Error).message}` });
     } finally {
       setIsExporting(false);
     }
@@ -220,6 +257,11 @@ export default function ExpenseListPage() {
       showToast(printed
         ? { kind: 'success', message: 'Đã mở hộp thoại in — chọn "Lưu thành PDF" để xuất file .pdf.' }
         : { kind: 'info', message: 'Đã mở bản xem trước. Dùng Cmd/Ctrl + P để in hoặc lưu thành PDF.' });
+    } catch (err: unknown) {
+      // Same silent-failure hole as the .xlsx export above: without this the
+      // buttons simply re-enabled and the accountant got no explanation
+      // (kanban 101026003010).
+      showToast({ kind: 'error', message: `Không in được: ${(err as Error).message}` });
     } finally {
       setIsExporting(false);
     }
