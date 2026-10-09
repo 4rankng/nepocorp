@@ -338,7 +338,12 @@ function DesktopTable({
   sortOrder: 'asc' | 'desc';
   onSort: (field: 'name' | 'role' | 'status' | 'date') => void;
 }) {
-  // 5 columns: Tài khoản, Liên hệ, Vai trò, Xe, Ngày tạo (status via left-edge strip)
+  // Base columns: Tài khoản, Liên hệ, Vai trò, Xe, Ngày tạo (status via
+  // left-edge strip). The actions column is all-or-nothing: a role that cannot
+  // delete must not see a "Thao tác" header sitting over permanently empty
+  // cells — that read as "the feature is missing/broken" rather than
+  // "you are not allowed" (kanban 091026213000).
+  const showActions = canManage && canDelete;
 
   return (
     <div className="desktop-only">
@@ -366,13 +371,13 @@ function DesktopTable({
                   {sortBy === 'date' ? (sortOrder === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} style={{ opacity: 0.4 }} />}
                 </button>
               </th>
-              <th style={{ width: 84, textAlign: 'right' }}>Thao tác</th>
+              {showActions && <th style={{ width: 84, textAlign: 'right' }}>Thao tác</th>}
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={showActions ? 6 : 5}>
                   <div className="users-empty">
                     <img src={resolveEmptyIllustration('empty-users')} alt="" aria-hidden="true" className="users-empty__illustration" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <p className="users-empty__title">Không tìm thấy tài khoản</p>
@@ -440,22 +445,22 @@ function DesktopTable({
                   <td style={{ color: 'var(--ink-3)', fontSize: 'var(--fs-body)', whiteSpace: 'nowrap' }}>
                     {formatDate(u.createdAt)}
                   </td>
+                  {showActions && (
                   <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                    {canManage && canDelete && (
-                      <button
-                        type="button"
-                        className="users-row-action users-row-action--danger"
-                        aria-label={`Xoá tài khoản ${u.fullName || u.username || `#${u.id}`}`}
-                        disabled={!!deleting || isMe}
-                        title={isMe ? 'Không thể xoá tài khoản đang đăng nhập' : 'Xoá tài khoản'}
-                        onClick={() => { if (!isMe) onDelete(u.id); }}
-                        style={{ opacity: isMe ? 0.4 : 1 }}
-                      >
-                        {deleting === u.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
-                        <span>Xoá</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="users-row-action users-row-action--danger"
+                      aria-label={`Xoá tài khoản ${u.fullName || u.username || `#${u.id}`}`}
+                      disabled={!!deleting || isMe}
+                      title={isMe ? 'Không thể xoá tài khoản đang đăng nhập' : 'Xoá tài khoản'}
+                      onClick={() => { if (!isMe) onDelete(u.id); }}
+                      style={{ opacity: isMe ? 0.4 : 1 }}
+                    >
+                      {deleting === u.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
+                      <span>Xoá</span>
+                    </button>
                   </td>
+                  )}
                 </tr>
               );
             })}
