@@ -4,10 +4,11 @@ import {
   Mail, Phone, Check, AtSign, Lock, Truck as TruckIcon,
 } from 'lucide-react';
 import { Drawer, Btn, FormGroup } from '../../../components/UI';
-import { ROLE_LABELS } from '../utils';
+import { ROLE_LABELS, assignableRoles } from '../utils';
 import { Role } from '@tingting/shared';
 import type { Truck } from '@tingting/shared';
 import type { UserRow, CreateData, EditData } from '../utils';
+import { useAuth } from '../../../hooks/useAuth';
 
 // ── Icon Input ─────────────────────────────────────────────────────────────
 
@@ -119,6 +120,8 @@ interface EditPanelProps {
 }
 
 export function EditPanel({ isOpen, user, isMe, saving, error, truckList, canEditDriversOnly, onClose, onSave }: EditPanelProps) {
+  const { user: viewer } = useAuth();
+  const viewerRole = viewer?.role;
   const [fullName, setFullName] = useState(user.fullName ?? '');
   const [username, setUsername] = useState(user.username ?? '');
   const [email, setEmail]       = useState(user.email ?? '');
@@ -251,7 +254,7 @@ export function EditPanel({ isOpen, user, isMe, saving, error, truckList, canEdi
       <div className="row-2">
         <FormGroup label="Vai trò">
           <select className="input" value={role} disabled={canEditDriversOnly} onChange={e => setRole(e.target.value as Role)}>
-            {Object.values(Role).map(r => (
+            {assignableRoles(viewerRole).map(r => (
               <option key={r} value={r}>{ROLE_LABELS[r]}</option>
             ))}
           </select>
@@ -322,6 +325,8 @@ interface AddPanelProps {
 }
 
 export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: AddPanelProps) {
+  const { user: viewer } = useAuth();
+  const viewerRole = viewer?.role;
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail]       = useState('');
@@ -452,7 +457,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
             onChange={e => { setRole(e.target.value as Role | ''); setRoleTouched(true); }}
           >
             <option value="">— Chọn vai trò —</option>
-            {Object.values(Role).map(r => (
+            {assignableRoles(viewerRole).map(r => (
               <option key={r} value={r}>{ROLE_LABELS[r]}</option>
             ))}
           </select>

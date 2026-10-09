@@ -53,4 +53,20 @@ export const ROLE_PILL: Record<Role, { cls: string; label: string }> = {
 
 export type FilterKey = 'all' | Role;
 
+/**
+ * Roles the given account is actually allowed to hand out.
+ *
+ * The API already refuses a non-ADMIN assigning ADMIN ("Chỉ quản trị viên mới
+ * có thể gán vai trò ADMIN"), but the form offered every role to everyone, so a
+ * MANAGER could pick "Quản trị viên", fill the whole form, and only be told on
+ * save — after doing the work (kanban 101026003220).
+ *
+ * This mirrors the server rule exactly, so the dropdown only ever offers
+ * choices that will succeed. Keep the two in step.
+ */
+export function assignableRoles(actorRole: Role | undefined): Role[] {
+  const all = Object.values(Role);
+  return actorRole === Role.ADMIN ? all : all.filter(r => r !== Role.ADMIN);
+}
+
 export { Role, ROLE_LABELS };
