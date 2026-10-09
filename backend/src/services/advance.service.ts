@@ -1045,8 +1045,40 @@ export async function rejectAdvanceSettlement(id: number, rejectedBy: number) {
   });
 }
 
+/**
+ * Delete a settlement that has NOT been approved yet (kanban 091026213510).
+ *
+ * OPS filed a wrongly-scoped settlement and had no way to remove it — the
+ * detail page only offered edits. A PENDING settlement has no ledger effect
+ * (the outstanding-advance balance only counts APPROVED settlements) and no
+ * downstream document, so it is deleted outright with its line/link rows.
+ * CHECKED_BY_ACCOUNTANT and beyond sit on the approval path and are refused.
+ */
+export async function deleteAdvanceSettlement(id: number) {
+  return db.transaction(async (tx) => {
+    const [settlement] = await tx.select()
+      .from(s.advanceSettlements)
+      .where(eq(s.advanceSettlements.id, id))
+      .for('update');
+    if (!settlement) throw new AdvanceError(404, 'Không tìm thấy phiếu hoàn ứng');
+    if (settlement.status !== 'PENDING') {
+      throw new AdvanceError(
+        400,
+        `Chỉ xóa được phiếu hoàn ứng chưa duyệt (trạng thái hiện tại: ${settlement.status})`,
+      );
+    }
+
+    await tx.delete(s.settlementExpenses).where(eq(s.settlementExpenses.settlementId, id));
+    await tx.delete(s.advanceSettlementRequests).where(eq(s.advanceSettlementRequests.settlementId, id));
+    const [deleted] = await tx.delete(s.advanceSettlements)
+      .where(eq(s.advanceSettlements.id, id))
+      .returning();
+    if (!deleted) throw new AdvanceError(409, 'Phiếu đã bị thay đổi bởi thao tác khác');
+    return deleted;
+  });
+}
+
 // ── Outstanding advance balance (F1) ─────────────────────────────────────────
-//
 // Locked formula (Option 1, customer-confirmed):
 //   outstanding = Σ APPROVED advance_requests.amount
 //                 NOT linked to any APPROVED advance_settlement.

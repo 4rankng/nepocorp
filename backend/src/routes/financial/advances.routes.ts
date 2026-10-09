@@ -6,7 +6,7 @@ import { asyncHandler } from '../../middleware/asyncHandler';
 import { getUser } from '../../middleware/auth';
 import { getAdvanceSettlement } from '../../services/advance.service';
 import { exportSettlementXlsx, exportSettlementHtml } from '../../services/settlement-export.service';
-import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, getOutstandingAdvanceBalances, adjustSettlementExpense, updateAdvanceSettlement } from '../../services/advance.service';
+import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, deleteAdvanceSettlement, getOutstandingAdvanceBalances, adjustSettlementExpense, updateAdvanceSettlement } from '../../services/advance.service';
 import { throwValidation } from '../../lib/validation';
 import { formatLocalDate } from '../../lib/format';
 
@@ -80,6 +80,15 @@ router.put('/advance-settlements/:id', requireRoles(Role.ADMIN, Role.ACCOUNTANT)
   if (!result) return res.status(404).json({ error: 'Không tìm thấy phiếu hoàn ứng' });
   res.locals.auditEntityKey = `phiếu hoàn ứng ${result.code}`;
   res.json(result);
+}));
+
+// Delete an UN-APPROVED settlement (kanban 091026213510). The service refuses
+// anything past PENDING, so an approved document can never be removed here.
+router.delete('/advance-settlements/:id', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  const deleted = await deleteAdvanceSettlement(id);
+  res.locals.auditEntityKey = `phiếu hoàn ứng ${deleted.code}`;
+  res.json({ ok: true, id: deleted.id, code: deleted.code });
 }));
 
 router.patch(

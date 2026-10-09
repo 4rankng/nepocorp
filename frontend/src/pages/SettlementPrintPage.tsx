@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, FileSpreadsheet, Pencil, Save, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, FileSpreadsheet, Pencil, Save, CheckCircle2, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
+import { useConfirm } from '../components/confirm-dialog';
+import { useToast } from '../components/shared/Toast';
 import { downloadBlob } from '../lib/download';
 import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
@@ -113,6 +115,9 @@ export default function SettlementPrintPage() {
   const updateSettlement = useUpdateAdvanceSettlement();
   const updateMySettlement = useUpdateMyAdvanceSettlement();
   const approveSettlement = useApproveSettlement();
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const { toast } = useToast();
+  const [deleting, setDeleting] = useState(false);
 
   const handleBack = () => navigate(-1);
   useBackShortcut(handleBack);
@@ -151,6 +156,27 @@ export default function SettlementPrintPage() {
   }
 
   const s = settlement as SettlementData;
+
+  // Delete is office-only and PENDING-only (the service refuses anything past
+  // PENDING) — an un-approved, wrongly-scoped settlement had no removal path
+  // before (kanban 091026213510).
+  const handleDelete = async () => {
+    const ok = await confirm(
+      `Xóa phiếu hoàn ứng ${s.code}? Thao tác không thể hoàn tác.`,
+      { variant: 'danger', confirmLabel: 'Xóa phiếu' },
+    );
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/advance-settlements/${s.id}`);
+      toast({ kind: 'success', message: `Đã xóa phiếu ${s.code}` });
+      navigate('/admin/advance-settlements');
+    } catch (err) {
+      toast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xóa phiếu' });
+    } finally {
+      setDeleting(false);
+    }
+  };
   const expenses = s.linkedExpenses || [];
   const requests = s.linkedRequests || [];
   const totalAdvance = requests.reduce((sum, r) => sum + Number(r.amount), 0);
@@ -488,6 +514,17 @@ export default function SettlementPrintPage() {
               {updateSettlement.isPending || approveSettlement.isPending ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
               Sửa và hoàn tất
             </button>
+            {s.status === 'PENDING' && (
+              <button
+                className="btn btn--danger"
+                style={{ marginTop: 8 }}
+                disabled={deleting || updateSettlement.isPending || approveSettlement.isPending}
+                onClick={handleDelete}
+              >
+                {deleting ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
+                Xóa phiếu
+              </button>
+            )}
           </div>
         )}
 
@@ -546,6 +583,8 @@ export default function SettlementPrintPage() {
           onClose={() => setShowPreview(false)}
         />
       )}
+
+      {confirmDialog}
     </div>
   );
 }
