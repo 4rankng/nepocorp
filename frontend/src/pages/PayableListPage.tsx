@@ -9,7 +9,6 @@ import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
-import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import './PayableListPage.css';
 import '../components/shared/HeroKpiRow.css';
 import {
@@ -173,16 +172,16 @@ export default function PayableListPage() {
   // undefined this is the same query as `data`, so it costs no extra request.
   const { data: countsData } = usePayablesSummary(undefined);
   const categoryCounts = (countsData as unknown as PayablesResponse | undefined)?.categoryCounts;
-  const visibleChips = useMemo(
-    () => CATEGORY_CHIPS.filter(chip =>
-      chip.value === undefined
-      // Keep the active chip visible even if its count just dropped to zero,
-      // so the table it labels is never left without a selected tab.
-      || chip.value === category
-      || !categoryCounts
-      || (categoryCounts[chip.value] ?? 0) > 0),
-    [category, categoryCounts],
-  );
+  // Every chip is always rendered, in a fixed order. The chip row used to hide a
+  // category whose count had not arrived yet, so the same data showed five tabs on
+  // one reload and two on the next, and a chip could vanish the moment it was
+  // clicked (kanban 091026235510). A chip that is genuinely empty now says so —
+  // as a "0" badge plus an empty-state row — instead of disappearing, which also
+  // settles the "does this tab actually filter?" doubt.
+  const chipCount = (value: PayablesCategory | undefined): number | null => {
+    if (value === undefined) return null;
+    return categoryCounts ? categoryCounts[value] ?? 0 : null;
+  };
   const payables = useMemo(
     () => (data as unknown as PayablesResponse | undefined)?.items ?? [],
     [data],
@@ -192,7 +191,6 @@ export default function PayableListPage() {
   const apiOverdueCount = (data as unknown as PayablesResponse | undefined)?.overdueSuppliers ?? 0;
   const error = queryError ? (queryError as Error).message : null;
   const [search, setSearch] = useState('');
-  const prefersReduced = usePrefersReducedMotion();
   const compact = false; // full VND everywhere — no short form (e.g. "12,5 tr")
 
   /* ── Commission modal ── */
@@ -328,18 +326,20 @@ export default function PayableListPage() {
       <div className="payables-data-card">
         {/* Category chips */}
         <div className="payables-category-chips" role="tablist" aria-label="Lọc theo loại công nợ">
-          {visibleChips.map(chip => {
+          {CATEGORY_CHIPS.map(chip => {
             const isActive = chip.value === category;
+            const count = chipCount(chip.value);
             return (
               <button
                 key={chip.label}
                 type="button"
                 role="tab"
                 aria-selected={isActive}
-                className={`payables-category-chip${isActive ? ' is-active' : ''}`}
+                className={`payables-category-chip${isActive ? ' is-active' : ''}${count === 0 ? ' is-empty' : ''}`}
                 onClick={() => setCategory(chip.value)}
               >
                 {chip.label}
+                {count !== null && <span className="payables-category-chip__count">{count}</span>}
               </button>
             );
           })}
@@ -370,6 +370,19 @@ export default function PayableListPage() {
         {loading ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--ink-3)' }}>
             Đang tải dữ liệu công nợ phải trả...
+          </div>
+        ) : filteredPayables.length === 0 ? (
+          <div className="payables-empty" role="status">
+            <p className="payables-empty__title">
+              {search.trim()
+                ? `Không tìm thấy nhà cung cấp nào khớp "${search.trim()}"`
+                : `Không có công nợ nhà cung cấp nào ở mục “${CATEGORY_CHIPS.find(c => c.value === category)?.label ?? 'Tất cả'}”`}
+            </p>
+            {!search.trim() && category && (
+              <button type="button" className="payables-empty__reset" onClick={() => setCategory(undefined)}>
+                Xem tất cả công nợ
+              </button>
+            )}
           </div>
         ) : (
           <>

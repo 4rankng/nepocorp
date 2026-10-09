@@ -382,6 +382,74 @@
   outline-offset: 2px;
 }
 
+/* Per-category supplier count. The chip row is never hidden any more, so the
+   count is what tells an accountant whether a tab will have rows (091026235510).
+   While it is still loading nothing is rendered rather than a misleading 0. */
+.payables-page .payables-category-chip__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 7px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-3, #f1f5f9);
+  color: var(--fg-2, #475569);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.payables-page .payables-category-chip.is-active .payables-category-chip__count {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+/* A category with no suppliers still stays clickable, just visually quiet. */
+.payables-page .payables-category-chip.is-empty {
+  color: var(--fg-3, #94a3b8);
+}
+
+.payables-page .payables-category-chip.is-empty .payables-category-chip__count {
+  background: transparent;
+  color: var(--fg-3, #94a3b8);
+}
+
+.payables-page .payables-category-chip.is-active.is-empty {
+  color: #fff;
+}
+
+/* Empty table state for a category with no rows. */
+.payables-page .payables-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.payables-page .payables-empty__title {
+  margin: 0;
+  color: var(--fg-3, #94a3b8);
+  font-size: var(--fs-sm);
+}
+
+.payables-page .payables-empty__reset {
+  appearance: none;
+  margin-top: 14px;
+  padding: 8px 16px;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-radius: 999px;
+  background: var(--surface-2, #fff);
+  color: var(--primary, #0f766e);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.payables-page .payables-empty__reset:hover {
+  background: var(--surface-3, #f1f5f9);
+}
+
 /* Commission posting form (inside Modal).
    NOTE: the Modal is rendered through a portal at document.body, OUTSIDE the
    .payables-page wrapper — so these rules MUST NOT be scoped under .payables-page

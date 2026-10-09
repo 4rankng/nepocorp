@@ -37,6 +37,13 @@ export function usePayablesSummary(category?: PayablesCategory) {
   return useQuery({
     queryKey: qk.financial.payablesSummary(category),
     queryFn: () => financialClient.getPayablesSummary(category),
+    // Match its financial siblings. Without this the summary was stale
+    // immediately, so every remount/refocus refetched the aggregate — and the
+    // page holds two of these queries at once (the active category plus the
+    // unfiltered one carrying the per-category counts), which is what made the
+    // chip row flicker between reloads (kanban 091026235510).
+    staleTime: 2 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
