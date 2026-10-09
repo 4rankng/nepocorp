@@ -67,11 +67,13 @@ export function printHtml(html: string, onFallback?: () => void): boolean {
   try {
     iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
+    // Off-screen rather than 0×0: a zero-area frame is skipped by some print
+    // pipelines and yields a blank sheet even though the document is loaded.
     iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
+    iframe.style.left = '-10000px';
+    iframe.style.top = '0';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
     iframe.style.border = '0';
     iframe.src = 'about:blank';
     document.body.appendChild(iframe);
