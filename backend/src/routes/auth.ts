@@ -165,6 +165,15 @@ router.delete('/users/:id', authMiddleware, casbinAuthz('users'), asyncHandler(a
   if (req.user?.role === Role.ACCOUNTANT) {
     throw new ApiError(403, 'Kế toán không thể xóa người dùng');
   }
+  // Deleting an account is ADMIN-only. The users table already hides the delete
+  // control from anyone else (`showActions = canManage && canDelete`), but the
+  // Casbin policy grants MANAGER `users, delete`, so a MANAGER could still delete
+  // an account by calling the API directly — a privilege the UI denies them.
+  // Server and screen must agree, and the narrower rule is the safe one to
+  // enforce (kanban 101026003000).
+  if (req.user?.role !== Role.ADMIN) {
+    throw new ApiError(403, 'Chỉ quản trị viên mới có thể xóa tài khoản');
+  }
   const id = parseInt(req.params.id as string, 10);
   if (isNaN(id)) throw new ApiError(400, 'ID không hợp lệ');
   await userService.deleteUser(id, getUser(req).userId);
