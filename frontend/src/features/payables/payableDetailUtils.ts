@@ -1,5 +1,4 @@
 import { TxnType } from '@tingting/shared';
-import type { AgingBucket } from '@tingting/shared';
 
 export const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
@@ -55,45 +54,4 @@ export function ledgerHeading(
     title: `${base} — ${scope}`,
     subtitle: baseSub,
   };
-}
-
-export function normalizeAging(buckets: AgingBucket[]): number[] {
-  const amounts = [0, 0, 0, 0];
-  // Map by the bucket's RANGE, not its array index: some backends emit a short
-  // or reordered bucket list, and index mapping then shifts every label — a
-  // carrier's real 31–60 balance renders under a neighbouring label and the
-  // cell looks unlabelled/missing (kanban 091026135140).
-  for (const b of buckets) {
-    const key = rangeKey(b.range);
-    if (key === null) continue;
-    amounts[AGING_BUCKET_INDEX[key]] += b.amount;
-  }
-  return amounts;
-}
-
-/** Canonical bucket key from either the UI label or the API's range string. */
-type BucketKey = '0-30' | '31-60' | '61-90' | '90+';
-
-const AGING_BUCKET_INDEX: Record<BucketKey, number> = {
-  '0-30': 0,
-  '31-60': 1,
-  '61-90': 2,
-  '90+': 3,
-};
-
-/**
- * Normalize a range string to a bucket key. Tolerates the forms the API emits
- * ("0-30", "31-60 ngày", "90+", "Trên 90 ngày"). Returns null when the string
- * matches no known bucket, so an unknown label never steals another bucket's
- * amount.
- */
-function rangeKey(range: string | undefined): BucketKey | null {
-  if (!range) return null;
-  const raw = range.toLowerCase().replace(/ngày/g, '').trim();
-  if (raw.includes('90') && !raw.includes('-')) return '90+'; // "90+", "trên 90"
-  if (/^\d+\s*-\s*\d+$/.test(raw)) {
-    const key = raw.replace(/\s+/g, '') as BucketKey;
-    return key in AGING_BUCKET_INDEX ? key : null;
-  }
-  return null;
 }
