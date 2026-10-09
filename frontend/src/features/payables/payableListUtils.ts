@@ -65,13 +65,20 @@ export function computeAgingTotals(
     overdueCount: apiOverdueCount,
   };
 
+  // Sum EVERY bucket value, including credits (negative buckets) and rows
+  // whose net happens to be zero — the four displayed buckets must add up to
+  // the server's aggregate on every render, or the aging cards and the hero
+  // total describe two different debts (kanban 091026010100). Counts keep
+  // their "has a balance in this bucket" meaning and stay on positive values.
   payables.forEach(d => {
-    if (d.totalOutstanding > 0) {
-      if (d.aging.current > 0) { sum.current += d.aging.current; sum.currentCount++; }
-      if (d.aging.d30 > 0) { sum.d30 += d.aging.d30; sum.d30Count++; }
-      if (d.aging.d60 > 0) { sum.d60 += d.aging.d60; sum.d60Count++; }
-      if (d.aging.over90 > 0) { sum.over90 += d.aging.over90; sum.over90Count++; }
-    }
+    sum.current += d.aging.current;
+    sum.d30 += d.aging.d30;
+    sum.d60 += d.aging.d60;
+    sum.over90 += d.aging.over90;
+    if (d.aging.current > 0) sum.currentCount++;
+    if (d.aging.d30 > 0) sum.d30Count++;
+    if (d.aging.d60 > 0) sum.d60Count++;
+    if (d.aging.over90 > 0) sum.over90Count++;
   });
 
   return sum;
