@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Settings2, Upload } from "lucide-react";
 import type { Tire } from "@tingting/shared";
+import { TIRE_STATUS_LABELS } from "@tingting/shared";
 import { ConfirmDialog } from "../components/UI";
 import { AssetIcon } from "../components/AssetIcon";
 import { StatusSwatch } from "../components/shared/StatusStrip";
@@ -106,6 +107,33 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
   const installMut = useInstallTire();
   const transferMut = useTransferTire();
   const importMut = useImportTires();
+
+  // A serial is globally unique, so a duplicate can sit on ANOTHER vehicle.
+  // Resolve the conflict message from the full tire list so the add form can
+  // warn inline while typing instead of only after a rejected submit
+  // (kanban 091026211000). Mirrors the backend's tireSerialConflictMessage.
+  const serialConflict = useMemo(() => {
+    const bySerial = new Map<string, Tire>();
+    for (const t of allTires ?? []) bySerial.set(t.serial.trim().toLowerCase(), t);
+    const plateByTruck = new Map((trucksDrivers?.trucks ?? []).map(t => [t.id, t.licensePlate]));
+    const plateByTrailer = new Map(trailers.map(t => [t.id, t.licensePlate]));
+    return (rawSerial: string): string | null => {
+      const t = bySerial.get(rawSerial.trim().toLowerCase());
+      if (!t) return null;
+      const statusLabel = TIRE_STATUS_LABELS[t.status] ?? t.status;
+      const location = t.truckId
+        ? `xe ${plateByTruck.get(t.truckId) ?? `#${t.truckId}`}`
+        : t.trailerId
+          ? `rơ-moóc ${plateByTrailer.get(t.trailerId) ?? `#${t.trailerId}`}`
+          : t.status === 'IN_STOCK'
+            ? 'kho lốp dự phòng'
+            : t.status === 'DISPOSED'
+              ? 'danh sách đã thanh lý'
+              : 'hệ thống';
+      const position = t.position ? `, vị trí ${t.position}` : '';
+      return `Serial lốp ${t.serial} đã tồn tại (${statusLabel}, ${location}${position})`;
+    };
+  }, [allTires, trucksDrivers, trailers]);
   const createPositionMut = useCreateTirePosition();
   const updatePositionMut = useUpdateTirePosition();
   const deletePositionMut = useDeleteTirePosition();
@@ -196,6 +224,7 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
             suppliers={suppliers}
             saving={createMut.isPending}
             onManagePositions={openPositionManager}
+            serialConflict={serialConflict}
             onsave={async (d) => {
               try {
                 await createMut.mutateAsync({

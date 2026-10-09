@@ -20,12 +20,19 @@ export function AddTireForm({
   saving,
   onManagePositions,
   onsave,
+  serialConflict,
 }: {
   positionLabels: string[];
   suppliers: Supplier[];
   saving: boolean;
   onManagePositions: PositionManagerOpener;
   onsave: (d: { serial: string; position: string | null; size: string | null; supplierId: number | null; cost: number; purchasedAt: string | null; installedAt?: string | null }) => Promise<unknown> | void;
+  /**
+   * Returns a diagnostic message when `serial` already exists on ANY vehicle —
+   * so the form can warn inline instead of only after a rejected submit
+   * (kanban 091026211000).
+   */
+  serialConflict?: (serial: string) => string | null;
 }) {
   const [serial, setSerial] = useState("");
   const [positionText, setPositionText] = useState("");
@@ -35,8 +42,10 @@ export function AddTireForm({
   const [purchasedAt, setPurchasedAt] = useState("");
   const [installedAt, setInstalledAt] = useState(todayISO());
 
+  const conflictMessage = serial.trim() ? (serialConflict?.(serial.trim()) ?? null) : null;
+
   const submit = async () => {
-    if (!serial.trim()) return;
+    if (!serial.trim() || conflictMessage) return;
     const positionPayload = positionPayloadFromLabel(positionText);
     try {
       await onsave({
@@ -64,7 +73,22 @@ export function AddTireForm({
     <div className="ttp-add">
       <div className="ttp-field ttp-field--serial">
         <label htmlFor="tire-serial">Serial lốp *</label>
-        <input id="tire-serial" name="serial" className="input" value={serial} onChange={(e) => setSerial(e.target.value)} placeholder="VD: 12345678" />
+        <input
+          id="tire-serial"
+          name="serial"
+          className="input"
+          value={serial}
+          onChange={(e) => setSerial(e.target.value)}
+          placeholder="VD: 12345678"
+          aria-invalid={conflictMessage ? true : undefined}
+          aria-describedby={conflictMessage ? 'tire-serial-error' : undefined}
+          style={conflictMessage ? { borderColor: 'var(--danger)' } : undefined}
+        />
+        {conflictMessage && (
+          <p id="tire-serial-error" role="alert" style={{ color: 'var(--danger)', fontSize: 'var(--fs-xs)', margin: '4px 0 0', lineHeight: 1.4 }}>
+            {conflictMessage}
+          </p>
+        )}
       </div>
       <div className="ttp-field">
         <span className="ttp-field__label">Vị trí</span>
@@ -90,7 +114,7 @@ export function AddTireForm({
         <label htmlFor="tire-installed-at">Ngày lắp</label>
         <input id="tire-installed-at" name="installedAt" className="input" type="date" value={installedAt} onChange={(e) => setInstalledAt(e.target.value)} title="Mặc định hôm nay — chọn lại ngày thật khi nhập lốp cũ đang gắn trên xe" />
       </div>
-      <button className="btn btn--primary ttp-add-submit" disabled={saving || !serial.trim()} onClick={submit}>
+      <button className="btn btn--primary ttp-add-submit" disabled={saving || !serial.trim() || !!conflictMessage} onClick={submit}>
         {saving ? "Đang lưu…" : "Thêm lốp"}
       </button>
     </div>
