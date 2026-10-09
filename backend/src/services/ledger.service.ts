@@ -247,6 +247,46 @@ export class LedgerService {
    * in strict mode (default) a bad fee throws before any posting occurs.
    */
   /**
+   * How many fuel charges this trip still owes for a supplier — cost rows minus
+   * the unlock reversals that cancel them.
+   *
+   * Reversal notes mirror the cost note with a " (Hoàn tác)" suffix, so counting
+   * them per trip+supplier gives the number of charges that are actually live.
+   * The pattern matches both fuel cost notes — the per-allocation
+   * "Chi phí N lít dầu chuyến X (Hoàn tác)" and the whole-trip
+   * "Chi phí dầu chuyến X (Hoàn tác)". Scoped to entityType VENDOR it cannot
+   * match the carrier reversal ("Cước thuê ngoài…") or the fee reversal
+   * ("Phí chi hộ…").
+   *
+   * A trip locked twice without an unlock in between would otherwise double-bill
+   * the fuel supplier (kanban 091026211520).
+   */
+  private static async countActiveFuelCharges(
+    tx: Tx,
+    tripId: number,
+    supplierId: number,
+  ): Promise<number> {
+    const [costRow] = await tx.select({ n: count() })
+      .from(s.ledger)
+      .where(and(
+        eq(s.ledger.txnType, TxnType.FUEL_EXPENSE),
+        eq(s.ledger.txnId, tripId),
+        eq(s.ledger.entityType, 'VENDOR'),
+        eq(s.ledger.entityId, supplierId),
+      ));
+    const [reversalRow] = await tx.select({ n: count() })
+      .from(s.ledger)
+      .where(and(
+        eq(s.ledger.txnType, TxnType.UNLOCK_REVERSAL),
+        eq(s.ledger.txnId, tripId),
+        eq(s.ledger.entityType, 'VENDOR'),
+        eq(s.ledger.entityId, supplierId),
+        like(s.ledger.note, 'Chi phí% (Hoàn tác)'),
+      ));
+    return Number(costRow?.n ?? 0) - Number(reversalRow?.n ?? 0);
+  }
+
+  /**
    * True when this trip already carries an unreversed carrier charge on the
    * CARRIER ledger for this carrier.
    *
@@ -335,35 +375,58 @@ export class LedgerService {
     }
 
     // ── OWN/EXTERNAL: fuel supplier payable ──
+    // Idempotent per supplier. A trip may legitimately refuel the same supplier
+    // more than once, so we post one row per allocation — but if this trip
+    // already carries unreversed charges for that supplier, the live charges
+    // already cover what we are about to post. Re-locking without an
+    // intervening unlock used to append a duplicate charge every time, leaving
+    // a trip with four costs against two reversals and a doubled bill
+    // (kanban 091026211520). Same defect class as the carrier guard below.
     const fuelAllocationCosts = this.resolveFuelAllocationCosts(trip);
     if (fuelAllocationCosts.length > 0) {
-      for (const { allocation, fuelCost } of fuelAllocationCosts) {
-        const liters = Number(allocation.liters);
-        if (fuelCost <= 0) continue;
-        await this.postEntry(tx, {
-          txnType: TxnType.FUEL_EXPENSE,
-          txnId: trip.id,
-          entityType: 'VENDOR',
-          entityId: allocation.supplierId as number,
-          debit: 0,
-          credit: fuelCost,
-          note: label
-            ? `Chi phí ${liters.toLocaleString('vi-VN')} lít dầu chuyến ${label}`
-            : `Chi phí ${liters.toLocaleString('vi-VN')} lít dầu`,
-        });
+      const bySupplier = new Map<number, { allocation: typeof fuelAllocationCosts[0]['allocation']; fuelCost: number }[]>();
+      for (const entry of fuelAllocationCosts) {
+        const supplierId = entry.allocation.supplierId as number;
+        const list = bySupplier.get(supplierId);
+        if (list) list.push(entry);
+        else bySupplier.set(supplierId, [entry]);
+      }
+      for (const [supplierId, entries] of bySupplier) {
+        const alreadyActive = await this.countActiveFuelCharges(tx, trip.id, supplierId);
+        let deficit = entries.length - alreadyActive;
+        for (const { allocation, fuelCost } of entries) {
+          const liters = Number(allocation.liters);
+          if (fuelCost <= 0) continue;
+          if (deficit <= 0) break;
+          await this.postEntry(tx, {
+            txnType: TxnType.FUEL_EXPENSE,
+            txnId: trip.id,
+            entityType: 'VENDOR',
+            entityId: supplierId,
+            debit: 0,
+            credit: fuelCost,
+            note: label
+              ? `Chi phí ${liters.toLocaleString('vi-VN')} lít dầu chuyến ${label}`
+              : `Chi phí ${liters.toLocaleString('vi-VN')} lít dầu`,
+          });
+          deficit--;
+        }
       }
     } else {
       const fuelCost = Number(trip.totalFuelCost || 0);
       if (trip.fuelSupplierId && fuelCost > 0) {
-        await this.postEntry(tx, {
-          txnType: TxnType.FUEL_EXPENSE,
-          txnId: trip.id,
-          entityType: 'VENDOR',
-          entityId: trip.fuelSupplierId,
-          debit: 0,
-          credit: fuelCost,
-          note: label ? `Chi phí dầu chuyến ${label}` : 'Chi phí dầu chuyến',
-        });
+        const alreadyActive = await this.countActiveFuelCharges(tx, trip.id, trip.fuelSupplierId);
+        if (alreadyActive <= 0) {
+          await this.postEntry(tx, {
+            txnType: TxnType.FUEL_EXPENSE,
+            txnId: trip.id,
+            entityType: 'VENDOR',
+            entityId: trip.fuelSupplierId,
+            debit: 0,
+            credit: fuelCost,
+            note: label ? `Chi phí dầu chuyến ${label}` : 'Chi phí dầu chuyến',
+          });
+        }
       }
     }
 
