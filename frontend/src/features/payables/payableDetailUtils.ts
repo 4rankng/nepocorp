@@ -35,6 +35,13 @@ export const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
  * nhiên liệu" swapped the table columns to fuel fields while the title still
  * announced freight — staff read the fuel column under a freight heading
  * (kanban 091026010110).
+ *
+ * It then over-corrected by concatenating base + tab
+ * ("Chi tiết cước vận chuyển thuê ngoài — Cước thuê ngoài"), which reads as two
+ * half-sentences glued together and says nothing useful (kanban 091026165510).
+ * A tab selection is a scope, so the heading becomes exactly that scope: one
+ * clean segment that follows the active tab. "Tất cả" keeps the entity-level
+ * base, which is the only heading that describes the whole ledger.
  */
 export function ledgerHeading(
   isCarrier: boolean,
@@ -51,7 +58,7 @@ export function ledgerHeading(
   const tab = FILTER_OPTIONS.find(f => f.key === filter);
   const scope = tab ? tab.label : 'Giao dịch';
   return {
-    title: `${base} — ${scope}`,
-    subtitle: baseSub,
+    title: scope,
+    subtitle: `Lọc theo "${scope}". ${baseSub}`,
   };
 }
