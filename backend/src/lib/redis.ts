@@ -5,6 +5,11 @@ let redis: Redis | null = null;
 
 const inflightCacheRequests = new Map<string, Promise<unknown>>();
 const cacheVersions = new Map<string, number>();
+/**
+ * Bumped by every pattern invalidation. An in-flight fetch captures the epoch
+ * and refuses to publish when it changed — see cacheGet().
+ */
+let cacheEpoch = 0;
 
 export function getRedis(): Redis {
   if (!redis) {
@@ -47,9 +52,16 @@ export async function cacheGet<T>(
   if (inflight) return inflight as Promise<T>;
 
   const version = cacheVersions.get(key) ?? 0;
+  const epoch = cacheEpoch;
   const fetchPromise = fetchFn()
     .then(async (result) => {
-      if ((cacheVersions.get(key) ?? 0) === version) {
+      // Publish only if nothing invalidated this cache while the fetch ran.
+      // The per-key version covers `cacheInvalidate(key)`, but a PATTERN
+      // invalidation deletes keys it cannot enumerate a version for (a key
+      // mid-computation does not exist in Redis yet), so a slow fetch could
+      // re-publish the pre-write snapshot and the report would flap between the
+      // fresh and stale aggregates for the rest of the TTL (kanban 091026010100).
+      if (epoch === cacheEpoch && (cacheVersions.get(key) ?? 0) === version) {
         try {
           const resolvedTtl = typeof ttl === 'function' ? ttl(result) : ttl;
           await client.set(key, JSON.stringify(result), 'EX', resolvedTtl);
@@ -81,6 +93,10 @@ export async function cacheInvalidate(key: string): Promise<void> {
 }
 
 export async function cacheInvalidatePattern(pattern: string): Promise<void> {
+  // Bump the epoch first: it must be visible to every in-flight fetch BEFORE the
+  // DEL below, so none of them can re-publish a snapshot taken before this
+  // invalidation (kanban 091026010100).
+  cacheEpoch += 1;
   const client = getRedis();
   try {
     const stream = client.scanStream({ match: pattern, count: 100 });
