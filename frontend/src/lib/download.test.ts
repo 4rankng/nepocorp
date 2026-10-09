@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { downloadBlob, openBlobInNewTab } from './download';
+import { downloadBlob, openBlobInNewTab, printHtml } from './download';
 
 /**
  * The regression these lock down: every export used to revoke the object URL
@@ -71,5 +71,53 @@ describe('openBlobInNewTab', () => {
     expect(open).toHaveBeenCalledWith('blob:print-url', '_blank', 'noopener');
     vi.advanceTimersByTime(60_000);
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The "PDF (In)" no-op (kanban 091026135110) came from printing the iframe
+ * BEFORE the sheet was written into it. These lock the order in: the document
+ * must be present when print() runs, and print must fire exactly once.
+ */
+describe('printHtml', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    document.querySelectorAll('iframe').forEach(f => f.remove());
+  });
+
+  it('writes the sheet before printing, exactly once', () => {
+    vi.useFakeTimers();
+    const onFallback = vi.fn();
+    const ok = printHtml('<h1>Bảng kê</h1>', onFallback);
+    expect(ok).toBe(true);
+
+    const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+    expect(iframe).toBeTruthy();
+    // The sheet is already in the frame when print() is reachable.
+    expect(iframe.contentDocument?.body?.innerHTML ?? '').toContain('Bảng kê');
+
+    const win = iframe.contentWindow;
+    if (!win) throw new Error('iframe has no contentWindow');
+    const print = vi.fn();
+    win.print = print;
+
+    iframe.dispatchEvent(new Event('load'));
+    vi.advanceTimersByTime(1000); // late timer must be a no-op after load
+    expect(print).toHaveBeenCalledTimes(1);
+    expect(onFallback).not.toHaveBeenCalled();
+  });
+
+  it('falls back when the frame cannot print', () => {
+    vi.useFakeTimers();
+    const onFallback = vi.fn();
+    printHtml('<p>x</p>', onFallback);
+
+    const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+    const win = iframe.contentWindow;
+    if (!win) throw new Error('iframe has no contentWindow');
+    win.print = () => { throw new Error('blocked'); };
+    iframe.dispatchEvent(new Event('load'));
+    expect(onFallback).toHaveBeenCalledTimes(1);
   });
 });
