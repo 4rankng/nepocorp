@@ -41,6 +41,30 @@ function formatDateOnly(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
 
+/**
+ * Midnight-UTC anchor for the CURRENT Vietnam calendar day.
+ *
+ * `getDriverVehicleAlerts` reasons in Vietnam time — the reminder window is a
+ * business calendar question, and this is a Vietnam operation. The assertions
+ * below used a bare `new Date()`, which `formatDateOnly` renders in UTC, so the
+ * expectation silently slipped a day behind the service for seven hours out of
+ * every day (00:00-07:00 ICT, where UTC is still on the previous date). The test
+ * passed in the morning and failed after midnight — a wall-clock flake, not a
+ * behaviour change.
+ *
+ * Anchoring to ICT makes the expectation follow the same day the service does,
+ * at any hour.
+ */
+function vietnamToday(): Date {
+  const ymd = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+  return new Date(`${ymd}T00:00:00.000Z`);
+}
+
 async function insertTruck(values: Partial<typeof s.trucks.$inferInsert> = {}) {
   const [truck] = await db.insert(s.trucks).values({
     licensePlate: `15C-${String(Date.now() + truckIds.length).slice(-5)}`,
@@ -325,8 +349,8 @@ test('getDriverVehicleAlerts prefers active canonical schedules and falls back t
   assert.deepEqual(
     alerts.map((item) => ({ field: item.field, date: item.date })),
     [
-      { field: 'lastOilServiceDate', date: formatDateOnly(addDays(new Date(), 1)) },
-      { field: 'insuranceExpiryDate', date: formatDateOnly(addDays(new Date(), 3)) },
+      { field: 'lastOilServiceDate', date: formatDateOnly(addDays(vietnamToday(), 1)) },
+      { field: 'insuranceExpiryDate', date: formatDateOnly(addDays(vietnamToday(), 3)) },
     ],
   );
 });
