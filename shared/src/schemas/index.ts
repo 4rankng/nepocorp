@@ -84,6 +84,10 @@ const fuelUnitPrice = positiveNumeric
     message: fuelUnitPriceMessage,
   });
 
+/** A required fuel unit price (config / price history) with the same floor. */
+const requiredFuelUnitPrice = positiveNumeric
+  .refine((v) => v >= MIN_FUEL_UNIT_PRICE_VND, { message: fuelUnitPriceMessage });
+
 // ─── Trip ────────────────────────────────────────────────────────────────────
 
 export const tripFuelAllocationSchema = z.object({
@@ -703,13 +707,13 @@ export const fuelConfigSchema = z.object({
   loadedNorm: positiveNumeric,
   emptyNorm: positiveNumeric,
   supplement: nonNegNumeric.optional().default(3),
-  unitPrice: positiveNumeric,
+  unitPrice: requiredFuelUnitPrice,
   warningThreshold: nonNegNumeric.optional().default(37),
   criticalThreshold: nonNegNumeric.optional().default(40),
 });
 
 export const fuelPriceHistorySchema = z.object({
-  unitPrice: positiveNumeric,
+  unitPrice: requiredFuelUnitPrice,
   effectiveDate: z.string().min(1),
   note: z.string().optional(),
 });

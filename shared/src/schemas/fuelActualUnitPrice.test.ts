@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { createTripSchema, updateTripFiguresSchema } from './index';
+import { createTripSchema, updateTripFiguresSchema, fuelConfigSchema, tripFuelAllocationSchema } from './index';
 import { FuelMode, LoadingType } from '../constants';
 
 // Regression guard for the reported unit-price drift ("entered 23,530, it
@@ -84,4 +84,17 @@ test('blank fuelActualUnitPrice (null/undefined) is accepted → config fallback
     updateTripFiguresSchema.safeParse({ ...base }).success,
     true,
   );
+});
+
+test('fuelConfigSchema applies the same plausibility floor to the pricing default', () => {
+  const cfg = { loadedNorm: 30, emptyNorm: 25 };
+  assert.strictEqual(fuelConfigSchema.safeParse({ ...cfg, unitPrice: 225 }).success, false,
+    'a liters value in the config price must be rejected');
+  assert.strictEqual(fuelConfigSchema.safeParse({ ...cfg, unitPrice: 27_650 }).success, true);
+});
+
+test('tripFuelAllocationSchema applies the floor to a per-purchase price', () => {
+  const alloc = { supplierId: 10, liters: 225, paymentMethod: 'CREDIT' as const };
+  assert.strictEqual(tripFuelAllocationSchema.safeParse({ ...alloc, unitPrice: 225 }).success, false);
+  assert.strictEqual(tripFuelAllocationSchema.safeParse({ ...alloc, unitPrice: 23_530 }).success, true);
 });
