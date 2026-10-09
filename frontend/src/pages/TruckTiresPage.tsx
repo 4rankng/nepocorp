@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Settings2 } from "lucide-react";
+import { ArrowLeft, Settings2, Upload } from "lucide-react";
 import type { Tire } from "@tingting/shared";
 import { ConfirmDialog } from "../components/UI";
 import { AssetIcon } from "../components/AssetIcon";
@@ -10,8 +10,9 @@ import { formatErrorMessage } from "../lib/api";
 import { routes } from "../lib/routes";
 import { useBackShortcut } from "../hooks/useBackShortcut";
 import { buildPositionLabels, buildUsedPositionLabels, normalizedCatalogLabel, todayISO } from "../features/tires/tireUtils";
-import { useTires, useCreateTire, useUpdateTire, useDeleteTire, useInstallTire, useRemoveTire, useDisposeTire, useTransferTire } from "../hooks/useTireQueries";
+import { useTires, useCreateTire, useUpdateTire, useDeleteTire, useInstallTire, useRemoveTire, useDisposeTire, useTransferTire, useImportTires } from "../hooks/useTireQueries";
 import { useAllSuppliers, useCreateTirePosition, useDeleteTirePosition, useTirePositions, useTrailers, useTrucksAndDrivers, useUpdateTirePosition } from "../hooks/useCatalogQueries";
+import { TireImportDialog } from "../features/tires/tire-import-dialog";
 import "./TruckTiresPage.css";
 
 type VehicleKind = "truck" | "trailer";
@@ -104,6 +105,7 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
   const disposeMut = useDisposeTire();
   const installMut = useInstallTire();
   const transferMut = useTransferTire();
+  const importMut = useImportTires();
   const createPositionMut = useCreateTirePosition();
   const updatePositionMut = useUpdateTirePosition();
   const deletePositionMut = useDeleteTirePosition();
@@ -113,6 +115,7 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
   const [installTarget, setInstallTarget] = useState<Tire | null>(null);
   const [transferTarget, setTransferTarget] = useState<Tire | null>(null);
   const [positionManagerOpen, setPositionManagerOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [positionManagerSelect, setPositionManagerSelect] = useState<((value: string) => void) | null>(null);
   const { toast } = useToast();
 
@@ -170,6 +173,10 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
           </h1>
           <div className="ttp-sub">Theo dõi serial lốp, vị trí lắp, ngày mua, tuổi lốp, nhà cung cấp và thanh lý lốp cũ.</div>
         </div>
+        <button type="button" className="ttp-tool-btn" onClick={() => setImportOpen(true)}>
+          <Upload size={15} />
+          Nhập Excel
+        </button>
       </div>
 
       <div className="ttp-workbench">
@@ -353,6 +360,13 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
           ondelete={(id) => deletePositionMut.mutateAsync(id)}
         />
       )}
+
+      <TireImportDialog
+        isOpen={importOpen}
+        importing={importMut.isPending}
+        onClose={() => setImportOpen(false)}
+        onImport={(rows) => importMut.mutateAsync(rows)}
+      />
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
