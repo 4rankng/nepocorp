@@ -8,6 +8,7 @@ import { listTripContainers, batchUpsertTripContainers, createTripExpense, updat
 import { processExpenseApproval } from '../services/approval.service';
 import { requireRoles } from '../middleware/casbin';
 import { getUser } from '../middleware/auth';
+import { getDriverByUserId } from '../services/driver.service';
 import { db } from '../db';
 import * as dbSchema from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -174,10 +175,44 @@ router.post('/bulk-figures', asyncHandler(async (req: Request, res: Response) =>
   });
 }));
 
+// Roles that legitimately read any trip. Everyone else (the driver/forwarder
+// portals) is confined to the trips they own — see the ownership guard below.
+const TRIP_READ_STAFF_ROLES: Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
+
 router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
-  res.json(await tripService.getTripById(id));
+  const user = getUser(req);
+  const trip = await tripService.getTripById(id);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+
+  /**
+   * Ownership guard.
+   *
+   * This endpoint had no ownership check, so ANY authenticated account could
+   * read ANY trip by id — including its revenue, cost and profit. A driver
+   * landing on a trip id belonging to someone else saw that trip and its costs
+   * flash up before the SPA redirected them away (kanban 101026004000). The
+   * route guard in the SPA hides the page; only this check actually stops the
+   * data from being served.
+   *
+   * 404 rather than 403 so an id outside your own trips is indistinguishable
+   * from one that does not exist.
+   */
+  if (!TRIP_READ_STAFF_ROLES.includes(user.role)) {
+    if (user.role === Role.DRIVER) {
+      const driver = await getDriverByUserId(user.userId);
+      if (!driver || trip.driver?.id !== driver.id) {
+        return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+      }
+    } else {
+      // Forwarders reach trips through /api/forwarder, which enforces its own
+      // scope. Deny by default for any other portal role.
+      return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+    }
+  }
+
+  res.json(trip);
 }));
 
 // Soft-delete trip — only ADMIN/MANAGER, only CREATED status (flow 01 §2.6)
