@@ -28,6 +28,45 @@ export async function transitionTripStatus(
     const currentStatus = trip.status as TripStatus;
     if (currentStatus === targetStatus) return trip; // Idempotent short-circuit
 
+    /**
+     * Reverse a COMPLETED trip's ledger postings. Shared by CANCEL and by
+     * re-dispatching (COMPLETED → IN_TRANSIT): the next completion re-posts
+     * every row, so reusing a completion without reversing first appends
+     * byte-identical fuel/expense rows that the payable statement then shows as
+     * duplicates (kanban 091026135130).
+     */
+    const reverseCompletedPostings = async () => {
+      const [ancillaryFees, fuelAllocations] = await Promise.all([
+        tx.select().from(s.tripExpenses).where(eq(s.tripExpenses.tripId, trip.id)),
+        tx.select().from(s.tripFuelAllocations).where(eq(s.tripFuelAllocations.tripId, trip.id)),
+      ]);
+      await LedgerService.postTripUnlock(tx, {
+        id: trip.id,
+        tripCode: trip.tripCode,
+        customerId: trip.customerId,
+        driverId: trip.driverId ?? null,
+        revenue: trip.revenue,
+        driverSalary: trip.driverSalary,
+        carrierType: trip.carrierType ?? 'OWN',
+        externalCarrierId: trip.externalCarrierId ?? null,
+        externalFreightCost: trip.externalFreightCost ?? null,
+        fuelSupplierId: trip.fuelSupplierId ?? null,
+        fuelPriceApplied: trip.fuelPriceApplied,
+        fuelActualUnitPrice: trip.fuelActualUnitPrice,
+        totalFuelCost: trip.totalFuelCost,
+        fuelAllocations,
+        ancillaryFees: ancillaryFees.map(fee => ({
+          id: fee.id,
+          buyAmount: fee.buyAmount,
+          sellAmount: fee.sellAmount,
+          settlementMethod: fee.settlementMethod,
+          supplierId: fee.supplierId ?? null,
+          forwarderId: fee.forwarderId ?? null,
+          approvalStatus: fee.approvalStatus,
+        })),
+      }, { strict: false });
+    };
+
     // Verify role permissions and transition matrix
     if (targetStatus === TripStatus.IN_TRANSIT) {
       // Per docs/flows/01-TRIP_LIFECYCLE.md §2.3, only ADMIN/MANAGER can
@@ -70,6 +109,12 @@ export async function transitionTripStatus(
           409,
           `Xe đang chạy chuyến ${busyLabel}. Vui lòng hoàn thành chuyến đó trước.`,
         );
+      }
+      // Re-dispatching a completed trip reverses its postings now; completing it
+      // again re-posts them. Without this the payables statement accumulates
+      // duplicate fuel/expense rows (kanban 091026135130).
+      if (currentStatus === TripStatus.COMPLETED) {
+        await reverseCompletedPostings();
       }
     } else if (targetStatus === TripStatus.COMPLETED && currentStatus === TripStatus.LOCKED) {
       // UNLOCK: LOCKED → COMPLETED — reopen the trip for editing. Ledger rows
@@ -204,12 +249,8 @@ export async function transitionTripStatus(
         throw new ApiError(409, 'Không thể hủy chuyến đi đã chốt');
       }
 
-      const ancillaryFees = currentStatus === TripStatus.COMPLETED
-        ? await tx.select().from(s.tripExpenses).where(eq(s.tripExpenses.tripId, trip.id))
-        : [];
-      const fuelAllocations = currentStatus === TripStatus.COMPLETED
-        ? await tx.select().from(s.tripFuelAllocations).where(eq(s.tripFuelAllocations.tripId, trip.id))
-        : [];
+      // Canceling reverses the postings (via reverseCompletedPostings below),
+      // so no per-fee/fuel snapshot is needed here.
 
       // Canceled: zero all financials
       const [updated] = await tx.update(s.trips).set({
@@ -225,31 +266,7 @@ export async function transitionTripStatus(
       }).where(eq(s.trips.id, tripId)).returning();
 
       if (currentStatus === TripStatus.COMPLETED) {
-        await LedgerService.postTripUnlock(tx, {
-          id: trip.id,
-          tripCode: trip.tripCode,
-          customerId: trip.customerId,
-          driverId: trip.driverId ?? null,
-          revenue: trip.revenue,
-          driverSalary: trip.driverSalary,
-          carrierType: trip.carrierType ?? 'OWN',
-          externalCarrierId: trip.externalCarrierId ?? null,
-          externalFreightCost: trip.externalFreightCost ?? null,
-          fuelSupplierId: trip.fuelSupplierId ?? null,
-          fuelPriceApplied: trip.fuelPriceApplied,
-          fuelActualUnitPrice: trip.fuelActualUnitPrice,
-          totalFuelCost: trip.totalFuelCost,
-          fuelAllocations,
-          ancillaryFees: ancillaryFees.map(fee => ({
-            id: fee.id,
-            buyAmount: fee.buyAmount,
-            sellAmount: fee.sellAmount,
-            settlementMethod: fee.settlementMethod,
-            supplierId: fee.supplierId ?? null,
-            forwarderId: fee.forwarderId ?? null,
-            approvalStatus: fee.approvalStatus,
-          })),
-        }, { strict: false });
+        await reverseCompletedPostings();
       }
 
       // Cancel audit row is written by the middleware for POST /cancel

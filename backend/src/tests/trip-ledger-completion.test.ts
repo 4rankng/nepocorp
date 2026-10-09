@@ -393,6 +393,33 @@ describe('trip completion ledger posting', () => {
     assert.equal(latestSupplierRows.at(-1)?.balance, '0');
   });
 
+  test('re-dispatching a completed trip reverses its postings, so re-completion never duplicates them', async () => {
+    const { trip, supplier } = await createInTransitTrip({
+      revenue: 700_000,
+      totalFuelCost: 200_000,
+    });
+
+    await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
+    // COMPLETED → IN_TRANSIT: send the truck out again (kanban 091026135130).
+    await transitionTripStatus(trip.id, TripStatus.IN_TRANSIT, 1, Role.MANAGER);
+    await transitionTripStatus(trip.id, TripStatus.COMPLETED, 1, Role.MANAGER);
+
+    const rows = await ledgerRowsForTrip(trip.id);
+    // post (1st completion) + reversal (re-dispatch) + post (2nd completion).
+    assert.equal(rows.filter(r => r.txnType === TxnType.FUEL_EXPENSE).length, 2);
+    assert.equal(rows.filter(r => r.txnType === TxnType.TRIP_REVENUE).length, 2);
+    assert.equal(rows.filter(r => r.txnType === TxnType.UNLOCK_REVERSAL).length, 2);
+
+    // Net fuel exposure stays a single 200,000₫ credit — not double-counted.
+    const netFuelCredit = rows
+      .filter(r =>
+        r.entityType === 'VENDOR' &&
+        r.entityId === supplier.id &&
+        (r.txnType === TxnType.FUEL_EXPENSE || r.txnType === TxnType.UNLOCK_REVERSAL))
+      .reduce((sum, r) => sum + Number(r.credit) - Number(r.debit), 0);
+    assert.equal(netFuelCredit, 200_000);
+  });
+
   test('editing completed trip figures reverses and reposts ledger entries', async () => {
     const { trip, customer } = await createInTransitTrip({
       revenue: 800_000,
