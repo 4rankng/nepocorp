@@ -19,7 +19,6 @@ import type {
   FuelReconcileResult,
   FuelReconcileResultRow,
   FuelReconcileStatus,
-  FuelReconcileSummary,
 } from '@tingting/shared';
 
 export interface FuelReconcileFileRow {
