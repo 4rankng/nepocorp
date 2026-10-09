@@ -267,10 +267,10 @@ export default function ExpenseListPage() {
             Chưa thanh toán
           </div>
           <div className="expense-kpi-value">
-            {stats.unpaidCount}
+            {stats.unpaidCount}{' '}
             <span className="expense-kpi-value-unit">phiếu</span>
           </div>
-          <div className="expense-kpi-meta">{formatNumber(stats.unpaidAmount)}</div>
+          <div className="expense-kpi-meta">{formatNumber(stats.unpaidAmount)} ₫</div>
         </div>
 
         <div className="expense-kpi-card expense-kpi-card--paid">
@@ -281,10 +281,10 @@ export default function ExpenseListPage() {
             Đã thanh toán
           </div>
           <div className="expense-kpi-value">
-            {stats.paidCount}
+            {stats.paidCount}{' '}
             <span className="expense-kpi-value-unit">phiếu</span>
           </div>
-          <div className="expense-kpi-meta">{formatNumber(stats.paidAmount)}</div>
+          <div className="expense-kpi-meta">{formatNumber(stats.paidAmount)} ₫</div>
         </div>
       </div>
 
