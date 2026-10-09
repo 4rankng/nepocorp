@@ -5,7 +5,7 @@ import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
 import { downloadBlob } from '../lib/download';
-import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement } from '../hooks/useForwarderQueries';
+import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { PageHeader, StatusPill } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
@@ -111,6 +111,7 @@ export default function SettlementPrintPage() {
   const [selectionReady, setSelectionReady] = useState(false);
   const updateExpense = useUpdateSettlementExpense();
   const updateSettlement = useUpdateAdvanceSettlement();
+  const updateMySettlement = useUpdateMyAdvanceSettlement();
   const approveSettlement = useApproveSettlement();
 
   const handleBack = () => navigate(-1);
@@ -169,6 +170,8 @@ export default function SettlementPrintPage() {
   const plans = groupSettlementExpensesByTrip(expenses);
   const totalFromPlans = plans.reduce((sum, plan) => sum + plan.totalExpense, 0);
   const canEditExpenses = !isPortal && (user?.role === 'ACCOUNTANT' || user?.role === 'ADMIN') && (s.status === 'PENDING' || s.status === 'CHECKED_BY_ACCOUNTANT');
+  // Ops sở hữu phiếu có thể tự bổ sung/bớt tạm ứng, chi phí khi phiếu còn CHỜ XỬ LÝ.
+  const canEditComposition = canEditExpenses || (isPortal && s.status === 'PENDING');
 
   const requestCandidates = [...requests, ...(s.eligibleAdvanceRequests ?? [])]
     .filter((request, index, items) => items.findIndex(item => item.id === request.id) === index);
@@ -205,6 +208,18 @@ export default function SettlementPrintPage() {
       note: settlementNote.trim() || null,
     });
     await approveSettlement.mutateAsync(s.id);
+  };
+
+  const handleSaveChanges = async () => {
+    if (selectedRequestIds.size === 0) return;
+    await updateMySettlement.mutateAsync({
+      settlementId: s.id,
+      advanceRequestIds: [...selectedRequestIds],
+      tripExpenseIds: [...selectedExpenseIds],
+      refundAmount: selectedRefundAmount,
+      reimbursementAmount: selectedReimbursementAmount,
+      note: settlementNote.trim() || null,
+    });
   };
 
   const startEditingExpense = (expense: LinkedExpense) => {
@@ -300,7 +315,7 @@ export default function SettlementPrintPage() {
           </div>
         )}
 
-        {canEditExpenses && (
+        {canEditComposition && (
           <div className="settlement-detail__section no-print">
             <h2 className="settlement-detail__section-title">Tạm ứng đưa vào phiếu</h2>
             <p className="settlement-editor-hint">Chỉ các tạm ứng đã duyệt và còn đủ điều kiện mới có thể thêm vào phiếu.</p>
@@ -387,7 +402,7 @@ export default function SettlementPrintPage() {
               <strong>{formatCurrency(totalFromPlans)}</strong>
             </div>
           </div>
-          {canEditExpenses && (
+          {canEditComposition && (
             <div className="settlement-expense-actions no-print">
               {expenseCandidatePlans.map(plan => (
                 <div className="settlement-expense-plan" key={plan.tripId}>
@@ -407,7 +422,7 @@ export default function SettlementPrintPage() {
                               <small>{expense.containerNumber || 'Chi phí chung'} · {formatCurrency(Number(expense.buyAmount))}</small>
                             </span>
                           </label>
-                          {expenses.some(item => item.id === expense.id) && (
+                          {canEditExpenses && expenses.some(item => item.id === expense.id) && (
                             <button className="btn btn--secondary btn--sm" onClick={() => startEditingExpense(expense)}>
                               <Pencil size={14} /> Sửa
                             </button>
@@ -472,6 +487,37 @@ export default function SettlementPrintPage() {
             <button className="btn btn--primary" disabled={selectedRequestIds.size === 0 || updateSettlement.isPending || approveSettlement.isPending} onClick={handleFinalize}>
               {updateSettlement.isPending || approveSettlement.isPending ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
               Sửa và hoàn tất
+            </button>
+          </div>
+        )}
+
+        {isPortal && s.status === 'PENDING' && (
+          <div className="settlement-finalize no-print">
+            <div className="settlement-finalize__fields">
+              <label>
+                {selectedDifference > 0
+                  ? 'Ops tạm ứng chuyển kỳ sau'
+                  : selectedDifference < 0
+                    ? 'Công ty hoàn thêm'
+                    : 'Đã cân đối'}
+                <input
+                  className="input"
+                  type="text"
+                  readOnly
+                  value={formatCurrency(Math.abs(selectedDifference))}
+                />
+              </label>
+              <label>Ghi chú
+                <textarea className="input" rows={2} value={settlementNote} onChange={event => setSettlementNote(event.target.value)} />
+              </label>
+            </div>
+            <p className="settlement-editor-hint">Phiếu chưa cân đối sẽ không lưu được — hãy chọn đủ tạm ứng và chi phí tương ứng.</p>
+            {updateMySettlement.error && (
+              <p className="settlement-finalize__error">{String(updateMySettlement.error)}</p>
+            )}
+            <button className="btn btn--primary" disabled={selectedRequestIds.size === 0 || updateMySettlement.isPending} onClick={handleSaveChanges}>
+              {updateMySettlement.isPending ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
+              Lưu thay đổi
             </button>
           </div>
         )}

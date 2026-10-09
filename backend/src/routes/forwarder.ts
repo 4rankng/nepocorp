@@ -26,8 +26,8 @@ import { throwValidation } from '../lib/validation';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { tripContainerSchema, tripExpenseSchema, tripExpensePatchSchema, tripExpenseCompletionSchema } from '@tingting/shared';
-import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement, getOutstandingAdvanceBalance } from '../services/advance.service';
-import { createAdvanceRequestSchema, createAdvanceSettlementSchema } from '@tingting/shared';
+import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, updateAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement, getOutstandingAdvanceBalance } from '../services/advance.service';
+import { createAdvanceRequestSchema, createAdvanceSettlementSchema, updateAdvanceSettlementSchema } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
 import sharp from 'sharp';
 import { sniffImageType } from '../lib/format';
@@ -280,6 +280,21 @@ router.post('/advance-settlements', asyncHandler(async (req: Request, res: Respo
     const { note, ...rest } = parsed.data;
     const result = await createAdvanceSettlement(forwarder.id, { ...rest, note: note ?? undefined });
   res.status(201).json(result);
+}));
+
+// Ops tự bổ sung/bớt tạm ứng, chi phí trong phiếu CHỜ XỬ LÝ của chính mình.
+// Số tiền chi phí vẫn là quyền kế toán (PATCH phía office).
+router.put('/advance-settlements/:id', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = req.forwarder!;
+  const settlement = await getAdvanceSettlement(Number(req.params.id));
+  if (!settlement) return res.status(404).json({ error: 'Không tìm thấy phiếu thanh toán' });
+  if (settlement.forwarderId !== forwarder.id) return res.status(403).json({ error: 'Không có quyền truy cập' });
+  if (settlement.status !== 'PENDING') return res.status(409).json({ error: 'Chỉ được sửa phiếu đang chờ xử lý' });
+  const parsed = updateAdvanceSettlementSchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  const result = await updateAdvanceSettlement(settlement.id, parsed.data, { actor: 'forwarder' });
+  res.locals.auditEntityKey = `phiếu hoàn ứng ${result.code} (Ops tự điều chỉnh)`;
+  res.json(result);
 }));
 
 // ── Expense Photos ──

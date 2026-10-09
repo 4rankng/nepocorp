@@ -266,6 +266,27 @@ export function useUpdateAdvanceSettlement() {
   });
 }
 
+/** Portal variant — Ops saves composition changes on their own PENDING phiếu. */
+export function useUpdateMyAdvanceSettlement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ settlementId, ...data }: {
+      settlementId: number;
+      advanceRequestIds: number[];
+      tripExpenseIds: number[];
+      refundAmount: number;
+      reimbursementAmount: number;
+      note?: string | null;
+    }) => forwarderClient.updateMyAdvanceSettlement(settlementId, data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementDetail(variables.settlementId) });
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementsAll });
+      qc.invalidateQueries({ queryKey: qk.forwarder.eligibleAdvanceRequests });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
+    },
+  });
+}
+
 export function useUpdateSettlementExpense() {
   const qc = useQueryClient();
   return useMutation({

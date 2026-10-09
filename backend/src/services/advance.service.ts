@@ -573,6 +573,7 @@ export async function updateAdvanceSettlement(
     reimbursementAmount: number;
     note?: string | null;
   },
+  opts: { actor?: 'office' | 'forwarder' } = {},
 ) {
   await db.transaction(async (tx) => {
     const [settlement] = await tx.select().from(s.advanceSettlements)
@@ -647,15 +648,27 @@ export async function updateAdvanceSettlement(
   });
   const detail = await getAdvanceSettlement(settlementId);
   if (!detail) throw new AdvanceError(404, 'Không tìm thấy phiếu hoàn ứng sau khi cập nhật');
-  emitNotification({
-    type: NotificationType.SYSTEM_ANNOUNCEMENT,
-    title: 'Kế toán đã cập nhật phiếu hoàn ứng',
-    message: `Phiếu ${detail.code} đã được cập nhật danh sách tạm ứng, chi phí hoặc số dư Ops tạm ứng.`,
-    relatedEntityType: 'advance_settlements',
-    relatedEntityId: settlementId,
-    targetUserId: detail.forwarderId,
-    targetRoles: [],
-  });
+  if (opts.actor === 'forwarder') {
+    emitNotification({
+      type: NotificationType.SYSTEM_ANNOUNCEMENT,
+      title: 'Ops đã cập nhật phiếu hoàn ứng',
+      message: `Phiếu ${detail.code} đã được Ops bổ sung/bớt tạm ứng, chi phí. Vui lòng xem lại trước khi duyệt.`,
+      relatedEntityType: 'advance_settlements',
+      relatedEntityId: settlementId,
+      targetUserId: detail.forwarderId,
+      targetRoles: ['ACCOUNTANT', 'ADMIN'],
+    });
+  } else {
+    emitNotification({
+      type: NotificationType.SYSTEM_ANNOUNCEMENT,
+      title: 'Kế toán đã cập nhật phiếu hoàn ứng',
+      message: `Phiếu ${detail.code} đã được cập nhật danh sách tạm ứng, chi phí hoặc số dư Ops tạm ứng.`,
+      relatedEntityType: 'advance_settlements',
+      relatedEntityId: settlementId,
+      targetUserId: detail.forwarderId,
+      targetRoles: [],
+    });
+  }
   return detail;
 }
 

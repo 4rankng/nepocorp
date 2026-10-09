@@ -163,6 +163,14 @@ export const forwarderClient = {
     reimbursementAmount: number;
     note?: string | null;
   }) => api.put<AdvanceSettlementWithRefs>(`${FINANCIAL.ADVANCE_SETTLEMENTS}/${id}`, data),
+  // Portal variant: Ops edits their own PENDING phiếu via /forwarder/me.
+  updateMyAdvanceSettlement: async (id: number, data: {
+    advanceRequestIds: number[];
+    tripExpenseIds: number[];
+    refundAmount: number;
+    reimbursementAmount: number;
+    note?: string | null;
+  }) => api.put<AdvanceSettlementWithRefs>(FORWARDER.ADVANCE_SETTLEMENT_DETAIL(id), data),
   updateSettlementExpense: async (settlementId: number, expenseId: number, data: {
     buyAmount: number;
     sellAmount?: number;
