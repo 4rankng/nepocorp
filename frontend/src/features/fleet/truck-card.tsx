@@ -473,6 +473,7 @@ export function TruckCard({
         saving={crud.saving}
         item={crud.editingId != null ? trucks.find((t) => t.id === crud.editingId) : undefined}
         trailers={trailers}
+        trucks={trucks}
         onsave={(d) => {
           if (crud.editingId != null) crud.doUpdate(crud.editingId, d);
           else crud.doCreate(d);

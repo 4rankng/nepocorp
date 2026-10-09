@@ -10,10 +10,17 @@ import { TRUCK_STATUS } from './constants';
  * was visually cramped and easy to miss when toggled. Modal gives the form
  * proper breathing room, focused labels, and an obvious save/cancel footer.
  */
-export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpen }: {
+export function TruckFormModal({ saving, item, trailers, trucks = [], onsave, oncancel, isOpen }: {
   saving: boolean;
   item?: TruckType;
   trailers: Array<{ id: number; licensePlate: string; type: string }>;
+  /**
+   * Full truck list, used only to label each trailer option with the tractor
+   * it is currently hooked to. Staff pick the pairing here — the one place it
+   * matters — and the bare "plate (type)" list made it easy to steal a trailer
+   * that is already out on a run (kanban 091026010130).
+   */
+  trucks?: Array<{ id: number; licensePlate: string; currentTrailerId?: number | null }>;
   onsave: (d: Record<string, unknown>) => void;
   oncancel: () => void;
   isOpen: boolean;
@@ -21,6 +28,11 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
   const [plate, setPlate] = useState(item?.licensePlate || '');
   const [currentTrailerId, setCurrentTrailerId] = useState<number | null>(item?.currentTrailerId ?? null);
   const [status, setStatus] = useState(item?.status || 'ACTIVE');
+  // trailer id → plate of the tractor currently holding it.
+  const pairedTruck = new Map<number, string>();
+  trucks.forEach(t => {
+    if (t.currentTrailerId != null) pairedTruck.set(t.currentTrailerId, t.licensePlate);
+  });
   useEffect(() => {
     if (isOpen) {
       setPlate(item?.licensePlate || '');
@@ -89,9 +101,15 @@ export function TruckFormModal({ saving, item, trailers, onsave, oncancel, isOpe
                 onChange={e => setCurrentTrailerId(e.target.value ? Number(e.target.value) : null)}
               >
                 <option value="">— Không có —</option>
-                {trailers.map(t => (
-                  <option key={t.id} value={t.id}>{t.licensePlate} ({TRAILER_TYPE_LABELS[t.type as TrailerType] || t.type})</option>
-                ))}
+                {trailers.map(t => {
+                  const owner = pairedTruck.get(t.id);
+                  return (
+                    <option key={t.id} value={t.id}>
+                      {t.licensePlate} ({TRAILER_TYPE_LABELS[t.type as TrailerType] || t.type})
+                      {owner ? ` — đang ghép ${owner}` : ' — trống'}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div className="field fleet-form__field">

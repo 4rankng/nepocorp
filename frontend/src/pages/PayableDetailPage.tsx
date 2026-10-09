@@ -25,7 +25,7 @@ import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import './DebtDetailPage.css';
 import { payableBillingDocumentEntityType } from './payable-billing-document';
-import { FILTER_OPTIONS, normalizeAging } from '../features/payables/payableDetailUtils';
+import { FILTER_OPTIONS, ledgerHeading, normalizeAging } from '../features/payables/payableDetailUtils';
 import type { LedgerFilter } from '../features/payables/payableDetailUtils';
 import { LedgerRow, FuelLedgerRow, ExpenseLedgerRow } from '../features/payables/payableDetailLedger';
 import { PayableLedgerCard, FuelLedgerCard, ExpenseLedgerCard } from '../features/payables/payableDetailLedger';
@@ -153,6 +153,11 @@ export default function PayableDetailPage() {
   const agingAmounts = useMemo(() =>
     normalizeAging(typedProfile?.agingBuckets ?? []),
     [typedProfile?.agingBuckets]
+  );
+
+  const heading = useMemo(
+    () => ledgerHeading(isCarrierPayable, ledgerFilter),
+    [isCarrierPayable, ledgerFilter],
   );
 
   const filteredRows = useMemo(() => {
@@ -369,10 +374,8 @@ export default function PayableDetailPage() {
       <section className="dd-ledger dd-ledger--standalone">
         <div className="dd-ledger-head">
           <div className="dd-ledger-heading">
-            <h2>{isCarrierPayable ? 'Chi tiết cước vận chuyển thuê ngoài' : 'Chi tiết công nợ phải trả'}</h2>
-            <p>{isCarrierPayable
-              ? 'Cước theo chuyến và các khoản đã thanh toán cho nhà vận chuyển.'
-              : 'Toàn bộ chi phí, khoản đã thanh toán và điều chỉnh với nhà cung cấp.'}</p>
+            <h2>{heading.title}</h2>
+            <p>{heading.subtitle}</p>
           </div>
           <span className="dd-cnt">{filteredRows.length} giao dịch</span>
           <div className="dd-filters">

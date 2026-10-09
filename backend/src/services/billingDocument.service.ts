@@ -452,6 +452,33 @@ async function buildCarrierPaymentLines(carrierId: number, from: string, to: str
   return { lines, entityName };
 }
 
+/**
+ * Should this fuel accrual be left out of a statement covering [from, to]?
+ *
+ * A fuel supplier bills on the day the fuel was drawn, so the trip's departure
+ * date decides the period — not the ledger timestamp, which is when the trip
+ * happened to be locked. A September trip locked in October otherwise lands in
+ * an "01/10–31/10" statement (kanban 081026232510: 50 of 69 lines were
+ * September trips).
+ *
+ * Only ever excludes. A row whose trip cannot be resolved, or which is not fuel,
+ * stays in on the posting-date filter that `getSupplierStatement` already
+ * applied — a statement must never silently lose a line because detail data
+ * was missing.
+ */
+export function isFuelOutOfPeriod(
+  row: { txnType: string; fuelDetails?: { departureDate?: string | null } | null },
+  from: string,
+  to: string,
+): boolean {
+  if (row.txnType !== TxnType.FUEL_EXPENSE) return false;
+  const departure = row.fuelDetails?.departureDate;
+  if (!departure) return false;
+  if (from && departure < from) return true;
+  if (to && departure > to) return true;
+  return false;
+}
+
 /** Build AP supplier lines from the existing supplier statement (payable accruals). */
 async function buildSupplierPaymentLines(supplierId: number, from: string, to: string): Promise<{ lines: BillingDraftLine[]; entityName: string }> {
   const statement = await getSupplierStatement(supplierId, from, to);
@@ -461,7 +488,17 @@ async function buildSupplierPaymentLines(supplierId: number, from: string, to: s
   // Only payable accruals (credit > 0); exclude settlement payments.
   const lines: BillingDraftLine[] = [];
   let sortOrder = 0;
+  // Fuel is billed by the supplier on the day it was drawn, so the trip's
+  // departure date — not the ledger posting date — decides which period a fuel
+  // line belongs to. getSupplierStatement filters on the ledger timestamp
+  // (correct for balances), which put a September trip that posted in October
+  // into an "01/10–31/10" statement: 50 of 69 lines, ~19 belonging to October
+  // (kanban 081026232510). Sending that to a supplier does not reconcile.
+  //
+  // Rows whose trip cannot be resolved keep the posting-date inclusion: a fuel
+  // line is never dropped on the strength of missing detail data.
   for (const row of statement.ledgerRows) {
+    if (isFuelOutOfPeriod(row, from, to)) continue;
     const credit = Number(row.credit ?? 0);
     if (credit <= 0) continue;
     lines.push({

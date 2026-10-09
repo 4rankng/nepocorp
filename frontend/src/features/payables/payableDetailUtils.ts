@@ -29,6 +29,34 @@ export const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
   { key: TxnType.ADJUSTMENT,        label: 'Điều chỉnh' },
 ];
 
+/**
+ * Heading + subtitle for the ledger card, following the active filter tab.
+ *
+ * The heading used to be fixed by entity kind only, so switching to "Chi phí
+ * nhiên liệu" swapped the table columns to fuel fields while the title still
+ * announced freight — staff read the fuel column under a freight heading
+ * (kanban 091026010110).
+ */
+export function ledgerHeading(
+  isCarrier: boolean,
+  filter: LedgerFilter,
+): { title: string; subtitle: string } {
+  const base = isCarrier
+    ? 'Chi tiết cước vận chuyển thuê ngoài'
+    : 'Chi tiết công nợ phải trả';
+  const baseSub = isCarrier
+    ? 'Cước theo chuyến và các khoản đã thanh toán cho nhà vận chuyển.'
+    : 'Toàn bộ chi phí, khoản đã thanh toán và điều chỉnh với nhà cung cấp.';
+  if (filter === 'all') return { title: base, subtitle: baseSub };
+
+  const tab = FILTER_OPTIONS.find(f => f.key === filter);
+  const scope = tab ? tab.label : 'Giao dịch';
+  return {
+    title: `${base} — ${scope}`,
+    subtitle: baseSub,
+  };
+}
+
 export function normalizeAging(buckets: AgingBucket[]): number[] {
   const amounts = [0, 0, 0, 0];
   buckets.forEach((b, i) => {

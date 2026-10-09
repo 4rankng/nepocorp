@@ -79,10 +79,14 @@ export function printHtml(html: string, onFallback?: () => void): boolean {
     const doc = iframe.contentDocument;
     if (!doc) throw new Error('no contentDocument');
 
+    // Declared up front so `print` can cancel the fallback timer it owns.
+    let fallbackTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+
     let printed = false;
     const print = () => {
       if (printed) return;
       printed = true;
+      clearTimeout(fallbackTimer);
       try {
         iframe!.contentWindow?.focus();
         iframe!.contentWindow?.print();
@@ -91,14 +95,16 @@ export function printHtml(html: string, onFallback?: () => void): boolean {
       }
     };
 
+    // Print once the document has actually loaded, NOT straight after
+    // doc.close(): on a slow phone the statement's table can still be
+    // laying out, and printing that early yields a blank page — which reads
+    // as "the button does nothing". The timer only covers engines that never
+    // fire load for a written-into about:blank frame.
     iframe.onload = print;
     doc.open();
     doc.write(html);
     doc.close();
-    // Some engines fire onload before the listener is attached above; for a
-    // same-origin about:blank document with no external assets, printing is
-    // safe as soon as write() returns.
-    print();
+    fallbackTimer = setTimeout(print, 1500);
 
     // Keep the node alive until the dialog closes, then clean up.
     setTimeout(() => iframe?.remove(), 60_000);
