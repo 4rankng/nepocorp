@@ -52,7 +52,7 @@ export function FuelSection() {
         <span className="typo-eyebrow">Định mức &amp; Bổ sung dầu</span>
       </div>
 
-      {/* Row 1: Chế độ dầu + Số lít khoán (flat-rate) OR Đơn giá (auto) */}
+      {/* Chế độ dầu — full width: it decides the shape of the rows below. */}
       <div className="fs-row">
         <div className="field">
           <label style={labelStyle}>Chế độ dầu</label>
@@ -66,8 +66,13 @@ export function FuelSection() {
             <option value={FuelMode.FLAT_RATE}>Khoán (Nhập thủ công)</option>
           </select>
         </div>
+      </div>
 
-        {fuelMode === FuelMode.FLAT_RATE ? (
+      {/* Định mức: khoán pairs the liters with the pump price; auto shows the
+          price alone, and a single-child .fs-row spans the full width so no
+          half-empty row is left behind (kanban 20260926_1 / 20260926_2). */}
+      <div className="fs-row">
+        {fuelMode === FuelMode.FLAT_RATE && (
           <div className="field">
             <label style={labelStyle}>Số lít dầu khoán (Thực tế áp dụng)</label>
             <input
@@ -80,16 +85,9 @@ export function FuelSection() {
               style={{ width: "100%" }}
             />
           </div>
-        ) : unitPriceField}
+        )}
+        {unitPriceField}
       </div>
-
-      {/* Row 2: Đơn giá (flat-rate only) + Nhà cung cấp (OWN only) */}
-      {fuelMode === FuelMode.FLAT_RATE && (
-        <div className="fs-row">
-          {unitPriceField}
-          <div />
-        </div>
-      )}
 
       {carrierType === 'OWN' && (
         <div>
