@@ -8,16 +8,12 @@ import {
 } from '@tingting/shared';
 import { splitRoute } from '../../lib/route';
 import { formatDayMonth } from '../../lib/date';
-import { formatAmount } from '../../lib/format';
 import {
-  buildTripCode, calcConsumption, getMissingIndicators, getDataCompleteness, getMissingPlanFields, isTripToday,
+  buildTripCode, calcConsumption, formatMoney, getMissingIndicators, getDataCompleteness, getMissingPlanFields, isTripToday,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
   getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
 } from './tripHelpers';
 import { XeNgoaiBadge } from './XeNgoaiBadge';
-
-const formatMoney = (n: number): string =>
-  formatAmount(n);
 
 export interface TripQuickEditDraft {
   fuelLiters: string;
