@@ -272,3 +272,54 @@ describe('rơ-moóc expense attribution (polymorphic expenses.truck_id)', () => 
       'truck renewal shows the truck plate');
   });
 });
+
+/**
+ * Regression: /expenses filters by NGÀY PHÁT SINH (expenses.expense_date), never
+ * by the entry date (created_at). QA filed 081026232540 believing the opposite;
+ * the stacked date cell reads "<occurrence>\nnhập <entry>", and a row whose
+ * occurrence precedes the range MUST be excluded even when it was entered
+ * inside it. These two fixtures deliberately straddle an October boundary with
+ * occurrence and entry dates swapped, so an index-based filter on created_at
+ * would return the wrong set.
+ */
+describe('expenses date filter keys on occurrence date, not entry date', () => {
+  const dateFilterExpenseIds: number[] = [];
+
+  after(async () => {
+    if (dateFilterExpenseIds.length > 0) {
+      await db.delete(s.expenses).where(inArray(s.expenses.id, dateFilterExpenseIds));
+    }
+  });
+
+  test('fromDate/toDate select by expense_date even when created_at disagrees', async () => {
+    const [inSeptOccurrenceEnteredOct] = await db.insert(s.expenses).values({
+      expenseDate: '2098-09-20',       // occurrence BEFORE the range
+      createdAt: new Date('2098-10-05T00:00:00Z'), // entered INSIDE the range
+      supplierId,
+      categoryId: plainCategoryId,
+      amount: '111000',
+      paymentStatus: 'PAID',
+    }).returning({ id: s.expenses.id });
+    const [inOctOccurrenceEnteredSept] = await db.insert(s.expenses).values({
+      expenseDate: '2098-10-02',       // occurrence INSIDE the range
+      createdAt: new Date('2098-09-25T00:00:00Z'), // entered BEFORE the range
+      supplierId,
+      categoryId: plainCategoryId,
+      amount: '222000',
+      paymentStatus: 'PAID',
+    }).returning({ id: s.expenses.id });
+    dateFilterExpenseIds.push(inSeptOccurrenceEnteredOct.id, inOctOccurrenceEnteredSept.id);
+
+    const page = await listExpenses(db, {
+      page: 1, pageSize: 200,
+      fromDate: '2098-10-01',
+      toDate: '2098-10-31',
+    });
+    const ids = page.items.map(e => e.id);
+
+    assert.ok(ids.includes(inOctOccurrenceEnteredSept.id),
+      'October occurrence is in range even though it was entered in September');
+    assert.ok(!ids.includes(inSeptOccurrenceEnteredOct.id),
+      'September occurrence is out of range even though it was entered in October');
+  });
+});
