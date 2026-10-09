@@ -151,6 +151,9 @@ const titleRules: TitleRule[] = [
   { test: p => p.startsWith(routes.myForwarderTrips), title: PAGE_CATALOG.myForwarderTrips.title },
   { test: p => p.startsWith(routes.myAdvances), title: PAGE_CATALOG.myAdvances.title },
   { test: p => /^\/my-settlements\/\d+$/.test(p), title: PAGE_CATALOG.mySettlementDetail.title },
+  // Office-staff twin of the route above. Without it the tab title fell back to
+  // the brand name and read "TransTing · TransTing" (kanban 101026003240).
+  { test: p => /^\/settlements\/\d+$/.test(p), title: PAGE_CATALOG.mySettlementDetail.title },
   { test: p => p.startsWith(routes.mySettlements), title: PAGE_CATALOG.mySettlements.title },
   { test: p => p.startsWith(routes.advances), title: PAGE_CATALOG.advances.title },
   { test: p => p.startsWith(routes.adminAdvanceSettlements), title: PAGE_CATALOG.adminAdvanceSettlements.title },

@@ -365,7 +365,7 @@ export default function CustomersPage() {
         onChange={setPage}
         hasMore={currentPage < totalPages}
         onLoadMore={loadMoreCustomers}
-        summary={<span>Hiển thị <strong>{visibleCustomers.length}</strong> trên <strong>{filtered.length}</strong> khách hàng</span>}
+        summary={<span>Hiển thị <strong>{visibleCustomers.length}</strong>/<strong>{filtered.length}</strong> khách hàng</span>}
       />
 
       {/* Customer add/edit modal */}
