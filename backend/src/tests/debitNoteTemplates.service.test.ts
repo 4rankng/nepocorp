@@ -1,6 +1,8 @@
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { client } from '../db';
+import { eq } from 'drizzle-orm';
+import { db, client } from '../db';
+import * as s from '../db/schema';
 import {
   buildBillingXlsx,
   renderTemplatedXlsx,
@@ -121,10 +123,22 @@ test('renderTemplatedXlsx DEBIT_NOTE normalizes horizontal statement snapshots t
 });
 
 test('renderTemplatedXlsx DEBIT_NOTE embeds no image when company has no logo', async () => {
-  const buf = await renderTemplatedXlsx(debitDoc, defaultSnapshot);
-  const wb = await loadWorkbook(buf);
-  const ws = wb.worksheets[0] as unknown as { getImages?: () => unknown[] };
-  assert.equal((ws.getImages?.() ?? []).length, 0, 'no image should embed when no company logo is configured');
+  const LOGO_KEY = 'company.logo_storage_key';
+  const [existing] = await db.select().from(s.appSettings).where(eq(s.appSettings.key, LOGO_KEY)).limit(1);
+  await db.insert(s.appSettings).values({ key: LOGO_KEY, value: '' })
+    .onConflictDoUpdate({ target: s.appSettings.key, set: { value: '' } });
+  try {
+    const buf = await renderTemplatedXlsx(debitDoc, defaultSnapshot);
+    const wb = await loadWorkbook(buf);
+    const ws = wb.worksheets[0] as unknown as { getImages?: () => unknown[] };
+    assert.equal((ws.getImages?.() ?? []).length, 0, 'no image should embed when no company logo is configured');
+  } finally {
+    if (existing) {
+      await db.update(s.appSettings).set({ value: existing.value }).where(eq(s.appSettings.key, LOGO_KEY));
+    } else {
+      await db.delete(s.appSettings).where(eq(s.appSettings.key, LOGO_KEY));
+    }
+  }
 });
 
 test('renderTemplatedXlsx DEBIT_NOTE adds a shipment header row before charge rows', async () => {

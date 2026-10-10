@@ -66,13 +66,13 @@ before(async () => {
   });
 
   // Seed data — create missing entities (fresh CI DB has no data)
-  let [adm] = await db.select().from(s.users).where(eq(s.users.username, 'admin')).limit(1);
+  let [adm] = await db.select().from(s.users).where(and(eq(s.users.username, 'admin'), isNull(s.users.deletedAt))).limit(1);
   if (!adm) {
     [adm] = await db.insert(s.users).values({
       username: 'admin', passwordHash: await bcrypt.hash('admin123', 10), role: Role.ADMIN,
     }).returning();
   }
-  let [drvUser] = await db.select().from(s.users).where(eq(s.users.username, 'laixe')).limit(1);
+  let [drvUser] = await db.select().from(s.users).where(and(eq(s.users.username, 'laixe'), isNull(s.users.deletedAt))).limit(1);
   if (!drvUser) {
     [drvUser] = await db.insert(s.users).values({
       username: 'laixe', passwordHash: await bcrypt.hash('laixe123', 10), role: Role.DRIVER,
@@ -116,7 +116,7 @@ before(async () => {
   if (!trck) {
     [trck] = await db.insert(s.trucks).values({ licensePlate: '51C-12345' }).returning();
   }
-  let [drvr] = await db.select().from(s.drivers).where(eq(s.drivers.userId, drvUser.id)).limit(1);
+  let [drvr] = await db.select().from(s.drivers).where(and(eq(s.drivers.userId, drvUser.id), isNull(s.drivers.deletedAt))).limit(1);
   if (!drvr) {
     [drvr] = await db.insert(s.drivers).values({ name: 'Lái xe E2E', userId: drvUser.id }).returning();
   }
