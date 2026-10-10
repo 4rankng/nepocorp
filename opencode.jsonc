@@ -10,6 +10,17 @@
         "--repo",
         "/Volumes/LexarSSD/projects/nepocorp"
       ]
+    },
+    "repowise": {
+      "type": "local",
+      "command": [
+        "repowise",
+        "mcp",
+        "/Volumes/LexarSSD/projects/nepocorp",
+        "--transport",
+        "stdio"
+      ],
+      "enabled": true
     }
   }
 }
