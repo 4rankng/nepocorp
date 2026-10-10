@@ -479,11 +479,71 @@ export function isFuelOutOfPeriod(
   return false;
 }
 
+/**
+ * The ledger ids of the fuel charges that are still live for a supplier.
+ *
+ * The ledger is append-only: unlocking a trip (or re-dispatching a completed
+ * one) posts an UNLOCK_REVERSAL that cancels the fuel charges already on the
+ * books, and the next lock posts a fresh charge. Both the cancelled charge and
+ * its replacement stay in the ledger, so the supplier's swap shows up as two
+ * "Chi phí N lít dầu chuyến X" rows — the same description twice, at the same
+ * amount when the fuel figures did not change (kanban 081026232520: "TRP-202610-0021"
+ * and "TRP-202609-0054" repeated ×2/×3 in the saved statement).
+ *
+ * Mirroring LedgerService.countActiveFuelCharges (charges − reversals, per
+ * trip), this returns only the NEWEST live charge rows, so the statement lists
+ * each live charge exactly once. Counts come from the whole ledger, not the
+ * statement period: an edit's reversal can land in a different month than the
+ * charge it cancels, and a period-filtered count would then keep the stale row.
+ */
+async function liveFuelChargeIds(supplierId: number): Promise<Set<number>> {
+  const rows = await db.select({
+    id: s.ledger.id,
+    txnType: s.ledger.txnType,
+    txnId: s.ledger.txnId,
+    note: s.ledger.note,
+  })
+    .from(s.ledger)
+    .where(and(eq(s.ledger.entityType, 'VENDOR'), eq(s.ledger.entityId, supplierId)))
+    .orderBy(desc(s.ledger.id));
+
+  const liveByTrip = new Map<number, number>();
+  for (const row of rows) {
+    if (!row.txnId) continue;
+    if (row.txnType === TxnType.FUEL_EXPENSE) {
+      liveByTrip.set(row.txnId, (liveByTrip.get(row.txnId) ?? 0) + 1);
+    } else if (
+      row.txnType === TxnType.UNLOCK_REVERSAL
+      && (row.note ?? '').startsWith('Chi phí')
+    ) {
+      liveByTrip.set(row.txnId, (liveByTrip.get(row.txnId) ?? 0) - 1);
+    }
+  }
+
+  const live = new Set<number>();
+  const emittedByTrip = new Map<number, number>();
+  for (const row of rows) {
+    if (row.txnType !== TxnType.FUEL_EXPENSE || !row.txnId) continue;
+    const emitted = emittedByTrip.get(row.txnId) ?? 0;
+    if (emitted < (liveByTrip.get(row.txnId) ?? 0)) {
+      live.add(row.id);
+      emittedByTrip.set(row.txnId, emitted + 1);
+    }
+  }
+  return live;
+}
+
 /** Build AP supplier lines from the existing supplier statement (payable accruals). */
 async function buildSupplierPaymentLines(supplierId: number, from: string, to: string): Promise<{ lines: BillingDraftLine[]; entityName: string }> {
   const statement = await getSupplierStatement(supplierId, from, to);
   if (!statement) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
   const entityName = statement.supplier.name;
+
+  // Drop fuel charges that an unlock reversal has already cancelled — see
+  // liveFuelChargeIds. The reversal rows themselves carry credit = 0 and are
+  // excluded by the credit filter below, so without this the statement keeps
+  // both the cancelled charge and its replacement.
+  const liveFuelChargeIdsSet = await liveFuelChargeIds(supplierId);
 
   // Only payable accruals (credit > 0); exclude settlement payments.
   const lines: BillingDraftLine[] = [];
@@ -501,6 +561,9 @@ async function buildSupplierPaymentLines(supplierId: number, from: string, to: s
     if (isFuelOutOfPeriod(row, from, to)) continue;
     const credit = Number(row.credit ?? 0);
     if (credit <= 0) continue;
+    // A fuel charge that an unlock reversal has cancelled is not a live
+    // payable — its replacement is the row we keep.
+    if (row.txnType === TxnType.FUEL_EXPENSE && !liveFuelChargeIdsSet.has(row.id)) continue;
     lines.push({
       sourceType: 'EXPENSE', sourceId: row.txnId ?? null, lineType: 'SERVICE_FEE',
       description: row.note || 'Chi phí nhà cung cấp',
