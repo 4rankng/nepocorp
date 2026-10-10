@@ -1,11 +1,19 @@
 import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { useState, useRef, useEffect } from 'react';
-import { Wallet, Loader2, Plus, X, User, AlertCircle, Clock, FileText, CheckCircle2 } from 'lucide-react';
+import { Wallet, Loader2, Plus, X, User, AlertCircle, Clock, FileText, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { ADVANCE_REQUEST_STATUS_LABELS, AdvanceSettlementStatus, type AdvanceRequestStatus } from '@tingting/shared';
 import type { AdvanceRequestWithRefs, AdvanceSettlementWithRefs } from '@tingting/shared';
-import { PageHeader, FormGroup } from '../components/UI';
-import { useForwarderAdvanceRequests, useCreateAdvanceRequest, useForwarderAdvanceBalance, useForwarderSettlements } from '../hooks/useQueries';
+import { PageHeader, FormGroup, useConfirm } from '../components/UI';
+import { useToast } from '../components/shared/Toast';
+import {
+  useForwarderAdvanceRequests,
+  useCreateAdvanceRequest,
+  useUpdateAdvanceRequest,
+  useDeleteAdvanceRequest,
+  useForwarderAdvanceBalance,
+  useForwarderSettlements,
+} from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useMonth } from '../hooks/useMonth';
@@ -19,6 +27,15 @@ import '../components/shared/HeroKpiRow.css';
 const PENDING_VALUE_SUFFIX = ' chờ duyệt';
 
 type StatusFilter = '' | AdvanceRequestStatus;
+
+/**
+ * An approved request has already been credited to the ledger at its original
+ * amount, so the service refuses both amend and delete on it. Mirror that here
+ * so the buttons never appear on a row they would fail on.
+ */
+function canModify(status: string): boolean {
+  return status !== 'APPROVED';
+}
 
 export default function ForwarderAdvancesPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
@@ -46,14 +63,23 @@ export default function ForwarderAdvancesPage() {
     selectors: ['.page-header', '.hero-kpi-row', '.fadv-form-panel', '.fwd-filter-pills', '.fadv-card-trip'],
   });
   const createAdvanceRequest = useCreateAdvanceRequest();
+  const updateAdvanceRequest = useUpdateAdvanceRequest();
+  const deleteAdvanceRequest = useDeleteAdvanceRequest();
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const { toast: showToast } = useToast();
   const requests = (data?.items ?? []) as AdvanceRequestWithRefs[];
   const counts = data?.counts ?? {};
   const { rootRef: listRef } = useListAnimations({ itemSelector: '.fadv-card-trip', mode: 'cards', deps: [requests] });
 
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ amount: '', reason: '' });
-  const mutationError = createAdvanceRequest.error
-    ? (createAdvanceRequest.error instanceof Error ? createAdvanceRequest.error.message : 'Lỗi tạo yêu cầu')
+  const isEditing = editingId !== null;
+  const submitting = createAdvanceRequest.isPending || updateAdvanceRequest.isPending;
+  const mutationError = (createAdvanceRequest.error ?? updateAdvanceRequest.error)
+    ? ((createAdvanceRequest.error ?? updateAdvanceRequest.error) instanceof Error
+      ? (createAdvanceRequest.error ?? updateAdvanceRequest.error)!.message
+      : isEditing ? 'Lỗi sửa yêu cầu' : 'Lỗi tạo yêu cầu')
     : null;
 
   const error = queryError ? 'Không thể tải danh sách yêu cầu tạm ứng' : null;
@@ -79,17 +105,51 @@ export default function ForwarderAdvancesPage() {
     ]);
   }, [loading, totalRequests, totalAmount, pendingCount, outstanding, animateCounters, prefersReduced]);
 
+  function resetForm() {
+    setShowForm(false);
+    setEditingId(null);
+    setForm({ amount: '', reason: '' });
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    createAdvanceRequest.mutate(
-      { amount: Number(form.amount), reason: form.reason },
-      {
-        onSuccess: () => {
-          setShowForm(false);
-          setForm({ amount: '', reason: '' });
-        },
-      },
+    const payload = { amount: Number(form.amount), reason: form.reason };
+    const onDone = () => {
+      resetForm();
+      showToast(isEditing
+        ? { kind: 'success', message: 'Đã cập nhật yêu cầu tạm ứng' }
+        : { kind: 'success', message: 'Đã gửi yêu cầu tạm ứng' });
+    };
+
+    if (isEditing) {
+      updateAdvanceRequest.mutate({ id: editingId, ...payload }, { onSuccess: onDone });
+      return;
+    }
+    createAdvanceRequest.mutate(payload, { onSuccess: onDone });
+  }
+
+  /** Load a row into the shared form panel and switch it into edit mode. */
+  function startEdit(req: AdvanceRequestWithRefs) {
+    setEditingId(req.id);
+    setForm({ amount: String(Number(req.amount)), reason: req.reason });
+    setShowForm(true);
+  }
+
+  /**
+   * Deletion is irreversible and the row feeds "Tồn tạm ứng", so it goes
+   * through the same danger-confirmation the admin reject path uses, naming
+   * the amount so the forwarder signs off on the right row.
+   */
+  async function confirmDelete(req: AdvanceRequestWithRefs) {
+    const ok = await confirm(
+      `Xóa yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}? Yêu cầu "${req.reason}" sẽ bị xóa vĩnh viễn.`,
+      { variant: 'danger', confirmLabel: 'Xóa', cancelLabel: 'Huỷ' },
     );
+    if (!ok) return;
+    deleteAdvanceRequest.mutate(req.id, {
+      onSuccess: () => showToast({ kind: 'success', message: 'Đã xóa yêu cầu tạm ứng' }),
+      onError: (err: unknown) => showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xóa yêu cầu' }),
+    });
   }
 
   if (loading) return (
@@ -124,7 +184,7 @@ export default function ForwarderAdvancesPage() {
         iconName="advances"
         action={
           !showForm ? (
-            <button className="btn btn--primary" onClick={() => setShowForm(true)}>
+            <button className="btn btn--primary" onClick={() => { setEditingId(null); setForm({ amount: '', reason: '' }); setShowForm(true); }}>
               <Plus size={16} /> Tạo yêu cầu
             </button>
           ) : undefined
@@ -184,18 +244,20 @@ export default function ForwarderAdvancesPage() {
         </div>
       )}
 
-      {/* Create form */}
+      {/* Create / edit form — one panel, two modes */}
       {showForm && (
         <div className="fadv-form-panel fade-up">
           <div className="fadv-form-panel__head">
             <span className="fadv-form-panel__title">
-              <Wallet size={16} style={{ verticalAlign: -2, marginRight: 6, opacity: 0.7 }} />
-              Tạo yêu cầu tạm ứng
+              {isEditing
+                ? <Pencil size={16} style={{ verticalAlign: -2, marginRight: 6, opacity: 0.7 }} />
+                : <Wallet size={16} style={{ verticalAlign: -2, marginRight: 6, opacity: 0.7 }} />}
+              {isEditing ? 'Sửa yêu cầu tạm ứng' : 'Tạo yêu cầu tạm ứng'}
             </span>
             <button
               className="btn btn--ghost btn--sm"
               aria-label="Đóng yêu cầu tạm ứng"
-              onClick={() => { setShowForm(false); setForm({ amount: '', reason: '' }); }}
+              onClick={resetForm}
             >
               <X size={16} />
             </button>
@@ -231,13 +293,15 @@ export default function ForwarderAdvancesPage() {
               <button
                 type="button"
                 className="btn btn--secondary btn--sm"
-                onClick={() => { setShowForm(false); setForm({ amount: '', reason: '' }); }}
+                onClick={resetForm}
               >
                 Hủy
               </button>
-              <button className="btn btn--primary btn--sm" type="submit" disabled={createAdvanceRequest.isPending}>
-                {createAdvanceRequest.isPending ? <Loader2 size={14} className="spin" /> : <Wallet size={14} />}
-                Gửi yêu cầu
+              <button className="btn btn--primary btn--sm" type="submit" disabled={submitting}>
+                {submitting
+                  ? <Loader2 size={14} className="spin" />
+                  : isEditing ? <Pencil size={14} /> : <Wallet size={14} />}
+                {isEditing ? 'Lưu thay đổi' : 'Gửi yêu cầu'}
               </button>
             </div>
           </form>
@@ -300,11 +364,37 @@ export default function ForwarderAdvancesPage() {
                     <span>{formatDate(req.approvedAt)}</span>
                   </div>
                 )}
+                {canModify(req.status) && (
+                  <div className="fadv-card-trip__actions">
+                    <button
+                      type="button"
+                      className="fadv-card-trip__action"
+                      title="Sửa yêu cầu"
+                      aria-label={`Sửa yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}`}
+                      disabled={deleteAdvanceRequest.isPending}
+                      onClick={() => startEdit(req)}
+                    >
+                      <Pencil size={14} /> Sửa
+                    </button>
+                    <button
+                      type="button"
+                      className="fadv-card-trip__action fadv-card-trip__action--danger"
+                      title="Xóa yêu cầu"
+                      aria-label={`Xóa yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}`}
+                      disabled={deleteAdvanceRequest.isPending}
+                      onClick={() => void confirmDelete(req)}
+                    >
+                      <Trash2 size={14} /> Xóa
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {confirmDialog}
     </div>
   );
 }

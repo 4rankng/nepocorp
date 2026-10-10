@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { ToastProvider } from '../components/shared/Toast';
 import type { CounterTarget } from '../hooks/animations';
 import ForwarderAdvancesPage from './ForwarderAdvancesPage';
 
@@ -9,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   balance: vi.fn(),
   settlements: vi.fn(),
   create: vi.fn(),
+  update: vi.fn(),
+  remove: vi.fn(),
   animateCounters: vi.fn(),
   prefersReduced: { value: true },
 }));
@@ -16,6 +19,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../hooks/useQueries', () => ({
   useForwarderAdvanceRequests: mocks.requests,
   useCreateAdvanceRequest: mocks.create,
+  useUpdateAdvanceRequest: mocks.update,
+  useDeleteAdvanceRequest: mocks.remove,
   useForwarderAdvanceBalance: mocks.balance,
   useForwarderSettlements: mocks.settlements,
 }));
@@ -61,11 +66,13 @@ beforeEach(() => {
   mocks.balance.mockReturnValue(success({ outstanding: '197090978' }));
   mocks.settlements.mockReturnValue(success({ items: [] }));
   mocks.create.mockReturnValue({ error: null, mutate: vi.fn() });
+  mocks.update.mockReturnValue({ error: null, isPending: false, mutate: vi.fn() });
+  mocks.remove.mockReturnValue({ isPending: false, mutate: vi.fn() });
 });
 afterEach(cleanup);
 
 it('shows the outstanding amount with its ₫ marker and the normalized label', () => {
-  const { container } = render(<MemoryRouter><ForwarderAdvancesPage /></MemoryRouter>);
+  const { container } = render(<MemoryRouter><ToastProvider><ForwarderAdvancesPage /></ToastProvider></MemoryRouter>);
   const value = container.querySelector('.hero-kpi-mini--accent .hero-kpi-mini__value');
   expect(value?.textContent).toBe('197.090.978₫');
   expect(value?.querySelector('.hero-kpi-mini__currency')?.textContent).toBe('₫');
@@ -73,14 +80,14 @@ it('shows the outstanding amount with its ₫ marker and the normalized label', 
 });
 
 it('renders the pending count with exactly one space before the counter runs', () => {
-  const { container } = render(<MemoryRouter><ForwarderAdvancesPage /></MemoryRouter>);
+  const { container } = render(<MemoryRouter><ToastProvider><ForwarderAdvancesPage /></ToastProvider></MemoryRouter>);
   expect(container.querySelector('.hero-kpi-mini--warn .hero-kpi-mini__value')?.textContent).toBe('1 chờ duyệt');
 });
 
 it('keeps one space and the ₫ marker after the counter animation settles', () => {
   mocks.prefersReduced.value = false;
   mocks.animateCounters.mockImplementation(settleCounters);
-  const { container } = render(<MemoryRouter><ForwarderAdvancesPage /></MemoryRouter>);
+  const { container } = render(<MemoryRouter><ToastProvider><ForwarderAdvancesPage /></ToastProvider></MemoryRouter>);
   expect(container.querySelector('.hero-kpi-mini--warn .hero-kpi-mini__value')?.textContent).toBe('1 chờ duyệt');
   const value = container.querySelector('.hero-kpi-mini--accent .hero-kpi-mini__value');
   expect(value?.textContent).toBe('197.090.978₫');

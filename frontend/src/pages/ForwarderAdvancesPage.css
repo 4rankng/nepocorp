@@ -115,6 +115,50 @@
   margin: 0 2px;
 }
 
+/* ── Per-request edit / delete controls ────────────────────────────────── */
+.fadv-card-trip__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.fadv-card-trip__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--surface, rgba(255,255,255,0.6));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.fadv-card-trip__action:hover:not(:disabled) {
+  background: var(--surface-hover, rgba(9,9,11,0.04));
+  border-color: var(--ink-3);
+}
+
+.fadv-card-trip__action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fadv-card-trip__action--danger {
+  color: var(--danger-text, #B91C1C);
+}
+
+.fadv-card-trip__action--danger:hover:not(:disabled) {
+  background: var(--danger-soft, #FBD9DD);
+  border-color: var(--danger, #E32434);
+}
+
 /* ── Create form panel ──────────────────────────────────────────────────── */
 .fadv-form-panel {
   background: var(--glass-bg, rgba(255,255,255,0.85));
@@ -256,6 +300,18 @@
 
   .fadv-card-trip__approver {
     font-size: var(--fs-xs);
+  }
+
+  /* Touch targets: 44px min, and the pair takes the full row on phones. */
+  .fadv-card-trip__actions {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .fadv-card-trip__action {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
   }
 
   .fadv-card-trip__amount {

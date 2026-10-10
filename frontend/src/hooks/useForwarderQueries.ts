@@ -132,6 +132,33 @@ export function useCreateAdvanceRequest() {
   });
 }
 
+export function useUpdateAdvanceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number; amount: number; reason: string }) =>
+      forwarderClient.updateAdvanceRequest(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.forwarder.forwarderAdvanceRequestsAll });
+      // "Tồn tạm ứng" and the eligible-for-settlement picker are derived from
+      // approved requests, so an edit can move both numbers.
+      qc.invalidateQueries({ queryKey: qk.forwarder.advanceBalance });
+      qc.invalidateQueries({ queryKey: qk.forwarder.eligibleAdvanceRequests });
+    },
+  });
+}
+
+export function useDeleteAdvanceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.deleteAdvanceRequest(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.forwarder.forwarderAdvanceRequestsAll });
+      qc.invalidateQueries({ queryKey: qk.forwarder.advanceBalance });
+      qc.invalidateQueries({ queryKey: qk.forwarder.eligibleAdvanceRequests });
+    },
+  });
+}
+
 // ── Advance Settlements (forwarder) ──────────────────────────────────────────
 
 export function useForwarderSettlements(filters?: { dateFrom?: string; dateTo?: string }) {

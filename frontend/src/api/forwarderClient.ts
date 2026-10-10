@@ -97,6 +97,12 @@ export const forwarderClient = {
   createAdvanceRequest: async (data: { amount: number; reason: string }) => {
     return api.post(FORWARDER.ADVANCE_REQUESTS, data);
   },
+  updateAdvanceRequest: async (id: number, data: { amount: number; reason: string }) => {
+    return api.put<AdvanceRequestWithRefs>(FORWARDER.ADVANCE_REQUEST(id), data);
+  },
+  deleteAdvanceRequest: async (id: number) => {
+    return api.delete<{ ok: true; id: number }>(FORWARDER.ADVANCE_REQUEST(id));
+  },
 
   getAdvanceBalance: async () => {
     return api.get<{ outstanding: string }>(FORWARDER.ADVANCE_BALANCE);
