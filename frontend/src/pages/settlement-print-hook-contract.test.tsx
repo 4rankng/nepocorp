@@ -63,6 +63,7 @@ vi.mock('../hooks/useForwarderQueries', async (importOriginal) => ({
   useUpdateSettlementExpense: () => mocks.returns.expense,
   useApproveSettlement: () => mocks.returns.approve,
   useRejectSettlement: () => mocks.returns.reject,
+  useDeleteSettlement: () => mocks.returns.remove,
 }));
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => ({ user: { role: mocks.role } }) }));
 vi.mock('../hooks/animations', () => ({ usePageAnimations: () => ({ rootRef: { current: null } }) }));
@@ -95,6 +96,10 @@ describe('settlement print tolerates hooks that return nothing (kanban 101026101
     expect(screen.getByRole('button', { name: 'Duyệt' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Từ chối' })).toBeTruthy();
     expect(screen.getByText('Sửa và hoàn tất')).toBeTruthy();
+    // Removal is a separate right (kanban 101026154020) and must survive the
+    // same "hook returned nothing" case: an ACCOUNTANT on a PENDING phiếu still
+    // gets the button, and `deleteSettlement?.isPending` must read as false.
+    expect(screen.getByRole('button', { name: /Xóa phiếu hoàn ứng PT-2610-0007/ })).toBeTruthy();
   });
 
   it('renders the expense adjustment editor when the adjustment hook returns undefined', () => {

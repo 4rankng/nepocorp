@@ -76,7 +76,7 @@ describe('admin advance settlement ledger density', () => {
 
   // Named action contract (kanban 20260922_34) — the row components no longer
   // take react-query mutation objects.
-  const settlementActions = { onApprove: vi.fn(), onReject: vi.fn() };
+  const settlementActions = { onApprove: vi.fn(), onReject: vi.fn(), onDelete: vi.fn() };
 
   it.each([
     {
@@ -86,6 +86,7 @@ describe('admin advance settlement ledger density', () => {
           s={settlement}
           actions={settlementActions}
           canApproveReject
+          canDelete={false}
         />
       ),
     },
@@ -96,6 +97,7 @@ describe('admin advance settlement ledger density', () => {
           s={settlement}
           actions={settlementActions}
           canApproveReject
+          canDelete={false}
         />
       ),
     },
@@ -137,6 +139,7 @@ describe('admin advance settlement ledger density', () => {
           s={reimbursementSettlement}
           actions={settlementActions}
           canApproveReject
+          canDelete={false}
         />
       </MemoryRouter>,
     );

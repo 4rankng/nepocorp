@@ -21,19 +21,48 @@ const settlement = {
   linkedExpenses: [],
 } as never;
 
-function mount(actions: SettlementActions, canApproveReject = true, status = AdvanceSettlementStatus.PENDING) {
+function mount(
+  actions: SettlementActions,
+  canApproveReject = true,
+  status = AdvanceSettlementStatus.PENDING,
+  canDelete = false,
+) {
   return render(
     <MemoryRouter>
       <SettlementGridRow
         s={{ ...(settlement as object), status } as never}
         actions={actions}
         canApproveReject={canApproveReject}
+        canDelete={canDelete}
       />
     </MemoryRouter>,
   );
 }
 
-const stubActions = (): SettlementActions => ({ onApprove: vi.fn(), onReject: vi.fn() });
+const stubActions = (): SettlementActions => ({ onApprove: vi.fn(), onReject: vi.fn(), onDelete: vi.fn() });
+
+/**
+ * Removing an un-approved phiếu is its own right (ADMIN/MANAGER/ACCOUNTANT — the
+ * same band the DELETE route admits), not a by-product of the accountant-only
+ * amount editor it used to be nested inside: a MANAGER could sign a phiếu off but
+ * had no way to throw one away (kanban 101026154020). It also belongs to the
+ * settlement header, once, exactly like the batch decisions.
+ */
+it('offers one delete action on a PENDING phiếu to the roles that may delete it', () => {
+  mount(stubActions(), true, AdvanceSettlementStatus.PENDING, true);
+
+  const deletes = screen.getAllByRole('button', { name: /Xóa phiếu PT-2609-0002/ });
+  expect(deletes).toHaveLength(1);
+
+  fireEvent.click(deletes[0]);
+  expect(screen.getByText(/Xóa phiếu hoàn ứng PT-2609-0002\? Thao tác không thể hoàn tác\./)).toBeTruthy();
+});
+
+it('never offers removal once the phiếu has left PENDING', () => {
+  mount(stubActions(), true, AdvanceSettlementStatus.APPROVED, true);
+
+  expect(screen.queryByRole('button', { name: /Xóa phiếu PT-2609-0002/ })).toBeNull();
+});
 
 it('puts approve and reject on the settlement header, not on every child row', () => {
   mount(stubActions());

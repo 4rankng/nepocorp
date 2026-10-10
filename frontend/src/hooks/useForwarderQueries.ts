@@ -371,6 +371,29 @@ export function useUpdateSettlementExpense() {
   });
 }
 
+/**
+ * Office removal of an un-approved phiếu (kanban 101026154020).
+ *
+ * The list page and the detail page both fire it, so both caches drop: the
+ * detail entry, the period lists, and the advance-request pickers — deleting the
+ * phiếu releases its advance requests back into "Tồn tạm ứng".
+ */
+export function useDeleteSettlement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.deleteAdvanceSettlement(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementDetail(id) });
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementDetail(id) });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementsAll });
+      qc.invalidateQueries({ queryKey: qk.forwarder.eligibleAdvanceRequests });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.advanceBalances });
+      qc.invalidateQueries({ queryKey: qk.forwarder.advanceBalance });
+    },
+  });
+}
+
 export function useRejectSettlement() {
   const qc = useQueryClient();
   return useMutation({

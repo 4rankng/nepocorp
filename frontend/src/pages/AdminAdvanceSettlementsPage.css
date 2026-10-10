@@ -249,7 +249,7 @@
 .as-page .as-batch-action:hover:not(:disabled) { border-color: var(--ink-3); }
 .as-page .as-batch-action:disabled { opacity: 0.55; cursor: default; }
 .as-page .as-batch-action--approve { border-color: color-mix(in srgb, var(--accent) 40%, var(--line-2)); color: var(--accent-700, #0A6E3A); }
-.as-page .as-batch-action--reject { border-color: color-mix(in srgb, var(--danger) 35%, var(--line-2)); color: var(--danger); }
+.as-page .as-batch-action--reject, .as-page .as-batch-action--danger { border-color: color-mix(in srgb, var(--danger) 35%, var(--line-2)); color: var(--danger); }
 .as-page .as-batch-action__label { white-space: nowrap; }
 
 /* At or below the ledger's 1015px floor there is no room for both labels next

@@ -165,6 +165,11 @@ export const forwarderClient = {
   approveAdvanceSettlement: async (id: number) => {
     return api.post(FINANCIAL.ADVANCE_SETTLEMENT_APPROVE(id), {});
   },
+  // Office removal of an un-approved phiếu (kanban 101026154020). The service
+  // accepts ADMIN/MANAGER/ACCOUNTANT and refuses anything past PENDING.
+  deleteAdvanceSettlement: async (id: number) => {
+    return api.delete<{ ok: true; id: number; code: string }>(FINANCIAL.ADVANCE_SETTLEMENT_DETAIL(id));
+  },
   updateAdvanceSettlement: async (id: number, data: {
     advanceRequestIds: number[];
     tripExpenseIds: number[];

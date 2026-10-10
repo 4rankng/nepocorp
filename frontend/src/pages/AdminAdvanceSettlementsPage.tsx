@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, FileText, Pencil, XCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, FileText, Pencil, XCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
 import { formatNumber, formatDate } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
-import { canApproveSettlement } from '../features/advances/settlementPermissions';
+import { canApproveSettlement, canDeleteSettlement } from '../features/advances/settlementPermissions';
 import { AdvanceSettlementStatus } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill, ConfirmDialog } from '../components/UI';
@@ -15,6 +15,7 @@ import {
   useAdminAdvanceBalances,
   useRejectSettlement,
   useApproveSettlement,
+  useDeleteSettlement,
   pendingAction,
 } from '../hooks/useForwarderQueries';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
@@ -44,9 +45,11 @@ export interface SettlementActions {
   /** Settlement id with an in-flight mutation, if any. */
   pendingId?: number;
   /** Which mutation is in flight for `pendingId`. */
-  pendingKind?: 'approve' | 'reject';
+  pendingKind?: 'approve' | 'reject' | 'delete';
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  /** Removes a PENDING phiếu; the caller re-checks the status before wiring it. */
+  onDelete: (id: number) => void;
 }
 
 export function SettlementGridRow({
@@ -54,18 +57,24 @@ export function SettlementGridRow({
   actions,
   focusId,
   canApproveReject,
+  canDelete,
 }: {
   s: Settlement;
   actions: SettlementActions;
   focusId?: string;
   canApproveReject: boolean;
+  canDelete: boolean;
 }) {
   const isRejecting = actions.pendingId === s.id && actions.pendingKind === 'reject';
   const isApproving = actions.pendingId === s.id && actions.pendingKind === 'approve';
+  const isDeleting = actions.pendingId === s.id && actions.pendingKind === 'delete';
   const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
+  // Only PENDING is deletable server-side; CHECKED_BY_ACCOUNTANT already sits on
+  // the approval path and is refused (kanban 101026154020).
+  const mayDelete = canDelete && s.status === AdvanceSettlementStatus.PENDING;
   const plans = groupSettlementExpensesByTrip(s.linkedExpenses ?? []);
   const rows = plans.length > 0 ? plans : [null];
-  const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | null>(null);
+  const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
   // Money the accountant is signing off on — shown in the confirm step so a
   // batch action is never a blind tap (kanban 20260922_34).
   const payout = Number(s.reimbursementAmount || 0) > 0
@@ -106,39 +115,64 @@ export function SettlementGridRow({
             <strong><Money value={Number(s.refundAmount)} /></strong>
           </div>
         )}
-        {canAct && canApproveReject && (
+        {canAct && (canApproveReject || mayDelete) && (
           <div className="as-settlement-actions">
-            <button
-              type="button"
-              className="as-batch-action as-batch-action--approve"
-              onClick={() => setPendingAction('approve')}
-              disabled={isApproving || isRejecting}
-              aria-label={`Duyệt cả phiếu ${s.code}`}
-            >
-              {isApproving ? <Loader2 size={15} className="spin" /> : <CheckCircle2 size={15} aria-hidden="true" />}
-              <span className="as-batch-action__label">Duyệt</span>
-            </button>
-            <button
-              type="button"
-              className="as-batch-action as-batch-action--reject"
-              onClick={() => setPendingAction('reject')}
-              disabled={isApproving || isRejecting}
-              aria-label={`Từ chối cả phiếu ${s.code}`}
-            >
-              {isRejecting ? <Loader2 size={15} className="spin" /> : <XCircle size={15} aria-hidden="true" />}
-              <span className="as-batch-action__label">Từ chối</span>
-            </button>
+            {canApproveReject && (
+              <>
+                <button
+                  type="button"
+                  className="as-batch-action as-batch-action--approve"
+                  onClick={() => setPendingAction('approve')}
+                  disabled={isApproving || isRejecting}
+                  aria-label={`Duyệt cả phiếu ${s.code}`}
+                >
+                  {isApproving ? <Loader2 size={15} className="spin" /> : <CheckCircle2 size={15} aria-hidden="true" />}
+                  <span className="as-batch-action__label">Duyệt</span>
+                </button>
+                <button
+                  type="button"
+                  className="as-batch-action as-batch-action--reject"
+                  onClick={() => setPendingAction('reject')}
+                  disabled={isApproving || isRejecting}
+                  aria-label={`Từ chối cả phiếu ${s.code}`}
+                >
+                  {isRejecting ? <Loader2 size={15} className="spin" /> : <XCircle size={15} aria-hidden="true" />}
+                  <span className="as-batch-action__label">Từ chối</span>
+                </button>
+              </>
+            )}
+            {/* Removing the phiếu is the settlement's own action — rendered once,
+                here, never per child row: the repeated-per-row reject button was
+                the defect of kanban 20260922_34 and delete must not reintroduce
+                it (kanban 101026154020). MANAGER may delete but not rewrite the
+                sheet, so this is gated separately from approve/reject. */}
+            {mayDelete && (
+              <button
+                type="button"
+                className="as-batch-action as-batch-action--danger"
+                onClick={() => setPendingAction('delete')}
+                disabled={isDeleting}
+                aria-label={`Xóa phiếu ${s.code}`}
+              >
+                {isDeleting ? <Loader2 size={15} className="spin" /> : <Trash2 size={15} aria-hidden="true" />}
+                <span className="as-batch-action__label">Xóa</span>
+              </button>
+            )}
           </div>
         )}
       </div>
       <ConfirmDialog
         isOpen={pendingAction !== null}
-        variant={pendingAction === 'reject' ? 'danger' : 'primary'}
-        confirmLabel={pendingAction === 'reject' ? 'Từ chối cả phiếu' : 'Duyệt cả phiếu'}
+        variant={pendingAction === 'approve' ? 'primary' : 'danger'}
+        confirmLabel={
+          pendingAction === 'reject' ? 'Từ chối cả phiếu' : pendingAction === 'delete' ? 'Xóa phiếu' : 'Duyệt cả phiếu'
+        }
         message={
           pendingAction === 'reject'
             ? `Từ chối cả phiếu ${s.code}? Toàn bộ chi phí trong phiếu sẽ không được hoàn ứng.`
-            : `Duyệt cả phiếu ${s.code}? ${payout.label}: ${formatNumber(payout.value)} ₫ sẽ được ghi nhận.`
+            : pendingAction === 'delete'
+              ? `Xóa phiếu hoàn ứng ${s.code}? Thao tác không thể hoàn tác.`
+              : `Duyệt cả phiếu ${s.code}? ${payout.label}: ${formatNumber(payout.value)} ₫ sẽ được ghi nhận.`
         }
         onCancel={() => setPendingAction(null)}
         onConfirm={() => {
@@ -146,6 +180,7 @@ export function SettlementGridRow({
           setPendingAction(null);
           if (action === 'approve') actions.onApprove(s.id);
           else if (action === 'reject') actions.onReject(s.id);
+          else if (action === 'delete') actions.onDelete(s.id);
         }}
       />
       {rows.map((plan, index) => (
@@ -235,15 +270,22 @@ export function SettlementMobileCard({
   actions,
   focusId,
   canApproveReject,
+  canDelete,
 }: {
   s: Settlement;
   actions: SettlementActions;
   focusId?: string;
   canApproveReject: boolean;
+  canDelete: boolean;
 }) {
   const isRejecting = actions.pendingId === s.id && actions.pendingKind === 'reject';
   const isApproving = actions.pendingId === s.id && actions.pendingKind === 'approve';
+  const isDeleting = actions.pendingId === s.id && actions.pendingKind === 'delete';
   const canAct = s.status === AdvanceSettlementStatus.PENDING || s.status === AdvanceSettlementStatus.CHECKED_BY_ACCOUNTANT;
+  // Same rule as the desktop row and the service: PENDING only.
+  const mayDelete = canDelete && s.status === AdvanceSettlementStatus.PENDING;
+  // Destructive and irreversible, so the card confirms it just like the desktop row.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const scope = summarizeSettlementExpenses(s.linkedExpenses);
   const plans = groupSettlementExpensesByTrip(s.linkedExpenses ?? []);
 
@@ -368,6 +410,18 @@ export function SettlementMobileCard({
               Từ chối
             </button>
           )}
+          {mayDelete && (
+            <button
+              type="button"
+              className="btn as-mcard__reject"
+              onClick={() => setConfirmingDelete(true)}
+              disabled={isDeleting}
+              aria-label={`Xóa phiếu ${s.code}`}
+            >
+              {isDeleting ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} aria-hidden="true" />}
+              Xóa phiếu
+            </button>
+          )}
         </div>
       ) : (s.approverName || s.checkerName) ? (
         <div className="as-mcard__reviewer">
@@ -375,6 +429,18 @@ export function SettlementMobileCard({
           <strong>{s.approverName ?? s.checkerName}</strong>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={confirmingDelete}
+        variant="danger"
+        confirmLabel="Xóa phiếu"
+        message={`Xóa phiếu hoàn ứng ${s.code}? Thao tác không thể hoàn tác.`}
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={() => {
+          setConfirmingDelete(false);
+          actions.onDelete(s.id);
+        }}
+      />
     </article>
   );
 }
@@ -393,20 +459,27 @@ export default function AdminAdvanceSettlementsPage() {
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const rejectMutation = useRejectSettlement();
   const approveMutation = useApproveSettlement();
+  const deleteMutation = useDeleteSettlement();
   // Same guard as the advance-request ledger: a hook that returns nothing must
   // not blank the route (kanban 101026101500). Approval still wins.
   const { pendingId, pendingKind } = pendingAction([
     { kind: 'approve', mutation: approveMutation },
     { kind: 'reject', mutation: rejectMutation },
+    { kind: 'delete', mutation: deleteMutation },
   ]);
   const settlementActions: SettlementActions = {
     pendingId,
     pendingKind,
     onApprove: (id: number) => approveMutation.mutate(id),
     onReject: (id: number) => rejectMutation.mutate(id),
+    onDelete: (id: number) => deleteMutation.mutate(id),
   };
   const { user } = useAuth();
   const canApproveReject = canApproveSettlement(user?.role);
+  // Removal is a separate right from approval: a MANAGER signs a phiếu off but
+  // cannot rewrite it — and must still be able to throw one away
+  // (kanban 101026154020). The row folds in the PENDING-only status rule.
+  const canDelete = canDeleteSettlement(user?.role);
 
   const allSettlements: Settlement[] = useMemo(
     () => (data?.items ?? []) as Settlement[],
@@ -568,6 +641,7 @@ export default function AdminAdvanceSettlementsPage() {
                       actions={settlementActions}
                       focusId={`as-${s.id}`}
                       canApproveReject={canApproveReject}
+                      canDelete={canDelete}
                     />
                   ))}
                 </div>
@@ -583,6 +657,7 @@ export default function AdminAdvanceSettlementsPage() {
                   actions={settlementActions}
                   focusId={`as-${s.id}`}
                   canApproveReject={canApproveReject}
+                  canDelete={canDelete}
                 />
               ))}
             </div>

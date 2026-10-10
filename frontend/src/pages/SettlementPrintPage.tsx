@@ -7,9 +7,9 @@ import { api } from '../lib/api';
 import { useConfirm } from '../components/confirm-dialog';
 import { useToast } from '../components/shared/Toast';
 import { downloadBlob } from '../lib/download';
-import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement, pendingAction } from '../hooks/useForwarderQueries';
+import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement, useDeleteSettlement, pendingAction } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
-import { canApproveSettlement, canAdjustSettlementAmounts } from '../features/advances/settlementPermissions';
+import { canApproveSettlement, canAdjustSettlementAmounts, canDeleteSettlementNow } from '../features/advances/settlementPermissions';
 import { PageHeader, StatusPill } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
@@ -117,6 +117,7 @@ export default function SettlementPrintPage() {
   const updateMySettlement = useUpdateMyAdvanceSettlement();
   const approveSettlement = useApproveSettlement();
   const rejectSettlement = useRejectSettlement();
+  const deleteSettlement = useDeleteSettlement();
   // A hook that returns nothing — a module the dev server is midway through
   // replacing, a hook disabled for the role, a mocked module — must not blank
   // this page (kanban 101026101500). Approve/reject is one decision, so it goes
@@ -135,7 +136,8 @@ export default function SettlementPrintPage() {
   const mySettlementSaveError = updateMySettlement?.error ?? null;
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { toast } = useToast();
-  const [deleting, setDeleting] = useState(false);
+  // Read tolerantly, like the save flags: a mocked/absent hook must not blank the page.
+  const deleting = deleteSettlement?.isPending === true;
 
   const handleBack = () => navigate(-1);
   useBackShortcut(handleBack);
@@ -177,22 +179,22 @@ export default function SettlementPrintPage() {
 
   // Delete is office-only and PENDING-only (the service refuses anything past
   // PENDING) — an un-approved, wrongly-scoped settlement had no removal path
-  // before (kanban 091026213510).
+  // before (kanban 091026213510). It is deliberately NOT nested under
+  // `canEditExpenses` any more: a MANAGER may delete but not rewrite the sheet,
+  // so the old nesting hid the button from exactly the role that filed this
+  // (kanban 101026154020).
   const handleDelete = async () => {
     const ok = await confirm(
       `Xóa phiếu hoàn ứng ${s.code}? Thao tác không thể hoàn tác.`,
       { variant: 'danger', confirmLabel: 'Xóa phiếu' },
     );
     if (!ok) return;
-    setDeleting(true);
     try {
-      await api.delete(`/advance-settlements/${s.id}`);
+      await deleteSettlement.mutateAsync(s.id);
       toast({ kind: 'success', message: `Đã xóa phiếu ${s.code}` });
       navigate('/admin/advance-settlements');
     } catch (err) {
       toast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xóa phiếu' });
-    } finally {
-      setDeleting(false);
     }
   };
   // Explicit approve/reject on the detail page (kanban 101026003210). The same
@@ -244,6 +246,9 @@ export default function SettlementPrintPage() {
   const awaitingSignOff = s.status === 'PENDING' || s.status === 'CHECKED_BY_ACCOUNTANT';
   const canEditExpenses = !isPortal && canAdjustSettlementAmounts(user?.role) && awaitingSignOff;
   const maySignOff = !isPortal && canApproveSettlement(user?.role) && awaitingSignOff;
+  // Removing the phiếu is its own right: the same office band as approve/reject,
+  // and only while the service still deletes it (PENDING). See kanban 101026154020.
+  const mayDelete = !isPortal && canDeleteSettlementNow(user?.role, s.status);
   // Ops sở hữu phiếu có thể tự bổ sung/bớt tạm ứng, chi phí khi phiếu còn CHỜ XỬ LÝ.
   const canEditComposition = canEditExpenses || (isPortal && s.status === 'PENDING');
 
@@ -362,6 +367,16 @@ export default function SettlementPrintPage() {
                     {rejectingSettlement ? <Loader2 size={14} className="spin" /> : <XCircle size={14} />} Từ chối
                   </button>
                 </>
+              )}
+              {mayDelete && (
+                <button
+                  className="btn btn--danger btn--sm"
+                  disabled={deleting || savingSettlement || approvingSettlement}
+                  onClick={() => void handleDelete()}
+                  aria-label={`Xóa phiếu hoàn ứng ${s.code}`}
+                >
+                  {deleting ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />} Xóa phiếu
+                </button>
               )}
             </div>
           }
@@ -580,17 +595,6 @@ export default function SettlementPrintPage() {
               {savingSettlement || approvingSettlement ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
               Sửa và hoàn tất
             </button>
-            {s.status === 'PENDING' && (
-              <button
-                className="btn btn--danger"
-                style={{ marginTop: 8 }}
-                disabled={deleting || savingSettlement || approvingSettlement}
-                onClick={handleDelete}
-              >
-                {deleting ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
-                Xóa phiếu
-              </button>
-            )}
           </div>
         )}
 
