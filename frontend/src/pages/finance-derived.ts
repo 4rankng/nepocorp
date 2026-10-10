@@ -44,6 +44,45 @@ const runningSum = (arr: number[]): number[] => {
   return arr.map((value) => (acc += value));
 };
 
+export interface FinanceCostBreakdown {
+  fuel: number;
+  road: number;
+  driver: number;
+  tolls: number;
+  maintenance: number;
+  /** `report.totalCosts` — the exact figure the P&L subtotal and the dashboard show. */
+  total: number;
+  /** OWN trips in the reporting set (COMPLETED/LOCKED) the cost rows cover. */
+  tripCount: number;
+}
+
+/**
+ * Cost structure behind the /finance donut and the P&L "chi phí trực tiếp" rows.
+ *
+ * Derived exclusively from the backend P&L report — `totalCosts` plus the
+ * per-trip `tripDetails` the backend already reconciles against it — so the
+ * parts always sum to the same "Tổng chi phí" the P&L subtotal and the dashboard
+ * show. Summing the raw monthly trip list instead (every status but CANCELED,
+ * OWN + EXTERNAL, three cost fields only) made the donut total sit above the
+ * table total on the same page (kanban 101026013010).
+ *
+ * EXTERNAL trips are excluded: their hire cost is netted inside
+ * `externalMarginTotal` revenue, never inside `totalCosts`.
+ */
+export function deriveCostBreakdown(report?: PnlReport): FinanceCostBreakdown {
+  const total = report?.totalCosts ?? 0;
+  const maintenance = report?.maintenanceExpensesTotal ?? 0;
+  const own = (report?.tripDetails ?? []).filter((d) => !d.isExternal);
+  const fuel = own.reduce((s, d) => s + d.fuelOrHireCost, 0);
+  const road = own.reduce((s, d) => s + d.roadAllowance, 0);
+  const driver = own.reduce((s, d) => s + d.driverAndAllowances, 0);
+  // Vé BOT + lệ phí công ty trả (`tollCost + tollsDiscount`). Taken as the
+  // remainder of the report total so the five rows always add up to `total`,
+  // even if the backend changes how it itemises a trip.
+  const tolls = total - maintenance - fuel - road - driver;
+  return { fuel, road, driver, tolls, maintenance, total, tripCount: own.length };
+}
+
 interface FinanceDerivedInput {
   allTrips: TripDetail[];
   report?: PnlReport;
@@ -57,22 +96,21 @@ interface FinanceDerivedInput {
 export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, yearlyData, month, chartView }: FinanceDerivedInput) {
 
     const {
-      fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
+      fuelCost, roadCost, driverCost, tollsCost, maintenanceCost, companyExpenses,
+      costTotal, costTripCount,
       totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
       totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, companyExpensesLY, netProfitLY,
       activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
     } = useMemo(() => {
       const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
-      const realFuelCost = activeTrips.reduce((s, t) => s + parseFloat(t.totalFuelCost || '0'), 0);
-      const realRoadCost = activeTrips.reduce((s, t) => s + parseFloat(t.totalRoadAllowance || '0'), 0);
-      const realDriverCost = activeTrips.reduce((s, t) => s + parseFloat(t.driverSalary || '0'), 0);
       const totalCosts = report?.totalCosts ?? 0;
 
-      const hasRealCosts = realFuelCost + realRoadCost + realDriverCost > 0;
-      const fuelCost   = hasRealCosts ? realFuelCost   : Math.round(totalCosts * 0.55);
-      const roadCost   = hasRealCosts ? realRoadCost   : Math.round(totalCosts * 0.25);
-      const driverCost = hasRealCosts ? realDriverCost : Math.round(totalCosts * 0.20);
-      const maintenanceCost = report?.maintenanceExpensesTotal ?? 0;
+      // The direct-cost rows and the cost donut share the report's basis so
+      // they reconcile with its "Tổng chi phí vận hành" subtotal (kanban 101026013010).
+      const {
+        fuel: fuelCost, road: roadCost, driver: driverCost, tolls: tollsCost,
+        maintenance: maintenanceCost, tripCount: costTripCount,
+      } = deriveCostBreakdown(report);
       const companyExpenses = report?.companyExpenses ?? 0;
 
       const operatingRevenue = report?.totalRevenue ?? 0;
@@ -109,8 +147,9 @@ export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, y
         { name: 'Nhiên liệu', value: fuelCost, fill: '#059669' },
         { name: 'Tiền đi đường', value: roadCost, fill: '#D97706' },
         { name: 'Lương lái xe', value: driverCost, fill: '#2563EB' },
+        { name: 'Vé BOT & lệ phí', value: tollsCost, fill: '#7C3AED' },
         { name: 'Bảo dưỡng', value: maintenanceCost, fill: '#DC2626' },
-      ].filter(d => d.value > 0.5);
+      ].filter(d => d.value > 0);
 
       const categoryBreakdown: Array<{ categoryName: string; total: number }> =
         (report?.categoryBreakdown ?? []).map(c => ({
@@ -176,7 +215,8 @@ export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, y
       }
 
       return {
-        fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
+        fuelCost, roadCost, driverCost, tollsCost, maintenanceCost, companyExpenses,
+        costTotal: totalCosts, costTripCount,
         totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
         totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY, companyExpensesLY, netProfitLY,
         activeCapTable, revenueChartData, costPieData, topTrucks, categoryBreakdown, truckBreakdown,
@@ -236,7 +276,8 @@ export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, y
 
     const hasChartData = chartView === 'day' ? dailyChartData.labels.length > 0 : trimmedChartData.length > 0;
   return {
-    fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
+    fuelCost, roadCost, driverCost, tollsCost, maintenanceCost, companyExpenses,
+    costTotal, costTripCount,
     totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
     totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY,
     companyExpensesLY, netProfitLY, activeCapTable, revenueChartData, costPieData,

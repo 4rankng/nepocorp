@@ -24,6 +24,10 @@ interface FinanceChartsRowProps {
   activeChartData: { months: string[]; revenue: number[]; gross: number[]; currentIdx?: number };
   loading: boolean;
   costPieData: FinanceCostSlice[];
+  /** `report.totalCosts` — the donut centre must equal the P&L subtotal verbatim. */
+  costTotal: number;
+  /** OWN trips (COMPLETED/LOCKED) the cost breakdown covers — shown as the basis caption. */
+  costTripCount: number;
   topTrucks: FinanceTopTruck[];
   /** Compact-currency formatter (page-owned helper, injected to keep the one-way page → feature dependency). */
   formatCompact: (value: number) => string;
@@ -39,6 +43,8 @@ export function FinanceChartsRow({
   activeChartData,
   loading,
   costPieData,
+  costTotal,
+  costTripCount,
   topTrucks,
   formatCompact,
 }: FinanceChartsRowProps) {
@@ -94,15 +100,18 @@ export function FinanceChartsRow({
       <div className="panel finance-charts-row__side" style={{ padding: '16px 20px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
         {/* Cost pie */}
         <div>
-          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 12 }}>
+          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
             Cơ cấu chi phí {String(month).padStart(2, '0')}/{String(year).slice(-2)}
+          </div>
+          <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--fg-3)', marginBottom: 12, lineHeight: 1.4 }}>
+            Chi phí trực tiếp của {costTripCount} chuyến đã khóa + bảo dưỡng xe · khớp “Tổng chi phí vận hành” trong bảng P&amp;L
           </div>
           {loading ? (
             <div style={{ height: 160, background: 'var(--bg-2)', borderRadius: 6 }} />
           ) : costPieData.length > 0 ? (
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
               {(() => {
-                const total = costPieData.reduce((s, d) => s + d.value, 0) || 1;
+                const total = costTotal || costPieData.reduce((s, d) => s + d.value, 0) || 1;
                 const cx = 100, cy = 100, rOuter = 80, rInner = 50;
                 let start = -Math.PI / 2;
                 const arcs = costPieData.map((d) => {

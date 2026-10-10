@@ -36,7 +36,8 @@ export default function FinancePage() {
   const error = queryError ? queryError.message || 'Không thể tải báo cáo' : null;
 
   const {
-    fuelCost, roadCost, driverCost, maintenanceCost, companyExpenses,
+    fuelCost, roadCost, driverCost, tollsCost, maintenanceCost, companyExpenses,
+    costTotal, costTripCount,
     totalRevenue, otherRevenue, transRevenue, totalCosts, grossProfit, netProfit,
     totalRevenueLY, otherRevenueLY, transRevenueLY, totalCostsLY, grossProfitLY,
     companyExpensesLY, netProfitLY, activeCapTable, costPieData,
@@ -101,6 +102,8 @@ export default function FinancePage() {
                 ['Nhiên liệu', fuelCost, ''],
                 ['Tiền đi đường', roadCost, ''],
                 ['Lương lái xe', driverCost, ''],
+                ['Vé BOT & lệ phí', tollsCost, ''],
+                ['Bảo dưỡng & sửa chữa', maintenanceCost, ''],
                 ['Tổng chi phí vận hành', totalCosts, totalCostsLY],
                 ['Lợi nhuận gộp', grossProfit, grossProfitLY],
                 ['Lợi nhuận ròng', netProfit, netProfitLY],
@@ -176,6 +179,8 @@ export default function FinancePage() {
         activeChartData={activeChartData}
         loading={loading}
         costPieData={costPieData}
+        costTotal={costTotal}
+        costTripCount={costTripCount}
         topTrucks={topTrucks}
         formatCompact={compactNum}
       />
@@ -284,6 +289,17 @@ export default function FinancePage() {
               <div className="pnl-row__amount">{formatNumber(driverCost)}</div>
               <div className="pnl-row__yoy">—</div><div className="pnl-row__pct">—</div>
             </div>
+
+            {tollsCost > 0 && (
+            <div className="pnl-row">
+              <div className="pnl-row__label">
+                Vé BOT &amp; lệ phí
+                <div className="pnl-row__label-sub">Vé cầu đường &amp; lệ phí công ty trả</div>
+              </div>
+              <div className="pnl-row__amount">{formatNumber(tollsCost)}</div>
+              <div className="pnl-row__yoy">—</div><div className="pnl-row__pct">—</div>
+            </div>
+            )}
 
             {maintenanceCost > 0 && (
             <div className="pnl-row">
