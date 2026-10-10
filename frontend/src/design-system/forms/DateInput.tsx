@@ -95,7 +95,11 @@ export function DateInput({
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.slice(0, 10);
+    const raw = e.target.value;
+    // A complete field ignores further keystrokes instead of slicing the tail
+    // off (which silently mangled the value while editing). Focusing selects
+    // the whole date, so typing a new one replaces it.
+    if (raw.length > 10) return;
     setText(raw);
     // Commit as soon as the field holds a complete, in-range date so filters
     // run without waiting for blur.
@@ -129,6 +133,7 @@ export function DateInput({
         aria-label={label}
         value={text}
         onChange={handleChange}
+        onFocus={e => e.currentTarget.select()}
         onBlur={handleBlur}
         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleBlur(); } }}
         disabled={disabled}
