@@ -228,6 +228,16 @@
   color: var(--ink);
 }
 
+/* Explains why the driver's fuel card shows litres only (no unit price/total). */
+.fuel-alloc-card__note {
+  margin: 4px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
 /* Earnings card customizations */
 .earnings-highlight {
   color: var(--accent);

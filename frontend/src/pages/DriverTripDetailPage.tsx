@@ -204,6 +204,16 @@ export default function DriverTripDetailPage() {
                 Nhà cung cấp: <strong style={{ color: 'var(--accent)' }}>{trip.fuelSupplierName}</strong>
               </div>
             )}
+            {/* The driver API deliberately allowlists litres/mode/supplier only
+                (getDriverTripDetail — no fuel unit price or cost, unlike the
+                office trip detail). Fuel is a supplier payable, not driver
+                income, so the money stays hidden; this note makes that explicit
+                instead of leaving the driver to wonder whether a price is
+                missing (kanban 101026101530). */}
+            <p className="fuel-alloc-card__note">
+              Đây là lượng dầu công ty cấp cho chuyến để đổ tại nhà cung cấp.
+              Đơn giá và tổng tiền do văn phòng thanh toán với nhà cung cấp nên không hiển thị ở đây.
+            </p>
           </div>
         </div>
 
