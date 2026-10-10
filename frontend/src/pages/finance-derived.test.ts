@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PnlReport, PnlTripDetail } from '@tingting/shared';
-import { deriveCostBreakdown } from './finance-derived';
+import { deriveCostBreakdown, marginPct } from './finance-derived';
 
 const detail = (overrides: Partial<PnlTripDetail> = {}): PnlTripDetail => ({
   id: 1,
@@ -107,5 +107,27 @@ describe('deriveCostBreakdown', () => {
     expect(deriveCostBreakdown(undefined)).toEqual({
       fuel: 0, road: 0, driver: 0, tolls: 0, maintenance: 0, total: 0, tripCount: 0,
     });
+  });
+});
+
+/**
+ * One number, one rounding: the KPI strip and the P&L table both print
+ * marginPct(grossProfit, totalRevenue), so they can only disagree if something
+ * writes the KPI out-of-band — the count-up animation did exactly that and left
+ * the header at 29,8% while the table said 29,9% (kanban 101026211520).
+ */
+describe('marginPct', () => {
+  it('rounds the reported October figures to the same one-decimal value the table shows', () => {
+    // 64.322.284 ÷ 215.349.049 = 29,869…% → 29,9 (the ticket's arithmetic).
+    expect(marginPct(64_322_284, 215_349_049)).toBe('29.9');
+  });
+
+  it('is 0.0 instead of NaN/Infinity when the period has no revenue', () => {
+    expect(marginPct(0, 0)).toBe('0.0');
+    expect(marginPct(5_000_000, 0)).toBe('0.0');
+  });
+
+  it('keeps the sign for a loss period', () => {
+    expect(marginPct(-12_000_000, 100_000_000)).toBe('-12.0');
   });
 });
