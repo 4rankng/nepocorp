@@ -179,7 +179,7 @@ describe('payables aging cards — a real space, never a glue (101026102020)', (
     expect(totalCell?.textContent).toBe('311.270.004 ₫');
   });
 
-  it('never leaves a digit glued to a following letter in the hero KPIs', () => {
+  it('separates the hero KPI counts from their words', () => {
     const { container } = render(
       <MemoryRouter>
         <PayableHeroKpiRow totals={TOTALS} heroMoney={moneyParts(TOTALS.total, false)} />
