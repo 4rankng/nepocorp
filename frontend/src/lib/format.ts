@@ -23,6 +23,41 @@ export function formatCurrency(n: number | string | null): string {
 }
 
 /**
+ * Read a formatted amount back into a number — the inverse of `formatCurrency`
+ * and `formatNumber`.
+ *
+ * The vi-VN separators are the whole subtlety: a dot groups thousands
+ * ("5.159.636 ₫") while a comma marks the decimal ("1.234,5 ₫") — the opposite
+ * of what `parseFloat` reads. `parseFloat('5.159.636 ₫')` stops at the second
+ * dot and answers 5.159, so every export that handed a `formatCurrency` string
+ * over to a workbook or a printed total recorded 5.159 for a 5.159.636 ₫
+ * amount: the xlsx column, its `SUM()` and the printed TỔNG CỘNG all came out
+ * as 405,159 for a 5.559.636 ₫ sheet (kanban 101026102000).
+ *
+ * Returns null when the cell holds no recognizable amount, so a caller can keep
+ * the original text or leave the cell out of a sum.
+ */
+export function parseAmount(raw: string | number | null | undefined): number | null {
+  if (raw == null) return null;
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+  const cleaned = raw.replace(/[^\d.,-]/g, '');
+  const negative = cleaned.startsWith('-');
+  const digits = cleaned.replace(/-/g, '');
+  if (!digits) return null;
+  // A trailing ",dd" is the vi-VN decimal mark; any other comma groups thousands.
+  const decimalMarked = /,\d{1,2}$/.test(digits)
+    ? digits.replace(/\./g, '').replace(',', '.')
+    : digits.replace(/,/g, '');
+  // Dots in repeated 3-digit groups group thousands ("1.234.567"), they are not a decimal point.
+  const plain = /^\d{1,3}(?:\.\d{3})+$/.test(decimalMarked)
+    ? decimalMarked.replace(/\./g, '')
+    : decimalMarked;
+  const value = parseFloat(plain);
+  if (!Number.isFinite(value)) return null;
+  return negative ? -value : value;
+}
+
+/**
  * Split a VND amount into a big numeric part and a smaller unit/suffix part,
  * so the unit ("₫", or "tr ₫" / "tỷ ₫" / "k ₫" when compact) can be rendered
  * at subtitle size next to the digits.

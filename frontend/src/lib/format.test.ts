@@ -1,5 +1,58 @@
 import { describe, it, expect } from 'vitest';
-import { formatAmount, formatCurrency, moneyParts } from './format';
+import { formatAmount, formatCurrency, moneyParts, parseAmount } from './format';
+
+/**
+ * `parseAmount` is the inverse of `formatCurrency`/`formatNumber`, and reading
+ * a vi-VN amount back is where it earns its place: the dot groups thousands and
+ * the comma is the decimal mark, the opposite of what `parseFloat` reads.
+ * Without it a 5.159.636 ₫ row was recorded as 5.159 in the .xlsx export and the
+ * printed totals row, and their sum came out 405,159 (kanban 101026102000).
+ */
+describe('parseAmount', () => {
+  it('reads a vi-VN grouped amount with either unit', () => {
+    expect(parseAmount('5.159.636 ₫')).toBe(5_159_636);
+    expect(parseAmount('5.159.636 đ')).toBe(5_159_636);
+    expect(parseAmount('250.000 ₫')).toBe(250_000);
+  });
+
+  it('reads the vi-VN decimal comma, not the dot', () => {
+    expect(parseAmount('5,5')).toBe(5.5);
+    expect(parseAmount('1.234,5 ₫')).toBe(1_234.5);
+  });
+
+  it('treats a 3-digit group as thousands, so 1.234 is 1234', () => {
+    expect(parseAmount('1.234')).toBe(1_234);
+    // …while a 1-2 digit tail is a decimal point.
+    expect(parseAmount('1.5')).toBe(1.5);
+    expect(parseAmount('12.34')).toBe(12.34);
+  });
+
+  it('keeps the sign of a negative amount', () => {
+    expect(parseAmount('-250.000 ₫')).toBe(-250_000);
+    expect(parseAmount('-1.234,56 ₫')).toBe(-1_234.56);
+  });
+
+  it('passes a plain number through', () => {
+    expect(parseAmount(5_159_636)).toBe(5_159_636);
+    expect(parseAmount(0)).toBe(0);
+    expect(parseAmount('2250000')).toBe(2_250_000);
+  });
+
+  it('returns null for a cell that holds no amount', () => {
+    expect(parseAmount('—')).toBeNull();
+    expect(parseAmount('')).toBeNull();
+    expect(parseAmount(null)).toBeNull();
+    expect(parseAmount(undefined)).toBeNull();
+    expect(parseAmount(NaN)).toBeNull();
+    expect(parseAmount('abc')).toBeNull();
+  });
+
+  it('round-trips every amount formatCurrency produces', () => {
+    for (const amount of [0, 999, 1_000, 5_159_636, 331_451_555, -2_500_000, 1_234.56]) {
+      expect(parseAmount(formatCurrency(amount))).toBe(amount);
+    }
+  });
+});
 
 /**
  * `formatAmount` replaces the `formatCurrency(n).replace(' ₫', '')` idiom that

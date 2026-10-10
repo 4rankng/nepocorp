@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { BRAND as APP_BRAND } from '../brand';
 import { downloadBlob } from './download';
+import { parseAmount } from './format';
 
 export type ColumnType = 'text' | 'number' | 'km' | 'liters' | 'currency' | 'date' | 'decimal';
 
@@ -80,9 +81,12 @@ function coerceCellValue(value: string | number, type: ColumnType): string | num
 
   if (type === 'currency' || type === 'number' || type === 'km' || type === 'liters' || type === 'decimal') {
     if (typeof value === 'number') return value;
-    const cleaned = String(value).replace(/[₫đ\s]/g, '').replace(',', '.');
-    const num = parseFloat(cleaned);
-    return Number.isFinite(num) ? num : value;
+    // Cells may arrive already formatted for display ("5.159.636 ₫"); the vi-VN
+    // separators have to be read back properly or the workbook records 5.159 for
+    // a 5.159.636 ₫ amount — and its SUM() then totals 405.159 (kanban
+    // 101026102000). Unreadable values are kept as text, as before.
+    const parsed = parseAmount(value);
+    return parsed === null ? value : parsed;
   }
 
   if (type === 'date') {
