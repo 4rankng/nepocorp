@@ -152,37 +152,63 @@ function Topbar({
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  useClickOutside(searchContainerRef, () => setSearchQuery(''), { enabled: searchQuery.length > 0 });
-
   const roleItems = React.useMemo(() => getSearchItems(user.role), [user.role]);
   const matchedItems = React.useMemo(() => filterItems(roleItems, searchQuery), [roleItems, searchQuery]);
+  // The field advertises "⌘ K" but nothing opened it, and an empty query listed
+  // nothing — so opening the palette showed a blank panel (kanban 101026101510).
+  // An `open` state + an unfiltered fallback make it a real command palette:
+  // Cmd/Ctrl+K (or focus) lists every destination the role can reach.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const dropdownItems = searchQuery.trim() ? matchedItems : roleItems;
+  const closeSearch = React.useCallback(() => {
+    setSearchQuery('');
+    setSearchOpen(false);
+  }, [setSearchQuery]);
+  const openSearch = React.useCallback(() => {
+    setSearchOpen(true);
+    searchInputRef.current?.focus();
+  }, []);
+
+  useClickOutside(searchContainerRef, closeSearch, { enabled: searchOpen, escapeKey: true });
+
+  React.useEffect(() => {
+    if (isDriver) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openSearch();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isDriver, openSearch]);
 
   React.useEffect(() => { setActiveIndex(0); }, [searchQuery]);
 
   function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActiveIndex(i => Math.min(i + 1, matchedItems.length - 1));
+      setActiveIndex(i => Math.min(i + 1, dropdownItems.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex(i => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const item = matchedItems[activeIndex];
+      const item = dropdownItems[activeIndex];
       if (item) {
         navigate(item.path);
-        setSearchQuery('');
+        closeSearch();
         searchInputRef.current?.blur();
       }
     } else if (e.key === 'Escape') {
-      setSearchQuery('');
+      closeSearch();
       searchInputRef.current?.blur();
     }
   }
 
   function handleSearchSelect(item: SearchItem) {
     navigate(item.path);
-    setSearchQuery('');
+    closeSearch();
     searchInputRef.current?.blur();
   }
 
@@ -219,12 +245,13 @@ function Topbar({
             placeholder="Tìm trang, cấu hình, thao tác…"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
+            onFocus={() => setSearchOpen(true)}
             onKeyDown={handleSearchKeyDown}
           />
           {!searchQuery && <kbd>⌘ K</kbd>}
-          {searchQuery.length > 0 && (
+          {searchOpen && (
             <SearchDropdown
-              items={matchedItems}
+              items={dropdownItems}
               query={searchQuery}
               activeIndex={activeIndex}
               onSelect={handleSearchSelect}
