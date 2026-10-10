@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import { installChunkErrorHandler } from './lib/chunk-error';
+import { installFatalScreen } from './lib/fatal-screen';
 import 'leaflet/dist/leaflet.css';
 import 'driver.js/dist/driver.css';
 import './index.css';
@@ -23,6 +24,12 @@ const queryClient = new QueryClient({
 // chunk the cached service worker no longer has), purge the SW cache and
 // reload once instead of hanging on a "Đang tải…" spinner or going blank.
 installChunkErrorHandler();
+
+// Last resort for anything React cannot catch: an uncaught error that leaves
+// #root empty paints a readable, reloadable panel instead of a blank page
+// (kanban 101026211510). Registered before the first render so a crash during
+// mount is covered too.
+installFatalScreen();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
