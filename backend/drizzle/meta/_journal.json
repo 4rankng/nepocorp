@@ -813,6 +813,13 @@
       "when": 1791594483582,
       "tag": "0120_fearless_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 121,
+      "version": "7",
+      "when": 1791597289756,
+      "tag": "0121_elite_mysterio",
+      "breakpoints": true
     }
   ]
 }

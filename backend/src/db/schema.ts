@@ -50,9 +50,12 @@ export const workDayStatusEnum = pgEnum('work_day_status', ['TRIP_DAY', 'STANDBY
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
-  username: varchar('username', { length: 100 }).unique(),
-  email: varchar('email', { length: 255 }).unique(),
-  phone: varchar('phone', { length: 20 }).unique(),
+  // Uniqueness is enforced by the partial indexes below, on LIVE rows only:
+  // a soft-deleted account keeps its identifiers for history but must not block
+  // re-creating the same username/email/phone (kanban 101026095010).
+  username: varchar('username', { length: 100 }),
+  email: varchar('email', { length: 255 }),
+  phone: varchar('phone', { length: 20 }),
   // Human-readable full name (e.g. "Lê Văn Tài"). Used as the actor label in
   // audit log messages so users see "Quản lý Lê Văn Tài khóa chuyến" instead
   // of the email "Quản lý giamdoc@nepo.vn khóa chuyến #76".
@@ -63,7 +66,22 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (table) => [
+  // One live account per identifier. The old plain unique indexes counted
+  // soft-deleted rows too, so re-creating a deleted account's username answered
+  // "Dữ liệu đã tồn tại" while the /users list (which hides deleted rows) showed
+  // no such account — the operator read that as "creating a user is broken"
+  // (kanban 101026095010).
+  uniqueIndex('users_username_active_unq')
+    .on(table.username)
+    .where(sql`${table.username} IS NOT NULL AND ${table.deletedAt} IS NULL`),
+  uniqueIndex('users_email_active_unq')
+    .on(table.email)
+    .where(sql`${table.email} IS NOT NULL AND ${table.deletedAt} IS NULL`),
+  uniqueIndex('users_phone_active_unq')
+    .on(table.phone)
+    .where(sql`${table.phone} IS NOT NULL AND ${table.deletedAt} IS NULL`),
+]);
 
 export const trucks = pgTable('trucks', {
   id: serial('id').primaryKey(),

@@ -57,8 +57,14 @@ export async function verifyPassword(userId: number, password: string): Promise<
  * Returns the full user row (without passwordHash) on success, or throws ApiError(401) on failure.
  */
 export async function authenticate(identifier: string, password: string) {
+  // Identifiers are unique among LIVE rows only (schema.ts), so a soft-deleted
+  // account can share one with an active account — always ignore the deleted row
+  // or it could shadow the live login (kanban 101026095010).
   const [user] = await db.select().from(users).where(
-    or(eq(users.username, identifier), eq(users.email, identifier), eq(users.phone, identifier))
+    and(
+      or(eq(users.username, identifier), eq(users.email, identifier), eq(users.phone, identifier)),
+      isNull(users.deletedAt),
+    )
   ).limit(1);
 
   if (!user || user.deletedAt || user.status !== 'ACTIVE') {
@@ -175,6 +181,33 @@ async function assertTruckFree(
   }
 }
 
+type IdentifierColumn = Parameters<typeof eq>[0];
+
+/**
+ * A LIVE account owns its username/email/phone exclusively. A soft-deleted one does
+ * not: the identifier is kept for history but is free to reuse (schema.ts partial
+ * indexes). Check before writing so a collision answers with the field and the
+ * account that holds it instead of a bare unique-violation "Dữ liệu đã tồn tại"
+ * that looks like "creating a user is broken" (kanban 101026095010).
+ */
+async function assertIdentifierFree(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  column: IdentifierColumn,
+  value: string | null | undefined,
+  label: string,
+  keepUserId?: number,
+): Promise<void> {
+  if (!value) return;
+  const [holder] = await tx.select({ id: users.id, fullName: users.fullName, username: users.username })
+    .from(users)
+    .where(and(eq(column, value), isNull(users.deletedAt)))
+    .limit(1);
+  if (holder && holder.id !== keepUserId) {
+    const who = holder.fullName || holder.username || `#${holder.id}`;
+    throw new ApiError(409, `${label} "${value}" đang thuộc tài khoản ${who}. Hãy dùng giá trị khác.`);
+  }
+}
+
 /** Create a new user with hashed password. DRIVER-role users also get a linked drivers row. */
 export async function createUser(data: {
   username?: string;
@@ -190,6 +223,9 @@ export async function createUser(data: {
 }) {
   const passwordHash = await bcrypt.hash(data.password, 10);
   return db.transaction(async (tx) => {
+    await assertIdentifierFree(tx, users.username, data.username, 'Username');
+    await assertIdentifierFree(tx, users.email, data.email, 'Email');
+    await assertIdentifierFree(tx, users.phone, data.phone, 'Số điện thoại');
     const [created] = await tx.insert(users).values({
       username: data.username || null,
       email: data.email || null,
@@ -279,10 +315,19 @@ export async function updateUser(id: number, data: {
     if (data.role !== undefined) updates.role = data.role as (typeof users.role.enumValues)[number];
     if (data.status !== undefined) updates.status = data.status;
     if (passwordHash) updates.passwordHash = passwordHash;
-    if (data.username !== undefined) updates.username = data.username;
+    if (data.username !== undefined) {
+      await assertIdentifierFree(tx, users.username, data.username, 'Username', id);
+      updates.username = data.username;
+    }
     if (data.fullName !== undefined) updates.fullName = data.fullName || null;
-    if (data.email !== undefined) updates.email = data.email || null;
-    if (data.phone !== undefined) updates.phone = data.phone || null;
+    if (data.email !== undefined) {
+      await assertIdentifierFree(tx, users.email, data.email, 'Email', id);
+      updates.email = data.email || null;
+    }
+    if (data.phone !== undefined) {
+      await assertIdentifierFree(tx, users.phone, data.phone, 'Số điện thoại', id);
+      updates.phone = data.phone || null;
+    }
 
     const [updated] = await tx.update(users).set(updates)
       .where(eq(users.id, id)).returning(USER_FIELDS);
