@@ -18,6 +18,7 @@ import {
 
 // Extracted form modals + shared fleet constants
 import { TruckFormModal, TRUCK_STATUS, DRIVER_STATUS, fleetStyles as styles } from ".";
+import { useFleetDelete } from "./useFleetDelete";
 
 import "../../pages/FleetPage.css";
 
@@ -204,6 +205,7 @@ export function TruckCard({
   ) => void;
 }) {
   const [viewingId, setViewingId] = useState<number | null>(null);
+  const { requestDelete, confirmDialog } = useFleetDelete(crud.doDelete);
   const { data: tires = [] } = useTires();
   const active = trucks.filter((t) => t.status === "ACTIVE").length;
   const maint = trucks.filter((t) => t.status === "MAINTENANCE").length;
@@ -384,7 +386,7 @@ export function TruckCard({
                     style={{ color: "var(--danger)" }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      crud.doDelete(t.id);
+                      void requestDelete(t.id, `xe đầu kéo ${t.licensePlate}`);
                     }}
                   >
                     Xóa
@@ -416,9 +418,11 @@ export function TruckCard({
           if (id != null) crud.setEditingId(id);
         }}
         onDelete={() => {
-          const id = viewingId;
-          setViewingId(null);
-          if (id != null) crud.doDelete(id);
+          const truck = viewingId != null ? trucks.find((x) => x.id === viewingId) : null;
+          if (!truck) return;
+          void requestDelete(truck.id, `xe đầu kéo ${truck.licensePlate}`).then((deleted) => {
+            if (deleted) setViewingId(null);
+          });
         }}
         details={(() => {
           const t = viewingId != null ? trucks.find((x) => x.id === viewingId) : null;
@@ -480,6 +484,7 @@ export function TruckCard({
         }}
         oncancel={crud.cancelForm}
       />
+      {confirmDialog}
     </Panel>
   );
 }
