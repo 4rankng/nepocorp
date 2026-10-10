@@ -26,7 +26,12 @@ export function PayableMobileCardList({ payables }: { payables: PayableSummary[]
             return (
               <ClickableCard key={`${d.kind ?? 'vendor'}-${d.supplier.id}`} to={payableDetailHref(d)} className="m-card">
                 <div className="m-card__top">
-                  <span className="m-card__title">{d.supplier.name}</span>
+                  {/* Both rows below are flex, so these explicit spaces are not
+                      rendered — they exist so the DOM reads "…AN KHÁNH 308.490.000 ₫"
+                      and "Tuổi nợ lớn nhất 58 ngày" instead of gluing the two
+                      children when the card is copied or measured, the way the
+                      table cells and the aging cards read (kanban 101026102020). */}
+                  <span className="m-card__title">{d.supplier.name}</span>{' '}
                   <span className={`m-card__row-value${d.totalOutstanding > 0 ? '--danger' : '--success'} m-card__row-value`} style={{ fontSize: 'var(--fs-body)' }}>
                     {formatCurrency(d.totalOutstanding)}
                   </span>
@@ -44,7 +49,7 @@ export function PayableMobileCardList({ payables }: { payables: PayableSummary[]
                     </div>
                     {d.maxOverdueDays > 0 && (
                       <div className="m-card__row">
-                        <span className="m-card__row-label">Tuổi nợ lớn nhất</span>
+                        <span className="m-card__row-label">Tuổi nợ lớn nhất</span>{' '}
                         <span style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: d.maxOverdueDays > 60 ? 'var(--danger)' : d.maxOverdueDays > 30 ? 'var(--warning)' : 'var(--ink-2)' }}>
                           {d.maxOverdueDays} ngày
                         </span>
