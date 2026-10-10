@@ -5,7 +5,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { formatNumber, formatDate } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import { canApproveSettlement } from '../features/advances/settlementPermissions';
-import { AdvanceSettlementStatus, Role } from '@tingting/shared';
+import { AdvanceSettlementStatus } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill, ConfirmDialog } from '../components/UI';
 import { StatusStrip } from '../components/shared/StatusStrip';
@@ -15,6 +15,7 @@ import {
   useAdminAdvanceBalances,
   useRejectSettlement,
   useApproveSettlement,
+  pendingAction,
 } from '../hooks/useForwarderQueries';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
@@ -392,11 +393,15 @@ export default function AdminAdvanceSettlementsPage() {
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const rejectMutation = useRejectSettlement();
   const approveMutation = useApproveSettlement();
+  // Same guard as the advance-request ledger: a hook that returns nothing must
+  // not blank the route (kanban 101026101500). Approval still wins.
+  const { pendingId, pendingKind } = pendingAction([
+    { kind: 'approve', mutation: approveMutation },
+    { kind: 'reject', mutation: rejectMutation },
+  ]);
   const settlementActions: SettlementActions = {
-    pendingId: approveMutation.isPending
-      ? approveMutation.variables
-      : rejectMutation.isPending ? rejectMutation.variables : undefined,
-    pendingKind: approveMutation.isPending ? 'approve' : rejectMutation.isPending ? 'reject' : undefined,
+    pendingId,
+    pendingKind,
     onApprove: (id: number) => approveMutation.mutate(id),
     onReject: (id: number) => rejectMutation.mutate(id),
   };

@@ -16,6 +16,7 @@ import {
   useApproveAdvanceRequest,
   useRejectAdvanceRequest,
   useRestoreAdvanceRequest,
+  pendingAction,
 } from '../hooks/useQueries';
 import { advanceRequestStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
@@ -346,15 +347,18 @@ export default function AdminAdvancesPage() {
     });
   }, [allRequests, confirm, rejectMutation, showToast]);
 
+  // Which decision is in flight — read through `pendingAction` so a hook that
+  // returns nothing (stale module, disabled hook) cannot blank the route
+  // (kanban 101026101500). First in-flight wins, in approval order.
+  const { pendingId, pendingKind } = pendingAction([
+    { kind: 'approve', mutation: approveMutation },
+    { kind: 'reject', mutation: rejectMutation },
+    { kind: 'restore', mutation: restoreMutation },
+  ]);
+
   const advanceActions: AdvanceActions = {
-    pendingId: approveMutation.isPending
-      ? approveMutation.variables
-      : rejectMutation.isPending
-        ? rejectMutation.variables
-        : restoreMutation.isPending ? restoreMutation.variables : undefined,
-    pendingKind: approveMutation.isPending
-      ? 'approve'
-      : rejectMutation.isPending ? 'reject' : restoreMutation.isPending ? 'restore' : undefined,
+    pendingId,
+    pendingKind,
     onApprove: (id) => approveMutation.mutate(id),
     onReject: (id) => void confirmReject(id),
     onRestore: (id) => {

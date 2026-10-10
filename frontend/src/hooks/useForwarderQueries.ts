@@ -171,6 +171,34 @@ export function useUnlinkedExpenses() {
 
 // ── Admin: Advance Requests ──────────────────────────────────────────────────
 
+/** The slice of a mutation result the decision rows need. */
+export interface PendingMutation {
+  isPending?: boolean;
+  variables?: number;
+}
+
+/**
+ * Resolve the in-flight decision for a page that reads several mutation hooks.
+ *
+ * The advance pages used to read `.isPending` off each hook result directly
+ * (`approveMutation.isPending ? … : rejectMutation.isPending ? …`). A hook that
+ * returns nothing — a module the dev server is midway through replacing, a
+ * hook disabled for the current role, a mocked module in a test — then took the
+ * whole route down with `Cannot read properties of undefined (reading
+ * 'isPending')` (kanban 101026101500) instead of rendering the list.
+ *
+ * The first in-flight candidate wins, in the order given, matching the ternary
+ * chain it replaces. A missing mutation simply reads as "nothing in flight".
+ */
+export function pendingAction<K extends string>(
+  candidates: ReadonlyArray<{ kind: K; mutation: PendingMutation | undefined }>,
+): { pendingId?: number; pendingKind?: K } {
+  for (const { kind, mutation } of candidates) {
+    if (mutation?.isPending) return { pendingId: mutation.variables, pendingKind: kind };
+  }
+  return {};
+}
+
 export function useAdminAdvanceRequests(filters?: { status?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
     queryKey: qk.adminForwarder.advanceRequests(filters),

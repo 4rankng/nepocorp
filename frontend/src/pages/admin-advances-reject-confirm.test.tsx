@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import type * as AdvanceQueries from '../hooks/useQueries';
 import { ToastProvider } from '../components/shared/Toast';
 import AdminAdvancesPage from './AdminAdvancesPage';
 
@@ -21,7 +22,8 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../hooks/useQueries', () => ({
+vi.mock('../hooks/useQueries', async (importOriginal) => ({
+  ...(await importOriginal<typeof AdvanceQueries>()),
   useAdminAdvanceRequests: () => ({ data: { items: [mocks.request] }, isLoading: false, error: null, refetch: vi.fn() }),
   useAdminAdvanceBalances: () => ({ data: { items: [], totalOutstanding: '0' } }),
   useApproveAdvanceRequest: () => ({ isPending: false, variables: undefined, mutate: mocks.approve }),
