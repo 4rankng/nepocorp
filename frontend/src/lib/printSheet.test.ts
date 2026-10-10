@@ -42,6 +42,30 @@ describe('buildPrintableSheetHtml', () => {
     expect(html).not.toContain('TỔNG CỘNG');
   });
 
+  /**
+   * The expense list hands over `formatCurrency` output, and vi-VN groups
+   * thousands with a dot. `parseFloat` reads "5.159.636 ₫" as 5.159, so the
+   * printed sheet totalled a 5.159.636 ₫ column as "405,159" (kanban
+   * 101026102000).
+   */
+  it('sums pre-formatted vi-VN amounts, unit and all', () => {
+    const html = buildPrintableSheetHtml(
+      ['Ngày phát sinh', 'Số tiền'],
+      [['03/10/2026', '5.159.636 ₫'], ['03/10/2026', '250.000 ₫'], ['02/10/2026', '150.000 ₫']],
+      { ...base, columnTypes: ['date', 'currency'], totalsColumns: [1] },
+    );
+    expect(html).toMatch(/<td style="text-align:right">5\.559\.636 ₫<\/td>/);
+  });
+
+  it('reads a vi-VN decimal comma and a negative amount', () => {
+    const html = buildPrintableSheetHtml(
+      ['Mô tả', 'Số tiền'],
+      [['A', '1.234,56 ₫'], ['B', '-250.000 ₫']],
+      { ...base, columnTypes: ['text', 'currency'], totalsColumns: [1] },
+    );
+    expect(html).toContain('-248.765,44 ₫');
+  });
+
   it('renders an empty period as a message, not a bare table', () => {
     const html = buildPrintableSheetHtml(HEADERS, [], { ...base, columnTypes: [...TYPES], totalsColumns: [2] });
     expect(html).toContain('Không có dữ liệu');

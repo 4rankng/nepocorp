@@ -1,4 +1,5 @@
 import type { ColumnType } from './csv';
+import { formatCurrency } from './format';
 import { BRAND as APP_BRAND } from '../brand';
 
 /**
@@ -57,17 +58,38 @@ function alignFor(type: ColumnType): 'left' | 'right' | 'center' {
 }
 
 /** Parse a pre-formatted cell back to a number for the totals row. */
+function toAmount(raw: string | number): number | null {
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+  const cleaned = raw.replace(/[^\d.,-]/g, '');
+  const negative = cleaned.startsWith('-');
+  const digits = cleaned.replace(/-/g, '');
+  if (!digits) return null;
+  // Cells arrive already formatted for display: `formatCurrency` writes vi-VN
+  // groups ("5.159.636 ₫"), where the dot groups thousands. `parseFloat` stops
+  // at the second dot, so a 5.159.636 ₫ line was summed as 5.159 and the
+  // printed TỔNG CỘNG read "405,159" for rows totalling 5.559.636 ₫
+  // (kanban 101026102000). A trailing ",dd" is the vi-VN decimal mark; any
+  // other comma groups thousands.
+  const decimalMarked = /,\d{1,2}$/.test(digits)
+    ? digits.replace(/\./g, '').replace(',', '.')
+    : digits.replace(/,/g, '');
+  // Dots in repeated 3-digit groups are thousands separators, not a decimal point.
+  const plain = /^\d{1,3}(?:\.\d{3})+$/.test(decimalMarked)
+    ? decimalMarked.replace(/\./g, '')
+    : decimalMarked;
+  const value = parseFloat(plain);
+  if (!Number.isFinite(value)) return null;
+  return negative ? -value : value;
+}
+
 function sumColumn(rows: (string | number)[][], index: number): number | null {
   let sum = 0;
   let seen = false;
   for (const row of rows) {
-    const raw = row[index];
-    if (raw === '' || raw == null) continue;
-    const n = typeof raw === 'number' ? raw : parseFloat(String(raw).replace(/[^\d.,-]/g, '').replace(/,(?=\d{3}\b)/g, ''));
-    if (Number.isFinite(n)) {
-      sum += n;
-      seen = true;
-    }
+    const value = toAmount(row[index] ?? '');
+    if (value === null) continue;
+    sum += value;
+    seen = true;
   }
   return seen ? sum : null;
 }
@@ -112,7 +134,9 @@ export function buildPrintableSheetHtml(
           if (i === 0) return `<td class="totals__label">${escapeHtml(options.totalsLabel ?? 'TỔNG CỘNG')}</td>`;
           if (!totalsCols.includes(i)) return '<td></td>';
           const sum = sumColumn(rows, i);
-          return `<td style="text-align:right">${sum === null ? '' : escapeHtml(sum.toLocaleString('vi-VN'))}</td>`;
+          // Money carries the same unit as the cells above it — never a bare
+          // number (house rule: `formatCurrency`).
+          return `<td style="text-align:right">${sum === null ? '' : escapeHtml(formatCurrency(sum))}</td>`;
         })
         .join('')}</tr>`
     : '';
