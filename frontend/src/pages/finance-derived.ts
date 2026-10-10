@@ -147,7 +147,7 @@ export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, y
         { name: 'Nhiên liệu', value: fuelCost, fill: '#059669' },
         { name: 'Tiền đi đường', value: roadCost, fill: '#D97706' },
         { name: 'Lương lái xe', value: driverCost, fill: '#2563EB' },
-        { name: 'Vé BOT & lệ phí', value: tollsCost, fill: '#7C3AED' },
+        { name: 'Phí trạm/vé CT', value: tollsCost, fill: '#7C3AED' },
         { name: 'Bảo dưỡng', value: maintenanceCost, fill: '#DC2626' },
       ].filter(d => d.value > 0);
 

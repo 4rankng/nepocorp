@@ -102,7 +102,7 @@ export default function FinancePage() {
                 ['Nhiên liệu', fuelCost, ''],
                 ['Tiền đi đường', roadCost, ''],
                 ['Lương lái xe', driverCost, ''],
-                ['Vé BOT & lệ phí', tollsCost, ''],
+                ['Phí trạm/vé CT', tollsCost, ''],
                 ['Bảo dưỡng & sửa chữa', maintenanceCost, ''],
                 ['Tổng chi phí vận hành', totalCosts, totalCostsLY],
                 ['Lợi nhuận gộp', grossProfit, grossProfitLY],
@@ -293,8 +293,8 @@ export default function FinancePage() {
             {tollsCost > 0 && (
             <div className="pnl-row">
               <div className="pnl-row__label">
-                Vé BOT &amp; lệ phí
-                <div className="pnl-row__label-sub">Vé cầu đường &amp; lệ phí công ty trả</div>
+                Phí trạm/vé CT
+                <div className="pnl-row__label-sub">Phí trạm &amp; vé công ty trả</div>
               </div>
               <div className="pnl-row__amount">{formatNumber(tollsCost)}</div>
               <div className="pnl-row__yoy">—</div><div className="pnl-row__pct">—</div>
