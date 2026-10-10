@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Package, Loader2, Camera, ImageOff } from 'lucide-react';
+import { Package, Loader2, Camera } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { photoSrc } from '../../../lib/api/photo';
+import { PhotoPlaceholder } from '../../../components/PhotoPlaceholder';
 import { qk } from '../../../api/keys';
 import { PhotoViewer } from '../../../components/PhotoViewer';
 import '../../../components/PhotoViewer.css';
@@ -212,10 +213,7 @@ function PhotoGallery({ label, kind, urls, broken, onOpen, onBroken }: PhotoGall
               disabled={isBroken}
             >
               {isBroken ? (
-                <span className="cs-thumb__broken">
-                  <ImageOff size={16} />
-                  <span>Lỗi tải</span>
-                </span>
+                <PhotoPlaceholder compact />
               ) : (
                 <img
                   src={url}

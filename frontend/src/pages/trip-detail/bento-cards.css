@@ -416,8 +416,7 @@
   display: block;
 }
 
-.cs-thumb--empty,
-.cs-thumb__broken {
+.cs-thumb--empty {
   display: flex;
   flex-direction: column;
   align-items: center;

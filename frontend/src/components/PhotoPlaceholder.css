@@ -1,0 +1,45 @@
+/* Fallback shown when a stored photo can no longer be served (404 from
+   /api/photos). Shared by the trip-photo grid (PhotosCard) and the
+   container/seal thumbnails (ContainersCard) so both surfaces read the same. */
+
+.photo-ph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: var(--fs-body);
+  line-height: 1.25;
+}
+
+.photo-ph__label {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.photo-ph__hint {
+  color: var(--ink-3);
+}
+
+.photo-ph__sub {
+  color: var(--ink-4);
+  font-size: var(--fs-xs);
+  line-height: 1.3;
+}
+
+.photo-ph--compact {
+  gap: 3px;
+  padding: 2px;
+  color: var(--ink-4);
+  font-size: var(--fs-xs);
+}
+
+.photo-ph--compact .photo-ph__hint {
+  color: var(--ink-4);
+  font-size: var(--fs-xs);
+}

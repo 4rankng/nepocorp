@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Image as ImageIcon, ImageOff } from 'lucide-react';
-import { getAuthenticatedPhotoUrl } from '../../../lib/api';
+import { Image as ImageIcon } from 'lucide-react';
+import { photoSrc } from '../../../lib/api/photo';
+import { PhotoPlaceholder } from '../../../components/PhotoPlaceholder';
 import { PhotoViewer } from '../../../components/PhotoViewer';
 import '../../../components/PhotoViewer.css';
 
@@ -17,7 +18,10 @@ export function PhotosCard({ photoUrls }: PhotosCardProps) {
 
   if (!photoUrls || photoUrls.length === 0) return null;
 
-  const authUrls = photoUrls.map(u => getAuthenticatedPhotoUrl(u));
+  // `photoSrc` tolerates both a bare storage key and an already-formed
+  // `/api/photos/…` URL, so this card no longer assumes the trip-detail
+  // payload always hands it the latter.
+  const authUrls = photoUrls.map(photoSrc);
 
   return (
     <section className="card anim d6" style={{ marginBottom: 20 }}>
@@ -58,11 +62,7 @@ export function PhotosCard({ photoUrls }: PhotosCardProps) {
                 }}
               >
                 {isBroken ? (
-                  <>
-                    <ImageOff size={20} aria-hidden="true" />
-                    <span>Ảnh {i + 1}</span>
-                    <span style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-4)' }}>Không tải được</span>
-                  </>
+                  <PhotoPlaceholder label={`Ảnh ${i + 1}`} />
                 ) : (
                   <img
                     src={url}
