@@ -1,3 +1,4 @@
+import { useState, type ComponentProps } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Role } from '@tingting/shared';
@@ -14,6 +15,20 @@ vi.mock('../../../hooks/useAnimatedOverlay', () => ({
 // as a string rather than read from the Role enum here.
 const authMock = vi.hoisted(() => ({ user: { role: 'ADMIN' } as { role: string } | null }));
 vi.mock('../../../hooks/useAuth', () => ({ useAuth: () => ({ user: authMock.user }) }));
+
+/**
+ * Drives AddPanel through a close/reopen cycle the way UsersPage does: a
+ * successful save closes the panel, and the same panel is then reopened.
+ */
+function AddHarness({ onSave }: { onSave: ComponentProps<typeof AddPanel>['onSave'] }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>mở lại</button>
+      <AddPanel isOpen={open} saving={false} error={null} truckList={[]} onClose={() => setOpen(false)} onSave={onSave} />
+    </>
+  );
+}
 
 describe('account form input labels', () => {
   it.each(['add', 'edit'])('connects %s account labels to editable controls and exposes validation state', mode => {
@@ -102,5 +117,106 @@ describe('a password that exists only in the DOM', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][0]).toMatchObject({ username: 'qa.dom.pw', password: 'S7q3Q5Q9' });
     expect(screen.queryByText('Chưa nhập mật khẩu')).toBeNull();
+  });
+
+  it('generates a random password on button click and submits it', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
+
+    fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'qa.gen.pw' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo mật khẩu ngẫu nhiên' }));
+    const password = screen.getByLabelText('Mật khẩu *') as HTMLInputElement;
+    expect(password.value.length).toBeGreaterThanOrEqual(6);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0].password).toBe(password.value);
+  });
+
+  it('keeps the box value across show/hide and submits that value', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
+
+    fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'qa.toggle.pw' } });
+    (screen.getByLabelText('Mật khẩu *') as HTMLInputElement).value = 'S7q3Q5Q9';
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hiện mật khẩu' }));
+    const shown = screen.getByLabelText('Mật khẩu *') as HTMLInputElement;
+    expect(shown.type).toBe('text');
+    expect(shown.value).toBe('S7q3Q5Q9');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ẩn mật khẩu' }));
+    const hidden = screen.getByLabelText('Mật khẩu *') as HTMLInputElement;
+    expect(hidden.type).toBe('password');
+    expect(hidden.value).toBe('S7q3Q5Q9');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0].password).toBe('S7q3Q5Q9');
+  });
+
+  it('clears the password box and its validation when the panel is reopened', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    render(<AddHarness onSave={onSave} />);
+
+    fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'qa.reopen.pw' } });
+    (screen.getByLabelText('Mật khẩu *') as HTMLInputElement).value = 'ReUsed99';
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+
+    // The save resolved true, so the panel closed; open it again.
+    fireEvent.click(screen.getByRole('button', { name: 'mở lại' }));
+    const box = (await screen.findByLabelText('Mật khẩu *')) as HTMLInputElement;
+    expect(box.value).toBe('');
+    expect(screen.queryByText('Mật khẩu phải có tối thiểu 6 ký tự')).toBeNull();
+    expect(box.hasAttribute('aria-invalid')).toBe(false);
+  });
+
+  it('never submits a browser-autofilled value in the controlled identity fields', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
+
+    fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'qa@example.test' } });
+    // Autofill into controlled fields: DOM value with no React event.
+    (screen.getByLabelText('Username') as HTMLInputElement).value = 'admin@example.test';
+    (screen.getByLabelText('Mật khẩu *') as HTMLInputElement).value = 'S7q3Q5Q9';
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0].username).toBe('');
+    expect(onSave.mock.calls[0][0].email).toBe('qa@example.test');
+  });
+
+  it('refuses to submit a non-empty password below the minimum length', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
+
+    fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'qa.short.pw' } });
+    (screen.getByLabelText('Mật khẩu *') as HTMLInputElement).value = 'abc';
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(await screen.findByText('Mật khẩu phải có tối thiểu 6 ký tự')).toBeTruthy();
+  });
+
+  it('forwards an empty password so the create gate can name the missing field', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
+
+    fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'qa.empty.pw' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0].password).toBe('');
   });
 });

@@ -593,7 +593,7 @@ export default function AdminAdvanceSettlementsPage() {
       {/* Footer count */}
       {filtered.length > 0 && (
         <div className="as-footer">
-          {filtered.length} phiếu hoàn ứng
+          {`${filtered.length} phiếu hoàn ứng`}
         </div>
       )}
     </div>

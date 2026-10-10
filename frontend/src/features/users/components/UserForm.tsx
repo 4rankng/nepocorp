@@ -12,13 +12,12 @@ import { useAuth } from '../../../hooks/useAuth';
 
 // ── Icon Input ─────────────────────────────────────────────────────────────
 
-function IconInput({ id, name, icon, value, defaultValue, onChange, placeholder, type = 'text', autoComplete, valid, error, rightElement, disabled, inputRef }: {
+function IconInput({ id, name, icon, value, onChange, placeholder, type = 'text', autoComplete, valid, error, rightElement, disabled, inputRef }: {
   id?: string;
   name?: string;
   icon: React.ReactNode;
-  /** Controlled value. Omit together with `defaultValue` to leave the field uncontrolled. */
+  /** Controlled value. Omit to leave the field uncontrolled: the DOM owns the text. */
   value?: string;
-  defaultValue?: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   type?: string;
@@ -38,7 +37,7 @@ function IconInput({ id, name, icon, value, defaultValue, onChange, placeholder,
         name={name}
         className="icon-input__field"
         type={type}
-        {...(value === undefined ? { defaultValue: defaultValue ?? '' } : { value })}
+        {...(value === undefined ? {} : { value })}
         onChange={onChange}
         placeholder={placeholder}
         autoComplete={autoComplete}
@@ -373,15 +372,44 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
   const usernameValid = username.trim().length > 0;
   const emailError = email.trim().length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const phoneError = phone.trim().length > 0 && !/^[\d\s+()-]{8,}$/.test(phone);
+  // Display validation is driven by the mirrored state; the submit path re-reads
+  // the DOM so both agree on the value actually sent.
   const pwValid = password.length >= 6;
   const pwError = password.length > 0 && !pwValid;
 
+  const toggleShowPw = () => {
+    // The box owns the text (uncontrolled); mirror it into state when toggling so
+    // validation stays in step, then flip the input type. Never writes state back
+    // into the box, so a visible value can never be lost or replaced by a stale one.
+    const current = pwRef.current?.value;
+    if (current !== undefined && current !== password) setPassword(current);
+    setShowPw(v => !v);
+  };
+
+  const handleGeneratePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$';
+    let gen = '';
+    for (let i = 0; i < 10; i++) {
+      gen += chars[Math.floor(Math.random() * chars.length)];
+    }
+    // Write the box first, then the mirror: the exact visible value is submitted.
+    if (pwRef.current) pwRef.current.value = gen;
+    setPassword(gen);
+    setShowPw(true);
+  };
+
   const handleSubmit = async () => {
     if (!role) { setRoleTouched(true); return; }
-    // Adopt the box value before validating: an autofilled password lives in the
-    // DOM, not in state (see pwRef above).
+    // The box is the source of truth: a browser/password-manager autofill can put
+    // a value in the DOM without firing a React change event, so state may be
+    // empty while the operator sees a filled field. No trim — the value the
+    // operator sees is the value validated and sent.
     const typedPassword = pwRef.current?.value ?? password;
     if (typedPassword !== password) setPassword(typedPassword);
+    // A non-empty password under the minimum never leaves the form; the field
+    // already shows "Mật khẩu phải có tối thiểu 6 ký tự". An empty one is
+    // forwarded so the create gate names it ("Chưa nhập mật khẩu").
+    if (typedPassword.length > 0 && typedPassword.length < 6) return;
     const payload: CreateData = { fullName, username, email, phone, role, password: typedPassword };
     if (role === Role.DRIVER) {
       payload.baseSalary = baseSalary;
@@ -498,14 +526,26 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
             valid={pwValid}
             error={pwError}
             rightElement={
-              <button
-                type="button"
-                aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                onClick={() => setShowPw(v => !v)}
-                className="pw-toggle"
-              >
-                {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button
+                  type="button"
+                  title="Tạo mật khẩu ngẫu nhiên"
+                  aria-label="Tạo mật khẩu ngẫu nhiên"
+                  onClick={handleGeneratePassword}
+                  className="pw-toggle"
+                  style={{ color: 'var(--brand, #005A2D)' }}
+                >
+                  <KeyRound size={13} />
+                </button>
+                <button
+                  type="button"
+                  aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  onClick={toggleShowPw}
+                  className="pw-toggle"
+                >
+                  {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
             }
           />
         </FormGroup>

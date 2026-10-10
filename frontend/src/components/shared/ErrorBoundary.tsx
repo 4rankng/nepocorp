@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { RotateCw } from 'lucide-react';
 import { EmptyIllustration } from './EmptyIllustration';
+import { isChunkFailureMessage, recoverFromChunkFailure } from '../../lib/chunk-error';
 
 interface Props {
   children: React.ReactNode;
@@ -24,6 +25,15 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
+    // A page chunk that failed to load stays failed: React caches the rejected
+    // `lazy()` payload, so clearing the boundary just re-throws the same error
+    // and the button can never work (kanban 101026145010). Route whatever
+    // recovery is left — a reload re-fetches the module graph — and only fall
+    // back to clearing state for errors a re-render can actually fix.
+    if (this.state.error && isChunkFailureMessage(this.state.error.message)) {
+      if (!recoverFromChunkFailure()) window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null });
   };
 

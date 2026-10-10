@@ -31,7 +31,12 @@ function messageFromRejectionEvent(event: PromiseRejectionEvent): string {
   return typeof reason === 'string' ? reason : '';
 }
 
-function isChunkFailure(message: string): boolean {
+/**
+ * True when a message describes a failed dynamic import / chunk load.
+ * Shared with `lazyPage` and the ErrorBoundary retry so every recovery path
+ * recognises the same failure set.
+ */
+export function isChunkFailureMessage(message: string): boolean {
   return message.length > 0 && CHUNK_FAIL_RE.test(message);
 }
 
@@ -56,14 +61,24 @@ async function purgeCaches(): Promise<void> {
   }
 }
 
-function handleChunkFailure(): void {
+/**
+ * Purge the service-worker caches and reload the tab once per browser session
+ * so it fetches fresh assets.
+ *
+ * Returns false when the once-per-session cap is already spent: the caller must
+ * then render the terminal message instead of reloading again, so a genuinely
+ * broken deploy cannot loop the tab forever.
+ */
+export function recoverFromChunkFailure(): boolean {
   const count = Number(sessionStorage.getItem(RELOAD_KEY) || '0') + 1;
   sessionStorage.setItem(RELOAD_KEY, String(count));
-  if (count > 1) {
-    renderFallback();
-    return;
-  }
+  if (count > 1) return false;
   void purgeCaches().finally(() => window.location.reload());
+  return true;
+}
+
+function handleChunkFailure(): void {
+  if (!recoverFromChunkFailure()) renderFallback();
 }
 
 /**
@@ -73,13 +88,13 @@ function handleChunkFailure(): void {
  */
 export function installChunkErrorHandler(): void {
   window.addEventListener('error', (event: ErrorEvent) => {
-    if (isChunkFailure(messageFromErrorEvent(event))) {
+    if (isChunkFailureMessage(messageFromErrorEvent(event))) {
       handleChunkFailure();
       event.preventDefault();
     }
   });
   window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-    if (isChunkFailure(messageFromRejectionEvent(event))) {
+    if (isChunkFailureMessage(messageFromRejectionEvent(event))) {
       handleChunkFailure();
       event.preventDefault();
     }

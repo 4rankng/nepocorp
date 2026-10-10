@@ -82,13 +82,14 @@
   margin-bottom: 4px;
 }
 
-/* Currency unit / compact suffix rendered at subtitle size */
+/* Currency unit / compact suffix rendered with clear legibility */
 .aging-card__unit {
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 500;
-  color: var(--ink-3, #8B919B);
+  color: var(--ink-2, #475467);
   white-space: nowrap;
+  margin-left: 3px;
 }
 
 .aging-card__count {

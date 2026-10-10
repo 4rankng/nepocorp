@@ -9,7 +9,7 @@ import type {
   LedgerEntry,
   VendorPaymentRequest,
 } from '@tingting/shared';
-import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText, Fuel, Scale, ChevronDown } from 'lucide-react';
+import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText, Fuel, Scale, ChevronDown, Loader2 } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
@@ -115,9 +115,11 @@ export default function PayableDetailPage() {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [paymentReceiptId, setPaymentReceiptId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const downloadExport = async (format: string, opts: { fuel?: boolean } = {}) => {
     setShowExportMenu(false);
+    setExporting(true);
     try {
       // Mirror the on-screen period into the export — the scoped file replaces
       // the old whole-history dump ("kéo tới tháng 6").
@@ -142,8 +144,11 @@ export default function PayableDetailPage() {
         typedStatement?.supplier.name ?? String(id),
         appliedPeriodRange,
       ));
+      showToast({ kind: 'success', message: 'Xuất sao kê thành công' });
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message || 'Lỗi xuất sao kê' });
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -318,10 +323,11 @@ export default function PayableDetailPage() {
               <div className="dd-export-split">
                 <button
                   className="btn btn--secondary dd-export-split__main"
+                  disabled={exporting}
                   onClick={() => void downloadExport('xlsx')}
                 >
-                  <Download size={14} />
-                  Xuất sao kê
+                  {exporting ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                  {exporting ? 'Đang xuất…' : 'Xuất sao kê'}
                 </button>
                 <button
                   type="button"

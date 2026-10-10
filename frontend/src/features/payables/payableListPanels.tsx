@@ -84,7 +84,7 @@ export function PayableAgingGrid({
         <span className="aging-card__value">
           <span>{currentMoney.num}</span>{' '}<span className="aging-card__unit">{currentMoney.unit}</span>
         </span>
-        <span className="aging-card__count">{totals.currentCount} NCC</span>
+        <span className="aging-card__count">{totals.currentCount} nhà cung cấp</span>
         <div className="aging-card__bar-track">
           <div className="aging-card__bar aging-card__bar--ok" style={{ width: `${pctCurrent}%` }} />
         </div>
@@ -99,7 +99,7 @@ export function PayableAgingGrid({
         <span className="aging-card__value">
           <span>{d30Money.num}</span>{' '}<span className="aging-card__unit">{d30Money.unit}</span>
         </span>
-        <span className="aging-card__count">{totals.d30Count} NCC</span>
+        <span className="aging-card__count">{totals.d30Count} nhà cung cấp</span>
         <div className="aging-card__bar-track">
           <div className="aging-card__bar aging-card__bar--warn" style={{ width: `${pctD30}%` }} />
         </div>
@@ -114,7 +114,7 @@ export function PayableAgingGrid({
         <span className="aging-card__value">
           <span>{d60Money.num}</span>{' '}<span className="aging-card__unit">{d60Money.unit}</span>
         </span>
-        <span className="aging-card__count">{totals.d60Count} NCC</span>
+        <span className="aging-card__count">{totals.d60Count} nhà cung cấp</span>
         <div className="aging-card__bar-track">
           <div className="aging-card__bar aging-card__bar--deep" style={{ width: `${pctD60}%` }} />
         </div>
@@ -129,7 +129,7 @@ export function PayableAgingGrid({
         <span className="aging-card__value">
           <span>{over90Money.num}</span>{' '}<span className="aging-card__unit">{over90Money.unit}</span>
         </span>
-        <span className="aging-card__count">{totals.over90Count} NCC</span>
+        <span className="aging-card__count">{totals.over90Count} nhà cung cấp</span>
         <div className="aging-card__bar-track">
           <div className="aging-card__bar aging-card__bar--danger" style={{ width: `${pctOver90}%` }} />
         </div>

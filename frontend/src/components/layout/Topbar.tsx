@@ -58,7 +58,7 @@ function MonthNavigator() {
       >
         <Calendar size={14} className="topbar-date__icon" />
         <div className="topbar-date__body">
-          <span className="topbar-date__label">Tháng {month}/{year}</span>
+          <span className="topbar-date__label">{`Tháng ${month}/${year}`}</span>
           {periodLabel && <span className="topbar-date__period">{periodLabel}</span>}
         </div>
         <ChevronDown size={12} className="topbar-date__caret" />

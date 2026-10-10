@@ -287,7 +287,7 @@ export default function PayableListPage() {
       <PageHeader
         title="Công nợ phải trả"
         iconName="payables"
-        description={`Tổng nợ: ${formatCurrency(totals.total)} · ${totals.supplierCount} NCC · cập nhật vừa xong`}
+        description={`Tổng nợ: ${formatCurrency(totals.total)} · ${totals.supplierCount} nhà cung cấp · cập nhật vừa xong`}
         action={
           <div className="page-actions">
             {canPostCommission && (
