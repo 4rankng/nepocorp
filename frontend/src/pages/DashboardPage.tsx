@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, AlertTriangle, Download, Truck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import type { DashboardDecisionItem, Role, TripDetail } from '@tingting/shared';
+import type { DashboardDecisionItem, Role } from '@tingting/shared';
 import { isFinancialRole, ROLE_LABELS } from '@tingting/shared';
 import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { Banner } from '../components/shared/Banner';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
-import { styles, fmtMoM } from '../features/dashboard/utils';
+import { styles, fmtMoM, buildDailySeries } from '../features/dashboard/utils';
 import { useMonth } from '../hooks/useMonth';
 import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget';
 import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueueCard';
@@ -99,29 +99,18 @@ export default function DashboardPage() {
 
   // ── Chart series (daily + monthly) ────────────────────────────────────────
   // Daily view groups trips by departureDate; monthly view uses yearly P&L.
-  // Both convert to Tr (millions). Only data points with actual data are shown.
-
+  // Both convert to Tr (millions).
+  //
+  // Every day of the daily window is a category, including the days with no
+  // trip: building the series from the trips that exist left holes in the
+  // x-axis (1…9, 11 — day 10 missing, kanban 101026101500). The monthly view
+  // still trims the leading months with no data.
   const dailyChartData = useMemo(() => {
-    if (!allTrips || allTrips.length === 0) return { labels: [] as string[], revenue: [] as number[], gross: [] as number[] };
-    const activeTrips = allTrips.filter((t: TripDetail) => t.status !== 'CANCELED');
-    const dayMap = new Map<string, { revenue: number; gross: number }>();
-    for (const t of activeTrips) {
-      const dateKey = t.departureDate?.slice(0, 10);
-      if (!dateKey) continue;
-      const rev = Number(t.revenue) || 0;
-      const gp = Number(t.grossProfit) || 0;
-      const existing = dayMap.get(dateKey) ?? { revenue: 0, gross: 0 };
-      existing.revenue += rev;
-      existing.gross += gp;
-      dayMap.set(dateKey, existing);
-    }
-    const sorted = Array.from(dayMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .filter(([, v]) => v.revenue > 0 || v.gross > 0);
+    const series = buildDailySeries(allTrips);
     return {
-      labels: sorted.map(([d]) => String(parseInt(d.slice(8, 10), 10))),
-      revenue: sorted.map(([, v]) => v.revenue / 1_000_000),
-      gross: sorted.map(([, v]) => v.gross / 1_000_000),
+      labels: series.map((point) => String(point.day)),
+      revenue: series.map((point) => point.revenue / 1_000_000),
+      gross: series.map((point) => point.gross / 1_000_000),
     };
   }, [allTrips]);
 

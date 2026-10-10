@@ -29,6 +29,67 @@ export function fmtMoM(current: number, previous: number | undefined | null): st
   return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
 }
 
+export interface DailySeriesPoint {
+  /** Day of month — the chart's x-axis category. */
+  day: number;
+  /** Raw VND, not yet scaled to millions. */
+  revenue: number;
+  gross: number;
+}
+
+interface DailyTripLike {
+  departureDate?: string | null;
+  status?: string;
+  revenue?: unknown;
+  grossProfit?: unknown;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Daily chart series, one point per calendar day.
+ *
+ * The x-axis has to be unbroken: a day without trips is a real point (zero),
+ * not a hole. Deriving the series from the trips that exist dropped those days
+ * and the axis jumped 1…9, 11 — day 10 never rendered (kanban 101026101500).
+ * The window is trimmed to the first and last day that has data, the same rule
+ * the monthly view uses, so empty days at the edges stay out of the chart.
+ */
+export function buildDailySeries(trips: readonly DailyTripLike[]): DailySeriesPoint[] {
+  const perDay = new Map<string, { revenue: number; gross: number }>();
+  for (const trip of trips) {
+    if (trip.status === 'CANCELED') continue;
+    const dateKey = trip.departureDate?.slice(0, 10);
+    if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) continue;
+    const point = perDay.get(dateKey) ?? { revenue: 0, gross: 0 };
+    point.revenue += Number(trip.revenue) || 0;
+    point.gross += Number(trip.grossProfit) || 0;
+    perDay.set(dateKey, point);
+  }
+
+  const dataDays = [...perDay.entries()]
+    .filter(([, point]) => point.revenue > 0 || point.gross > 0)
+    .map(([dateKey]) => dateKey)
+    .sort();
+  if (dataDays.length === 0) return [];
+
+  // Step in UTC: Date.parse('YYYY-MM-DD') is UTC midnight, so a fixed
+  // 24h step lands on every day in between exactly once.
+  const first = Date.parse(dataDays[0]);
+  const last = Date.parse(dataDays[dataDays.length - 1]);
+  const series: DailySeriesPoint[] = [];
+  for (let time = first; time <= last; time += DAY_MS) {
+    const dateKey = new Date(time).toISOString().slice(0, 10);
+    const point = perDay.get(dateKey);
+    series.push({
+      day: Number(dateKey.slice(8, 10)),
+      revenue: point?.revenue ?? 0,
+      gross: point?.gross ?? 0,
+    });
+  }
+  return series;
+}
+
 export interface PieSlice {
   label: string;
   value: number;
