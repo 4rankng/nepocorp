@@ -349,6 +349,23 @@
 }
 
 /* Export dropdown menu items (shared by DebtDetail & PayableDetail) */
+/* Split export control: main click exports, caret opens the format menu
+   (kanban 101026130000). */
+.dd-export-split {
+  display: inline-flex;
+  align-items: stretch;
+}
+.dd-export-split .dd-export-split__main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.dd-export-split .dd-export-split__toggle {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -1px;
+  padding-left: 9px;
+  padding-right: 9px;
+}
 .dd-export-btn {
   display: flex;
   align-items: center;

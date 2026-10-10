@@ -9,7 +9,7 @@ import type {
   LedgerEntry,
   VendorPaymentRequest,
 } from '@tingting/shared';
-import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText, Fuel, Scale } from 'lucide-react';
+import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, FileText, Fuel, Scale, ChevronDown } from 'lucide-react';
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
@@ -311,13 +311,29 @@ export default function PayableDetailPage() {
           )}
           {!isCarrierPayable && (
             <div ref={exportMenuRef} style={{ position: 'relative' }}>
-              <button
-                className="btn btn--secondary"
-                onClick={() => setShowExportMenu(v => !v)}
-              >
-                <Download size={14} />
-                Xuất sao kê
-              </button>
+              {/* The label promises an export, so the main click EXPORTS — the same
+                  click does that on the receivables page (DebtDetailHeader). The
+                  caret opens the other formats; before this, clicking "Xuất sao kê"
+                  only toggled a menu and looked dead (kanban 101026130000). */}
+              <div className="dd-export-split">
+                <button
+                  className="btn btn--secondary dd-export-split__main"
+                  onClick={() => void downloadExport('xlsx')}
+                >
+                  <Download size={14} />
+                  Xuất sao kê
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--secondary dd-export-split__toggle"
+                  aria-label="Chọn định dạng xuất sao kê"
+                  aria-haspopup="menu"
+                  aria-expanded={showExportMenu}
+                  onClick={() => setShowExportMenu(v => !v)}
+                >
+                  <ChevronDown size={14} />
+                </button>
+              </div>
               <AnchoredDropdown
                 open={showExportMenu}
                 anchorRef={exportMenuRef}
