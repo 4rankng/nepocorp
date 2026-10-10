@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck, Calendar, MapPin, Package, Plus, CheckCircle2, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Truck, Calendar, MapPin, Package, Plus, CheckCircle2, RotateCcw, User, Info } from 'lucide-react';
 import { formatDate } from '../lib/format';
 import { api } from '../lib/api';
 import { ExpenseEntryStatus, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
@@ -296,6 +296,19 @@ export default function ForwarderTripDetailPage() {
         </div>
       </div>
 
+      {/* Assignment ownership — the portal is read-only for truck/driver, so an
+          unassigned trip must explain where the control actually lives instead
+          of looking like a broken page (kanban 101026101510). */}
+      {!trip.driverName && (
+        <div className="fwd-assign-note" role="note">
+          <span className="fwd-assign-note__icon" aria-hidden="true"><Info size={16} /></span>
+          <p className="fwd-assign-note__text">
+            Chuyến chưa được phân công lái xe. Việc gán hoặc đổi lái xe do <strong>Quản lý điều vận</strong> thực hiện
+            ở màn hình <strong>Phân xe</strong> hoặc trang sửa chuyến — cổng Giao nhận chỉ theo dõi chuyến và nhập chi phí.
+          </p>
+        </div>
+      )}
+
       {/* Trip Info Card */}
       <div className="panel" style={{ marginBottom: 16 }}>
         <div style={{ padding: '4px 20px 4px', borderBottom: '1px solid var(--border-1)' }}>
@@ -309,6 +322,13 @@ export default function ForwarderTripDetailPage() {
             <div className="info-row__body">
               <div className="info-row__label">Xe đầu kéo</div>
               <div className="info-row__value">{trip.truckPlate || '—'}</div>
+            </div>
+          </div>
+          <div className="info-row">
+            <span className="info-row__icon"><User size={16} /></span>
+            <div className="info-row__body">
+              <div className="info-row__label">Lái xe</div>
+              <div className="info-row__value">{trip.driverName || <span className="fwd-assign-note__unassigned">Chưa phân công</span>}</div>
             </div>
           </div>
           <div className="info-row">

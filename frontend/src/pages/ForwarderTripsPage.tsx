@@ -140,6 +140,9 @@ export default function ForwarderTripsPage() {
       </div>}
 
       {/* ── Search + date-range filter (N4) ── */}
+      <p className="fwd-trips-note">
+        Cổng Giao nhận theo dõi chuyến và nhập chi phí — chuyến đi do <strong>Quản lý điều vận</strong> tạo và phân công lái xe.
+      </p>
       <div className="fwd-trip-filters">
         <div className="fwd-trip-filters__search">
           <Search size={14} />

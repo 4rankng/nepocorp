@@ -2,6 +2,38 @@
   font-size: var(--fs-label);
 }
 
+/* Assignment ownership note — unassigned trips explain where the driver
+   control lives (kanban 101026101510). */
+.fwd-assign-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-1);
+  border-left: 3px solid var(--warning, #D97706);
+  border-radius: 10px;
+  background: var(--bg-2, rgba(0, 0, 0, 0.02));
+}
+
+.fwd-assign-note__icon {
+  flex-shrink: 0;
+  color: var(--warning, #D97706);
+  margin-top: 1px;
+}
+
+.fwd-assign-note__text {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--fg-2);
+}
+
+.fwd-assign-note__unassigned {
+  color: var(--fg-3);
+  font-style: italic;
+}
+
 .forwarder-trip-detail-page .info-row__value,
 .forwarder-trip-detail-page .trip-legs__empty,
 .forwarder-trip-detail-page .trip-legs__stop-name {

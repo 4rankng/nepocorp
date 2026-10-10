@@ -94,6 +94,15 @@
   margin: 0 0 16px;
 }
 
+/* Role boundary hint — the portal is read-only for trip creation/assignment
+   (kanban 101026101510). */
+.fwd-trips-note {
+  margin: 0 0 12px;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--fg-3, var(--ink-3, #6b7280));
+}
+
 .fwd-trip-filters__search {
   display: flex;
   align-items: center;

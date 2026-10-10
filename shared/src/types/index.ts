@@ -941,6 +941,9 @@ export interface ForwarderTripDetail {
   status: TripStatus;
   routeName: string | null;
   truckPlate: string | null;
+  /** Assigned driver — null until a Quản lý phân xe. Read-only in the portal. */
+  driverId: number | null;
+  driverName: string | null;
   customerName: string | null;
   customerReference: string | null;
   containerCount: number | null;

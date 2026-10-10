@@ -162,9 +162,16 @@ export async function getForwarderTripDetail(tripId: number, _forwarderId: numbe
     containerCount: s.trips.containerCount,
     cargoTypeName: s.cargoTypes.name,
     notes: s.trips.notes,
+    // Read-only assignment state: the forwarder portal never writes it (Casbin
+    // gives FORWARDER no `trips` resource), but the detail must say whether a
+    // driver is already assigned instead of rendering an unexplained blank
+    // (kanban 101026101510).
+    driverId: s.trips.driverId,
+    driverName: s.drivers.name,
   }).from(s.trips)
     .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
     .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+    .leftJoin(s.drivers, eq(s.trips.driverId, s.drivers.id))
     .leftJoin(s.customers, eq(s.trips.customerId, s.customers.id))
     .leftJoin(s.cargoTypes, eq(s.trips.cargoTypeId, s.cargoTypes.id))
     .where(and(eq(s.trips.id, tripId), isNull(s.trips.deletedAt)))
