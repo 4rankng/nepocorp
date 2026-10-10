@@ -350,9 +350,18 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
   // The browser can put a suggested password in the box WITHOUT firing React's
   // onChange, so the text is on screen but the form state is still empty — the
   // operator submits and is told to fill in a password they can see is filled
-  // (kanban 101026095000). This one field is therefore uncontrolled and read from
-  // the DOM at submit. The identifier fields stay controlled on purpose: a browser
-  // autofilling the admin's own email into them must NOT be sent.
+  // (kanban 101026095000). This field is therefore uncontrolled and read from
+  // the DOM at submit.
+  //
+  // The identifier boxes below are controlled (typing must re-render validation),
+  // but they are read from the DOM at submit for the same reason: Chrome's
+  // autofill fills the username box the same silent way, and the gate then
+  // reported "cần ít nhất username, email hoặc SĐT" for a box the operator could
+  // see was full. A value the operator can see is a value they meant to submit.
+  const nameRef = useRef<HTMLInputElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
   const pwRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -400,17 +409,36 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
 
   const handleSubmit = async () => {
     if (!role) { setRoleTouched(true); return; }
-    // The box is the source of truth: a browser/password-manager autofill can put
-    // a value in the DOM without firing a React change event, so state may be
-    // empty while the operator sees a filled field. No trim — the value the
+    // The boxes are the source of truth: a browser/password-manager autofill can
+    // put a value in the DOM without firing a React change event, so state may be
+    // empty while the operator sees a filled field — and the gate then names a
+    // field that looks filled ("Chưa nhập mật khẩu" for a password on screen).
+    // Read every box, mirror it back into state, and no trim: the value the
     // operator sees is the value validated and sent.
-    const typedPassword = pwRef.current?.value ?? password;
+    const boxValue = (ref: React.RefObject<HTMLInputElement | null>, stateValue: string) =>
+      ref.current?.value ?? stateValue;
+    const typedFullName = boxValue(nameRef, fullName);
+    const typedUsername = boxValue(usernameRef, username);
+    const typedEmail = boxValue(emailRef, email);
+    const typedPhone = boxValue(phoneRef, phone);
+    const typedPassword = boxValue(pwRef, password);
+    if (typedFullName !== fullName) setFullName(typedFullName);
+    if (typedUsername !== username) setUsername(typedUsername);
+    if (typedEmail !== email) setEmail(typedEmail);
+    if (typedPhone !== phone) setPhone(typedPhone);
     if (typedPassword !== password) setPassword(typedPassword);
     // A non-empty password under the minimum never leaves the form; the field
     // already shows "Mật khẩu phải có tối thiểu 6 ký tự". An empty one is
     // forwarded so the create gate names it ("Chưa nhập mật khẩu").
     if (typedPassword.length > 0 && typedPassword.length < 6) return;
-    const payload: CreateData = { fullName, username, email, phone, role, password: typedPassword };
+    const payload: CreateData = {
+      fullName: typedFullName,
+      username: typedUsername,
+      email: typedEmail,
+      phone: typedPhone,
+      role,
+      password: typedPassword,
+    };
     if (role === Role.DRIVER) {
       payload.baseSalary = baseSalary;
       payload.socialInsurance = socialInsurance;
@@ -453,6 +481,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
         <div className="users-form-card">
           <FormGroup label="Họ và tên">
             <IconInput
+              inputRef={nameRef}
               icon={<User size={14} />}
               value={fullName}
               onChange={e => setFullName(e.target.value)}
@@ -462,6 +491,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
           </FormGroup>
           <FormGroup label="Username">
             <IconInput
+              inputRef={usernameRef}
               icon={<AtSign size={14} />}
               value={username}
               onChange={e => setUsername(e.target.value)}
@@ -474,6 +504,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
         <div className="users-form-card">
           <FormGroup label="Email">
             <IconInput
+              inputRef={emailRef}
               icon={<Mail size={14} />}
               type="email"
               value={email}
@@ -484,6 +515,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
           </FormGroup>
           <FormGroup label="Số điện thoại">
             <IconInput
+              inputRef={phoneRef}
               icon={<Phone size={14} />}
               value={phone}
               onChange={e => setPhone(e.target.value)}

@@ -119,6 +119,24 @@ describe('a password that exists only in the DOM', () => {
     expect(screen.queryByText('Chưa nhập mật khẩu')).toBeNull();
   });
 
+  it('submits an identifier the browser filled in, instead of calling the field empty', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
+
+    fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
+    // Chrome's autofill writes both boxes the silent way: value set, no event.
+    (screen.getByLabelText('Username') as HTMLInputElement).value = 'qa.autofill.user';
+    (screen.getByLabelText('Mật khẩu *') as HTMLInputElement).value = 'S7q3Q5Q9';
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      username: 'qa.autofill.user',
+      password: 'S7q3Q5Q9',
+    });
+  });
+
   it('generates a random password on button click and submits it', async () => {
     const onSave = vi.fn().mockResolvedValue(true);
     render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
@@ -178,19 +196,21 @@ describe('a password that exists only in the DOM', () => {
     expect(box.hasAttribute('aria-invalid')).toBe(false);
   });
 
-  it('never submits a browser-autofilled value in the controlled identity fields', async () => {
+  it('submits every browser-autofilled identifier, never a field the operator cannot see', async () => {
     const onSave = vi.fn().mockResolvedValue(true);
     render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
 
     fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'qa@example.test' } });
-    // Autofill into controlled fields: DOM value with no React event.
+    // Autofill: DOM values with no React event. The operator sees these boxes
+    // full, so the payload has to carry them (kanban 101026154000) — a gate that
+    // answers "cần ít nhất username, email hoặc SĐT" for a filled box is a lie.
     (screen.getByLabelText('Username') as HTMLInputElement).value = 'admin@example.test';
     (screen.getByLabelText('Mật khẩu *') as HTMLInputElement).value = 'S7q3Q5Q9';
 
     fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
-    expect(onSave.mock.calls[0][0].username).toBe('');
+    expect(onSave.mock.calls[0][0].username).toBe('admin@example.test');
     expect(onSave.mock.calls[0][0].email).toBe('qa@example.test');
   });
 
