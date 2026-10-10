@@ -9,7 +9,7 @@ import {
 import {
   SettlementGridRow,
   SettlementMobileCard,
-} from './AdminAdvanceSettlementsPage';
+} from './admin-advance-settlement-rows';
 
 describe('admin advance settlement ledger density', () => {
   const settlement = {

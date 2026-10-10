@@ -16,6 +16,7 @@ import { useBackShortcut } from '../hooks/useBackShortcut';
 import { groupSettlementExpensesByTrip } from './admin-advance-settlement-summary';
 import { settlementExportEndpoint } from './settlement-export-endpoint';
 import { PrintPreviewDialog } from '../components/shared/PrintPreviewDialog';
+import { SettlementAdvancesSection, SettlementInfoGrid } from './settlement-print-sections';
 import './SettlementPrintPage.css';
 
 // ─── Expense type Vietnamese labels ───
@@ -385,42 +386,10 @@ export default function SettlementPrintPage() {
 
       <div className="settlement-detail">
         {/* ── Info Grid ── */}
-        <div className="settlement-detail__section">
-          <div className="settlement-detail__info">
-            <div className="settlement-detail__info-item">
-              <span className="settlement-detail__info-label">Số phiếu</span>
-              <span className="settlement-detail__info-value">{s.code}</span>
-            </div>
-            <div className="settlement-detail__info-item">
-              <span className="settlement-detail__info-label">Ngày lập</span>
-              <span className="settlement-detail__info-value">{new Date(s.createdAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</span>
-            </div>
-            <div className="settlement-detail__info-item">
-              <span className="settlement-detail__info-label">Nhân viên</span>
-              <span className="settlement-detail__info-value">{s.forwarderName || '—'}</span>
-            </div>
-          </div>
-        </div>
+        <SettlementInfoGrid settlement={s} />
 
         {/* ── Advances ── */}
-        {requests.length > 0 && (
-          <div className="settlement-detail__section">
-            <h2 className="settlement-detail__section-title">Tạm ứng đã nhận</h2>
-            <div className="settlement-detail__advances">
-              {requests.map(r => (
-                <div key={r.id} className="settlement-detail__advance-row">
-                  <span className="settlement-detail__advance-amount">{formatCurrency(Number(r.amount))}</span>
-                  <span className="settlement-detail__advance-reason">{r.reason}</span>
-                  <span className="settlement-detail__advance-date">{new Date(r.createdAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</span>
-                </div>
-              ))}
-              <div className="settlement-detail__advance-total">
-                <span>Tổng tạm ứng:</span>
-                <strong>{formatCurrency(totalAdvance)}</strong>
-              </div>
-            </div>
-          </div>
-        )}
+        <SettlementAdvancesSection requests={requests} totalAdvance={totalAdvance} />
 
         {canEditComposition && (
           <div className="settlement-detail__section no-print">

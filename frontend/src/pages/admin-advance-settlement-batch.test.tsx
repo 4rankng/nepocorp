@@ -7,7 +7,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, expect, it, vi } from 'vitest';
 import { AdvanceSettlementStatus } from '@tingting/shared';
-import { SettlementGridRow, type SettlementActions } from './AdminAdvanceSettlementsPage';
+import { SettlementGridRow, type SettlementActions } from './admin-advance-settlement-rows';
 
 afterEach(cleanup);
 
