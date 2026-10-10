@@ -19,6 +19,7 @@ import {
   pendingAction,
 } from '../hooks/useQueries';
 import { advanceRequestStatusVariant } from '../lib/status-variants';
+import { AdvanceBalanceNote } from '../features/advances/AdvanceBalanceNote';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
 import { useMonth } from '../hooks/useMonth';
 import { getCalendarMonthRange } from '../lib/calendar-month';
@@ -471,6 +472,7 @@ export default function AdminAdvancesPage() {
           hasItems={(balancesData?.items.length ?? 0) > 0}
         />
       </div>
+      <AdvanceBalanceNote figures={balancesData} />
 
       {/* ── Card wrapper ──────────────────────────────────────────────── */}
       <div className="adv-panel">

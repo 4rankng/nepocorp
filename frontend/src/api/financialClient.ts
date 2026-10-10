@@ -123,6 +123,10 @@ export const financialClient = {
   getAdvanceBalances: () =>
     api.get<{
       totalOutstanding: string;
+      /** Σ APPROVED advance requests — one side of the published Tồn tạm ứng formula. */
+      approvedTotal?: string;
+      /** Σ APPROVED requests already in an APPROVED settlement — the other side. */
+      settledTotal?: string;
       items: Array<{ forwarderId: number; name: string | null; outstanding: string }>;
     }>(FINANCIAL.ADVANCE_BALANCES),
 

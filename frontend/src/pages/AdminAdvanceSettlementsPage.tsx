@@ -5,6 +5,7 @@ import { usePageAnimations } from '../hooks/animations';
 import { formatNumber, formatDate } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 import { canApproveSettlement, canDeleteSettlement } from '../features/advances/settlementPermissions';
+import { AdvanceBalanceNote } from '../features/advances/AdvanceBalanceNote';
 import { AdvanceSettlementStatus } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill, ConfirmDialog } from '../components/UI';
@@ -586,6 +587,7 @@ export default function AdminAdvanceSettlementsPage() {
           hasItems={(balancesData?.items.length ?? 0) > 0}
         />
       </div>
+      <AdvanceBalanceNote figures={balancesData} />
 
       {/* ── Card wrapper ──────────────────────────────────────────────── */}
       <div className="as-panel">

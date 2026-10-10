@@ -1,0 +1,22 @@
+/**
+ * The published TỒN TẠM ỨNG formula on the two admin advance surfaces
+ * (`/advances`, `/advance-settlements`).
+ *
+ * Muted, full-width and BELOW the KPI row on purpose: the four/five KPI cards
+ * are narrow, so a formula long enough to be checkable would clip there — and a
+ * clipped money control reads as a layout defect (kanban 101026203110).
+ */
+.adv-balance-note {
+  margin: 10px 2px 0;
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.adv-balance-note b {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--ink);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}

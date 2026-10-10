@@ -45,9 +45,15 @@ router.post('/advance-requests/:id/restore', requireRoles(Role.ADMIN, Role.MANAG
 // ─── Advance Balances (admin) — F1 outstanding per forwarder ──────────────────
 
 router.get('/advance-balances', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (_req: Request, res: Response) => {
-  const { totalOutstanding, items } = await getOutstandingAdvanceBalances();
+  const { totalOutstanding, approvedTotal, settledTotal, items } = await getOutstandingAdvanceBalances();
   res.json({
     totalOutstanding: String(totalOutstanding),
+    // The two sides of the published formula: totalOutstanding = approvedTotal
+    // − settledTotal. Sent as strings like every other money field, so the UI
+    // can show the accountant the subtraction instead of a bare total
+    // (kanban 101026203110).
+    approvedTotal: String(approvedTotal),
+    settledTotal: String(settledTotal),
     items: items.map(i => ({ forwarderId: i.forwarderId, name: i.name, outstanding: String(i.outstanding) })),
   });
 }));

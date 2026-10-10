@@ -1239,12 +1239,41 @@ export async function getOutstandingAdvanceBalance(forwarderUserId?: number): Pr
 /**
  * Per-forwarder breakdown of outstanding advance balances across ALL forwarders.
  * Drops zero-outstanding rows. `totalOutstanding` is the sum of all items.
+ *
+ * `approvedTotal` and `settledTotal` are the two sides of the balance formula
+ * above, published so the UI can show a number the accountant can reconcile
+ * instead of a bare total (kanban 101026203110):
+ *
+ *   totalOutstanding = approvedTotal − settledTotal
+ *                    = Σ APPROVED requests − Σ APPROVED requests whose id is
+ *                      linked to an APPROVED settlement
+ *
+ * They are queried independently of `totalOutstanding` (which is summed from
+ * the per-forwarder rows), so a divergence between the three shows up as a
+ * visible mismatch rather than being papered over.
  */
-export async function getOutstandingAdvanceBalances(): Promise<{
+export async function getOutstandingAdvanceBalances(
+  dbOrTx: typeof db | Tx = db,
+): Promise<{
   totalOutstanding: number;
+  approvedTotal: number;
+  settledTotal: number;
   items: Array<{ forwarderId: number; name: string | null; outstanding: number }>;
 }> {
-  const rows = await db.select({
+  const [approvedRow] = await dbOrTx.select({
+    total: sql<string>`coalesce(sum(${s.advanceRequests.amount}::numeric), 0)`,
+  }).from(s.advanceRequests)
+    .where(eq(s.advanceRequests.status, 'APPROVED'));
+
+  const [settledRow] = await dbOrTx.select({
+    total: sql<string>`coalesce(sum(${s.advanceRequests.amount}::numeric), 0)`,
+  }).from(s.advanceRequests)
+    .where(and(
+      eq(s.advanceRequests.status, 'APPROVED'),
+      inArray(s.advanceRequests.id, settledRequestIds),
+    ));
+
+  const rows = await dbOrTx.select({
     forwarderId: s.advanceRequests.requesterId,
     name: s.users.fullName,
     outstanding: sql<string>`sum(${s.advanceRequests.amount}::numeric)`,
@@ -1261,5 +1290,10 @@ export async function getOutstandingAdvanceBalances(): Promise<{
     .filter(r => r.outstanding > 0);
 
   const totalOutstanding = round2dp(items.reduce((sum, r) => sum + r.outstanding, 0));
-  return { totalOutstanding, items };
+  return {
+    totalOutstanding,
+    approvedTotal: round2dp(Number(approvedRow?.total ?? 0)),
+    settledTotal: round2dp(Number(settledRow?.total ?? 0)),
+    items,
+  };
 }
