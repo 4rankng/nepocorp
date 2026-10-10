@@ -10,8 +10,11 @@ export enum TripStatus {
  *  (giấy báo nợ) and carrier payment statements. Revenue posts at COMPLETED
  *  (postTripLock fires on IN_TRANSIT→COMPLETED); LOCKED is a frozen-figures superset of
  *  COMPLETED. CREATED / IN_TRANSIT / CANCELED have no posted AR and are excluded.
- *  NOTE: P&L (pnl.service) and profit distribution remain LOCKED-only by spec — a
- *  distinct concept (grossProfit is finalized at lock) — and must NOT use this set. */
+ *  NOTE: profit distribution (profit-distribution.service) is DELIBERATELY narrower —
+ *  it distributes only LOCKED trips, because grossProfit is finalized at lock. The P&L
+ *  report (pnl.service.getPnlReport) reports COMPLETED + LOCKED, i.e. this set: it was
+ *  narrowed to exactly these statuses on 2026-07-24 (commit 2c3dcca3, from "any
+ *  non-canceled trip") and must not be called LOCKED-only. */
 export const BILLABLE_TRIP_STATUSES = [TripStatus.COMPLETED, TripStatus.LOCKED] as const;
 
 export enum FuelMode {

@@ -477,7 +477,8 @@ describe('US-007 aging: SERVICE_FEE AR surfaces in customer aging', () => {
 // ─── US-005b: billable status = COMPLETED + LOCKED (the /debt/2 fix) ────────
 // Revenue posts to AR at COMPLETED (postTripLock on IN_TRANSIT→COMPLETED);
 // LOCKED is an optional figures-freeze superset. The debt notice must bill BOTH.
-// (P&L / profit-distribution remain LOCKED-only by spec — a distinct concept.)
+// (Profit distribution stays LOCKED-only by spec — a distinct concept. The P&L
+// report reports COMPLETED + LOCKED, same as this set, since commit 2c3dcca3.)
 
 interface BillableSeedCtx {
   customerId: number;

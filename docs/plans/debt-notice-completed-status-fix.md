@@ -124,3 +124,11 @@ replace `eq(s.trips.status, 'LOCKED')` → `inArray(s.trips.status, [...BILLABLE
 Verdict received: **APPROVE WITH CHANGES**. Disposition:
 - **Accepted:** (a) add carrier-payment regression test (Step 5 + acceptance #7); (b) strengthen migration 0073 idempotency acceptance (#8); (c) document why `pnl`/`profit-distribution` LOCKED filters are spec-correct and must not be widened (§7); (d) make `COMPLETED→CANCELED` the explicit safety net (pre-mortem #4); (e) place `BILLABLE_TRIP_STATUSES` next to `TripStatus`.
 - **Rejected (with evidence):** the Architect's headline objection "Tension A — editing a COMPLETED trip leaves the ledger stale forever; Option A creates notice↔statement divergence; rewrite pre-mortem #1." This is **falsified** by `trip-mutations.service.ts:672-712`, which runs `postTripUnlock(OLD)` + `postTripLock(NEW)` on every COMPLETED figure edit (gate confirmed reachable via the `LOCKED||CANCELED`-only block at `:354`). The ledger tracks `trips.revenue` for COMPLETED trips; pre-mortem #1 holds and is now cited precisely. Option A remains correct; Option B is unnecessary. A defensive edited-COMPLETED reconciliation test (acceptance #6) is added so this property cannot silently regress.
+
+---
+
+**Amendment (2026-10-10):** the §7/§8 claim that `pnl.service` is LOCKED-only no longer
+describes shipped behaviour. Commit 2c3dcca3 (2026-07-24) narrowed the P&L's trip set from
+"any non-canceled trip" to `[COMPLETED, LOCKED]` — so the P&L now uses the same billable set
+as this plan's AR rule, and only `profit-distribution.service` stays LOCKED-only. The stale
+claim was removed from `shared/src/constants/index.ts` and `chiho-reconciliation.test.ts`.
