@@ -55,7 +55,8 @@ describe('FuelAllocationEditor price column', () => {
     for (const cell of cells) {
       expect(cell).not.toBe('');
       expect(cell).toContain('27.650');
-      expect(cell).toContain('đ/lít');
+      // The VND sign is '₫' everywhere (kanban 091026235520 unified the symbol).
+      expect(cell).toContain('₫/lít');
     }
   });
 

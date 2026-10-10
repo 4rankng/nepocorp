@@ -70,8 +70,9 @@ it('shows penalty-history failure separately from the loaded earnings totals', (
 it('keeps the deduction minus sign and currency when income counters animate', () => {
   render(<DriverEarningsPage />);
   const targets = mocks.animateCounters.mock.calls[0][0] as Array<{ value: number; prefix?: string; suffix?: string }>;
-  expect(targets.find(target => target.value === 150000)).toMatchObject({ prefix: '-', suffix: ' đ' });
-  expect(targets.find(target => target.value === 5000000)).toMatchObject({ suffix: ' đ' });
+  // The VND sign is '₫' everywhere (kanban 091026235520 unified the symbol).
+  expect(targets.find(target => target.value === 150000)).toMatchObject({ prefix: '-', suffix: ' ₫' });
+  expect(targets.find(target => target.value === 5000000)).toMatchObject({ suffix: ' ₫' });
 });
 
 it('retains canceled penalties in history without counting them as current violations', () => {
