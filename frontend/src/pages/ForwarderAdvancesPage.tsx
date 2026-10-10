@@ -252,7 +252,7 @@ export default function ForwarderAdvancesPage() {
               {isEditing
                 ? <Pencil size={16} style={{ verticalAlign: -2, marginRight: 6, opacity: 0.7 }} />
                 : <Wallet size={16} style={{ verticalAlign: -2, marginRight: 6, opacity: 0.7 }} />}
-              {isEditing ? 'Sửa yêu cầu tạm ứng' : 'Tạo yêu cầu tạm ứng'}
+              {isEditing ? 'Điều chỉnh yêu cầu tạm ứng' : 'Tạo yêu cầu tạm ứng'}
             </span>
             <button
               className="btn btn--ghost btn--sm"
@@ -369,12 +369,12 @@ export default function ForwarderAdvancesPage() {
                     <button
                       type="button"
                       className="fadv-card-trip__action"
-                      title="Sửa yêu cầu"
-                      aria-label={`Sửa yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}`}
+                      title="Điều chỉnh yêu cầu"
+                      aria-label={`Điều chỉnh yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}`}
                       disabled={deleteAdvanceRequest.isPending}
                       onClick={() => startEdit(req)}
                     >
-                      <Pencil size={14} /> Sửa
+                      <Pencil size={14} /> Điều chỉnh
                     </button>
                     <button
                       type="button"

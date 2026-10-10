@@ -82,7 +82,7 @@ afterEach(cleanup);
 it('offers edit and delete on a pending request', () => {
   renderPage();
 
-  expect(screen.getByRole('button', { name: 'Sửa yêu cầu tạm ứng 20.000.000 ₫' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Điều chỉnh yêu cầu tạm ứng 20.000.000 ₫' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Xóa yêu cầu tạm ứng 20.000.000 ₫' })).toBeTruthy();
 });
 
@@ -90,16 +90,16 @@ it('hides edit and delete on an approved request', () => {
   renderPage();
 
   // Only the pending row is actionable, so exactly one pair of controls exists.
-  expect(screen.getAllByRole('button', { name: /Sửa yêu cầu tạm ứng/ })).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: /Điều chỉnh yêu cầu tạm ứng/ })).toHaveLength(1);
   expect(screen.getAllByRole('button', { name: /Xóa yêu cầu tạm ứng/ })).toHaveLength(1);
 });
 
 it('opens the shared form in edit mode, prefilled with the current amount and reason', () => {
   renderPage();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Sửa yêu cầu tạm ứng 20.000.000 ₫' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Điều chỉnh yêu cầu tạm ứng 20.000.000 ₫' }));
 
-  expect(screen.getByText('Sửa yêu cầu tạm ứng')).toBeTruthy();
+  expect(screen.getByText('Điều chỉnh yêu cầu tạm ứng')).toBeTruthy();
   const amount = screen.getByLabelText('Số tiền (₫)') as HTMLInputElement;
   const reason = screen.getByLabelText('Lý do') as HTMLInputElement;
   expect(amount.value).toBe('20000000');
@@ -114,7 +114,7 @@ it('submits the edit as an update, never as a create', () => {
   mocks.update.mockReturnValue({ error: null, isPending: false, mutate: updateMutate });
   renderPage();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Sửa yêu cầu tạm ứng 20.000.000 ₫' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Điều chỉnh yêu cầu tạm ứng 20.000.000 ₫' }));
   fireEvent.change(screen.getByLabelText('Số tiền (₫)'), { target: { value: '25500000' } });
   fireEvent.change(screen.getByLabelText('Lý do'), { target: { value: 'Sửa lý do' } });
   fireEvent.click(screen.getByRole('button', { name: 'Lưu thay đổi' }));
@@ -129,7 +129,7 @@ it('submits the edit as an update, never as a create', () => {
 it('closes the form and resets it back to create mode when the edit is cancelled', () => {
   renderPage();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Sửa yêu cầu tạm ứng 20.000.000 ₫' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Điều chỉnh yêu cầu tạm ứng 20.000.000 ₫' }));
   fireEvent.click(screen.getByRole('button', { name: 'Hủy' }));
   fireEvent.click(screen.getByRole('button', { name: /Tạo yêu cầu/ }));
 
@@ -183,7 +183,7 @@ it('surfaces a service refusal instead of swallowing it', () => {
   });
   renderPage();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Sửa yêu cầu tạm ứng 20.000.000 ₫' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Điều chỉnh yêu cầu tạm ứng 20.000.000 ₫' }));
 
   const alert = screen.getByRole('alert');
   expect(alert.textContent).toContain('số tiền đã ghi vào sổ cái');
