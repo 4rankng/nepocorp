@@ -184,6 +184,7 @@ export const FORWARDER = {
   EXPENSE: (id: number) => `/forwarder/me/expenses/${id}`,
   FORWARDER_EXPENSES: '/forwarder-expenses',
   ADVANCE_REQUESTS: '/forwarder/me/advance-requests',
+  ADVANCE_REQUEST: (id: number) => `/forwarder/me/advance-requests/${id}`,
   ADVANCE_SETTLEMENTS: '/forwarder/me/advance-settlements',
   ADVANCE_SETTLEMENT_PREVIEW: '/forwarder/me/advance-settlements/preview',
   ADVANCE_SETTLEMENT_DETAIL: (id: number) => `/forwarder/me/advance-settlements/${id}`,
