@@ -103,9 +103,11 @@ export function FinanceChartsRow({
           <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 4 }}>
             Cơ cấu chi phí {String(month).padStart(2, '0')}/{String(year).slice(-2)}
           </div>
+          {!loading && costPieData.length > 0 && (
           <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--fg-3)', marginBottom: 12, lineHeight: 1.4 }}>
             Chi phí trực tiếp của {costTripCount} chuyến đã khóa + bảo dưỡng xe · khớp “Tổng chi phí vận hành” trong bảng P&amp;L
           </div>
+          )}
           {loading ? (
             <div style={{ height: 160, background: 'var(--bg-2)', borderRadius: 6 }} />
           ) : costPieData.length > 0 ? (
