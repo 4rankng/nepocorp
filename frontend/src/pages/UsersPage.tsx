@@ -21,7 +21,11 @@ export default function UsersPage() {
   const canManage = me?.capabilities
     ? me.capabilities.includes('manage_users')
     : me?.role === Role.ADMIN || me?.role === Role.MANAGER;
-  const canDelete = me?.role === Role.ADMIN;
+  // ADMIN and MANAGER may both delete accounts. Neither may delete an ADMIN —
+  // `deleteUser` refuses that on the server, and `UserTable` hides the control
+  // on ADMIN rows for anyone who is not an ADMIN (kanban 101026003000).
+  const canDelete = me?.role === Role.ADMIN || me?.role === Role.MANAGER;
+  const isAdminViewer = me?.role === Role.ADMIN;
   // Accountants get scoped /users access: read-only except DRIVER rows (salary/truck/contact).
   const canEditDriversOnly = !canManage && me?.role === Role.ACCOUNTANT;
 
@@ -194,6 +198,7 @@ export default function UsersPage() {
         search={search}
         canManage={canManage}
         canDelete={canDelete}
+        isAdminViewer={isAdminViewer}
         canEditDriversOnly={canEditDriversOnly}
         truckMap={truckMap}
         deleting={deleting}

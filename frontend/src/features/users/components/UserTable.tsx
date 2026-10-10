@@ -27,6 +27,8 @@ interface UserTableProps {
   search: string;
   canManage: boolean;
   canDelete?: boolean;
+  /** Only an ADMIN may delete an ADMIN account; see deleteUser() on the server. */
+  isAdminViewer?: boolean;
   /** Accountant scope: may open the edit Drawer for DRIVER rows only. */
   canEditDriversOnly?: boolean;
   /** truckId → licensePlate, for the "Xe" column on driver rows. */
@@ -87,7 +89,7 @@ function getPlate(u: UserRow, truckMap?: Map<number, string>) {
 
 export function UserTable({
   paginated, filteredTotal, total, staffCount, driverCount, inactiveCount,
-  filter, search, canManage, canDelete = canManage, canEditDriversOnly = false,
+  filter, search, canManage, canDelete = canManage, isAdminViewer = false, canEditDriversOnly = false,
   truckMap, deleting, currentUserId,
   onFilterChange, onSearchChange, onEdit, onDelete, onAdd,
   onExport, exporting,
@@ -225,6 +227,7 @@ export function UserTable({
           filtered={paginated}
           canManage={canManage}
           canDelete={canDelete}
+          isAdminViewer={isAdminViewer}
           canEditDriversOnly={canEditDriversOnly}
           truckMap={truckMap}
           deleting={deleting}
@@ -241,6 +244,7 @@ export function UserTable({
           filtered={paginated}
           canManage={canManage}
           canDelete={canDelete}
+          isAdminViewer={isAdminViewer}
           canEditDriversOnly={canEditDriversOnly}
           truckMap={truckMap}
           deleting={deleting}
@@ -335,13 +339,14 @@ export function UserTable({
 /* ── Desktop table (inside panel) ─────────────────────────────────────────── */
 
 function DesktopTable({
-  filtered, canManage, canDelete, canEditDriversOnly, truckMap, deleting, currentUserId,
+  filtered, canManage, canDelete, isAdminViewer = false, canEditDriversOnly, truckMap, deleting, currentUserId,
   onEdit, onDelete,
   sortBy, sortOrder, onSort,
 }: {
   filtered: UserRow[];
   canManage: boolean;
   canDelete: boolean;
+  isAdminViewer?: boolean;
   canEditDriversOnly: boolean;
   truckMap?: Map<number, string>;
   deleting: number | null;
@@ -357,6 +362,11 @@ function DesktopTable({
   // delete must not see a "Thao tác" header sitting over permanently empty
   // cells — that read as "the feature is missing/broken" rather than
   // "you are not allowed" (kanban 091026213000).
+  // A MANAGER may delete accounts, but never an ADMIN's. The server enforces the
+  // same rule (deleteUser refuses a non-ADMIN actor on an ADMIN target); hiding
+  // the control here just keeps the screen from offering an action that will be
+  // rejected (kanban 101026003000).
+  const canDeleteRow = (u: UserRow) => canDelete && (isAdminViewer || u.role !== Role.ADMIN);
   const showActions = canManage && canDelete;
 
   return (
@@ -459,7 +469,7 @@ function DesktopTable({
                   <td style={{ color: 'var(--ink-3)', fontSize: 'var(--fs-body)', whiteSpace: 'nowrap' }}>
                     {formatDate(u.createdAt)}
                   </td>
-                  {showActions && (
+                  {showActions && canDeleteRow(u) && (
                   <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
@@ -487,10 +497,11 @@ function DesktopTable({
 
 /* ── Mobile card list (inside panel) ──────────────────────────────────────── */
 
-function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, truckMap, deleting, currentUserId, onEdit, onDelete }: {
+function MobileCardList({ filtered, canManage, canDelete, isAdminViewer = false, canEditDriversOnly, truckMap, deleting, currentUserId, onEdit, onDelete }: {
   filtered: UserRow[];
   canManage: boolean;
   canDelete: boolean;
+  isAdminViewer?: boolean;
   canEditDriversOnly: boolean;
   truckMap?: Map<number, string>;
   deleting: number | null;
@@ -564,7 +575,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                   </div>
                 </div>
 
-                {editable && canManage && canDelete && (
+                {editable && canManage && canDelete && (isAdminViewer || u.role !== Role.ADMIN) && (
                   <div className="users-mobile-card__menu">
                     <button
                       className="kebab-btn"
@@ -586,7 +597,7 @@ function MobileCardList({ filtered, canManage, canDelete, canEditDriversOnly, tr
                         background: '#fff', border: '1px solid var(--line)', borderRadius: 8,
                         overflow: 'hidden', minWidth: 120,
                       }} onClick={(e) => e.stopPropagation()}>
-                        {canManage && canDelete && (
+                        {canManage && canDelete && (isAdminViewer || u.role !== Role.ADMIN) && (
                           <button role="menuitem" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
                             disabled={!!deleting || isMe}
                             onClick={() => { setActiveMenuId(null); if (!isMe) onDelete(u.id); }}>
