@@ -393,7 +393,7 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
       <div class="vrow"><span class="k">Nhà cung cấp:</span><span><strong>${escapeHtml(data.supplierName ?? '—')}</strong></span></div>
       ${data.supplierNote ? `<div class="vrow"><span class="k">Ghi chú:</span><span>${escapeHtml(data.supplierNote)}</span></div>` : ''}
       ${data.lineItems.every(item => item.unitPrice === data.lineItems[0].unitPrice)
-        ? `<div class="vrow"><span class="k">Giá áp dụng:</span><span>${formatVND(data.lineItems[0].unitPrice)} đ/Lít</span></div>`
+        ? `<div class="vrow"><span class="k">Giá áp dụng:</span><span>${formatVND(data.lineItems[0].unitPrice)} ₫/Lít</span></div>`
         : ''}
     </div>
 
@@ -595,7 +595,7 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   ws.mergeCells(`A${row}:E${row}`);
   const uniformPrice = data.lineItems.every(item => item.unitPrice === data.lineItems[0].unitPrice);
   priceRow.getCell(1).value = uniformPrice
-    ? `Giá áp dụng: ${formatVND(data.lineItems[0].unitPrice)} đ/Lít`
+    ? `Giá áp dụng: ${formatVND(data.lineItems[0].unitPrice)} ₫/Lít`
     : 'Giá áp dụng: theo từng lần đổ (xem bảng)';
   priceRow.getCell(1).font = { name: F, size: 10, color: { argb: 'FF374151' } };
   row++;

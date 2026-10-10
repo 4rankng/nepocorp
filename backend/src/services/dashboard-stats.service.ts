@@ -338,5 +338,5 @@ function countFuelWarningTrips(
 }
 
 function formatVnd(value: number): string {
-  return `${Math.round(value).toLocaleString('vi-VN')} đ`;
+  return `${Math.round(value).toLocaleString('vi-VN')} ₫`;
 }

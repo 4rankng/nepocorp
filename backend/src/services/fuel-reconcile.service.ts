@@ -226,7 +226,7 @@ export function reconcileFuelRows(
       note = `Lệch ${formatLitres(f.liters - s.liters)} lít so với hệ thống`;
     } else if (amountDiff > AMOUNT_TOLERANCE) {
       status = 'AMOUNT_MISMATCH';
-      note = `Khớp số lít nhưng lệch ${Math.round(f.amount - s.amount).toLocaleString('vi-VN')} đ`;
+      note = `Khớp số lít nhưng lệch ${Math.round(f.amount - s.amount).toLocaleString('vi-VN')} ₫`;
     } else if (!f.hasAmount) {
       note = 'Khớp xe/ngày/số lít (file NCC không ghi số tiền — T.Tiền = 0)';
     }
