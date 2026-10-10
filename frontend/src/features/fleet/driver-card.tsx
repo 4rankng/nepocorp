@@ -8,6 +8,7 @@ import type { Truck as TruckType, Driver } from "@tingting/shared";
 // Extracted form modals + shared fleet constants
 import { DriverFormModal, TRUCK_STATUS, DRIVER_STATUS, fleetStyles as styles } from ".";
 import { useFleetDelete } from "./useFleetDelete";
+import { countFleetDrivers, driverTruckId } from "./fleet-counts";
 
 import "../../pages/FleetPage.css";
 
@@ -125,7 +126,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
   const [driverSearch, setDriverSearch] = useState("");
   const { requestDelete, confirmDialog } = useFleetDelete(crud.doDelete);
   const totalSalary = drivers.reduce((s, d) => s + (d.baseSalary ? Number(d.baseSalary) : 0), 0);
-  const unassigned = drivers.filter((d) => !d.assignedTruckId).length;
+  const { unassigned } = countFleetDrivers(drivers, truckMap);
   const q = driverSearch.trim().toLowerCase();
   const filteredDrivers = q ? drivers.filter((d) => d.name.toLowerCase().includes(q) || (d.phone && d.phone.includes(q))) : drivers;
 
@@ -180,46 +181,50 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
                   </td>
                 </tr>
               )}
-              {filteredDrivers.map((d, i) => (
-                <tr
-                  key={d.id}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setViewingId(d.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(ev) => {
-                    if (ev.key === "Enter" || ev.key === " ") {
-                      ev.preventDefault();
-                      setViewingId(d.id);
-                    }
-                  }}
-                >
-                  <td className="num fleet-status-cell">
-                    <StatusStrip color={fleetStatusColor(d.status)} />
-                    {i + 1}
-                  </td>
-                  <td>
-                    <span className="fleet-assigned">
-                      <DriverAvatarIcon />
-                      <span className="name">{d.name}</span>
-                    </span>
-                  </td>
-                  <td>
-                    <span className="fleet-phone">{d.phone || "—"}</span>
-                  </td>
-                  <td>{d.assignedTruckId && truckMap.has(d.assignedTruckId) ? <span className="fleet-pair">{truckMap.get(d.assignedTruckId)!.licensePlate}</span> : <span className="fleet-unassigned">— Chưa phân —</span>}</td>
-                  <td>
-                    {d.baseSalary ? (
-                      <span className="fleet-salary">
-                        {Number(d.baseSalary).toLocaleString("vi-VN")}
-                        <span className="unit">₫</span>
+              {filteredDrivers.map((d, i) => {
+                const truckId = driverTruckId(d, truckMap);
+                const truck = truckId !== null ? truckMap.get(truckId)! : null;
+                return (
+                  <tr
+                    key={d.id}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setViewingId(d.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(ev) => {
+                      if (ev.key === "Enter" || ev.key === " ") {
+                        ev.preventDefault();
+                        setViewingId(d.id);
+                      }
+                    }}
+                  >
+                    <td className="num fleet-status-cell">
+                      <StatusStrip color={fleetStatusColor(d.status)} />
+                      {i + 1}
+                    </td>
+                    <td>
+                      <span className="fleet-assigned">
+                        <DriverAvatarIcon />
+                        <span className="name">{d.name}</span>
                       </span>
-                    ) : (
-                      <span className="fleet-salary empty">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <span className="fleet-phone">{d.phone || "—"}</span>
+                    </td>
+                    <td>{truck ? <span className="fleet-pair">{truck.licensePlate}</span> : <span className="fleet-unassigned">— Chưa phân —</span>}</td>
+                    <td>
+                      {d.baseSalary ? (
+                        <span className="fleet-salary">
+                          {Number(d.baseSalary).toLocaleString("vi-VN")}
+                          <span className="unit">₫</span>
+                        </span>
+                      ) : (
+                        <span className="fleet-salary empty">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -246,7 +251,8 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
         <div className="m-card-list">
           {filteredDrivers.length === 0 && <div style={{ padding: 32, textAlign: "center", color: "var(--fg-3)" }}>Chưa có dữ liệu</div>}
           {filteredDrivers.map((d) => {
-            const truck = d.assignedTruckId && truckMap.has(d.assignedTruckId) ? truckMap.get(d.assignedTruckId)! : null;
+            const truckId = driverTruckId(d, truckMap);
+            const truck = truckId !== null ? truckMap.get(truckId)! : null;
             return (
               <div
                 key={d.id}

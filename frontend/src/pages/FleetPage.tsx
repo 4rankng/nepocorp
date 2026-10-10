@@ -20,6 +20,7 @@ import type { Truck as TruckType, Driver, VehicleSchedule } from "@tingting/shar
 
 // Extracted form modals + shared fleet constants
 import { TRUCK_STATUS, fleetStyles as styles } from "../features/fleet";
+import { countFleetDrivers, driverTruckId } from "../features/fleet/fleet-counts";
 
 import "./FleetPage.css";
 
@@ -90,22 +91,32 @@ export default function FleetPage() {
     await invalidateFleet();
   });
 
-  const { truckMap, driverByTruck, activeTrucks, maintTrucks, assignedDrivers, activeDrivers, readyToRun } = useMemo(() => {
+  const { truckMap, driverByTruck, activeTrucks, maintTrucks, assignedDrivers, totalDrivers, activeDrivers, readyToRun } = useMemo(() => {
     const truckMap = new Map<number, TruckType>();
     trucks.forEach((t) => truckMap.set(t.id, t));
 
     const driverByTruck = new Map<number, Driver>();
     drivers.forEach((d) => {
-      if (d.assignedTruckId) driverByTruck.set(d.assignedTruckId, d);
+      const truckId = driverTruckId(d, truckMap);
+      if (truckId !== null) driverByTruck.set(truckId, d);
     });
 
     const activeTrucks = trucks.filter((t) => t.status === "ACTIVE").length;
     const maintTrucks = trucks.filter((t) => t.status === "MAINTENANCE").length;
-    const assignedDrivers = drivers.filter((d) => d.assignedTruckId).length;
-    const activeDrivers = drivers.filter((d) => d.status === "ACTIVE").length;
+    // Same source as the Lái xe table and its footer (kanban 101026101500).
+    const driverCounts = countFleetDrivers(drivers, truckMap);
     const readyToRun = trucks.filter((t) => t.status === "ACTIVE" && driverByTruck.has(t.id)).length;
 
-    return { truckMap, driverByTruck, activeTrucks, maintTrucks, assignedDrivers, activeDrivers, readyToRun };
+    return {
+      truckMap,
+      driverByTruck,
+      activeTrucks,
+      maintTrucks,
+      assignedDrivers: driverCounts.assigned,
+      totalDrivers: driverCounts.total,
+      activeDrivers: driverCounts.active,
+      readyToRun,
+    };
   }, [trucks, drivers]);
 
   const ft40 = trailers.filter((t) => t.type === TrailerType.FT40).length;
@@ -250,7 +261,7 @@ export default function FleetPage() {
                 ·
               </span>
               <span>
-                {assignedDrivers}/{activeDrivers} phân xe
+                {assignedDrivers}/{totalDrivers} phân xe
               </span>
             </span>
           }
