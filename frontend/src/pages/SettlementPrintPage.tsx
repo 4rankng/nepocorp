@@ -7,7 +7,7 @@ import { api } from '../lib/api';
 import { useConfirm } from '../components/confirm-dialog';
 import { useToast } from '../components/shared/Toast';
 import { downloadBlob } from '../lib/download';
-import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement } from '../hooks/useForwarderQueries';
+import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement, pendingAction } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { canApproveSettlement, canAdjustSettlementAmounts } from '../features/advances/settlementPermissions';
 import { PageHeader, StatusPill } from '../components/UI';
@@ -117,6 +117,22 @@ export default function SettlementPrintPage() {
   const updateMySettlement = useUpdateMyAdvanceSettlement();
   const approveSettlement = useApproveSettlement();
   const rejectSettlement = useRejectSettlement();
+  // A hook that returns nothing — a module the dev server is midway through
+  // replacing, a hook disabled for the role, a mocked module — must not blank
+  // this page (kanban 101026101500). Approve/reject is one decision, so it goes
+  // through the shared `pendingAction`; the three save flags are independent, so
+  // each read stays tolerant on its own.
+  const { pendingKind: signOffPending } = pendingAction([
+    { kind: 'approve', mutation: approveSettlement },
+    { kind: 'reject', mutation: rejectSettlement },
+  ]);
+  const approvingSettlement = signOffPending === 'approve';
+  const rejectingSettlement = signOffPending === 'reject';
+  const savingSettlement = updateSettlement?.isPending === true;
+  const savingMySettlement = updateMySettlement?.isPending === true;
+  const savingExpense = updateExpense?.isPending === true;
+  const settlementSaveError = updateSettlement?.error ?? approveSettlement?.error ?? null;
+  const mySettlementSaveError = updateMySettlement?.error ?? null;
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { toast } = useToast();
   const [deleting, setDeleting] = useState(false);
@@ -333,17 +349,17 @@ export default function SettlementPrintPage() {
                 <>
                   <button
                     className="btn btn--primary btn--sm"
-                    disabled={approveSettlement.isPending || rejectSettlement.isPending}
+                    disabled={approvingSettlement || rejectingSettlement}
                     onClick={() => void handleApproveSettlement()}
                   >
-                    {approveSettlement.isPending ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />} Duyệt
+                    {approvingSettlement ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />} Duyệt
                   </button>
                   <button
                     className="btn btn--danger btn--sm"
-                    disabled={approveSettlement.isPending || rejectSettlement.isPending}
+                    disabled={approvingSettlement || rejectingSettlement}
                     onClick={() => void handleRejectSettlement()}
                   >
-                    {rejectSettlement.isPending ? <Loader2 size={14} className="spin" /> : <XCircle size={14} />} Từ chối
+                    {rejectingSettlement ? <Loader2 size={14} className="spin" /> : <XCircle size={14} />} Từ chối
                   </button>
                 </>
               )}
@@ -426,8 +442,8 @@ export default function SettlementPrintPage() {
               </label>
               <div className="settlement-expense-editor__actions">
                 <button className="btn btn--ghost" onClick={() => setEditingExpense(null)}>Hủy</button>
-                <button className="btn btn--primary" disabled={!adjustmentReason.trim() || Number(editedAmount) <= 0 || updateExpense.isPending} onClick={saveExpenseAdjustment}>
-                  {updateExpense.isPending ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Lưu điều chỉnh
+                <button className="btn btn--primary" disabled={!adjustmentReason.trim() || Number(editedAmount) <= 0 || savingExpense} onClick={saveExpenseAdjustment}>
+                  {savingExpense ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Lưu điều chỉnh
                 </button>
               </div>
             </div>
@@ -557,18 +573,18 @@ export default function SettlementPrintPage() {
                 <textarea className="input" rows={2} value={settlementNote} onChange={event => setSettlementNote(event.target.value)} />
               </label>
             </div>
-            {(updateSettlement.error || approveSettlement.error) && (
-              <p className="settlement-finalize__error">{String(updateSettlement.error || approveSettlement.error)}</p>
+            {settlementSaveError && (
+              <p className="settlement-finalize__error">{String(settlementSaveError)}</p>
             )}
-            <button className="btn btn--primary" disabled={selectedRequestIds.size === 0 || updateSettlement.isPending || approveSettlement.isPending} onClick={handleFinalize}>
-              {updateSettlement.isPending || approveSettlement.isPending ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
+            <button className="btn btn--primary" disabled={selectedRequestIds.size === 0 || savingSettlement || approvingSettlement} onClick={handleFinalize}>
+              {savingSettlement || approvingSettlement ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
               Sửa và hoàn tất
             </button>
             {s.status === 'PENDING' && (
               <button
                 className="btn btn--danger"
                 style={{ marginTop: 8 }}
-                disabled={deleting || updateSettlement.isPending || approveSettlement.isPending}
+                disabled={deleting || savingSettlement || approvingSettlement}
                 onClick={handleDelete}
               >
                 {deleting ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
@@ -599,11 +615,11 @@ export default function SettlementPrintPage() {
               </label>
             </div>
             <p className="settlement-editor-hint">Phiếu chưa cân đối sẽ không lưu được — hãy chọn đủ tạm ứng và chi phí tương ứng.</p>
-            {updateMySettlement.error && (
-              <p className="settlement-finalize__error">{String(updateMySettlement.error)}</p>
+            {mySettlementSaveError && (
+              <p className="settlement-finalize__error">{String(mySettlementSaveError)}</p>
             )}
-            <button className="btn btn--primary" disabled={selectedRequestIds.size === 0 || updateMySettlement.isPending} onClick={handleSaveChanges}>
-              {updateMySettlement.isPending ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
+            <button className="btn btn--primary" disabled={selectedRequestIds.size === 0 || savingMySettlement} onClick={handleSaveChanges}>
+              {savingMySettlement ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
               Lưu thay đổi
             </button>
           </div>
