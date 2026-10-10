@@ -6,7 +6,7 @@ import { asyncHandler } from '../../middleware/asyncHandler';
 import { getUser } from '../../middleware/auth';
 import { getAdvanceSettlement } from '../../services/advance.service';
 import { exportSettlementXlsx, exportSettlementHtml } from '../../services/settlement-export.service';
-import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, deleteAdvanceSettlement, getOutstandingAdvanceBalances, adjustSettlementExpense, updateAdvanceSettlement } from '../../services/advance.service';
+import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, restoreAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, deleteAdvanceSettlement, getOutstandingAdvanceBalances, adjustSettlementExpense, updateAdvanceSettlement } from '../../services/advance.service';
 import { throwValidation } from '../../lib/validation';
 import { formatLocalDate } from '../../lib/format';
 
@@ -31,6 +31,14 @@ router.post('/advance-requests/:id/approve', requireRoles(Role.ADMIN, Role.MANAG
 router.post('/advance-requests/:id/reject', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const result = await rejectAdvanceRequest(id, getUser(req).userId);
+  res.json(result);
+}));
+
+// Undo a rejection (kanban 101026013000): REJECTED → PENDING. Same roles as
+// approve/reject — an accountant cannot flip a manager's decision.
+router.post('/advance-requests/:id/restore', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const result = await restoreAdvanceRequest(id);
   res.json(result);
 }));
 

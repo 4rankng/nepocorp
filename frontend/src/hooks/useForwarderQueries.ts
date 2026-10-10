@@ -205,6 +205,16 @@ export function useRejectAdvanceRequest() {
   });
 }
 
+export function useRestoreAdvanceRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.restoreAdvanceRequest(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.advanceRequestsAll });
+    },
+  });
+}
+
 // ── Admin: Advance Settlements ──────────────────────────────────────────────
 
 export function useAdminSettlements(filters?: { status?: string; dateFrom?: string; dateTo?: string }) {

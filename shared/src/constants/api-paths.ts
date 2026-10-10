@@ -135,6 +135,7 @@ export const FINANCIAL = {
   ADVANCE_REQUESTS: '/advance-requests',
   ADVANCE_REQUEST_APPROVE: (id: number) => `/advance-requests/${id}/approve`,
   ADVANCE_REQUEST_REJECT: (id: number) => `/advance-requests/${id}/reject`,
+  ADVANCE_REQUEST_RESTORE: (id: number) => `/advance-requests/${id}/restore`,
   ADVANCE_SETTLEMENTS: '/advance-settlements',
   ADVANCE_SETTLEMENT_CHECK: (id: number) => `/advance-settlements/${id}/check`,
   ADVANCE_SETTLEMENT_APPROVE: (id: number) => `/advance-settlements/${id}/approve`,

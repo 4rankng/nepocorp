@@ -296,6 +296,38 @@ export async function rejectAdvanceRequest(id: number, rejectedBy: number) {
   });
 }
 
+/**
+ * Undo a rejection: REJECTED → PENDING (kanban 101026013000).
+ *
+ * A rejected request used to be a dead end — approve() refuses any non-PENDING
+ * row, so a manager who rejected by mistake had no way back. This mirrors
+ * `rejectAdvanceRequest`'s guard and optimistic-concurrency check, and clears
+ * the decision columns so the row looks freshly pending again. No ledger entry
+ * is written here, exactly as rejection writes none.
+ */
+export async function restoreAdvanceRequest(id: number) {
+  return db.transaction(async (tx) => {
+    const [request] = await tx.select()
+      .from(s.advanceRequests)
+      .where(eq(s.advanceRequests.id, id))
+      .for('update');
+    if (!request) throw new AdvanceError(404, 'Advance request not found');
+    if (request.status !== 'REJECTED') {
+      throw new AdvanceError(400, `Cannot restore request with status ${request.status}`);
+    }
+
+    const now = new Date();
+    const [updated] = await tx.update(s.advanceRequests)
+      .set({ status: 'PENDING', approvedBy: null, approvedAt: null, updatedAt: now })
+      .where(and(eq(s.advanceRequests.id, id), eq(s.advanceRequests.status, 'REJECTED')))
+      .returning();
+    if (!updated) throw new AdvanceError(409, 'Request was modified by another operation');
+
+    const [enriched] = await enrichWithNames([updated]);
+    return enriched;
+  });
+}
+
 export async function createAdvanceSettlement(
   forwarderId: number,
   data: {

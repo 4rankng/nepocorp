@@ -133,6 +133,9 @@ export const forwarderClient = {
   rejectAdvanceRequest: async (id: number) => {
     return api.post(FINANCIAL.ADVANCE_REQUEST_REJECT(id), {});
   },
+  restoreAdvanceRequest: async (id: number) => {
+    return api.post(FINANCIAL.ADVANCE_REQUEST_RESTORE(id), {});
+  },
 
   listAllAdvanceSettlements: async (filters?: { status?: string; dateFrom?: string; dateTo?: string }) => {
     return api.get<{ items: AdvanceSettlementWithRefs[] }>(`${FINANCIAL.ADVANCE_SETTLEMENTS}${toQuery(filters)}`);
