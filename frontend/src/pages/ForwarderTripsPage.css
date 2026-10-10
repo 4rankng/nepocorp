@@ -136,22 +136,9 @@
   color: var(--ink-3, var(--fg-3, #6b7280));
 }
 
-.fwd-trip-filters__date input {
-  font-size: var(--fs-control);
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.85);
-
-  height: var(--control-h);
-  min-height: var(--control-h);
-  color: var(--ink, var(--fg, #111827));
-  outline: none;
-}
-
-.fwd-trip-filters__date input:focus {
-  border-color: var(--accent, #00B14F);
-}
+/* The date fields render through the shared DateInput, whose text field
+   carries the app's standard `.input` styling — nothing page-specific left
+   to override here (kanban 101026101520). */
 
 .fwd-row-legend {
   display: flex;

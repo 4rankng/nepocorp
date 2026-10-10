@@ -10,7 +10,7 @@ import { useForwarderTrips } from '../hooks/useQueries';
 import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { useMonth } from '../hooks/useMonth';
-import { useDebouncedValue } from '../design-system';
+import { useDebouncedValue, DateInput } from '../design-system';
 import { getCalendarMonthRange } from '../lib/calendar-month';
 import './ForwarderTripsPage.css';
 import '../components/shared/HeroKpiRow.css';
@@ -154,22 +154,22 @@ export default function ForwarderTripsPage() {
         <div className="fwd-trip-filters__dates">
           <label className="fwd-trip-filters__date">
             <span>Từ ngày</span>
-            <input
-              type="date"
+            <DateInput
+              label="Từ ngày"
               value={dateFrom}
               min={monthRange.start}
               max={monthRange.end}
-              onChange={e => setDateRange({ monthKey, dateFrom: e.target.value, dateTo })}
+              onChange={iso => setDateRange({ monthKey, dateFrom: iso, dateTo })}
             />
           </label>
           <label className="fwd-trip-filters__date">
             <span>Đến ngày</span>
-            <input
-              type="date"
+            <DateInput
+              label="Đến ngày"
               value={dateTo}
               min={monthRange.start}
               max={monthRange.end}
-              onChange={e => setDateRange({ monthKey, dateFrom, dateTo: e.target.value })}
+              onChange={iso => setDateRange({ monthKey, dateFrom, dateTo: iso })}
             />
           </label>
         </div>

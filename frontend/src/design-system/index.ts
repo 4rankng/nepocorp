@@ -38,5 +38,7 @@ export { SearchableSelect } from './forms/SearchableSelect';
 export type { SearchableSelectOption, SearchableSelectProps } from './forms/SearchableSelect';
 export { NumberField } from './forms/NumberField';
 export type { NumberFieldProps } from './forms/NumberField';
+export { DateInput, isoToDmy, parseDmy } from './forms/DateInput';
+export type { DateInputProps } from './forms/DateInput';
 export { CrudFormModal } from './forms/CrudFormModal';
 export type { CrudFormModalProps } from './forms/CrudFormModal';

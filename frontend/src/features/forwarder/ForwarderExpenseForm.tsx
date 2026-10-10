@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { FormGroup } from '../../components/UI';
+import { DateInput } from '../../design-system';
 import { containerDisplayName, type ForwarderExpenseContainer } from './forwarderContainerLabel';
 
 export interface ExpenseFormState {
@@ -211,11 +212,10 @@ export function ForwarderExpenseForm({
                   />
                 </FormGroup>
                 <FormGroup label="Ngày hóa đơn">
-                  <input
-                    className="input"
-                    type="date"
+                  <DateInput
+                    label="Ngày hóa đơn"
                     value={form.invoiceDate}
-                    onChange={e => setForm(f => ({ ...f, invoiceDate: e.target.value }))}
+                    onChange={iso => setForm(f => ({ ...f, invoiceDate: iso }))}
                   />
                 </FormGroup>
               </>
