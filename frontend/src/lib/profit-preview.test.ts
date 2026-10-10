@@ -8,7 +8,7 @@ describe('getProfitPreviewEmptyMessage', () => {
       distributions: [],
       entity: [],
       undistributedProfit: 0,
-    })).toBe('Chưa có chuyến đã khóa trong quý này để phân phối.');
+    })).toBe('Chưa có chuyến nào được chốt sổ (khóa) trong quý này để phân phối.');
   });
 
   it('does not show an empty state when there are distribution rows', () => {

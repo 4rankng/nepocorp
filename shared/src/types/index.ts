@@ -1518,6 +1518,12 @@ export interface PnlReport {
   otherIncome: number;
   netProfit: number;
   tripCount: number;
+  /**
+   * The locked (chốt sổ) subset of `tripCount` — the P&L covers completed AND
+   * locked trips. Surfaces that label `tripCount` "đã khóa" overstate it and
+   * make the locked-only quarterly distribution look empty (kanban 101026211500).
+   */
+  lockedTripCount?: number;
   trucks: PnlTruck[];
   maintenanceExpensesTotal: number;
   maintenanceExpensesByTruck: Record<number, string>;

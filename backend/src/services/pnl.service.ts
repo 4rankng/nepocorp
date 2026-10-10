@@ -333,6 +333,13 @@ export async function getPnlReport(month: number, year: number) {
       companyExpenses,
       netProfit,
       tripCount: monthTrips.length,
+      /**
+       * The locked (chốt sổ) subset of `tripCount`. The P&L spans completed AND
+       * locked trips, so a surface that says "đã khóa" while counting every
+       * reportable trip makes a quarter of locked trips read as empty
+       * (kanban 101026211500).
+       */
+      lockedTripCount: monthTrips.filter(t => t.status === TripStatus.LOCKED).length,
       maintenanceExpensesTotal: totalMaintenanceExpenses,
       maintenanceExpensesByTruck: maintenanceExpensesByTruckResult,
       maintenanceByComponent: Object.fromEntries(maintenanceByComponent),

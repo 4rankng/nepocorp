@@ -62,6 +62,10 @@ interface DistributionResult {
   }>;
   /** F3 — Σ profit of ownerless trucks (held aside, not distributed). */
   undistributedProfit?: number;
+  /** Trips finished in the quarter but not locked yet — excluded from the plan. */
+  pendingTripCount?: number;
+  /** Σ grossProfit of those not-yet-locked trips. */
+  pendingProfit?: number;
 }
 
 export default function ProfitPage() {
@@ -205,7 +209,11 @@ export default function ProfitPage() {
                 <span className="profit-hero__currency">₫</span>
               </div>
               <div className="profit-hero__sub">
-                Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã khóa trong kỳ
+                {/* The P&L covers completed AND locked trips. Claiming all of
+                    them were "đã khóa" made the locked-only quarterly preview
+                    read as broken (kanban 101026211500). */}
+                Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã ghi nhận trong kỳ
+                {' · '}<strong>{report?.lockedTripCount ?? 0}</strong> đã chốt sổ
               </div>
             </div>
           </div>
@@ -394,8 +402,18 @@ export default function ProfitPage() {
                 <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
                   <h4 style={{ margin: '0 0 10px', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--fg-1)' }}>📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}</h4>
                   <p style={{ margin: '0 0 12px', fontSize: 'var(--fs-body)', color: 'var(--fg-2)' }}>
-                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến</strong>: <strong style={{ color: preview.netProfit < 0 ? 'var(--danger)' : undefined }}>{formatVND(preview.netProfit)}</strong>
+                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến đã chốt sổ (khóa)</strong>: <strong style={{ color: preview.netProfit < 0 ? 'var(--danger)' : undefined }}>{formatVND(preview.netProfit)}</strong>
                   </p>
+
+                  {(preview.pendingTripCount ?? 0) > 0 && (
+                    // Explains a 0 ₫ quarter on a month that shows trips: they
+                    // finished but were never locked, and only locked trips are
+                    // distributable (kanban 101026211500).
+                    <div style={{ marginBottom: 10, padding: 10, background: 'var(--bg-2)', color: 'var(--fg-2)', borderRadius: 6, fontSize: 'var(--fs-body)' }}>
+                      Quý này còn <strong>{preview.pendingTripCount}</strong> chuyến đã hoàn thành nhưng <strong>chưa chốt sổ</strong>
+                      {preview.pendingProfit != null && <> (lợi nhuận gộp {formatVND(preview.pendingProfit)})</>} — chỉ chuyến đã chốt sổ mới được phân phối.
+                    </div>
+                  )}
 
                   {(preview.undistributedProfit ?? 0) > 0 && (
                     <div style={{ marginBottom: 10, padding: 10, background: 'var(--warn-soft)', color: 'var(--warn)', borderRadius: 6, fontSize: 'var(--fs-body)' }}>

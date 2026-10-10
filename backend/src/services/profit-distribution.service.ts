@@ -16,7 +16,7 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, desc, sql, gte, inArray } from 'drizzle-orm';
+import { eq, and, isNull, isNotNull, desc, sql, gte, inArray } from 'drizzle-orm';
 import { TripStatus } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { localDateStr, quarterDateRange, resolveTruckCapSnapshot } from './reporting-shared';
@@ -55,6 +55,15 @@ export interface DistributionPlan {
   perTruck: PerTruckDistribution[];
   /** Σ profit of ownerless trucks (profit but no truck_cap_table owners). */
   undistributedProfit: number;
+  /**
+   * Trips that finished inside the quarter but are NOT chốt sổ (LOCKED) yet, so
+   * they are excluded from the plan. Reported so a quarter that legitimately
+   * holds nothing to distribute can say so instead of looking broken while the
+   * month view shows trips (kanban 101026211500).
+   */
+  pendingTripCount: number;
+  /** Σ grossProfit of those not-yet-locked trips. */
+  pendingProfit: number;
 }
 
 /**
@@ -110,6 +119,8 @@ export async function distributeProfit(quarter: number, year: number) {
     perTruck: plan.perTruck,
     entity: plan.entity,
     undistributedProfit: plan.undistributedProfit,
+    pendingTripCount: plan.pendingTripCount,
+    pendingProfit: plan.pendingProfit,
   };
 }
 
@@ -128,6 +139,8 @@ export async function previewDistribution(quarter: number, year: number) {
     perTruck: plan.perTruck,
     entity: plan.entity,
     undistributedProfit: plan.undistributedProfit,
+    pendingTripCount: plan.pendingTripCount,
+    pendingProfit: plan.pendingProfit,
   };
 }
 
@@ -194,6 +207,23 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
     ),
   );
 
+  // Finished-but-not-locked trips in the same window. They carry revenue and
+  // cost already, but their figures are not frozen, so they are NOT part of the
+  // distributable plan — only counted so the UI can explain the difference.
+  const pendingTrips = await db.select({ grossProfit: s.trips.grossProfit })
+    .from(s.trips)
+    .where(
+      and(
+        eq(s.trips.status, TripStatus.COMPLETED),
+        isNotNull(s.trips.truckId),
+        isNull(s.trips.deletedAt),
+        gte(s.trips.departureDate, qStart),
+        sql`${s.trips.departureDate} < ${qEnd}`,
+      ),
+    );
+  const pendingTripCount = pendingTrips.length;
+  const pendingProfit = pendingTrips.reduce((sum, t) => sum + parseFloat(t.grossProfit || '0'), 0);
+
   // Σ LOCKED grossProfit per truck (D5 — read stored value, never recompute).
   const profitByTruck = new Map<number, number>();
   let tripCount = 0;
@@ -211,7 +241,10 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
   // thrown when there were zero entity-wide partners; here the honest answer
   // is an empty plan with zero undistributed profit.
   if (truckIds.length === 0) {
-    return { netProfit: 0, tripCount, distributions: [], entity: [], perTruck: [], undistributedProfit: 0 };
+    return {
+      netProfit: 0, tripCount, distributions: [], entity: [], perTruck: [], undistributedProfit: 0,
+      pendingTripCount, pendingProfit,
+    };
   }
 
   // Load all per-vehicle cap rows for the profit-bearing trucks, scoped once.
@@ -292,5 +325,5 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
     .map(([partnerName, amount]) => ({ partnerName, amount }))
     .sort((a, b) => b.amount - a.amount);
 
-  return { netProfit, tripCount, distributions, entity, perTruck, undistributedProfit };
+  return { netProfit, tripCount, distributions, entity, perTruck, undistributedProfit, pendingTripCount, pendingProfit };
 }
