@@ -138,7 +138,7 @@ export function FuelAllocationEditor() {
         <div className="fuel-allocation-row fuel-allocation-row--head" role="row">
           <span role="columnheader">Nơi đổ dầu</span>
           <span role="columnheader" className="fuel-allocation-column-liters">Số lít</span>
-          <span role="columnheader" className="fuel-allocation-column-price">Đơn giá (đ/lít)</span>
+          <span role="columnheader" className="fuel-allocation-column-price">Đơn giá (₫/lít)</span>
           <span role="columnheader" aria-hidden="true" />
         </div>
         {form.fuelAllocations.map((allocation) => {
@@ -213,7 +213,7 @@ export function FuelAllocationEditor() {
                       value={allocation.unitPrice ?? ''}
                       onChange={event => setUnitPrice(allocation._key, event.target.value)}
                     />
-                    <span aria-hidden="true">đ</span>
+                    <span aria-hidden="true">₫</span>
                   </div>
                 ) : (
                   <p
@@ -227,7 +227,7 @@ export function FuelAllocationEditor() {
                         {/* Price on its own line: the column is ~176px wide and the
                             full sentence used to wrap mid-phrase (kanban 20260921_23). */}
                         <span className="fuel-allocation-price-default__value">
-                          <Money value={defaultUnitPrice} noUnit /> đ/lít
+                          <Money value={defaultUnitPrice} noUnit /> ₫/lít
                         </span>
                         <span className="fuel-allocation-price-default__source">{defaultUnitPriceSource}</span>
                       </>

@@ -29,19 +29,19 @@ export function FuelSection() {
 
   const unitPriceField = (
     <div className="field">
-      <label style={labelStyle}>Đơn giá thực tế (đ/lít)</label>
+      <label style={labelStyle}>Đơn giá thực tế (₫/lít)</label>
       <InputWithPrefix
         id="fuelActualUnitPrice"
         placeholder="Để trống = dùng giá cấu hình"
         value={fuelActualUnitPrice}
         onChange={setFuelActualUnitPrice}
-        prefix="đ"
+        prefix="₫"
         type="money"
         mono
         style={{ width: "100%" }}
       />
       <p className="tc-field-hint">
-        Giá cấu hình áp dụng: {configPrice} đ/lít
+        Giá cấu hình áp dụng: {configPrice} ₫/lít
       </p>
     </div>
   );

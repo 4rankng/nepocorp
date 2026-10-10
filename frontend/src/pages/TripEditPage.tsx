@@ -378,7 +378,7 @@ export default function TripEditPage() {
                           value={form.externalFreightCost}
                           onChange={form.setExternalFreightCost}
                           placeholder="VD: 5.000.000"
-                          prefix="đ"
+                          prefix="₫"
                           type="money"
                           mono
                         />
@@ -425,23 +425,23 @@ export default function TripEditPage() {
                   <CardSection number={4} title="Doanh thu &amp; Hoa hồng" subtitle="Doanh thu đóng/trả cont, kết hợp và hoa hồng">
                     <div className="tc-field-row tc-field-row--2">
                       <div className="tc-field">
-                        <label className="tc-field-label">Doanh thu đóng/ trả hàng (đ)</label>
+                        <label className="tc-field-label">Doanh thu đóng/ trả hàng (₫)</label>
                         <InputWithPrefix
                           placeholder="VD: 4.200.000"
                           value={form.revenueEmptyReturn}
                           onChange={form.setRevenueEmptyReturn}
-                          prefix="đ"
+                          prefix="₫"
                           type="money"
                           mono
                         />
                       </div>
                       <div className="tc-field">
-                        <label className="tc-field-label">Doanh thu kết hợp (đ)</label>
+                        <label className="tc-field-label">Doanh thu kết hợp (₫)</label>
                         <InputWithPrefix
                           placeholder="VD: 2.000.000"
                           value={form.revenueCombine}
                           onChange={form.setRevenueCombine}
-                          prefix="đ"
+                          prefix="₫"
                           type="money"
                           mono
                         />
@@ -449,12 +449,12 @@ export default function TripEditPage() {
                     </div>
                     <div className="tc-field-row">
                       <div className="tc-field">
-                        <label className="tc-field-label">Hoa hồng khách hàng (đ)</label>
+                        <label className="tc-field-label">Hoa hồng khách hàng (₫)</label>
                         <InputWithPrefix
                           placeholder="0"
                           value={form.customerCommission}
                           onChange={form.setCustomerCommission}
-                          prefix="đ"
+                          prefix="₫"
                           type="money"
                           mono
                         />

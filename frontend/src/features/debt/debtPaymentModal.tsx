@@ -70,7 +70,7 @@ export function DebtPaymentModal({
         </div>
         <div className="field">
           <label htmlFor="pay-amount" style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
-            Số tiền nhận (đ) <span style={{ color: 'var(--danger)' }}>*</span>
+            Số tiền nhận (₫) <span style={{ color: 'var(--danger)' }}>*</span>
           </label>
           <input
             id="pay-amount"

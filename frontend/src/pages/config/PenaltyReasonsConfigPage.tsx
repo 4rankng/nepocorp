@@ -408,7 +408,7 @@ export default function PenaltyReasonsConfigPage() {
             <div className="kpi__icon kpi--success"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg></div>
           </div>
           <div className="kpi__value" style={{ fontFamily: 'var(--font-mono)' }}>
-            {fmt(totalAmount)}<span className="kpi__value-unit">đ</span>
+            {fmt(totalAmount)}<span className="kpi__value-unit">₫</span>
           </div>
           <div className="kpi__meta">Đã ghi nhận trong tháng</div>
         </div>
@@ -512,7 +512,7 @@ export default function PenaltyReasonsConfigPage() {
                 <div className="pr-card-foot">
                   <div className="pr-fine">
                     <div className="k">Mức phạt mặc định</div>
-                    <div className="v">{fmt(Number(d.defaultAmount))}<span className="cur">đ</span></div>
+                    <div className="v">{fmt(Number(d.defaultAmount))}<span className="cur">₫</span></div>
                   </div>
                   <div className={`pr-usage ${count === 0 ? 'zero' : ''}`}>
                     <div className="k">Áp dụng tháng này</div>

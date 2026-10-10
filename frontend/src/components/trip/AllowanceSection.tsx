@@ -49,23 +49,23 @@ export function AllowanceSection() {
 
       <div className="as-row">
         <div className="field">
-          <label className="as-field-label">Tổng tiền đi đường (đ)</label>
+          <label className="as-field-label">Tổng tiền đi đường (₫)</label>
           <InputWithPrefix
             value={tollsAddition}
             onChange={setTollsAddition}
             placeholder="VD: 2.700.000"
-            prefix="đ"
+            prefix="₫"
             mono
             type="money"
           />
         </div>
         <div className="field">
-          <label className="as-field-label">Tiền vé (công ty) đã thanh toán (đ)</label>
+          <label className="as-field-label">Tiền vé (công ty) đã thanh toán (₫)</label>
           <InputWithPrefix
             value={tollsDiscount}
             onChange={setTollsDiscount}
             placeholder="VD: 400.000"
-            prefix="đ"
+            prefix="₫"
             mono
             type="money"
           />
@@ -90,7 +90,7 @@ export function AllowanceSection() {
             const salary = Number(driverSalary) || 0;
             const shift = Number(vehicleShiftAllowance) || 0;
             return Math.max(0, roadAllowance + salary + shift).toLocaleString("vi-VN");
-          })()} đ
+          })()} ₫
         </span>
       </div>
 
@@ -126,19 +126,19 @@ export function AllowanceSection() {
 
       <div className="as-row">
         <div className="field">
-          <label className="as-field-label">Điều chỉnh tiền đi đường (đ)</label>
+          <label className="as-field-label">Điều chỉnh tiền đi đường (₫)</label>
           <div className="as-input-wrapper">
             <InputWithPrefix
               value={roadAllowanceOverride}
               onChange={setRoadAllowanceOverride}
               placeholder="Để trống = tự tính"
-              prefix="đ"
+              prefix="₫"
               mono
               type="money"
             />
             {computedRoadAllowanceHint !== null && (
               <div className="as-helper">
-                Tự tính: {computedRoadAllowanceHint.toLocaleString("vi-VN")} đ
+                Tự tính: {computedRoadAllowanceHint.toLocaleString("vi-VN")} ₫
                 {roadAllowanceOverride && Number(roadAllowanceOverride) !== computedRoadAllowanceHint && (
                   <span className="as-inline-warning">
                     Đã điều chỉnh
@@ -149,12 +149,12 @@ export function AllowanceSection() {
           </div>
         </div>
         <div className="field">
-          <label className="as-field-label">Tiền lương lái xe (đ)</label>
+          <label className="as-field-label">Tiền lương lái xe (₫)</label>
           <InputWithPrefix
             value={driverSalary}
             onChange={setDriverSalary}
             placeholder="VD: 850.000"
-            prefix="đ"
+            prefix="₫"
             mono
             type="money"
           />
@@ -163,13 +163,13 @@ export function AllowanceSection() {
 
       <div className="as-row">
         <div className="field">
-          <label className="as-field-label">Trả hàng 2 điểm (đ)</label>
+          <label className="as-field-label">Trả hàng 2 điểm (₫)</label>
           <div className="as-input-wrapper">
             <InputWithPrefix
               value={twoPointDeliveryBonus}
               onChange={setTwoPointDeliveryBonus}
               placeholder={twoPointDeliveryDefault ? twoPointDeliveryDefault.toLocaleString("vi-VN") : "VD: 200.000"}
-              prefix="đ"
+              prefix="₫"
               mono
               type="money"
             />
@@ -177,13 +177,13 @@ export function AllowanceSection() {
           </div>
         </div>
         <div className="field">
-          <label className="as-field-label">Lưu ca xe (đ)</label>
+          <label className="as-field-label">Lưu ca xe (₫)</label>
           <div className="as-input-wrapper">
             <InputWithPrefix
               value={vehicleShiftAllowance}
               onChange={setVehicleShiftAllowance}
               placeholder={vehicleShiftDefault ? vehicleShiftDefault.toLocaleString("vi-VN") : "VD: 200.000"}
-              prefix="đ"
+              prefix="₫"
               mono
               type="money"
             />
@@ -194,19 +194,19 @@ export function AllowanceSection() {
 
       <div className="as-row">
         <div className="field">
-          <label className="as-field-label">Doanh thu đóng/ trả hàng (đ)</label>
+          <label className="as-field-label">Doanh thu đóng/ trả hàng (₫)</label>
           <div className="as-input-wrapper">
             <InputWithPrefix
               value={revenueEmptyReturn}
               onChange={setRevenueEmptyReturn}
               placeholder="VD: 4.200.000"
-              prefix="đ"
+              prefix="₫"
               mono
               type="money"
             />
             {suggestedPrice !== null && (
               <div className="as-helper">
-                Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString("vi-VN")} đ{Number(containerCount) > 1 ? ` × ${containerCount} cont = ${(suggestedPrice * Number(containerCount)).toLocaleString("vi-VN")} đ` : ''}
+                Giá gợi ý từ bảng giá: {Number(suggestedPrice).toLocaleString("vi-VN")} ₫{Number(containerCount) > 1 ? ` × ${containerCount} cont = ${(suggestedPrice * Number(containerCount)).toLocaleString("vi-VN")} ₫` : ''}
                 {revenueEmptyReturn && Number(revenueEmptyReturn) !== suggestedPrice * Number(containerCount) && (
                   <span className="as-inline-warning">
                     Giá đã điều chỉnh
@@ -217,12 +217,12 @@ export function AllowanceSection() {
           </div>
         </div>
         <div className="field">
-          <label className="as-field-label">Doanh thu kết hợp (đ)</label>
+          <label className="as-field-label">Doanh thu kết hợp (₫)</label>
           <InputWithPrefix
             value={revenueCombine}
             onChange={setRevenueCombine}
             placeholder="VD: 2.000.000"
-            prefix="đ"
+            prefix="₫"
             mono
             type="money"
           />
@@ -231,12 +231,12 @@ export function AllowanceSection() {
 
       <div className="as-row">
         <div className="field">
-          <label className="as-field-label">Hoa hồng chi KH (đ)</label>
+          <label className="as-field-label">Hoa hồng chi KH (₫)</label>
           <InputWithPrefix
             value={customerCommission}
             onChange={setCustomerCommission}
             placeholder="0"
-            prefix="đ"
+            prefix="₫"
             mono
             type="money"
           />
@@ -279,8 +279,8 @@ export function AllowanceSection() {
             <div className="as-helper">
               {driverBaseSalary > 0
                 ? tripWageDays && Number(tripWageDays) > 0
-                  ? `${tripWageDays} ngày = ${computeTripDriverSalary(driverBaseSalary, Number(tripWageDays)).toLocaleString('vi-VN')} đ`
-                  : `1 ngày = ${computeTripDriverSalary(driverBaseSalary, 1).toLocaleString('vi-VN')} đ`
+                  ? `${tripWageDays} ngày = ${computeTripDriverSalary(driverBaseSalary, Number(tripWageDays)).toLocaleString('vi-VN')} ₫`
+                  : `1 ngày = ${computeTripDriverSalary(driverBaseSalary, 1).toLocaleString('vi-VN')} ₫`
                 : 'Chưa cấu hình lương cơ bản cho lái xe'}
             </div>
           </div>

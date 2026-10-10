@@ -36,7 +36,7 @@ function DashboardStat({ tone, icon, label, delta, value, description }: Dashboa
           {delta}
         </div>
         <div className="d-stat-value val">
-          <span>{value}</span> <i>đ</i>
+          <span>{value}</span> <i>₫</i>
         </div>
         <div className="d-stat-desc foot">{description}</div>
       </div>
@@ -80,7 +80,7 @@ export function DashboardKpiRow({
         label={`Doanh thu · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
         delta={<DeltaPill mom={revenueMoM} />}
         value={fmtVN(revenue)}
-        description={<>Tháng trước · {formatNumber(prevRevenue)} đ</>}
+        description={<>Tháng trước · {formatNumber(prevRevenue)} ₫</>}
       />
       <DashboardStat
         tone="cost"

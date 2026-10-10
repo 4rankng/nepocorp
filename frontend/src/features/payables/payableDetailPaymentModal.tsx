@@ -48,7 +48,7 @@ export function PayablePaymentModal({
       }
     >
       <div className="field">
-        <label htmlFor="payment-amount">Số tiền (đ) *</label>
+        <label htmlFor="payment-amount">Số tiền (₫) *</label>
         <input
           id="payment-amount"
           type="number"

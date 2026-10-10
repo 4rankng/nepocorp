@@ -79,7 +79,7 @@ export default function FuelConfigPage() {
             <p className="cfg-field-hint">Số lít bổ sung thêm mặc định cho mỗi chuyến.</p>
           </div>
           <div className="field" id="fuel-unit-price-field">
-            <label htmlFor="fuel-unit-price">Đơn giá nhiên liệu hiện hành (đ/lít)</label>
+            <label htmlFor="fuel-unit-price">Đơn giá nhiên liệu hiện hành (₫/lít)</label>
             <input id="fuel-unit-price" name="unitPrice" className="input" type="number" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="VD: 23000" />
           </div>
         </div>

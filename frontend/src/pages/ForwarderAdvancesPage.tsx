@@ -207,7 +207,7 @@ export default function ForwarderAdvancesPage() {
 
           <form onSubmit={handleSubmit}>
             <div className="fadv-form-panel__fields">
-              <FormGroup label="Số tiền (đ)">
+              <FormGroup label="Số tiền (₫)">
                 <input
                   type="number"
                   min={1}

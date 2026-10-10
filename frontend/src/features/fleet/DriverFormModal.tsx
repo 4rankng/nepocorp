@@ -82,7 +82,7 @@ export function DriverFormModal({ saving, item, trucks, onsave, oncancel, isOpen
               />
             </div>
             <div className="field fleet-form__field">
-              <label htmlFor="driver-salary">Lương cơ bản (đ)</label>
+              <label htmlFor="driver-salary">Lương cơ bản (₫)</label>
               <input
                 id="driver-salary"
                 className="input"

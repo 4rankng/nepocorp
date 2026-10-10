@@ -95,11 +95,11 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
       <div className="tc-form-row">
         <div className="field">
           <label>Tổng tiền đi đường</label>
-          <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="2.700.000" prefix="đ" mono type="money" />
+          <InputWithPrefix value={form.tollsAddition} onChange={form.setTollsAddition} placeholder="2.700.000" prefix="₫" mono type="money" />
         </div>
         <div className="field">
           <label>Tiền vé (công ty) đã thanh toán</label>
-          <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="400.000" prefix="đ" mono type="money" />
+          <InputWithPrefix value={form.tollsDiscount} onChange={form.setTollsDiscount} placeholder="400.000" prefix="₫" mono type="money" />
         </div>
         <div className="field">
           <label>Số trạm thu phí</label>
@@ -125,7 +125,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
             const salary = Number(form.driverSalary) || 0;
             const shift = Number(form.vehicleShiftAllowance) || 0;
             return Math.max(0, roadAllowance + salary + shift).toLocaleString("vi-VN");
-          })()} đ
+          })()} ₫
         </span>
       </div>
 
@@ -140,7 +140,7 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
         </div>
         <div className="field">
           <label>Tiền lương lái xe</label>
-          <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850.000" prefix="đ" mono type="money" />
+          <InputWithPrefix value={form.driverSalary} onChange={form.setDriverSalary} placeholder="850.000" prefix="₫" mono type="money" />
         </div>
       </div>
 
@@ -158,29 +158,29 @@ export function FuelTollsRevenueCard({ collapsible, defaultCollapsed }: FuelToll
           per row, and no field ever sits alone with empty space beside it. */}
       <div className="tc-form-row" style={{ marginTop: 16 }}>
         <div className="field">
-          <label>Trả hàng 2 điểm (đ)</label>
-          <InputWithPrefix value={form.twoPointDeliveryBonus} onChange={form.setTwoPointDeliveryBonus} placeholder="200.000" prefix="đ" mono type="money" />
+          <label>Trả hàng 2 điểm (₫)</label>
+          <InputWithPrefix value={form.twoPointDeliveryBonus} onChange={form.setTwoPointDeliveryBonus} placeholder="200.000" prefix="₫" mono type="money" />
         </div>
         <div className="field">
-          <label>Lưu ca xe (đ)</label>
-          <InputWithPrefix value={form.vehicleShiftAllowance} onChange={form.setVehicleShiftAllowance} placeholder="200.000" prefix="đ" mono type="money" />
+          <label>Lưu ca xe (₫)</label>
+          <InputWithPrefix value={form.vehicleShiftAllowance} onChange={form.setVehicleShiftAllowance} placeholder="200.000" prefix="₫" mono type="money" />
         </div>
         <div className="field">
           <label>Doanh thu đóng/ trả hàng</label>
-          <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4.200.000" prefix="đ" mono type="money" />
+          <InputWithPrefix value={form.revenueEmptyReturn} onChange={form.setRevenueEmptyReturn} placeholder="4.200.000" prefix="₫" mono type="money" />
           {form.suggestedPrice !== null && (
             <div style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', marginTop: 4 }}>
-              Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} đ{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} đ` : ''}
+              Gợi ý từ bảng giá: {form.suggestedPrice.toLocaleString('vi-VN')} ₫{Number(form.containerCount) > 1 ? ` × ${form.containerCount} cont = ${(form.suggestedPrice * Number(form.containerCount)).toLocaleString('vi-VN')} ₫` : ''}
             </div>
           )}
         </div>
         <div className="field">
           <label>Doanh thu kết hợp</label>
-          <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2.000.000" prefix="đ" mono type="money" />
+          <InputWithPrefix value={form.revenueCombine} onChange={form.setRevenueCombine} placeholder="2.000.000" prefix="₫" mono type="money" />
         </div>
         <div className="field">
-          <label>Hoa hồng khách hàng (đ)</label>
-          <InputWithPrefix value={form.customerCommission} onChange={form.setCustomerCommission} placeholder="0" prefix="đ" mono type="money" />
+          <label>Hoa hồng khách hàng (₫)</label>
+          <InputWithPrefix value={form.customerCommission} onChange={form.setCustomerCommission} placeholder="0" prefix="₫" mono type="money" />
           <div className="tc-field-hint">
             Trừ trực tiếp vào doanh thu chuyến. Mặc định 0 = không có hoa hồng.
           </div>

@@ -1,5 +1,5 @@
 /**
- * Sanity guard for the trip form's "Đơn giá thực tế" (đ/lít) field.
+ * Sanity guard for the trip form's "Đơn giá thực tế" (₫/lít) field.
  *
  * `computeTripTotals` derives `totalFuelCost = liters × price`, and the trip
  * lock books exactly that as a fuel payable. A fat-fingered pump price — 225
@@ -13,5 +13,5 @@
  */
 export function fuelPriceSanityError(actualPrice: number | null | undefined): string | null {
   if (actualPrice == null || actualPrice <= 0 || actualPrice >= 1000) return null;
-  return `Đơn giá thực tế ${actualPrice.toLocaleString('vi-VN')} đ/lít có vẻ sai. Kiểm tra lại (đơn giá dầu thường trên 10.000 đ/lít).`;
+  return `Đơn giá thực tế ${actualPrice.toLocaleString('vi-VN')} ₫/lít có vẻ sai. Kiểm tra lại (đơn giá dầu thường trên 10.000 ₫/lít).`;
 }

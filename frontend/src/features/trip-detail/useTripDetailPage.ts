@@ -228,7 +228,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 422) {
         const confirmed = await confirm(
-          'Doanh thu chuyến đi này bằng 0 đ. Bạn có chắc chắn muốn khóa chuyến với doanh thu bằng 0?'
+          'Doanh thu chuyến đi này bằng 0 ₫. Bạn có chắc chắn muốn khóa chuyến với doanh thu bằng 0?'
         );
         if (confirmed) {
           setActionLoading(true);

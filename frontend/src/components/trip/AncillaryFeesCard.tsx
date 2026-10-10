@@ -504,7 +504,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                       value={form.buyAmount}
                       onChange={handleBuyAmountChange}
                       placeholder="0"
-                      prefix="đ"
+                      prefix="₫"
                       mono
                       type="money"
                     />
@@ -519,7 +519,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                         value={form.sellAmount}
                         onChange={(val) => setForm(f => ({ ...f, sellAmount: val }))}
                         placeholder="0"
-                        prefix="đ"
+                        prefix="₫"
                         mono
                         type="money"
                       />
@@ -533,7 +533,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                           disabled
                           style={{ background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed', paddingRight: 32 }}
                         />
-                        <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 'var(--fs-body)', color: 'var(--fg-3)' }}>đ</span>
+                        <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 'var(--fs-body)', color: 'var(--fg-3)' }}>₫</span>
                       </div>
                     )}
                   </div>

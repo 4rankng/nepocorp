@@ -64,7 +64,7 @@ function DriverFields({ baseSalary, setBaseSalary, socialInsurance, setSocialIns
       <div className="users-form-section__title"><TruckIcon size={12} /> Thông tin lái xe</div>
       <div className="users-form-cards users-form-cards--driver">
         <div className="users-form-card">
-          <FormGroup label="Lương cơ bản (đ)">
+          <FormGroup label="Lương cơ bản (₫)">
             <input
               className="input"
               type="number"
@@ -74,7 +74,7 @@ function DriverFields({ baseSalary, setBaseSalary, socialInsurance, setSocialIns
               placeholder="0"
             />
           </FormGroup>
-          <FormGroup label="BHXH / BHYT (đ)">
+          <FormGroup label="BHXH / BHYT (₫)">
             <input
               className="input"
               type="number"

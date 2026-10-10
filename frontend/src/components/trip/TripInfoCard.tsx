@@ -188,7 +188,7 @@ export function TripInfoCard(props: TripInfoCardProps) {
                 value={form.externalFreightCost}
                 onChange={form.setExternalFreightCost}
                 placeholder="VD: 5.000.000"
-                prefix="đ"
+                prefix="₫"
                 type="money"
                 mono
               />

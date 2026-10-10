@@ -210,7 +210,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
                     {d.baseSalary ? (
                       <span className="fleet-salary">
                         {Number(d.baseSalary).toLocaleString("vi-VN")}
-                        <span className="unit">đ</span>
+                        <span className="unit">₫</span>
                       </span>
                     ) : (
                       <span className="fleet-salary empty">—</span>
@@ -226,7 +226,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
             <FleetStatusLegend maintenance={false} />
             <span style={styles.dotSep}>·</span>
             <span>
-              Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString("vi-VN")} đ</strong>
+              Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString("vi-VN")} ₫</strong>
             </span>
             {unassigned > 0 && (
               <>
@@ -276,7 +276,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
                 {d.baseSalary ? (
                   <div className="m-card__row">
                     <span className="m-card__row-label">Lương CB</span>
-                    <span className="m-card__row-value">{Number(d.baseSalary).toLocaleString("vi-VN")} đ</span>
+                    <span className="m-card__row-value">{Number(d.baseSalary).toLocaleString("vi-VN")} ₫</span>
                   </div>
                 ) : null}
               </div>
@@ -288,7 +288,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
             <FleetStatusLegend maintenance={false} />
             <span style={styles.dotSep}>·</span>
             <span>
-              Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString("vi-VN")} đ</strong>
+              Tổng quỹ lương: <strong style={styles.salaryMono}>{totalSalary.toLocaleString("vi-VN")} ₫</strong>
             </span>
             {unassigned > 0 && (
               <>
@@ -335,7 +335,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
               value: d.baseSalary ? (
                 <span className="fleet-salary">
                   {Number(d.baseSalary).toLocaleString("vi-VN")}
-                  <span className="unit">đ</span>
+                  <span className="unit">₫</span>
                 </span>
               ) : (
                 <span className="fleet-salary empty">—</span>

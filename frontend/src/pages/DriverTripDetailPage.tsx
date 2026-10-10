@@ -231,7 +231,7 @@ export default function DriverTripDetailPage() {
             </div>
             {trip.hasReturnCargo && (
               <div className="return-cargo-badge">
-                <span>✓</span> Chuyến về có hàng (+300.000 đ)
+                <span>✓</span> Chuyến về có hàng (+300.000 ₫)
               </div>
             )}
           </div>

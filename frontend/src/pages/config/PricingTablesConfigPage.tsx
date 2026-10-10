@@ -34,7 +34,7 @@ function PricingForm({ saving, item, onsave, oncancel, customers, routes }: {
         </Field>
       </div>
       <div style={{ flex: 1, minWidth: 120 }}>
-        <Field label="Giá (đ)"><input className="input" type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" /></Field>
+        <Field label="Giá (₫)"><input className="input" type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" /></Field>
       </div>
       <FormActions saving={saving} isedit={!!item} oncancel={oncancel} onsave={() => { if (!customerId || !routeId || !price) return; onsave({ customerId: customerId, routeId: routeId, price: Number(price) }); }} />
     </InlineForm>

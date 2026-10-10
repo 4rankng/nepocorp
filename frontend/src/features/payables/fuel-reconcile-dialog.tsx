@@ -228,7 +228,7 @@ export function FuelReconcileDialog({
 
   const toneClass = (tone: 'ok' | 'warn' | 'bad' | 'muted') =>
     `frd-tone frd-tone--${tone}`;
-  const money = (n: number | null) => (n === null ? '—' : `${Math.round(n).toLocaleString('vi-VN')} đ`);
+  const money = (n: number | null) => (n === null ? '—' : `${Math.round(n).toLocaleString('vi-VN')} ₫`);
   const litres = (n: number | null) => (n === null ? '—' : n.toLocaleString('vi-VN'));
 
   const summary = result?.summary;

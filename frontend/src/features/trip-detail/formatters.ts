@@ -9,10 +9,10 @@ export function fmtVND(n: number | null | undefined): string {
   return Math.round(n).toLocaleString('vi-VN');
 }
 
-/** Format a number as Vietnamese currency with đ suffix. */
+/** Format a number as Vietnamese currency with ₫ suffix. */
 export function fmtVNDWithUnit(n: number | null | undefined): string {
-  if (n == null) return '— đ';
-  return `${Math.round(n).toLocaleString('vi-VN')} đ`;
+  if (n == null) return '— ₫';
+  return `${Math.round(n).toLocaleString('vi-VN')} ₫`;
 }
 
 /** Format a number as Vietnamese currency with ₫ symbol. */

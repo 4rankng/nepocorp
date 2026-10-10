@@ -367,7 +367,7 @@ export function PenaltyTable({
                         <td>
                           <span className={`penalty-money ${moneyClass}`}>
                             {/* formatCurrency already appends the ₫ unit; a second
-                                <span class="unit">đ</span> here rendered "900.000 ₫đ"
+                                <span class="unit">₫</span> here rendered "900.000 ₫đ"
                                 (kanban 20260921_24). */}
                             {formatCurrency(d.fineYTD)}
                           </span>
@@ -471,7 +471,7 @@ export function PenaltyTable({
                 <div className="penalty-empty-divider" />
                 <div className="penalty-empty-stat">
                   <div className="lbl">Tiết kiệm phạt</div>
-                  <div className="val pos">~{formatCurrency(ytdTotal)}<span className="u">đ</span></div>
+                  <div className="val pos">~{formatCurrency(ytdTotal)}</div>
                 </div>
               </div>
               <div className="penalty-empty-actions">

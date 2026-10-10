@@ -325,7 +325,7 @@ export default function TripDetailPage() {
           </div>
         )}
         <div className="field">
-          <label htmlFor="adjustAmount">Số tiền điều chỉnh (đ) *</label>
+          <label htmlFor="adjustAmount">Số tiền điều chỉnh (₫) *</label>
           <input id="adjustAmount" name="adjustAmount" className="input" type="number" placeholder="VD: -500000 hoặc 300000"
             value={ui.adjustAmount} onChange={e => page.setAdjustAmount(e.target.value)} />
         </div>

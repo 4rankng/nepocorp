@@ -122,7 +122,7 @@ export function ExpenseDetailFields({
               )}
 
               <div className="expense-group">
-                <label htmlFor="amount" className="expense-label">Số tiền (đ) <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <label htmlFor="amount" className="expense-label">Số tiền (₫) <span style={{ color: 'var(--danger)' }}>*</span></label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"

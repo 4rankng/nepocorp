@@ -30,7 +30,7 @@ export function PayableSummarySection({
           <div className="dd-sum-label">TỔNG CỘNG NỢ</div>
           <div className={`dd-sum-total ${hasDebt ? '' : ' dd-sum-total--clear'}`}>
             {/* `moneyParts` splits the amount and its unit so the unit can be
-                set smaller. The old inline `.replace(' ₫', '')` + `<span>đ</span>`
+                set smaller. The old inline `.replace(' ₫', '')` + `<span>₫</span>`
                 ran the two together with no space and swapped the ₫ sign for a
                 plain "đ", so this card read "331.451.555đ" while every table
                 read "331.451.555 ₫" (kanban 091026235520). */}
