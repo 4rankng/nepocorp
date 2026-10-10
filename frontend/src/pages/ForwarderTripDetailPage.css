@@ -11,7 +11,9 @@
   margin: 0 0 16px;
   padding: 12px 14px;
   border: 1px solid var(--border-1);
-  border-left: 3px solid var(--warning, #D97706);
+  /* Accent bar as an inset shadow: the UI contract bans full-height colored
+     border-left rules (kanban 101026101510 note). */
+  box-shadow: inset 3px 0 0 var(--warning, #D97706);
   border-radius: 10px;
   background: var(--bg-2, rgba(0, 0, 0, 0.02));
 }
