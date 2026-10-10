@@ -22,8 +22,12 @@ export function useUserMutations(refetch: () => void) {
   const { toast: showToast } = useToast();
 
   const doCreate = useCallback(async (data: CreateData) => {
-    if (!data.password || (!data.username && !data.email && !data.phone)) {
-      setPanelError('Cần ít nhất username/email/SĐT và mật khẩu');
+    // Name the missing field: the old single message ("Cần ít nhất username/email/SĐT
+    // và mật khẩu") was shown even when the password box looked filled, which read as
+    // "creating a user is broken" (kanban 101026095000).
+    if (!data.password) { setPanelError('Chưa nhập mật khẩu'); return; }
+    if (!data.username && !data.email && !data.phone) {
+      setPanelError('Cần ít nhất username, email hoặc số điện thoại');
       return;
     }
     setSaving(true);

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Role } from '@tingting/shared';
 import { AddPanel, EditPanel } from './UserForm';
@@ -74,5 +74,33 @@ describe('assignable roles in the account form', () => {
     authMock.user = { role: 'ACCOUNTANT' };
     openAdd();
     expect(roleOptions()).not.toContain(Role.ADMIN);
+  });
+});
+
+/**
+ * A browser puts its suggested password straight into the box, without firing
+ * React's onChange: the value is on screen but never reaches the form state, so
+ * submitting was answered with "fill in the password" for a field the operator
+ * could see was filled (kanban 101026095000). The field is uncontrolled and read
+ * at submit, so what is on screen is what the API receives.
+ */
+describe('a password that exists only in the DOM', () => {
+  const roleSelect = () => screen.getAllByRole('combobox').find(el =>
+    Array.from(el.querySelectorAll('option')).some(o => o.value === Role.DRIVER))!;
+
+  it('is submitted as typed, without a React change event', async () => {
+    const onSave = vi.fn().mockResolvedValue(true);
+    render(<AddPanel isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={onSave} />);
+
+    fireEvent.change(roleSelect(), { target: { value: Role.ACCOUNTANT } });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'qa.dom.pw' } });
+    const password = screen.getByLabelText('Mật khẩu *') as HTMLInputElement;
+    password.value = 'S7q3Q5Q9';
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0]).toMatchObject({ username: 'qa.dom.pw', password: 'S7q3Q5Q9' });
+    expect(screen.queryByText('Chưa nhập mật khẩu')).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ShieldCheck, Plus, KeyRound, Loader2, Save, User, Eye, EyeOff,
   Mail, Phone, Check, AtSign, Lock, Truck as TruckIcon,
@@ -12,10 +12,13 @@ import { useAuth } from '../../../hooks/useAuth';
 
 // ── Icon Input ─────────────────────────────────────────────────────────────
 
-function IconInput({ id, icon, value, onChange, placeholder, type = 'text', autoComplete, valid, error, rightElement, disabled }: {
+function IconInput({ id, name, icon, value, defaultValue, onChange, placeholder, type = 'text', autoComplete, valid, error, rightElement, disabled, inputRef }: {
   id?: string;
+  name?: string;
   icon: React.ReactNode;
-  value: string;
+  /** Controlled value. Omit together with `defaultValue` to leave the field uncontrolled. */
+  value?: string;
+  defaultValue?: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   type?: string;
@@ -24,15 +27,18 @@ function IconInput({ id, icon, value, onChange, placeholder, type = 'text', auto
   error?: boolean;
   rightElement?: React.ReactNode;
   disabled?: boolean;
+  inputRef?: React.Ref<HTMLInputElement>;
 }) {
   return (
     <div className={`icon-input${valid ? ' icon-input--valid' : ''}${error ? ' icon-input--error' : ''}`}>
       <span className="icon-input__icon">{icon}</span>
       <input
+        ref={inputRef}
         id={id}
+        name={name}
         className="icon-input__field"
         type={type}
-        value={value}
+        {...(value === undefined ? { defaultValue: defaultValue ?? '' } : { value })}
         onChange={onChange}
         placeholder={placeholder}
         autoComplete={autoComplete}
@@ -342,12 +348,23 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
   const [socialInsurance, setSocialInsurance] = useState('');
   const [assignedTruckId, setAssignedTruckId] = useState<number | null>(null);
 
+  // The browser can put a suggested password in the box WITHOUT firing React's
+  // onChange, so the text is on screen but the form state is still empty — the
+  // operator submits and is told to fill in a password they can see is filled
+  // (kanban 101026095000). This one field is therefore uncontrolled and read from
+  // the DOM at submit. The identifier fields stay controlled on purpose: a browser
+  // autofilling the admin's own email into them must NOT be sent.
+  const pwRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (isOpen) {
       setFullName(''); setUsername(''); setEmail('');
       setPhone(''); setRole(''); setRoleTouched(false);
       setPassword(''); setShowPw(false);
       setBaseSalary(''); setSocialInsurance(''); setAssignedTruckId(null);
+      // Uncontrolled field: clear the box itself, state alone would leave the
+      // previous attempt's value on screen.
+      if (pwRef.current) pwRef.current.value = '';
     }
   }, [isOpen]);
 
@@ -361,7 +378,11 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
 
   const handleSubmit = async () => {
     if (!role) { setRoleTouched(true); return; }
-    const payload: CreateData = { fullName, username, email, phone, role, password };
+    // Adopt the box value before validating: an autofilled password lives in the
+    // DOM, not in state (see pwRef above).
+    const typedPassword = pwRef.current?.value ?? password;
+    if (typedPassword !== password) setPassword(typedPassword);
+    const payload: CreateData = { fullName, username, email, phone, role, password: typedPassword };
     if (role === Role.DRIVER) {
       payload.baseSalary = baseSalary;
       payload.socialInsurance = socialInsurance;
@@ -467,9 +488,10 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
           error={pwError ? 'Mật khẩu phải có tối thiểu 6 ký tự' : undefined}
         >
           <IconInput
+            inputRef={pwRef}
+            name="password"
             icon={<Lock size={14} />}
             type={showPw ? 'text' : 'password'}
-            value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="Tối thiểu 6 ký tự"
             autoComplete="new-password"
