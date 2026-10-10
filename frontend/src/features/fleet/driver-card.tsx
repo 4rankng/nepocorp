@@ -7,6 +7,7 @@ import type { Truck as TruckType, Driver } from "@tingting/shared";
 
 // Extracted form modals + shared fleet constants
 import { DriverFormModal, TRUCK_STATUS, DRIVER_STATUS, fleetStyles as styles } from ".";
+import { useFleetDelete } from "./useFleetDelete";
 
 import "../../pages/FleetPage.css";
 
@@ -122,6 +123,7 @@ function DetailModal({ isOpen, title, onClose, details, onEdit, onDelete, deleti
 export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; truckMap: Map<number, TruckType>; crud: ReturnType<typeof useCRUD> }) {
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [driverSearch, setDriverSearch] = useState("");
+  const { requestDelete, confirmDialog } = useFleetDelete(crud.doDelete);
   const totalSalary = drivers.reduce((s, d) => s + (d.baseSalary ? Number(d.baseSalary) : 0), 0);
   const unassigned = drivers.filter((d) => !d.assignedTruckId).length;
   const q = driverSearch.trim().toLowerCase();
@@ -279,6 +281,27 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
                     <span className="m-card__row-value">{Number(d.baseSalary).toLocaleString("vi-VN")} ₫</span>
                   </div>
                 ) : null}
+                <div className="fleet-card-actions">
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewingId(d.id);
+                    }}
+                  >
+                    Xem
+                  </button>
+                  <button
+                    className="btn btn--ghost btn--sm"
+                    style={{ color: "var(--danger)" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void requestDelete(d.id, `lái xe ${d.name}`);
+                    }}
+                  >
+                    Xóa
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -313,6 +336,13 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
           const id = viewingId;
           setViewingId(null);
           if (id != null) crud.setEditingId(id);
+        }}
+        onDelete={() => {
+          const driver = viewingId != null ? drivers.find((x) => x.id === viewingId) : null;
+          if (!driver) return;
+          void requestDelete(driver.id, `lái xe ${driver.name}`).then((deleted) => {
+            if (deleted) setViewingId(null);
+          });
         }}
         details={(() => {
           const d = viewingId != null ? drivers.find((x) => x.id === viewingId) : null;
@@ -357,6 +387,7 @@ export function DriverCard({ drivers, truckMap, crud }: { drivers: Driver[]; tru
         }}
         oncancel={crud.cancelForm}
       />
+      {confirmDialog}
     </Panel>
   );
 }

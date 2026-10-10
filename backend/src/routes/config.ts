@@ -21,7 +21,7 @@ import { createCrudRouter } from './utils/crud-factory';
 import debitNoteTemplatesRouter from './config/debit-note-templates.routes';
 import { ApiError } from '../errors';
 import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice, mirrorCustomerLink, mirrorSupplierLink, syncTrailerFields, validateCustomerUniqueness } from '../services/config.service';
-import { cacheInvalidatePattern } from '../lib/redis';
+import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import { Role } from '@tingting/shared';
 import { requireRoles } from '../middleware/casbin';
 import { installTire, removeTire, disposeTire, transferTire, isHttpError, assertTireSerialAvailable, importTiresFromRows } from '../services/tire.service';
@@ -39,6 +39,7 @@ import { getUser } from '../middleware/auth';
 import { parsePagination } from './utils/pagination';
 import { queryAuditLogs } from '../services/audit-query.service';
 import { getPenaltyStats } from '../services/reporting.service';
+import { softDeleteDriver } from '../services/driver.service';
 
 const router = Router();
 
@@ -152,7 +153,21 @@ router.use('/expense-categories', createCrudRouter(s.expenseCategories, expenseC
 router.use('/debit-note-templates', debitNoteTemplatesRouter);
 router.use('/tire-positions', createCrudRouter(s.tirePositions, tirePositionSchema, { searchableField: 'name' }));
 
-// Drivers — special handling (includes user_id, no delete per spec §4.2)
+// Drivers — special handling (includes user_id). DELETE is owned by a
+// dedicated handler below, not the generic factory: removing a driver must
+// soft-delete the profile AND deactivate its linked login in ONE transaction,
+// which the factory cannot express. The factory keeps `disableDelete` so there
+// is exactly one delete path for this resource.
+// (Spec §4.2 originally forbade delete outright; kanban 101026013020 makes
+// drivers consistent with trucks, which soft-delete.)
+router.delete('/drivers/:id', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  if (!Number.isFinite(id) || id <= 0) throw new ApiError(400, 'ID không hợp lệ');
+  await softDeleteDriver(id);
+  await cacheInvalidate('catalogs:bootstrap');
+  res.json({ ok: true });
+}));
+
 router.use('/drivers', createCrudRouter(s.drivers, driverSchema, {
   searchableField: 'name',
   disableDelete: true,

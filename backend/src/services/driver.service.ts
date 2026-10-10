@@ -388,3 +388,38 @@ export async function getDriverPenalties(driverId: number, dateFrom?: string, da
     .where(and(...conditions))
     .orderBy(desc(s.penalties.date));
 }
+
+/**
+ * Soft-delete a driver profile (kanban 101026013020).
+ *
+ * Deletion NEVER removes the row: `trips`, `driver_work_days`, `penalties` and
+ * `salary_confirmations` all hold a foreign key to `drivers.id`, so a hard
+ * delete would orphan settled history. This mirrors `deleteUser` in
+ * user.service.ts (the /users page path) and the truck delete, which is a
+ * soft delete through the CRUD factory's default. Marking the row deleted hides
+ * it from every catalog list — the CRUD list and the bootstrap cache both
+ * filter `deleted_at IS NULL`.
+ *
+ * When the profile is linked to a login, its `users` row is soft-deleted in
+ * the same transaction, so a removed driver can no longer sign in (otherwise
+ * the login would survive with no driver profile).
+ */
+export async function softDeleteDriver(driverId: number): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [driver] = await tx.select({ id: s.drivers.id, userId: s.drivers.userId })
+      .from(s.drivers)
+      .where(and(eq(s.drivers.id, driverId), isNull(s.drivers.deletedAt)))
+      .limit(1);
+    if (!driver) throw new ApiError(404, 'Không tìm thấy lái xe');
+
+    await tx.update(s.drivers)
+      .set({ deletedAt: sql`now()`, status: 'INACTIVE', updatedAt: sql`now()` })
+      .where(eq(s.drivers.id, driverId));
+
+    if (driver.userId != null) {
+      await tx.update(s.users)
+        .set({ deletedAt: sql`now()`, status: 'INACTIVE', updatedAt: sql`now()` })
+        .where(and(eq(s.users.id, driver.userId), isNull(s.users.deletedAt)));
+    }
+  });
+}
