@@ -33,7 +33,7 @@
  *   npx tsx scripts/repair-stale-payment-statements.ts --document-id 35
  *   npx tsx scripts/repair-stale-payment-statements.ts --supplier-id 10
  */
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db, client } from '../src/db';
 import * as s from '../src/db/schema';
 

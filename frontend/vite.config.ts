@@ -59,4 +59,14 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Vite's 500 kB default flags two known-budget chunks on every build:
+    // `exceljs.min` (~940 kB) is the vendored Excel export library — its own
+    // shared chunk, not part of the first load — and `index` (~790 kB) is the
+    // app shell (react-dom + zod + socket.io-client + shared UI). Route pages
+    // are already lazy-split via lazyPage(). The threshold documents that
+    // budget; cutting below it means replacing exceljs or splitting the shell,
+    // which are scoped tasks of their own.
+    chunkSizeWarningLimit: 1024,
+  },
 });

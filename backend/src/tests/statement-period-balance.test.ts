@@ -23,7 +23,6 @@ let routeId: number;
 let cargoTypeId: number;
 let septTripId: number;
 let augTripId: number;
-let octTripId: number;
 let orphanFuelTripId: number;
 
 const row = (over: Omit<typeof s.ledger.$inferInsert, 'entityType' | 'entityId' | 'balance'>) => db.insert(s.ledger).values({
@@ -64,12 +63,11 @@ before(async () => {
   };
 
   // Opening debt: a pre-period charge left unpaid.
-  // eslint-disable-next-line @typescript-eslint/no-use-before-define
   await row({ timestamp: new Date('2097-06-10T10:00:00Z'), txnType: 'VENDOR_EXPENSE', credit: '900000000', debit: '0', note: 'Nợ mở đầu kỳ' });
   // September activity, net.
   await row({ timestamp: new Date('2097-09-05T10:00:00Z'), txnType: 'FUEL_EXPENSE', txnId: septTripId = await mkTrip('CB-A', '2097-09-05', '100', '265580550'), credit: '265580550', debit: '0', note: '100 lít' });
   // An October charge — proves the live balance moves past the period.
-  await row({ timestamp: new Date('2097-10-05T10:00:00Z'), txnType: 'FUEL_EXPENSE', txnId: octTripId = await mkTrip('CB-B', '2097-10-05', '50', '120000000'), credit: '120000000', debit: '0', note: '50 lít' });
+  await row({ timestamp: new Date('2097-10-05T10:00:00Z'), txnType: 'FUEL_EXPENSE', txnId: await mkTrip('CB-B', '2097-10-05', '50', '120000000'), credit: '120000000', debit: '0', note: '50 lít' });
   // An August trip posted late, inside the September window.
   await row({ timestamp: new Date('2097-09-28T10:00:00Z'), txnType: 'FUEL_EXPENSE', txnId: augTripId = await mkTrip('CB-C', '2097-08-20', '10', '30000000'), credit: '30000000', debit: '0', note: '10 lít' });
   // A trip with fuel and no supplier — never posted to any payable ledger.

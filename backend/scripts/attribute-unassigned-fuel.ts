@@ -25,7 +25,6 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db, client } from '../src/db';
 import * as s from '../src/db/schema';
 import { LedgerService } from '../src/services/ledger.service';
-import { TxnType } from '@tingting/shared';
 
 const APPLY = process.argv.includes('--apply');
 const HAVE_SIGNOFF = process.argv.includes('--i-have-signoff');
