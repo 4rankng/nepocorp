@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { downloadBlob, openBlobInNewTab, printHtml } from './download';
+import { downloadBlob, openBlobInNewTab, printHtml, printSheet, withAutoPrint, PRINT_OUTCOME_TOAST } from './download';
 
 /**
  * The regression these lock down: every export used to revoke the object URL
@@ -108,16 +108,102 @@ describe('printHtml', () => {
     expect(onFallback).not.toHaveBeenCalled();
   });
 
-  it('falls back when the frame cannot print', () => {
+  it('reports a refusal that only surfaces when the sheet has loaded', () => {
     vi.useFakeTimers();
-    const onFallback = vi.fn();
-    printHtml('<p>x</p>', onFallback);
+    const onRefused = vi.fn();
+    expect(printHtml('<p>x</p>', onRefused)).toBe(true);
 
     const iframe = document.querySelector('iframe') as HTMLIFrameElement;
     const win = iframe.contentWindow;
     if (!win) throw new Error('iframe has no contentWindow');
     win.print = () => { throw new Error('blocked'); };
     iframe.dispatchEvent(new Event('load'));
-    expect(onFallback).toHaveBeenCalledTimes(1);
+    expect(onRefused).toHaveBeenCalledTimes(1);
+    expect(document.querySelectorAll('iframe')).toHaveLength(0);
+  });
+});
+
+/**
+ * The freeze these lock down: window.print() is modal, so the tab that calls it
+ * runs no script until the dialog closes. Printing from the app's own tab left
+ * /expenses disabled at "Đang chuẩn bị…" with no dialog and no download, and the
+ * supplier statement's menu closed onto nothing (kanban 101026102000 /
+ * 101026102010). The sheet therefore has to print from a tab of its own, and
+ * only a blocked popup may fall back to the in-page dialog.
+ */
+describe('withAutoPrint', () => {
+  it('opens the dialog from the sheet tab without a second click', () => {
+    const html = withAutoPrint('<!DOCTYPE html><body><h1>Bảng kê</h1></body></html>');
+    expect(html).toContain('<h1>Bảng kê</h1>');
+    expect(html.indexOf('window.print()')).toBeLessThan(html.indexOf('</body>'));
+  });
+
+  it('appends the trigger when the sheet has no body element', () => {
+    const html = withAutoPrint('<h1>Bảng kê</h1>');
+    expect(html).toBe('<h1>Bảng kê</h1><script>window.addEventListener("load",function(){setTimeout(function(){window.print();},150);});</script>');
+  });
+});
+
+describe('printSheet', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:sheet-url');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    document.querySelectorAll('iframe').forEach(f => f.remove());
+  });
+
+  it('prints from its own tab and leaves the app tab alone', () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue({} as unknown as Window);
+
+    expect(printSheet('<html><body>x</body></html>')).toBe('tab');
+    expect(open).toHaveBeenCalledWith('blob:sheet-url', '_blank');
+    // A tab of its own is the whole point: no iframe, so nothing prints in the
+    // app's renderer and the page keeps running.
+    expect(document.querySelectorAll('iframe')).toHaveLength(0);
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the in-page dialog when the tab is blocked, and reports it', () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+
+    const outcome = printSheet('<html><body>x</body></html>');
+
+    expect(outcome).toBe('inline');
+    expect(document.querySelectorAll('iframe')).toHaveLength(1);
+    // The unused URL must not leak.
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:sheet-url');
+  });
+
+  it('reports a blocked export when neither path can print', () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    // No DOM iframe support at all.
+    vi.spyOn(document, 'createElement').mockImplementation(() => { throw new Error('no iframe'); });
+
+    expect(printSheet('<html><body>x</body></html>')).toBe('blocked');
+    expect(PRINT_OUTCOME_TOAST.blocked.kind).toBe('error');
+  });
+
+  it('reports a print the browser refuses after the sheet loaded', () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const onRefused = vi.fn();
+
+    expect(printSheet('<html><body>x</body></html>', onRefused)).toBe('inline');
+    const win = (document.querySelector('iframe') as HTMLIFrameElement).contentWindow;
+    if (!win) throw new Error('iframe has no contentWindow');
+    win.print = () => { throw new Error('blocked'); };
+    (document.querySelector('iframe') as HTMLIFrameElement).dispatchEvent(new Event('load'));
+
+    expect(onRefused).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses a toast per outcome so a failure is never silent', () => {
+    expect(PRINT_OUTCOME_TOAST.tab.message).toMatch(/Lưu thành PDF/);
+    expect(PRINT_OUTCOME_TOAST.inline.message).toMatch(/Lưu thành PDF/);
+    expect(PRINT_OUTCOME_TOAST.blocked.message).toMatch(/Cmd\/Ctrl \+ P/);
   });
 });

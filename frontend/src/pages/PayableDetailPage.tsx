@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatCurrency } from '../lib/format';
-import { downloadBlob, openBlobInNewTab, printHtml } from '../lib/download';
+import { downloadBlob, printSheet, PRINT_OUTCOME_TOAST } from '../lib/download';
 import { TxnType, FINANCIAL } from '@tingting/shared';
 import type {
   SupplierStatement as SupplierStatementType,
@@ -129,14 +129,11 @@ export default function PayableDetailPage() {
       );
       if (format === 'pdf' && !opts.fuel) {
         // The "PDF (In)" endpoint returns a printable HTML sheet, not a PDF.
-        // Print it directly so the browser print dialog opens — and so the
-        // action still works on iOS/PWA, where opening a blob tab is blocked.
-        // Fall back to a tab when an iframe is unavailable (kanban 081026232560).
+        // `printSheet` prints it from a tab of its own — printing from this
+        // page froze the app behind the modal dialog, so the menu closed and
+        // nothing else ever happened (kanban 101026102010).
         const html = await api.getForText(url);
-        const printed = printHtml(html, () => openBlobInNewTab(new Blob([html], { type: 'text/html' })));
-        showToast(printed
-          ? { kind: 'success', message: 'Đã mở hộp thoại in — chọn "Lưu thành PDF" để xuất file .pdf.' }
-          : { kind: 'info', message: 'Đã mở bản xem trước. Dùng Cmd/Ctrl + P để in hoặc lưu thành PDF.' });
+        showToast(PRINT_OUTCOME_TOAST[printSheet(html, () => showToast(PRINT_OUTCOME_TOAST.blocked))]);
         return;
       }
       const blob = await api.getBlob(url);

@@ -24,7 +24,7 @@ import { resolveExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import type { ExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import { buildExpenseListSearchParams } from '../features/expenses/expense-list-query';
 import { downloadCSV, type ColumnType } from '../lib/csv';
-import { printHtml, openBlobInNewTab } from '../lib/download';
+import { printSheet, PRINT_OUTCOME_TOAST } from '../lib/download';
 import { buildPrintableSheetHtml } from '../lib/printSheet';
 import { useToast } from '../components/shared/Toast';
 import './ExpenseListPage.css';
@@ -235,9 +235,10 @@ export default function ExpenseListPage() {
    * Print the same sheet straight from the browser.
    *
    * The expense pages had no print control at all, only the .xlsx export
-   * (kanban 091026235500). Printing goes through `printHtml` rather than opening
-   * a blob tab so the button also works on iOS Safari and inside the installed
-   * PWA, where `window.open` is blocked (kanban 081026232560).
+   * (kanban 091026235500). Printing goes through `printSheet` so the sheet is
+   * printed from a tab of its own: `window.print()` is modal, so printing from
+   * this page froze the app (buttons stayed disabled at "Đang chuẩn bị…", no
+   * dialog, no download — kanban 101026102000).
    */
   const printExpenseSheet = async () => {
     setIsExporting(true);
@@ -253,10 +254,7 @@ export default function ExpenseListPage() {
           totalsColumns: [5],
         },
       );
-      const printed = printHtml(html, () => openBlobInNewTab(new Blob([html], { type: 'text/html' })));
-      showToast(printed
-        ? { kind: 'success', message: 'Đã mở hộp thoại in — chọn "Lưu thành PDF" để xuất file .pdf.' }
-        : { kind: 'info', message: 'Đã mở bản xem trước. Dùng Cmd/Ctrl + P để in hoặc lưu thành PDF.' });
+      showToast(PRINT_OUTCOME_TOAST[printSheet(html, () => showToast(PRINT_OUTCOME_TOAST.blocked))]);
     } catch (err: unknown) {
       // Same silent-failure hole as the .xlsx export above: without this the
       // buttons simply re-enabled and the accountant got no explanation
