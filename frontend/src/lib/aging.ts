@@ -48,3 +48,25 @@ export function normalizeAging(buckets: AgingBucket[]): number[] {
   }
   return amounts;
 }
+
+/**
+ * Index of the OLDEST bucket still carrying a balance (0–3), or -1 when the
+ * customer/supplier owes nothing.
+ *
+ * `> 0` is the app's overdue rule — money sitting in 31–60 / 61–90 / over-90
+ * rather than the current 0–30 bucket — and it is the SAME rule the list, the
+ * detail header and the aging notes read. The detail surfaces used to take the
+ * LARGEST bucket instead, so a customer with 1,3 tỷ current + 674 triệu overdue
+ * had its detail say "Toàn bộ công nợ đang trong hạn 30 ngày" while the list
+ * said "Nợ quá hạn" (kanban 101026203130).
+ *
+ * Overdue-by-bucket and the API's `maxOverdueDays > 30` agree by construction:
+ * `maxOverdueDays` is the age of the oldest still-open invoice, and an invoice
+ * older than 30 days is exactly what lands money outside the current bucket.
+ */
+export function oldestAgingBucketIdx(amounts: readonly number[]): number {
+  for (let i = amounts.length - 1; i >= 0; i--) {
+    if (amounts[i] > 0) return i;
+  }
+  return -1;
+}

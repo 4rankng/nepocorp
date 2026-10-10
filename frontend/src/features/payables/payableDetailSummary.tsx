@@ -7,6 +7,8 @@ interface PayableSummarySectionProps {
   effectiveAging: number[];
   agingTotal: number;
   activeAgingIdx: number;
+  /** Index of the OLDEST bucket carrying a balance; > 0 means overdue. */
+  oldestOverdueIdx: number;
   hasDebt: boolean;
   hasCredit: boolean;
   overpaymentAmount: number;
@@ -18,6 +20,7 @@ export function PayableSummarySection({
   effectiveAging,
   agingTotal,
   activeAgingIdx,
+  oldestOverdueIdx,
   hasDebt,
   hasCredit,
   overpaymentAmount,
@@ -42,9 +45,9 @@ export function PayableSummarySection({
           {hasDebt && (
             <div className="dd-sum-note">
               <AlertTriangle size={17} style={{ color: 'var(--danger)', flexShrink: 0 }} />
-              {activeAgingIdx <= 0
-                ? 'Toàn bộ công nợ đang trong hạn 30 ngày.'
-                : `Có công nợ quá hạn ${AGING_RANGES[activeAgingIdx].label.toLowerCase()} — cần ưu tiên thanh toán.`
+              {oldestOverdueIdx > 0
+                ? `Có công nợ quá hạn ${AGING_RANGES[oldestOverdueIdx].label.toLowerCase()} — cần ưu tiên thanh toán.`
+                : 'Toàn bộ công nợ đang trong hạn 30 ngày.'
               }
             </div>
           )}

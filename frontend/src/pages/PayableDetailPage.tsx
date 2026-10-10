@@ -27,7 +27,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import './DebtDetailPage.css';
 import { payableBillingDocumentEntityType } from './payable-billing-document';
 import { FILTER_OPTIONS, ledgerHeading } from '../features/payables/payableDetailUtils';
-import { normalizeAging } from '../lib/aging';
+import { normalizeAging, oldestAgingBucketIdx } from '../lib/aging';
 import type { LedgerFilter } from '../features/payables/payableDetailUtils';
 import { LedgerRow, FuelLedgerRow, ExpenseLedgerRow } from '../features/payables/payableDetailLedger';
 import { PayableLedgerCard, FuelLedgerCard, ExpenseLedgerCard } from '../features/payables/payableDetailLedger';
@@ -175,6 +175,10 @@ export default function PayableDetailPage() {
     agingAmounts.forEach((a, i) => { if (a > max) { max = a; idx = i; } });
     return max > 0 ? idx : -1;
   }, [agingAmounts]);
+
+  // Overdue = money in any bucket past the current 0–30 one, the same rule the
+  // payables list and the supplier detail note share (kanban 101026203130).
+  const oldestOverdueIdx = useMemo(() => oldestAgingBucketIdx(agingAmounts), [agingAmounts]);
 
   // The real debt owed today. `totalOutstanding` on the period-scoped payload is
   // that period's net movement, which is why this prefers the explicit field.
@@ -393,6 +397,7 @@ export default function PayableDetailPage() {
         effectiveAging={effectiveAging}
         agingTotal={agingTotal}
         activeAgingIdx={activeAgingIdx}
+        oldestOverdueIdx={oldestOverdueIdx}
         hasDebt={hasDebt}
         hasCredit={hasCredit}
         overpaymentAmount={overpaymentAmount}

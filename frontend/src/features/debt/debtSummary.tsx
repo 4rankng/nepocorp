@@ -60,6 +60,8 @@ export function DebtAccountStrip({
 interface DebtAgingSummaryProps {
   hasDebt: boolean;
   activeAgingIdx: number;
+  /** Index of the OLDEST bucket carrying a balance; > 0 means overdue. */
+  oldestOverdueIdx: number;
   agingAmounts: number[];
   ledgerRowCount: number;
 }
@@ -67,6 +69,7 @@ interface DebtAgingSummaryProps {
 export function DebtAgingSummary({
   hasDebt,
   activeAgingIdx,
+  oldestOverdueIdx,
   agingAmounts,
   ledgerRowCount,
 }: DebtAgingSummaryProps) {
@@ -85,9 +88,9 @@ export function DebtAgingSummary({
           {hasDebt && (
             <div className="dd-sum-note">
               <AlertTriangle size={17} style={{ color: 'var(--danger)', flexShrink: 0 }} />
-              {activeAgingIdx <= 0
-                ? 'Toàn bộ công nợ đang trong hạn 30 ngày — cần theo dõi thu hồi.'
-                : `Có công nợ quá hạn ${AGING_RANGES[activeAgingIdx].label.toLowerCase()} — cần ưu tiên thu hồi.`
+              {oldestOverdueIdx > 0
+                ? `Có công nợ quá hạn ${AGING_RANGES[oldestOverdueIdx].label.toLowerCase()} — cần ưu tiên thu hồi.`
+                : 'Toàn bộ công nợ đang trong hạn 30 ngày — cần theo dõi thu hồi.'
               }
             </div>
           )}

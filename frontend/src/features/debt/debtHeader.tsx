@@ -6,6 +6,8 @@ import { Tooltip } from '../../components/shared/Tooltip';
 interface DebtDetailHeaderProps {
   customer: CustomerStatement['customer'];
   hasDebt: boolean;
+  /** True when any bucket past the current 0–30 one carries a balance. */
+  isOverdue: boolean;
   onBack: () => void;
   onRecordPayment: () => void;
   onExport: () => void;
@@ -14,6 +16,7 @@ interface DebtDetailHeaderProps {
 export function DebtDetailHeader({
   customer,
   hasDebt,
+  isOverdue,
   onBack,
   onRecordPayment,
   onExport,
@@ -54,7 +57,13 @@ export function DebtDetailHeader({
             Khách hàng doanh nghiệp
           </span>
           {hasDebt ? (
-            <span className="dd-tag dd-tag--warn dd-tag--dot">Còn nợ trong hạn</span>
+            // The badge used to read "Còn nợ trong hạn" for every customer with
+            // a balance, so a customer the list marked "Nợ quá hạn" said the
+            // opposite here (kanban 101026203130). Same palette as before — the
+            // words are what were wrong.
+            <span className="dd-tag dd-tag--warn dd-tag--dot">
+              {isOverdue ? 'Nợ quá hạn' : 'Còn nợ trong hạn'}
+            </span>
           ) : (
             <span className="dd-tag dd-tag--ok dd-tag--dot">Đã thanh toán đủ</span>
           )}

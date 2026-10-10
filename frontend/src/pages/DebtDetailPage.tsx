@@ -17,7 +17,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { qk } from '../api/keys';
 import './DebtDetailPage.css';
 import { money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
-import { normalizeAging } from '../lib/aging';
+import { normalizeAging, oldestAgingBucketIdx } from '../lib/aging';
 import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity } from '../components/debt/PeriodFilter';
 import { buildStatementExportUrl, statementExportFilename } from '../lib/statementExport';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
@@ -218,6 +218,13 @@ export default function DebtDetailPage() {
     return max > 0 ? idx : -1;
   }, [agingAmounts]);
 
+  // The overdue rule the list, the header badge and the aging note all read
+  // (> 0 = money past the current 0–30 bucket). The note used to follow the
+  // LARGEST bucket instead, so a customer with a big current balance and real
+  // overdue debt read "trong hạn" here while the list said "Nợ quá hạn"
+  // (kanban 101026203130).
+  const oldestOverdueIdx = useMemo(() => oldestAgingBucketIdx(agingAmounts), [agingAmounts]);
+
   const lastPayment = useMemo(() => {
     if (!profileStatement) return null;
     return [...profileStatement.ledgerRows]
@@ -346,6 +353,7 @@ export default function DebtDetailPage() {
       <DebtDetailHeader
         customer={customer}
         hasDebt={hasDebt}
+        isOverdue={oldestOverdueIdx > 0}
         onBack={handleBack}
         onRecordPayment={openPaymentModal}
         onExport={() => { void downloadExport('xlsx'); }}
@@ -365,6 +373,7 @@ export default function DebtDetailPage() {
       <DebtAgingSummary
         hasDebt={hasDebt}
         activeAgingIdx={activeAgingIdx}
+        oldestOverdueIdx={oldestOverdueIdx}
         agingAmounts={agingAmounts}
         ledgerRowCount={ledgerRows.length}
       />

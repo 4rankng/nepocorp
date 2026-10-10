@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, moneyParts } from '../lib/format';
+import { oldestAgingBucketIdx } from '../lib/aging';
 import { api } from '../lib/api';
 import { downloadBlob } from '../lib/download';
 import { useToast } from '../components/shared/Toast';
@@ -172,7 +173,10 @@ export default function DebtListPage() {
         if (d.aging.d30 > 0) { sum.d30 += d.aging.d30; sum.d30Custs++; }
         if (d.aging.d60 > 0) { sum.d60 += d.aging.d60; sum.d60Custs++; }
         if (d.aging.over90 > 0) { sum.over90 += d.aging.over90; sum.over90Custs++; }
-        if (d.maxOverdueDays > 30) { sum.overdueCount++; }
+        // Same overload rule as the row label and every detail surface — read
+        // from the buckets so list and detail can never disagree again
+        // (kanban 101026203130). Equivalent to maxOverdueDays > 30.
+        if (oldestAgingBucketIdx([d.aging.current, d.aging.d30, d.aging.d60, d.aging.over90]) > 0) { sum.overdueCount++; }
         if (d.riskClass === 'high') { sum.highRiskCount++; }
       }
     });
@@ -474,7 +478,7 @@ export default function DebtListPage() {
                             </div>
                             <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginLeft: 16 }}>
                               {d.totalOutstanding > 0
-                                ? (d.maxOverdueDays > 30 ? "Nợ quá hạn" : "Trong hạn")
+                                ? (oldestAgingBucketIdx([d.aging.current, d.aging.d30, d.aging.d60, d.aging.over90]) > 0 ? "Nợ quá hạn" : "Trong hạn")
                                 : (d.totalOutstanding < 0 ? "Trả trước" : "Cân bằng")}
                             </div>
                           </td>
