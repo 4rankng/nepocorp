@@ -251,6 +251,17 @@
   border-color: var(--danger);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--danger) 18%, transparent);
 }
+/* Undo a rejection — a recovery action, so it reads as neutral/accent. */
+.adv-page .adv-decision-btn--restore {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+}
+.adv-page .adv-decision-btn--restore:hover:not(:disabled) {
+  color: var(--fg-on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 22%, transparent);
+}
 .adv-page .adv-decision-btn:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;

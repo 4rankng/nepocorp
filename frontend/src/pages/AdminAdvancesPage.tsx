@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
-import { Loader2, Wallet, CheckCircle2, XCircle } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Loader2, Wallet, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import {
   ADVANCE_REQUEST_STATUS_LABELS,
   AdvanceRequestStatus,
 } from '@tingting/shared';
-import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import { PageHeader, StatusPill, Toolbar, FilterPill, useConfirm } from '../components/UI';
+import { useToast } from '../components/shared/Toast';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { AssetIcon, type AssetIconName } from '../components/AssetIcon';
 import {
@@ -14,6 +15,7 @@ import {
   useAdminAdvanceBalances,
   useApproveAdvanceRequest,
   useRejectAdvanceRequest,
+  useRestoreAdvanceRequest,
 } from '../hooks/useQueries';
 import { advanceRequestStatusVariant } from '../lib/status-variants';
 import { useFocusDeepLink } from '../hooks/useFocusDeepLink';
@@ -36,6 +38,11 @@ interface AdvanceRequest {
 }
 
 type StatusFilter = '' | AdvanceRequestStatus;
+
+/** Display name for a requester, falling back to the raw id for legacy rows. */
+function requesterLabel(req: Pick<AdvanceRequest, 'requesterName' | 'requesterId'>): string {
+  return req.requesterName || `Đối tác ${req.requesterId}`;
+}
 
 const TABS: { key: StatusFilter; label: string }[] = [
   { key: '', label: 'Tất cả' },
@@ -78,20 +85,37 @@ function AdvKPI({ label, value, meta, variant, iconName, active = false, hasItem
 
 /* ── Desktop grid row ──────────────────────────────────────────────────── */
 
+/**
+ * Request-level decision handles shared by the desktop row and the mobile
+ * card. Plain callbacks plus the in-flight id — so the row components stay
+ * decoupled from the react-query layer (same contract style as
+ * `SettlementActions` in AdminAdvanceSettlementsPage).
+ */
+export interface AdvanceActions {
+  /** Request id with an in-flight decision, if any. */
+  pendingId?: number;
+  /** Which decision is in flight for `pendingId`. */
+  pendingKind?: 'approve' | 'reject' | 'restore';
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onRestore: (id: number) => void;
+}
+
 export function AdvanceGridRow({
   req,
-  approveMutation,
-  rejectMutation,
+  actions,
   focusId,
 }: {
   req: AdvanceRequest;
-  approveMutation: ReturnType<typeof useApproveAdvanceRequest>;
-  rejectMutation: ReturnType<typeof useRejectAdvanceRequest>;
+  actions: AdvanceActions;
   focusId?: string;
 }) {
-  const isApproving = approveMutation.isPending && approveMutation.variables === req.id;
-  const isRejecting = rejectMutation.isPending && rejectMutation.variables === req.id;
+  const isApproving = actions.pendingId === req.id && actions.pendingKind === 'approve';
+  const isRejecting = actions.pendingId === req.id && actions.pendingKind === 'reject';
+  const isRestoring = actions.pendingId === req.id && actions.pendingKind === 'restore';
   const isPending = req.status === AdvanceRequestStatus.PENDING;
+  const isRejected = req.status === AdvanceRequestStatus.REJECTED;
+  const name = requesterLabel(req);
 
   return (
     <div className="adv-grid-row" id={focusId}>
@@ -101,7 +125,7 @@ export function AdvanceGridRow({
           <Wallet size={16} />
         </div>
         <span className="adv-requester-name">
-          {req.requesterName || `Đối tác ${req.requesterId}`}
+          {name}
         </span>
       </div>
 
@@ -132,29 +156,46 @@ export function AdvanceGridRow({
             <button
               type="button"
               className="adv-decision-btn adv-decision-btn--approve"
-              onClick={() => approveMutation.mutate(req.id)}
+              onClick={() => actions.onApprove(req.id)}
               disabled={isApproving || isRejecting}
               title="Duyệt yêu cầu"
-              aria-label={`Duyệt yêu cầu của ${req.requesterName || `Đối tác ${req.requesterId}`}`}
+              aria-label={`Duyệt yêu cầu của ${name}`}
             >
               {isApproving ? <Loader2 size={18} className="spin" /> : <CheckCircle2 size={20} strokeWidth={2.2} />}
             </button>
             <button
               type="button"
               className="adv-decision-btn adv-decision-btn--reject"
-              onClick={() => rejectMutation.mutate(req.id)}
+              onClick={() => actions.onReject(req.id)}
               disabled={isApproving || isRejecting}
               title="Từ chối yêu cầu"
-              aria-label={`Từ chối yêu cầu của ${req.requesterName || `Đối tác ${req.requesterId}`}`}
+              aria-label={`Từ chối yêu cầu của ${name}`}
             >
               {isRejecting ? <Loader2 size={18} className="spin" /> : <XCircle size={20} strokeWidth={2.2} />}
             </button>
           </>
-        ) : req.approverName ? (
-          <div className="adv-approver">
-            bởi <strong>{req.approverName}</strong>
-          </div>
-        ) : null}
+        ) : (
+          <>
+            {req.approverName && (
+              <div className="adv-approver">
+                bởi <strong>{req.approverName}</strong>
+              </div>
+            )}
+            {/* Undo a rejection: REJECTED → PENDING (kanban 101026013000). */}
+            {isRejected && (
+              <button
+                type="button"
+                className="adv-decision-btn adv-decision-btn--restore"
+                onClick={() => actions.onRestore(req.id)}
+                disabled={isRestoring}
+                title="Thu hồi yêu cầu"
+                aria-label={`Thu hồi yêu cầu của ${name}`}
+              >
+                {isRestoring ? <Loader2 size={18} className="spin" /> : <RotateCcw size={18} strokeWidth={2.2} />}
+              </button>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -164,18 +205,19 @@ export function AdvanceGridRow({
 
 function AdvanceMobileCard({
   req,
-  approveMutation,
-  rejectMutation,
+  actions,
   focusId,
 }: {
   req: AdvanceRequest;
-  approveMutation: ReturnType<typeof useApproveAdvanceRequest>;
-  rejectMutation: ReturnType<typeof useRejectAdvanceRequest>;
+  actions: AdvanceActions;
   focusId?: string;
 }) {
-  const isApproving = approveMutation.isPending && approveMutation.variables === req.id;
-  const isRejecting = rejectMutation.isPending && rejectMutation.variables === req.id;
+  const isApproving = actions.pendingId === req.id && actions.pendingKind === 'approve';
+  const isRejecting = actions.pendingId === req.id && actions.pendingKind === 'reject';
+  const isRestoring = actions.pendingId === req.id && actions.pendingKind === 'restore';
   const isPending = req.status === AdvanceRequestStatus.PENDING;
+  const isRejected = req.status === AdvanceRequestStatus.REJECTED;
+  const name = requesterLabel(req);
 
   return (
     <div className="adv-mcard" id={focusId}>
@@ -186,7 +228,7 @@ function AdvanceMobileCard({
             <Wallet size={16} />
           </div>
           <span className="adv-mcard__name">
-            {req.requesterName || `Đối tác ${req.requesterId}`}
+            {name}
           </span>
         </div>
         <StatusPill variant={advanceRequestStatusVariant(req.status)}>
@@ -218,7 +260,7 @@ function AdvanceMobileCard({
         <div className="adv-mcard__actions">
           <button
             className="btn btn--primary"
-            onClick={() => approveMutation.mutate(req.id)}
+            onClick={() => actions.onApprove(req.id)}
             disabled={isApproving || isRejecting}
           >
             {isApproving ? <Loader2 size={16} className="spin" /> : <CheckCircle2 size={16} />}
@@ -226,21 +268,38 @@ function AdvanceMobileCard({
           </button>
           <button
             className="btn btn--danger"
-            onClick={() => rejectMutation.mutate(req.id)}
+            onClick={() => actions.onReject(req.id)}
             disabled={isApproving || isRejecting}
           >
             {isRejecting ? <Loader2 size={16} className="spin" /> : <XCircle size={16} />}
             Từ chối
           </button>
         </div>
-      ) : req.approverName ? (
-        <div className="adv-mcard__meta-row" style={{ marginTop: 4 }}>
-          <span className="adv-mcard__meta-label">Duyệt bởi</span>
-          <span className="adv-mcard__meta-value" style={{ fontWeight: 600, color: 'var(--ink)' }}>
-            {req.approverName}
-          </span>
-        </div>
-      ) : null}
+      ) : (
+        <>
+          {req.approverName && (
+            <div className="adv-mcard__meta-row" style={{ marginTop: 4 }}>
+              <span className="adv-mcard__meta-label">Duyệt bởi</span>
+              <span className="adv-mcard__meta-value" style={{ fontWeight: 600, color: 'var(--ink)' }}>
+                {req.approverName}
+              </span>
+            </div>
+          )}
+          {/* Undo a rejection: REJECTED → PENDING (kanban 101026013000). */}
+          {isRejected && (
+            <div className="adv-mcard__actions">
+              <button
+                className="btn btn--secondary"
+                onClick={() => actions.onRestore(req.id)}
+                disabled={isRestoring}
+              >
+                {isRestoring ? <Loader2 size={16} className="spin" /> : <RotateCcw size={16} />}
+                Thu hồi
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -259,11 +318,54 @@ export default function AdminAdvancesPage() {
   const { rootRef } = usePageAnimations({ ready: !isLoading });
   const approveMutation = useApproveAdvanceRequest();
   const rejectMutation = useRejectAdvanceRequest();
+  const restoreMutation = useRestoreAdvanceRequest();
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const { toast: showToast } = useToast();
 
   const allRequests: AdvanceRequest[] = useMemo(
     () => (data?.items ?? []) as AdvanceRequest[],
     [data],
   );
+
+  /* ── Reject asks first (kanban 101026013000) ─────────────────────────
+   * Rejection used to fire on a single stray tap, with no undo. The dialog
+   * names the requester and the amount so a manager signs off on the right row.
+   */
+  const confirmReject = useCallback(async (id: number) => {
+    const req = allRequests.find((r) => r.id === id);
+    const name = req ? requesterLabel(req) : `#${id}`;
+    const amount = req ? formatCurrency(Number(req.amount)) : '';
+    const ok = await confirm(
+      `Từ chối yêu cầu tạm ứng? Yêu cầu ${amount} của ${name} sẽ chuyển sang trạng thái Từ chối.`,
+      { variant: 'danger', confirmLabel: 'Từ chối', cancelLabel: 'Huỷ' },
+    );
+    if (!ok) return;
+    rejectMutation.mutate(id, {
+      onSuccess: () => showToast({ kind: 'success', message: `Đã từ chối yêu cầu tạm ứng của ${name}` }),
+      onError: (err: unknown) => showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi từ chối yêu cầu' }),
+    });
+  }, [allRequests, confirm, rejectMutation, showToast]);
+
+  const advanceActions: AdvanceActions = {
+    pendingId: approveMutation.isPending
+      ? approveMutation.variables
+      : rejectMutation.isPending
+        ? rejectMutation.variables
+        : restoreMutation.isPending ? restoreMutation.variables : undefined,
+    pendingKind: approveMutation.isPending
+      ? 'approve'
+      : rejectMutation.isPending ? 'reject' : restoreMutation.isPending ? 'restore' : undefined,
+    onApprove: (id) => approveMutation.mutate(id),
+    onReject: (id) => void confirmReject(id),
+    onRestore: (id) => {
+      const req = allRequests.find((r) => r.id === id);
+      const name = req ? requesterLabel(req) : `#${id}`;
+      restoreMutation.mutate(id, {
+        onSuccess: () => showToast({ kind: 'success', message: `Đã thu hồi yêu cầu tạm ứng của ${name}` }),
+        onError: (err: unknown) => showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi thu hồi yêu cầu' }),
+      });
+    },
+  };
 
   /* ── Focus deep-link: scroll to item from ?focus=<id> ──────────────── */
   // Called for its side effect (scrolling to the focused item); return value unused.
@@ -409,8 +511,7 @@ export default function AdminAdvancesPage() {
                 <AdvanceGridRow
                   key={req.id}
                   req={req}
-                  approveMutation={approveMutation}
-                  rejectMutation={rejectMutation}
+                  actions={advanceActions}
                   focusId={`adv-${req.id}`}
                 />
               ))}
@@ -422,8 +523,7 @@ export default function AdminAdvancesPage() {
                 <AdvanceMobileCard
                   key={req.id}
                   req={req}
-                  approveMutation={approveMutation}
-                  rejectMutation={rejectMutation}
+                  actions={advanceActions}
                   focusId={`adv-${req.id}`}
                 />
               ))}
@@ -438,6 +538,8 @@ export default function AdminAdvancesPage() {
           {filtered.length} yêu cầu tạm ứng
         </div>
       )}
+
+      {confirmDialog}
     </div>
   );
 }
