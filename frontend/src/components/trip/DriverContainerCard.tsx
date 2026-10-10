@@ -302,10 +302,14 @@ export function DriverContainerCard({ tripId, containers, contPhotoKey, sealPhot
               <div className="dcc-bento__hero-content">
                 <div className="dcc-bento__eyebrow">Số cont</div>
                 <div className="dcc-bento__plate">{containers[0].containerNumber}</div>
-                {containers[0].containerTypeName && (
+                {/* ONE label only. containerTypeName ("20'DC") is the type's
+                    display label and containerTypeCode ("20DC") is the same
+                    type in its normalized form, so rendering both read as a
+                    duplicate ("20'DC · 20DC" — kanban 101026101530). Fall back
+                    to the code only when the catalog row carries no name. */}
+                {(containers[0].containerTypeName || containers[0].containerTypeCode) && (
                   <div className="dcc-bento__hero-meta">
-                    {containers[0].containerTypeName}
-                    {containers[0].containerTypeCode ? ` · ${containers[0].containerTypeCode}` : ''}
+                    {containers[0].containerTypeName || containers[0].containerTypeCode}
                   </div>
                 )}
               </div>
