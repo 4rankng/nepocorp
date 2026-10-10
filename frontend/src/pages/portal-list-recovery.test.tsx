@@ -42,11 +42,11 @@ afterEach(cleanup);
 
 it('keeps forwarder search available after zero matches and can clear it', () => {
   render(<MemoryRouter><ForwarderTripsPage /></MemoryRouter>);
-  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'missing-container' } });
-  expect(screen.getByRole('textbox')).toHaveProperty('value', 'missing-container');
+  fireEvent.change(screen.getByRole('textbox', { name: 'Tìm chuyến đi theo container hoặc khách hàng' }), { target: { value: 'missing-container' } });
+  expect(screen.getByRole('textbox', { name: 'Tìm chuyến đi theo container hoặc khách hàng' })).toHaveProperty('value', 'missing-container');
   expect(screen.getByText('Không tìm thấy chuyến đi')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Xóa bộ lọc' }));
-  expect(screen.getByRole('textbox')).toHaveProperty('value', '');
+  expect(screen.getByRole('textbox', { name: 'Tìm chuyến đi theo container hoặc khách hàng' })).toHaveProperty('value', '');
   expect(screen.getByText(trip.routeName)).toBeTruthy();
 });
 
@@ -61,10 +61,10 @@ it('preserves forwarder search focus while the next query is loading', () => {
     ? { ...success(undefined), isLoading: true }
     : success({ items: [trip], counts: { CREATED: 1 } }));
   render(<MemoryRouter><ForwarderTripsPage /></MemoryRouter>);
-  const search = screen.getByRole('textbox');
+  const search = screen.getByRole('textbox', { name: 'Tìm chuyến đi theo container hoặc khách hàng' });
   search.focus();
   fireEvent.change(search, { target: { value: 'container' } });
-  expect(screen.getByRole('textbox')).toBe(search);
+  expect(screen.getByRole('textbox', { name: 'Tìm chuyến đi theo container hoặc khách hàng' })).toBe(search);
   expect(document.activeElement).toBe(search);
   expect(screen.getByRole('status').textContent).toContain('Đang tải danh sách chuyến đi');
 });
