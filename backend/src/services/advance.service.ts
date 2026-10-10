@@ -297,6 +297,91 @@ export async function rejectAdvanceRequest(id: number, rejectedBy: number) {
 }
 
 /**
+ * Amend a request the forwarder filed, before or after a rejection.
+ *
+ * Only PENDING and REJECTED rows are editable. APPROVED is refused because
+ * approval already posted a FORWARDER_ADVANCE ledger entry crediting
+ * `request.amount` (see approveAdvanceRequest) — the ledger is append-only by
+ * policy, so rewriting the amount afterwards would leave the books disagreeing
+ * with the request. A REJECTED request is editable precisely because rejection
+ * posts nothing; an admin can still restore it to PENDING and approve it later
+ * at the corrected amount.
+ *
+ * `requesterId` is the caller, not a filter argument: the row is locked and its
+ * owner compared in the same transaction so a forwarder can never amend (or
+ * probe for) another user's request.
+ */
+export async function updateAdvanceRequest(
+  id: number,
+  requesterId: number,
+  data: { amount: number; reason: string },
+) {
+  return db.transaction(async (tx) => {
+    const [request] = await tx.select()
+      .from(s.advanceRequests)
+      .where(eq(s.advanceRequests.id, id))
+      .for('update');
+    if (!request) throw new AdvanceError(404, 'Không tìm thấy yêu cầu tạm ứng');
+    if (request.requesterId !== requesterId) {
+      throw new AdvanceError(403, 'Không có quyền sửa yêu cầu tạm ứng của người khác');
+    }
+    if (request.status === 'APPROVED') {
+      throw new AdvanceError(400, 'Không sửa được yêu cầu đã duyệt — số tiền đã ghi vào sổ cái');
+    }
+
+    const [updated] = await tx.update(s.advanceRequests)
+      .set({ amount: String(data.amount), reason: data.reason, updatedAt: new Date() })
+      .where(eq(s.advanceRequests.id, id))
+      .returning();
+    if (!updated) throw new AdvanceError(409, 'Yêu cầu đã bị thay đổi bởi thao tác khác');
+
+    const [enriched] = await enrichWithNames([updated]);
+    return enriched;
+  });
+}
+
+/**
+ * Delete a request the forwarder filed, before or after a rejection.
+ *
+ * Two things block deletion:
+ *   - APPROVED — the FORWARDER_ADVANCE ledger entry outlives the row it was
+ *     credited from; removing the row would orphan the entry.
+ *   - Already linked to a phiếu hoàn ứng. `advance_settlement_requests
+ *     .advance_request_id` has no ON DELETE CASCADE, so the delete would fail
+ *     with a raw FK violation (23503 → 500) and, worse, silently change the
+ *     "Tồn tạm ứng" figure the forwarder is settled against.
+ */
+export async function deleteAdvanceRequest(id: number, requesterId: number) {
+  return db.transaction(async (tx) => {
+    const [request] = await tx.select()
+      .from(s.advanceRequests)
+      .where(eq(s.advanceRequests.id, id))
+      .for('update');
+    if (!request) throw new AdvanceError(404, 'Không tìm thấy yêu cầu tạm ứng');
+    if (request.requesterId !== requesterId) {
+      throw new AdvanceError(403, 'Không có quyền xóa yêu cầu tạm ứng của người khác');
+    }
+    if (request.status === 'APPROVED') {
+      throw new AdvanceError(400, 'Không xóa được yêu cầu đã duyệt — số tiền đã ghi vào sổ cái');
+    }
+
+    const [linked] = await tx.select({ id: s.advanceSettlementRequests.id })
+      .from(s.advanceSettlementRequests)
+      .where(eq(s.advanceSettlementRequests.advanceRequestId, id))
+      .limit(1);
+    if (linked) {
+      throw new AdvanceError(400, 'Yêu cầu đã được dùng trong phiếu hoàn ứng nên không thể xóa');
+    }
+
+    const [deleted] = await tx.delete(s.advanceRequests)
+      .where(eq(s.advanceRequests.id, id))
+      .returning();
+    if (!deleted) throw new AdvanceError(409, 'Yêu cầu đã bị thay đổi bởi thao tác khác');
+    return deleted;
+  });
+}
+
+/**
  * Undo a rejection: REJECTED → PENDING (kanban 101026013000).
  *
  * A rejected request used to be a dead end — approve() refuses any non-PENDING

@@ -1070,6 +1070,13 @@ export const createAdvanceRequestSchema = z.object({
   reason: z.string().min(1, 'Lý do tạm ứng không được để trống'),
 });
 
+/**
+ * Edit payload for an existing advance request. Deliberately the same shape as
+ * create — a request is amended wholesale, never patched field-by-field, so a
+ * missing field can never leave a half-updated amount/reason pair behind.
+ */
+export const updateAdvanceRequestSchema = createAdvanceRequestSchema;
+
 const positiveIds = z.array(z.coerce.number().int().positive());
 const uniquePositiveIds = positiveIds
   .refine(ids => new Set(ids).size === ids.length, 'Danh sách không được chứa mục trùng lặp');
@@ -1178,6 +1185,7 @@ export const accountantSettlementExpensePatchSchema = tripExpensePatchSchema
 export type DebtOffsetInput = z.infer<typeof debtOffsetSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type CreateAdvanceRequestInput = z.infer<typeof createAdvanceRequestSchema>;
+export type UpdateAdvanceRequestInput = z.infer<typeof updateAdvanceRequestSchema>;
 export type CreateAdvanceSettlementInput = z.infer<typeof createAdvanceSettlementSchema>;
 export type UpdateAdvanceSettlementInput = z.infer<typeof updateAdvanceSettlementSchema>;
 export type ContainerTypeInput = z.infer<typeof containerTypeSchema>;

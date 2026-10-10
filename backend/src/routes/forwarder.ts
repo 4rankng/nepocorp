@@ -26,8 +26,8 @@ import { throwValidation } from '../lib/validation';
 import { db } from '../db';
 import * as s from '../db/schema';
 import { tripContainerSchema, tripExpenseSchema, tripExpensePatchSchema, tripExpenseCompletionSchema } from '@tingting/shared';
-import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, updateAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement, getOutstandingAdvanceBalance } from '../services/advance.service';
-import { createAdvanceRequestSchema, createAdvanceSettlementSchema, updateAdvanceSettlementSchema } from '@tingting/shared';
+import { createAdvanceRequest, listAdvanceRequests, getAdvanceRequestCounts, createAdvanceSettlement, updateAdvanceSettlement, listAdvanceSettlements, getAdvanceSettlement, getOutstandingAdvanceBalance, updateAdvanceRequest, deleteAdvanceRequest } from '../services/advance.service';
+import { createAdvanceRequestSchema, createAdvanceSettlementSchema, updateAdvanceSettlementSchema, updateAdvanceRequestSchema } from '@tingting/shared';
 import { storageService } from '../services/storage.service';
 import sharp from 'sharp';
 import { sniffImageType } from '../lib/format';
@@ -194,6 +194,25 @@ router.post('/advance-requests', asyncHandler(async (req: Request, res: Response
   if (!parsed.success) throwValidation(parsed.error);
   const result = await createAdvanceRequest(forwarder.id, parsed.data);
   res.status(201).json(result);
+}));
+
+// Sửa yêu cầu của chính mình. Service chặn mọi yêu cầu đã duyệt và kiểm tra
+// requesterId trong cùng transaction, nên route chỉ cần chuyền thẳng id của
+// forwarder xuống dưới.
+router.put('/advance-requests/:id', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = req.forwarder!;
+  const parsed = updateAdvanceRequestSchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  const result = await updateAdvanceRequest(Number(req.params.id), forwarder.id, parsed.data);
+  res.json(result);
+}));
+
+// Xóa yêu cầu của chính mình — service từ chối yêu cầu đã duyệt và yêu cầu đã
+// gắn vào phiếu hoàn ứng.
+router.delete('/advance-requests/:id', asyncHandler(async (req: Request, res: Response) => {
+  const forwarder = req.forwarder!;
+  const deleted = await deleteAdvanceRequest(Number(req.params.id), forwarder.id);
+  res.json({ ok: true, id: deleted.id });
 }));
 
 // ── Advance Balance (F1) ──
