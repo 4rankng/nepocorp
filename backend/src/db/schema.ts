@@ -108,7 +108,15 @@ export const drivers = pgTable('drivers', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
-});
+}, (table) => [
+  // A truck has ONE active default driver. Without this rule two driver profiles
+  // can point at the same truck and the fleet/dispatch screens disagree about who
+  // drives it (kanban 101026003240 item f: 15C-180.99 showed two drivers).
+  // Soft-deleted rows are exempt so history stays readable.
+  uniqueIndex('drivers_assigned_truck_active_unq')
+    .on(table.assignedTruckId)
+    .where(sql`${table.assignedTruckId} IS NOT NULL AND ${table.deletedAt} IS NULL`),
+]);
 
 // Defined before customers to allow customers.linkedSupplierId to reference suppliers.id directly.
 // suppliers.linkedCustomerId intentionally omits .references() to break the mutual circular

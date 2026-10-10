@@ -156,6 +156,25 @@ export async function listUsers(requesterRole?: string, query: ListUsersQuery = 
   return { items, total: filteredRow?.count ?? 0, page, pageSize: limit, counts };
 }
 
+/**
+ * A truck carries ONE active driver (unique index drivers_assigned_truck_active_unq,
+ * kanban 101026003240 item f). Check before writing so a second claim fails with a
+ * message naming the current holder instead of a raw unique-violation 409.
+ */
+async function assertTruckFree(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  truckId: number,
+  keepDriverId?: number,
+): Promise<void> {
+  const [holder] = await tx.select({ id: drivers.id, name: drivers.name })
+    .from(drivers)
+    .where(and(eq(drivers.assignedTruckId, truckId), isNull(drivers.deletedAt)))
+    .limit(1);
+  if (holder && holder.id !== keepDriverId) {
+    throw new ApiError(409, `Xe này đang gán cho ${holder.name}. Hãy bỏ gán ở người đó trước khi gán cho lái xe khác.`);
+  }
+}
+
 /** Create a new user with hashed password. DRIVER-role users also get a linked drivers row. */
 export async function createUser(data: {
   username?: string;
@@ -182,6 +201,7 @@ export async function createUser(data: {
     }).returning(USER_FIELDS);
 
     if (data.role === Role.DRIVER) {
+      if (data.assignedTruckId != null) await assertTruckFree(tx, data.assignedTruckId);
       await tx.insert(drivers).values(buildDriverValues(created.id, {
         fullName: data.fullName, username: data.username, phone: data.phone,
         baseSalary: data.baseSalary, socialInsurance: data.socialInsurance,
@@ -273,6 +293,8 @@ export async function updateUser(id: number, data: {
       const [existingDriver] = await tx.select({ id: drivers.id })
         .from(drivers).where(and(eq(drivers.userId, id), isNull(drivers.deletedAt))).limit(1);
 
+      if (data.assignedTruckId != null) await assertTruckFree(tx, data.assignedTruckId, existingDriver?.id);
+
       if (existingDriver) {
         const driverSet = buildDriverUpdateSet(data);
         if (Object.keys(driverSet).length > 0) {
@@ -304,6 +326,20 @@ export async function updateUser(id: number, data: {
 export async function deleteUser(id: number, currentUserId: number) {
   if (id === currentUserId) throw new ApiError(400, 'Không thể xóa tài khoản đang đăng nhập');
   await db.transaction(async (tx) => {
+    // Read the target's role inside the transaction: a MANAGER may delete other
+    // accounts but never an ADMIN's, and the check has to see the role as it is
+    // now rather than as it was when the request was authorised
+    // (kanban 101026003000).
+    const [target] = await tx.select({ role: users.role }).from(users)
+      .where(and(eq(users.id, id), isNull(users.deletedAt))).limit(1);
+    if (!target) throw new ApiError(404, 'Không tìm thấy người dùng');
+
+    const [actor] = await tx.select({ role: users.role }).from(users)
+      .where(and(eq(users.id, currentUserId), isNull(users.deletedAt))).limit(1);
+    if (actor?.role !== Role.ADMIN && target.role === Role.ADMIN) {
+      throw new ApiError(403, 'Chỉ quản trị viên mới có thể xóa tài khoản quản trị viên');
+    }
+
     await tx.update(users).set({ deletedAt: sql`now()`, status: 'INACTIVE' }).where(eq(users.id, id));
     await tx.update(drivers).set({ deletedAt: sql`now()`, status: 'INACTIVE' })
       .where(and(eq(drivers.userId, id), isNull(drivers.deletedAt)));

@@ -806,6 +806,13 @@
       "when": 1791452014592,
       "tag": "0119_resync_identity_sequences",
       "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1791594483582,
+      "tag": "0120_fearless_warlock",
+      "breakpoints": true
     }
   ]
 }
