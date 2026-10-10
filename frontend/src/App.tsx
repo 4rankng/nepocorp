@@ -225,7 +225,16 @@ export default function App() {
           <AgentDirectiveProvider>
             <MonthProvider>
               <SearchProvider>
-                <AppRoutes />
+                {/* Last line of defence against a blank screen: the per-route
+                    boundary only covers the routed page, so a render error in
+                    the shell itself (Topbar, sidebar, pickers) used to unmount
+                    the whole tree and leave a page with nothing to click — the
+                    reported shape of kanban 101026211510. With this boundary the
+                    failure renders the recoverable error UI (message + "Thử lại"
+                    in the console's componentStack) instead. */}
+                <ErrorBoundary>
+                  <AppRoutes />
+                </ErrorBoundary>
               </SearchProvider>
             </MonthProvider>
           </AgentDirectiveProvider>
