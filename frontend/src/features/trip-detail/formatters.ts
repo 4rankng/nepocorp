@@ -39,6 +39,17 @@ export function fmtPercent(n: number | null | undefined): string {
   return n.toFixed(1).replace('.', ',');
 }
 
+/**
+ * Format a VAT rate held as a fraction as the percentage the label shows:
+ * 0.08 → "8", 0.085 → "8,5". Whole rates drop the decimal so the label reads
+ * "Thuế VAT đầu ra 8%" rather than "8,0%".
+ */
+export function formatVatRate(rate: number | null | undefined): string {
+  if (rate == null || !Number.isFinite(rate)) return '0';
+  const pct = rate * 100;
+  return Number.isInteger(pct) ? String(pct) : pct.toFixed(1).replace('.', ',');
+}
+
 /** Format an ISO date string to Vietnamese locale, e.g. "02/06/2026". */
 export function fmtDate(d: string | null | undefined): string {
   if (!d) return '—';

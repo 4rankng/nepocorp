@@ -1,5 +1,5 @@
 import { Banknote, Fuel, type LucideIcon } from 'lucide-react';
-import { computeTripTotals, TripStatus, type TripDetail } from '@tingting/shared';
+import { computeExVatAmount, computeTripTotals, TripStatus, type TripDetail } from '@tingting/shared';
 
 export interface TripListContainer {
   containerNumber: string;
@@ -132,6 +132,40 @@ export function getTripDisplayGrossProfit(trip: TripDetail): number {
   const externalFinancials = getExternalTripFinancials(trip);
   if (externalFinancials) return externalFinancials.grossProfit;
   return Number(trip.grossProfit ?? 0);
+}
+
+export interface TripRevenueBasis {
+  /** VAT-inclusive contract freight — what the customer is billed. */
+  contract: number;
+  /** VAT-exclusive freight — the figure `grossProfit` is recorded on. */
+  freightExVat: number;
+  /** Output VAT contained in `contract`. */
+  vatAmount: number;
+  /** Rate as a fraction (0.08 = 8%); 0 when the trip carries no VAT. */
+  vatRate: number;
+}
+
+/**
+ * Split a trip's freight into the three figures the money surfaces show.
+ *
+ * `trip.revenue` is the VAT-inclusive contract value while `trip.grossProfit`
+ * is recorded on the VAT-exclusive freight, so a trip with 8% VAT printed
+ * "Doanh thu 8.466.120 ₫", "Tổng chi phí 5.459.525 ₫" and "Lợi nhuận gộp
+ * 2.379.475 ₫" — three figures that look 627.120 ₫ short of adding up (kanban
+ * 101026203100). Splitting the contract value here lets every surface print the
+ * revenue the profit is actually computed on, with the VAT and the contract
+ * total beside it.
+ *
+ * Uses `computeExVatAmount` — the same rounding the backend stored the profit
+ * with — so the displayed basis reconciles with the stored figure to the đồng.
+ */
+export function getTripRevenueBasis(
+  trip: Pick<TripDetail, 'revenue' | 'vatRate'>,
+): TripRevenueBasis {
+  const contract = Number(trip.revenue ?? 0);
+  const vatRate = Number(trip.vatRate ?? 0);
+  const freightExVat = computeExVatAmount(contract, vatRate);
+  return { contract, freightExVat, vatAmount: contract - freightExVat, vatRate };
 }
 
 export interface AncillaryTripCost {

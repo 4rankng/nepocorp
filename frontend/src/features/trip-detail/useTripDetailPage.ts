@@ -13,7 +13,7 @@ import { useCatalogs } from '../../hooks/useCatalogs';
 import { TripStatus, Role } from '@tingting/shared';
 import { useConfirm } from '../../components/UI';
 import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState } from './types';
-import { getExternalTripFinancials, getTripDisplayGrossProfit } from '../trips/tripHelpers';
+import { getExternalTripFinancials, getTripDisplayGrossProfit, getTripRevenueBasis } from '../trips/tripHelpers';
 
 export function resolveExpectedFuelLiters(trip: {
   fuelMode?: string | null;
@@ -115,7 +115,8 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
   const derived: TripDerivedData = useMemo(() => {
     if (!trip) {
       return {
-        revenue: 0, freightRevenue: 0, totalCost: 0, grossProfit: 0, marginPct: null,
+        revenue: 0, freightRevenue: 0, contractRevenue: 0, vatAmount: 0, vatRate: 0,
+        totalCost: 0, grossProfit: 0, marginPct: null,
         fuelCost: 0, roadAllowance: 0, tollCost: 0, tollsDiscount: 0, driverSalary: 0, serviceCost: 0,
         twoPointDeliveryBonus: 0, vehicleShiftAllowance: 0,
         totalKm: 0, fuelLiters: 0, computedLiters: 0, ttbq: 0,
@@ -125,10 +126,17 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
     }
 
     const isExternal = trip.carrierType === 'EXTERNAL';
-    const revenueRaw = Number(trip.revenue || 0);
+    // `trip.revenue` is the VAT-inclusive contract freight while the stored
+    // grossProfit is recorded on the ex-VAT figure — showing both raw makes the
+    // statement look like it does not add up (kanban 101026203100). Split the
+    // contract value once, so the KPI tiles and the P&L card print the same
+    // VAT-exclusive basis the profit is computed on.
+    const basis = getTripRevenueBasis(trip);
+    const { contract: contractRevenue, vatAmount, vatRate } = basis;
     const externalFinancials = getExternalTripFinancials(trip);
-    const revenue = externalFinancials?.recordedRevenue ?? revenueRaw;
-    const freightRevenue = externalFinancials?.freightRevenue ?? revenueRaw;
+    const freightRevenue = externalFinancials?.freightRevenue ?? basis.freightExVat;
+    const revenue = externalFinancials?.recordedRevenue
+      ?? (basis.freightExVat - Number(trip.customerCommission || 0));
     const totalCost = externalFinancials?.externalFreightCost ?? Number(trip.totalCost || 0);
     const grossProfit = getTripDisplayGrossProfit(trip);
     const marginPct = revenue > 0 ? ((grossProfit / revenue) * 100).toFixed(1) : null;
@@ -152,7 +160,7 @@ export function useTripDetailPage(id: string | undefined): TripDetailPageData {
       : '—';
 
     return {
-      revenue, freightRevenue, totalCost, grossProfit, marginPct,
+      revenue, freightRevenue, contractRevenue, vatAmount, vatRate, totalCost, grossProfit, marginPct,
       fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary, serviceCost,
       twoPointDeliveryBonus, vehicleShiftAllowance,
       totalKm, fuelLiters, computedLiters, ttbq,

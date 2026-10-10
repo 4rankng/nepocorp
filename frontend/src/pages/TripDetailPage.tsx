@@ -193,6 +193,9 @@ export default function TripDetailPage() {
               totalCost={derived.totalCost}
               grossProfit={derived.grossProfit}
               marginPct={derived.marginPct}
+              contractRevenue={derived.contractRevenue}
+              vatAmount={derived.vatAmount}
+              vatRate={derived.vatRate}
             />
           </div>
 

@@ -124,6 +124,24 @@
   font-weight: 700;
 }
 
+/* Memo rows that explain the row above (output VAT and the VAT-inclusive
+   contract total) — indented and muted so they read as a note on the revenue
+   line rather than as further line items (kanban 101026203100). */
+.pl-row--sub {
+  padding: 3px 0;
+}
+
+.pl-row--sub .k {
+  padding-left: 16px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.pl-row--sub .v {
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
 .pl-total {
   display: flex;
   align-items: center;

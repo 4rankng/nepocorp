@@ -3,8 +3,23 @@ import type { TripDetail } from '@tingting/shared';
 
 /** Derived financial & operational data computed from a TripDetail. */
 export interface TripDerivedData {
+  /**
+   * The revenue the profit is recorded against: freight ex-VAT minus customer
+   * commission. The KPI tile and `marginPct` read THIS, so both describe the
+   * same basis as `grossProfit`.
+   */
   revenue: number;
+  /** Freight ex-VAT, before customer commission — the first row of the P&L. */
   freightRevenue: number;
+  /**
+   * VAT-inclusive contract freight (what the customer is billed). Equals
+   * `freightRevenue` on a trip without VAT.
+   */
+  contractRevenue: number;
+  /** Output VAT contained in `contractRevenue`; 0 when the trip has no VAT. */
+  vatAmount: number;
+  /** Trip VAT rate as a fraction (0.08 for 8%); 0 when unset. */
+  vatRate: number;
   totalCost: number;
   grossProfit: number;
   marginPct: string | null;

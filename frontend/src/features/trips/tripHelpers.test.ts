@@ -7,6 +7,7 @@ import {
   getExternalTripPreviewGrossProfit,
   getMissingPlanFields,
   getTripDisplayGrossProfit,
+  getTripRevenueBasis,
   isTripToday,
 } from './tripHelpers';
 
@@ -218,6 +219,49 @@ describe('getTripDisplayGrossProfit', () => {
     } as TripDetail;
 
     expect(getTripDisplayGrossProfit(trip)).toBe(-876500);
+  });
+});
+
+describe('getTripRevenueBasis (kanban 101026203100)', () => {
+  type BasisInput = Pick<TripDetail, 'revenue' | 'vatRate'>;
+
+  it('splits the VAT-inclusive contract value into ex-VAT freight and output VAT', () => {
+    // Trip 356 / TRP-202610-0002: 8.466.120 ₫ contract at 8% VAT, stored profit
+    // 2.379.475 ₫ = 7.839.000 − 5.459.525 — the ex-VAT basis, not the contract.
+    const basis = getTripRevenueBasis({ revenue: '8466120', vatRate: '0.080' });
+
+    expect(basis).toEqual({
+      contract: 8466120,
+      freightExVat: 7839000,
+      vatAmount: 627120,
+      vatRate: 0.08,
+    });
+    expect(basis.freightExVat - 5459525).toBe(2379475);
+  });
+
+  it('leaves a trip without VAT on the contract value (backward compatible)', () => {
+    expect(getTripRevenueBasis({ revenue: '24130980', vatRate: '0.000' })).toEqual({
+      contract: 24130980,
+      freightExVat: 24130980,
+      vatAmount: 0,
+      vatRate: 0,
+    });
+    expect(getTripRevenueBasis({ revenue: '1000000', vatRate: null } as unknown as BasisInput)).toEqual({
+      contract: 1000000,
+      freightExVat: 1000000,
+      vatAmount: 0,
+      vatRate: 0,
+    });
+  });
+
+  it('rounds the ex-VAT freight the way the stored profit was computed', () => {
+    // computeExVatAmount rounds to the đồng; the memo rows must not drift from it.
+    expect(getTripRevenueBasis({ revenue: '7560000', vatRate: '0.080' })).toEqual({
+      contract: 7560000,
+      freightExVat: 7000000,
+      vatAmount: 560000,
+      vatRate: 0.08,
+    });
   });
 });
 

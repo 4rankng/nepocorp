@@ -2,6 +2,7 @@ import React from 'react';
 import { Wallet } from 'lucide-react';
 import { Money } from '../../../components/shared/Money';
 import type { TripDerivedData } from '../types';
+import { formatVatRate } from '../formatters';
 
 interface FinancialCardProps {
   derived: TripDerivedData;
@@ -21,7 +22,8 @@ function NegMoney({ value }: { value: number }) {
 
 export function FinancialCard({ derived, customerCommission = 0 }: FinancialCardProps) {
   const {
-    revenue, freightRevenue, fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary,
+    freightRevenue, contractRevenue, vatAmount, vatRate,
+    fuelCost, roadAllowance, tollCost, tollsDiscount, driverSalary,
     twoPointDeliveryBonus, vehicleShiftAllowance,
     totalCost, grossProfit, externalHireCost,
   } = derived;
@@ -30,6 +32,12 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
   const showCommission = customerCommission > 0;
   const showTwoPointBonus = twoPointDeliveryBonus > 0;
   const showShiftAllowance = vehicleShiftAllowance > 0;
+  // An own-truck trip with output VAT states the VAT ladder explicitly: the row
+  // above the costs is the VAT-exclusive freight the profit is recorded on, and
+  // the two memo rows add the VAT back up to the VAT-inclusive contract value.
+  // Without them the card showed 8.466.120 ₫ above a 2.379.475 ₫ profit computed
+  // on 7.839.000 ₫ (kanban 101026203100).
+  const showVat = !isExternal && vatAmount > 0;
 
   return (
     <div className="card">
@@ -39,9 +47,21 @@ export function FinancialCard({ derived, customerCommission = 0 }: FinancialCard
       <div className="card-body">
         <div className="pl">
           <div className="pl-row">
-            <span className="k">Doanh thu</span>
-            <span className="v"><Money value={isExternal ? freightRevenue : revenue} /></span>
+            <span className="k">Doanh thu{showVat ? ' (chưa VAT)' : ''}</span>
+            <span className="v"><Money value={freightRevenue} /></span>
           </div>
+          {showVat && (
+            <>
+              <div className="pl-row pl-row--sub">
+                <span className="k">Thuế VAT đầu ra {formatVatRate(vatRate)}%</span>
+                <span className="v"><Money value={vatAmount} sign="+" /></span>
+              </div>
+              <div className="pl-row pl-row--sub">
+                <span className="k">Doanh thu gồm VAT</span>
+                <span className="v"><Money value={contractRevenue} /></span>
+              </div>
+            </>
+          )}
           {showCommission && (
             <div className="pl-row">
               <span className="k"><span className="swatch swatch--commission" />Hoa hồng khách hàng</span>
