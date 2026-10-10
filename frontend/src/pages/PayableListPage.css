@@ -386,14 +386,17 @@
 
 /* Per-category supplier count. The chip row is never hidden any more, so the
    count is what tells an accountant whether a tab will have rows (091026235510).
-   While it is still loading nothing is rendered rather than a misleading 0. */
+   While it is still loading nothing is rendered rather than a misleading 0.
+   The label and this badge are separated by a real space character in the
+   markup (kanban 101026102020), so the margin is only the remainder of the 7px
+   gap the badge carried on its own. */
 .payables-page .payables-category-chip__count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 20px;
   height: 20px;
-  margin-left: 7px;
+  margin-left: 4.5px;
   padding: 0 6px;
   border-radius: 999px;
   background: var(--surface-3, #f1f5f9);

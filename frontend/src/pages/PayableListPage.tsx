@@ -340,7 +340,18 @@ export default function PayableListPage() {
                 onClick={() => setCategory(chip.value)}
               >
                 {chip.label}
-                {count !== null && <span className="payables-category-chip__count">{count}</span>}
+                {/* The button is a block container, so an explicit space here is
+                    the separator that keeps the DOM text "Xăng dầu 1" — the two
+                    children used to sit flush and the chip read "Xăng dầu1" to
+                    anything copying the page (kanban 101026102020). The badge's
+                    CSS margin is reduced by the width of this space to keep the
+                    rendered gap at 7px. */}
+                {count !== null && (
+                  <>
+                    {' '}
+                    <span className="payables-category-chip__count">{count}</span>
+                  </>
+                )}
               </button>
             );
           })}
