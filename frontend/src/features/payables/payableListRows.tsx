@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { formatCurrency } from '../../lib/format';
 import { ClickableCard } from '../../components/shared/ClickableCard';
 import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
-import { payableDetailHref } from './payableListUtils';
+import { payableDetailHref, AGING_BUCKET_LABELS } from './payableListUtils';
 
 /* ─── Mobile card list (<=640px) ──────────────────────────────────────────── */
 
@@ -72,10 +72,9 @@ export function PayableDesktopTable({ payables }: { payables: PayableSummary[] }
             <tr>
               <th>Nhà cung cấp</th>
               <th className="num">Tổng nợ</th>
-              <th>0-30 ngày</th>
-              <th>31-60 ngày</th>
-              <th>61-90 ngày</th>
-              <th>&gt;90 ngày</th>
+              {AGING_BUCKET_LABELS.map(label => (
+                <th key={label}>{label}</th>
+              ))}
               <th style={{ width: 48 }}></th>
             </tr>
           </thead>

@@ -12,6 +12,7 @@ import { usePageAnimations } from '../hooks/animations';
 import './PayableListPage.css';
 import '../components/shared/HeroKpiRow.css';
 import {
+  AGING_BUCKET_LABELS,
   CATEGORY_CHIPS,
   computeAgingTotals,
   payableDetailHref,
@@ -255,7 +256,7 @@ export default function PayableListPage() {
 
   /* ── CSV export ── */
   const handleExport = async () => {
-    const headers = ['Nhà cung cấp', 'Tổng nợ', '0-30 ngày', '31-60 ngày', '61-90 ngày', '>90 ngày'];
+    const headers = ['Nhà cung cấp', 'Tổng nợ', ...AGING_BUCKET_LABELS];
     const rows = filteredPayables.map(d => [
       d.supplier.name,
       d.totalOutstanding,

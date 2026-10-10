@@ -1,4 +1,5 @@
 import { TxnType } from '@tingting/shared';
+import { AGING_BUCKET_LABELS } from './payableListUtils';
 
 export const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.VENDOR_EXPENSE]:  { label: 'Ghi nhận chi phí',   pill: 'dd-txn-pill dd-txn-pill--pen' },
@@ -10,11 +11,13 @@ export const TXN_META: Record<string, { label: string; pill: string }> = {
 };
 export const DEFAULT_META = { label: 'KHÁC', pill: 'dd-txn-pill dd-txn-pill--other' };
 
+// Labels come from AGING_BUCKET_LABELS so the detail buckets and the list
+// surface can never drift apart again (kanban 101026102020).
 export const AGING_RANGES = [
-  { label: '0–30 NGÀY',    dotColor: 'var(--accent)',  index: 0 },
-  { label: '31–60 NGÀY',   dotColor: 'var(--warning)', index: 1 },
-  { label: '61–90 NGÀY',   dotColor: '#D97706',        index: 2 },
-  { label: 'TRÊN 90 NGÀY', dotColor: 'var(--danger)',  index: 3 },
+  { label: AGING_BUCKET_LABELS[0].toUpperCase(), dotColor: 'var(--accent)',  index: 0 },
+  { label: AGING_BUCKET_LABELS[1].toUpperCase(), dotColor: 'var(--warning)', index: 1 },
+  { label: AGING_BUCKET_LABELS[2].toUpperCase(), dotColor: '#D97706',        index: 2 },
+  { label: AGING_BUCKET_LABELS[3].toUpperCase(), dotColor: 'var(--danger)',  index: 3 },
 ] as const;
 
 export type LedgerFilter = 'all' | typeof TxnType.VENDOR_EXPENSE | typeof TxnType.VENDOR_PAYMENT | typeof TxnType.ADJUSTMENT | typeof TxnType.FUEL_EXPENSE | typeof TxnType.EXTERNAL_CARRIER_COST;

@@ -1,6 +1,6 @@
 import type { MoneyParts } from '../../lib/format';
 import { AssetIcon } from '../../components/AssetIcon';
-import type { PayablesAgingTotals } from './payableListUtils';
+import { AGING_BUCKET_LABELS, type PayablesAgingTotals } from './payableListUtils';
 
 /* ─── Zone 1: Hero KPI Row ────────────────────────────────────────────────── */
 
@@ -17,7 +17,7 @@ export function PayableHeroKpiRow({
       <div className="hero-kpi-card">
         <span className="hero-kpi-card__eyebrow">Tổng công nợ phải trả</span>
         <span className="hero-kpi-card__amount">
-          <span>{heroMoney.num}</span>
+          <span>{heroMoney.num}</span>{' '}
           <span className="hero-kpi-card__currency">{heroMoney.unit}</span>
         </span>
         <span className="hero-kpi-card__subtitle">
@@ -32,7 +32,7 @@ export function PayableHeroKpiRow({
           <div className="hero-kpi-mini__body">
             <span className="hero-kpi-mini__value">
               {totals.overdueCount}
-            </span>
+            </span>{' '}
             <span className="hero-kpi-mini__label">quá hạn</span>
           </div>
           <AssetIcon name="overdue" size={44} className="hero-kpi-mini__watermark hero-kpi-mini__watermark--asset" />
@@ -41,7 +41,7 @@ export function PayableHeroKpiRow({
           <div className="hero-kpi-mini__body">
             <span className="hero-kpi-mini__value">
               {totals.supplierCount}
-            </span>
+            </span>{' '}
             <span className="hero-kpi-mini__label">nhà cung cấp</span>
           </div>
           <AssetIcon name="active-supplier" size={44} className="hero-kpi-mini__watermark hero-kpi-mini__watermark--asset" />
@@ -79,10 +79,10 @@ export function PayableAgingGrid({
       <div className="aging-card aging-card--ok">
         <div className="aging-card__header">
           <span className="aging-card__dot aging-card__dot--ok" />
-          <span className="aging-card__label">0–30 ngày</span>
+          <span className="aging-card__label">{AGING_BUCKET_LABELS[0]}</span>
         </div>
         <span className="aging-card__value">
-          <span>{currentMoney.num}</span><span className="aging-card__unit">{currentMoney.unit}</span>
+          <span>{currentMoney.num}</span>{' '}<span className="aging-card__unit">{currentMoney.unit}</span>
         </span>
         <span className="aging-card__count">{totals.currentCount} NCC</span>
         <div className="aging-card__bar-track">
@@ -94,10 +94,10 @@ export function PayableAgingGrid({
       <div className="aging-card aging-card--warn">
         <div className="aging-card__header">
           <span className="aging-card__dot aging-card__dot--warn" />
-          <span className="aging-card__label">31–60 ngày</span>
+          <span className="aging-card__label">{AGING_BUCKET_LABELS[1]}</span>
         </div>
         <span className="aging-card__value">
-          <span>{d30Money.num}</span><span className="aging-card__unit">{d30Money.unit}</span>
+          <span>{d30Money.num}</span>{' '}<span className="aging-card__unit">{d30Money.unit}</span>
         </span>
         <span className="aging-card__count">{totals.d30Count} NCC</span>
         <div className="aging-card__bar-track">
@@ -109,10 +109,10 @@ export function PayableAgingGrid({
       <div className="aging-card aging-card--deep">
         <div className="aging-card__header">
           <span className="aging-card__dot aging-card__dot--deep" />
-          <span className="aging-card__label">61–90 ngày</span>
+          <span className="aging-card__label">{AGING_BUCKET_LABELS[2]}</span>
         </div>
         <span className="aging-card__value">
-          <span>{d60Money.num}</span><span className="aging-card__unit">{d60Money.unit}</span>
+          <span>{d60Money.num}</span>{' '}<span className="aging-card__unit">{d60Money.unit}</span>
         </span>
         <span className="aging-card__count">{totals.d60Count} NCC</span>
         <div className="aging-card__bar-track">
@@ -124,10 +124,10 @@ export function PayableAgingGrid({
       <div className="aging-card aging-card--danger">
         <div className="aging-card__header">
           <span className="aging-card__dot aging-card__dot--danger" />
-          <span className="aging-card__label">Trên 90 ngày</span>
+          <span className="aging-card__label">{AGING_BUCKET_LABELS[3]}</span>
         </div>
         <span className="aging-card__value">
-          <span>{over90Money.num}</span><span className="aging-card__unit">{over90Money.unit}</span>
+          <span>{over90Money.num}</span>{' '}<span className="aging-card__unit">{over90Money.unit}</span>
         </span>
         <span className="aging-card__count">{totals.over90Count} NCC</span>
         <div className="aging-card__bar-track">

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeAgingTotals } from './payableListUtils';
+import { AGING_BUCKET_LABELS, computeAgingTotals } from './payableListUtils';
+import { AGING_RANGES } from './payableDetailUtils';
 import type { PayableSummary, Supplier } from '@tingting/shared';
 
 function supplier(id: number, name: string): Supplier {
@@ -61,4 +62,29 @@ describe('computeAgingTotals invariants', () => {
     expect(totals.total).toBe(0);
   });
 
+});
+
+/**
+ * Regression: kanban 101026102020 — one bucket was spelled two ways on one
+ * screen: the aging cards said "0–30 ngày" (en dash) beside table columns that
+ * said "0-30 ngày" (hyphen), and "Trên 90 ngày" sat next to ">90 ngày".
+ */
+describe('AGING_BUCKET_LABELS', () => {
+  it('names every bucket with an en dash, and the last one with the word "Trên"', () => {
+    expect([...AGING_BUCKET_LABELS]).toEqual([
+      '0–30 ngày',
+      '31–60 ngày',
+      '61–90 ngày',
+      'Trên 90 ngày',
+    ]);
+    for (const label of AGING_BUCKET_LABELS) {
+      expect(label).not.toContain('-'); // ASCII hyphen-minus never spells a range here
+      expect(label).not.toContain('>');
+    }
+    expect(AGING_BUCKET_LABELS.slice(0, 3).every(l => l.includes('–'))).toBe(true);
+  });
+
+  it('is the same list the detail page renders, uppercased', () => {
+    expect(AGING_RANGES.map(r => r.label)).toEqual(AGING_BUCKET_LABELS.map(l => l.toUpperCase()));
+  });
 });

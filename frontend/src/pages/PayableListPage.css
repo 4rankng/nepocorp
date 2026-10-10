@@ -67,10 +67,12 @@
   color: var(--ink-3, #8B919B);
 }
 
+/* The amount and its unit are one text flow, not two flex items: as flex items
+   Chrome reported them on separate lines ("311.270.004\n₫") and the two spans
+   carried no separator, so the card read "311.270.004₫" to anything copying the
+   page while a table cell read "311.270.004 ₫" (kanban 101026102020). */
 .aging-card__value {
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
+  display: block;
   font-family: var(--font-display);
   font-size: var(--fs-xl);
   font-weight: 600;

@@ -45,6 +45,23 @@ export const CATEGORY_CHIPS: Array<{ value: PayablesCategory | undefined; label:
   { value: 'carrier', label: 'Vận chuyển thuê ngoài' },
 ];
 
+/* ─── Aging buckets ───────────────────────────────────────────────────────── */
+
+/**
+ * One source of truth for the four aging bucket labels on every payables
+ * surface — the desktop table header, the aging cards and the CSV export all
+ * read this list (kanban 101026102020). The same bucket used to be spelled two
+ * ways on one screen: the cards said "0–30 ngày" (en dash) beside table columns
+ * that said "0-30 ngày" (hyphen), and "Trên 90 ngày" sat next to ">90 ngày".
+ * The detail page (`AGING_RANGES`) uppercases this same list.
+ */
+export const AGING_BUCKET_LABELS = [
+  '0–30 ngày',
+  '31–60 ngày',
+  '61–90 ngày',
+  'Trên 90 ngày',
+] as const;
+
 /* ─── Derived aggregates ──────────────────────────────────────────────────── */
 
 export function computeAgingTotals(
