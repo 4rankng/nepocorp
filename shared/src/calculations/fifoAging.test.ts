@@ -1,12 +1,67 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { computeFifoAging } from './fifoAging.ts';
+import { bucketOpenInvoices, computeFifoAging, maxOpenInvoiceAgeDays } from './fifoAging.ts';
 import type { FifoAgingInput } from './fifoAging.ts';
 
 // Helper: create a date N days before the reference date
 function daysAgo(days: number, ref: Date): string {
   return new Date(ref.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 }
+
+describe('computeFifoAging refs — the per-type payables split (kanban 101026203120)', () => {
+  const ref = new Date('2026-06-01T00:00:00Z');
+
+  test('each open invoice keeps the ref of the debit that produced it', () => {
+    const entries: FifoAgingInput[] = [
+      { timestamp: daysAgo(45, ref), debit: '500000', credit: '0', ref: 'VENDOR_EXPENSE' },
+      { timestamp: daysAgo(10, ref), debit: '300000', credit: '0', ref: 'FUEL_EXPENSE' },
+    ];
+    const { openInvoices } = computeFifoAging(entries, ref);
+
+    assert.deepStrictEqual(openInvoices.map(i => i.ref), ['VENDOR_EXPENSE', 'FUEL_EXPENSE']);
+  });
+
+  test('a credit reduces the open invoice it is allocated to, keeping that invoice ref', () => {
+    const entries: FifoAgingInput[] = [
+      { timestamp: daysAgo(45, ref), debit: '500000', credit: '0', ref: 'VENDOR_EXPENSE' },
+      { timestamp: daysAgo(5, ref), debit: '0', credit: '500000', ref: 'ADJUSTMENT' },
+    ];
+    const { aging, openInvoices } = computeFifoAging(entries, ref);
+
+    // The ADJUSTMENT paid the expense off: nothing open, nothing aged.
+    assert.strictEqual(openInvoices[0].open, 0);
+    assert.strictEqual(aging.current + aging.d30 + aging.d60 + aging.over90, 0);
+  });
+
+  test('omits ref entirely when the caller supplies none (existing callers unchanged)', () => {
+    const { openInvoices } = computeFifoAging([{ timestamp: daysAgo(3, ref), debit: '1000', credit: '0' }], ref);
+    assert.deepStrictEqual(openInvoices, [{ ts: daysAgo(3, ref), open: 1000 }]);
+  });
+});
+
+describe('bucketOpenInvoices / maxOpenInvoiceAgeDays', () => {
+  const ref = new Date('2026-06-01T00:00:00Z');
+
+  test('buckets by age with the same boundaries as computeFifoAging', () => {
+    const buckets = bucketOpenInvoices([
+      { ts: daysAgo(10, ref), open: 1_000 },
+      { ts: daysAgo(45, ref), open: 2_000 },
+      { ts: daysAgo(75, ref), open: 3_000 },
+      { ts: daysAgo(120, ref), open: 4_000 },
+      { ts: daysAgo(45, ref), open: 0 },
+    ], ref);
+
+    assert.deepStrictEqual(buckets, { current: 1_000, d30: 2_000, d60: 3_000, over90: 4_000 });
+  });
+
+  test('reports the oldest still-open age and ignores settled invoices', () => {
+    assert.strictEqual(maxOpenInvoiceAgeDays([
+      { ts: daysAgo(45, ref), open: 0 },
+      { ts: daysAgo(20, ref), open: 500 },
+    ], ref), 20);
+    assert.strictEqual(maxOpenInvoiceAgeDays([], ref), 0);
+  });
+});
 
 describe('computeFifoAging', () => {
   const ref = new Date('2026-06-01T00:00:00Z');

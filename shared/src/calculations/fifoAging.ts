@@ -2,6 +2,14 @@ export interface FifoAgingInput {
   timestamp: string | null;
   debit: string | number;
   credit: string | number;
+  /**
+   * Optional label carried onto the open invoice this entry produces. The
+   * payables aging tags every entry with its transaction type so a category
+   * view can sum exactly the debits that are STILL OPEN after FIFO allocation,
+   * instead of every debit of that type regardless of what paid it
+   * (kanban 101026203120).
+   */
+  ref?: string;
 }
 
 export interface AgingBuckets {
@@ -14,6 +22,47 @@ export interface AgingBuckets {
 export interface OpenInvoice {
   ts: string;
   open: number;
+  /** The `ref` of the entry this invoice came from, when the caller supplied one. */
+  ref?: string;
+}
+
+/**
+ * Bucket still-open invoices by age. Each bucket addition is rounded so sums
+ * stay stable across hundreds of entries.
+ *
+ * Shared with the per-transaction-type projections in the payables aging: one
+ * definition of "which bucket is this invoice in" for every caller.
+ */
+export function bucketOpenInvoices(
+  invoices: readonly OpenInvoice[],
+  referenceDate: Date = new Date(),
+): AgingBuckets {
+  const aging: AgingBuckets = { current: 0, d30: 0, d60: 0, over90: 0 };
+
+  for (const inv of invoices) {
+    if (inv.open <= 0) continue;
+    const ageDays = (referenceDate.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24);
+    if (ageDays <= 30) aging.current += Math.round(inv.open);
+    else if (ageDays <= 60) aging.d30 += Math.round(inv.open);
+    else if (ageDays <= 90) aging.d60 += Math.round(inv.open);
+    else aging.over90 += Math.round(inv.open);
+  }
+
+  return aging;
+}
+
+/** Whole days since the OLDEST still-open invoice; 0 when nothing is open. */
+export function maxOpenInvoiceAgeDays(
+  invoices: readonly OpenInvoice[],
+  referenceDate: Date = new Date(),
+): number {
+  let max = 0;
+  for (const inv of invoices) {
+    if (inv.open <= 0) continue;
+    const ageDays = Math.floor((referenceDate.getTime() - new Date(inv.ts).getTime()) / 86400000);
+    if (ageDays > max) max = ageDays;
+  }
+  return max;
 }
 
 export function computeFifoAging(
@@ -47,7 +96,9 @@ export function computeFifoAging(
       }
       if (debitRemaining > 0) {
         const ts = entry.timestamp ?? referenceDate.toISOString();
-        openInvoices.push({ ts, open: debitRemaining });
+        openInvoices.push(entry.ref === undefined
+          ? { ts, open: debitRemaining }
+          : { ts, open: debitRemaining, ref: entry.ref });
       }
     }
 
@@ -66,17 +117,5 @@ export function computeFifoAging(
     }
   }
 
-  const aging: AgingBuckets = { current: 0, d30: 0, d60: 0, over90: 0 };
-
-  for (const inv of openInvoices) {
-    if (inv.open <= 0) continue;
-    const ageDays = (referenceDate.getTime() - new Date(inv.ts).getTime()) / (1000 * 60 * 60 * 24);
-    // Round each bucket addition to avoid floating-point drift across hundreds of entries.
-    if (ageDays <= 30) aging.current += Math.round(inv.open);
-    else if (ageDays <= 60) aging.d30 += Math.round(inv.open);
-    else if (ageDays <= 90) aging.d60 += Math.round(inv.open);
-    else aging.over90 += Math.round(inv.open);
-  }
-
-  return { aging, openInvoices };
+  return { aging: bucketOpenInvoices(openInvoices, referenceDate), openInvoices };
 }

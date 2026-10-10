@@ -2,12 +2,13 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { cacheGet } from '../lib/redis';
 import { eq, and, or, sql, inArray, like } from 'drizzle-orm';
-import { computeFifoAging, TxnType } from '@tingting/shared';
+import { bucketOpenInvoices, computeFifoAging, maxOpenInvoiceAgeDays, TxnType } from '@tingting/shared';
+import type { AgingBuckets, OpenInvoice } from '@tingting/shared';
 import type { PayableSummary, PayablesCategory, Supplier } from '@tingting/shared';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type LedgerEntry = { debit: string | null; credit: string | null; timestamp: Date | null };
+type LedgerEntry = { debit: string | null; credit: string | null; timestamp: Date | null; txnType?: string | null };
 
 interface AgingConfig {
   entityType: 'CUSTOMER' | 'VENDOR' | 'CARRIER';
@@ -22,8 +23,6 @@ interface FetchOptions {
   entityId?: number;
   /** Restrict to a known set of entities — useful after catalog/search prefiltering */
   entityIds?: number[];
-  /** Restrict to a subset of transaction types (e.g. fuel-only payables). */
-  txnTypes?: TxnType[];
   /** Carrier AP projection, including only carrier-cost reversals. */
   carrierPayables?: boolean;
   /** Read historical CUSTOMER carrier rows together with current CARRIER rows. */
@@ -38,6 +37,15 @@ interface EntityAgingResult {
   openInvoices: Array<{ ts: string; open: number }>;
   totalOutstanding: number;
   maxOverdueDays: number;
+  /**
+   * The same FIFO allocation, split by the transaction type of each still-open
+   * debit. A category chip is a projection of this map, never a query over its
+   * own transaction type — filtering the ledger by type drops the entries that
+   * reverse those debits and reports a gross position the detail page
+   * contradicts (kanban 101026203120). Optional so an older cached payload
+   * simply has no split instead of crashing a reader.
+   */
+  byTxnType?: Record<string, { outstanding: number; aging: AgingBuckets; maxOverdueDays: number }>;
 }
 
 interface AgingPageOptions {
@@ -114,8 +122,6 @@ async function fetchLedgerGrouped(
           )
       )
     )`);
-  } else if (opts.txnTypes && opts.txnTypes.length > 0) {
-    conditions.push(inArray(s.ledger.txnType, opts.txnTypes));
   }
   if (opts.excludeCarrierPayables) {
     conditions.push(sql`not (
@@ -133,6 +139,7 @@ async function fetchLedgerGrouped(
     debit: s.ledger.debit,
     credit: s.ledger.credit,
     timestamp: s.ledger.timestamp,
+    txnType: s.ledger.txnType,
   }).from(s.ledger)
     .where(and(...conditions))
     .orderBy(sql`${s.ledger.id} ASC`);
@@ -140,7 +147,7 @@ async function fetchLedgerGrouped(
   const grouped = new Map<number, LedgerEntry[]>();
   for (const row of ledgerRows) {
     const entries = grouped.get(row.entityId) || [];
-    entries.push({ debit: row.debit, credit: row.credit, timestamp: row.timestamp });
+    entries.push({ debit: row.debit, credit: row.credit, timestamp: row.timestamp, txnType: row.txnType });
     grouped.set(row.entityId, entries);
   }
   return grouped;
@@ -152,6 +159,9 @@ function computeAging(entries: LedgerEntry[], now: Date, invertSigns: boolean) {
       timestamp: e.timestamp instanceof Date ? e.timestamp.toISOString() : (e.timestamp as string | null),
       debit: invertSigns ? (e.credit ?? '0') : (e.debit ?? '0'),
       credit: invertSigns ? (e.debit ?? '0') : (e.credit ?? '0'),
+      // Tag every entry with its transaction type so the still-open invoices
+      // remember what created them.
+      ref: e.txnType ?? 'UNKNOWN',
     })),
     now,
   );
@@ -167,55 +177,75 @@ function computeEntityResults(
   for (const [entityId, entries] of grouped) {
     const { aging, openInvoices } = computeAging(entries, now, config.invertSigns);
     const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
-
-    let maxOverdueDays = 0;
-    for (const inv of openInvoices) {
-      if (inv.open <= 0) continue;
-      const ageDays = Math.floor((now.getTime() - new Date(inv.ts).getTime()) / 86400000);
-      if (ageDays > maxOverdueDays) maxOverdueDays = ageDays;
-    }
+    const maxOverdueDays = maxOpenInvoiceAgeDays(openInvoices, now);
 
     if (totalOutstanding > 0) {
-      results.push({ entityId, aging, openInvoices, totalOutstanding, maxOverdueDays });
+      results.push({ entityId, aging, openInvoices, totalOutstanding, maxOverdueDays, byTxnType: splitOpenByTxnType(openInvoices, now) });
     }
   }
 
   return results;
 }
 
+/**
+ * Split the still-open invoices of one entity by the transaction type that
+ * created them, bucket each group, and report each group's oldest age. The sum
+ * over all groups equals the entity's `totalOutstanding` (and of `aging`), so a
+ * category projection can never exceed the entity's net position.
+ */
+function splitOpenByTxnType(
+  openInvoices: readonly OpenInvoice[],
+  now: Date,
+): Record<string, { outstanding: number; aging: AgingBuckets; maxOverdueDays: number }> {
+  const groups = new Map<string, OpenInvoice[]>();
+  for (const inv of openInvoices) {
+    if (inv.open <= 0) continue;
+    const key = inv.ref ?? 'UNKNOWN';
+    const list = groups.get(key) ?? [];
+    list.push(inv);
+    groups.set(key, list);
+  }
+
+  const split: Record<string, { outstanding: number; aging: AgingBuckets; maxOverdueDays: number }> = {};
+  for (const [key, list] of groups) {
+    const bucket = bucketOpenInvoices(list, now);
+    split[key] = {
+      outstanding: bucket.current + bucket.d30 + bucket.d60 + bucket.over90,
+      aging: bucket,
+      maxOverdueDays: maxOpenInvoiceAgeDays(list, now),
+    };
+  }
+  return split;
+}
+
 async function getEntityResultsCached(
   config: AgingConfig,
   opts: {
     asOfDate?: string;
-    txnTypes?: TxnType[];
     carrierPayables?: boolean;
     entityTypes?: Array<'CUSTOMER' | 'VENDOR' | 'CARRIER'>;
     excludeCarrierPayables?: boolean;
   } = {},
 ): Promise<EntityAgingResult[]> {
   // Cache the expensive "pull all ledger rows for an entity type + run FIFO
-  // aging" step. Keyed by (entityType, invertSigns, asOfDate|today, txnTypes) —
-  // never by entityIds, so the full per-entityType result is computed once per
-  // TTL and list callers filter in JS. Aging buckets are day-granular, so
-  // date-only keying is exact within a day; every ledger write invalidates via
-  // invalidateReportCaches() (route-layer, post-commit). The 300s TTL is only a
-  // safety net. JSON round-trip is lossless here — EntityAgingResult carries no
-  // Date objects (timestamps are ISO strings).
+  // aging" step. Keyed by (entityType, invertSigns, asOfDate|today, projection
+  // kind) — never by entityIds, so the full per-entityType result is computed
+  // once per TTL and list callers (including the category projections) filter in
+  // JS. Aging buckets are day-granular, so date-only keying is exact within a
+  // day; every ledger write invalidates via invalidateReportCaches()
+  // (route-layer, post-commit). The 300s TTL is only a safety net. JSON
+  // round-trip is lossless here — EntityAgingResult carries no Date objects
+  // (timestamps are ISO strings).
   const asOfKey = opts.asOfDate ?? new Date().toISOString().slice(0, 10);
-  const txnKey = opts.carrierPayables
-    ? 'carrier-payables'
-    : opts.txnTypes && opts.txnTypes.length > 0
-      ? opts.txnTypes.join(',')
-      : 'all';
+  const txnKey = opts.carrierPayables ? 'carrier-payables' : 'all';
   const entityKey = opts.entityTypes?.join(',') ?? config.entityType;
   const projectionKey = opts.excludeCarrierPayables ? 'no-carrier-ap' : 'all-projections';
   return cacheGet<EntityAgingResult[]>(
-    `reports:entity-results:${entityKey}:${config.invertSigns ? 'inv' : 'std'}:${asOfKey}:${txnKey}:${projectionKey}`,
+    `reports:entity-results:v2:${entityKey}:${config.invertSigns ? 'inv' : 'std'}:${asOfKey}:${txnKey}:${projectionKey}`,
     300,
     async () => {
       const grouped = await fetchLedgerGrouped(config, {
         asOfDate: opts.asOfDate,
-        txnTypes: opts.txnTypes,
         carrierPayables: opts.carrierPayables,
         entityTypes: opts.entityTypes,
         excludeCarrierPayables: opts.excludeCarrierPayables,
@@ -427,11 +457,35 @@ export async function getCustomerAgingList(opts: { search?: string; asOfDate?: s
 type PayablesScope = {
   entityType: 'CUSTOMER' | 'VENDOR' | 'CARRIER';
   entityTypes?: Array<'CUSTOMER' | 'VENDOR' | 'CARRIER'>;
-  txnTypes?: TxnType[];
   invertSigns: boolean;
   kind: 'vendor' | 'carrier';
   carrierPayables?: boolean;
+  /**
+   * Report only the net position of ONE transaction type, read from the same
+   * FIFO allocation the unfiltered scope uses. A category chip must never be
+   * its own ledger query: filtering the ledger by type drops the entries that
+   * reverse those debits (an expense edit writes ADJUSTMENT + VENDOR_EXPENSE,
+   * a delete writes ADJUSTMENT), so the chip reported a gross 30.000 ₫ the
+   * supplier detail netted to 0 ₫ (kanban 101026203120).
+   */
+  projectTxnType?: TxnType;
 };
+
+/** One entity's figures inside a scope: the whole position, or one type's. */
+type EntityPosition = { outstanding: number; aging: AgingBuckets; maxOverdueDays: number };
+
+/**
+ * The figures a scope reports for one entity. `projectTxnType` undefined = the
+ * entity's whole net position. For a category, null means "nothing open of this
+ * type" — the supplier is left out of that chip.
+ */
+function positionFor(r: EntityAgingResult, projectTxnType?: TxnType): EntityPosition | null {
+  if (projectTxnType === undefined) {
+    return { outstanding: r.totalOutstanding, aging: r.aging, maxOverdueDays: r.maxOverdueDays };
+  }
+  const position = r.byTxnType?.[projectTxnType];
+  return position && position.outstanding > 0 ? position : null;
+}
 
 type PayablesSummaryResult = {
   items: PayableSummary[];
@@ -454,7 +508,6 @@ async function getPayablesForScope(
     { entityType: scope.entityType, invertSigns: scope.invertSigns },
     {
       asOfDate,
-      txnTypes: scope.txnTypes,
       carrierPayables: scope.carrierPayables,
       entityTypes: scope.entityTypes,
     },
@@ -485,8 +538,10 @@ async function getPayablesForScope(
     for (const r of results) {
       const carrier = carrierById.get(r.entityId);
       if (!carrier) continue;
-      totalOutstanding += r.totalOutstanding;
-      if (r.maxOverdueDays > 30) overdueSuppliers++;
+      const position = positionFor(r, scope.projectTxnType);
+      if (!position) continue;
+      totalOutstanding += position.outstanding;
+      if (position.maxOverdueDays > 30) overdueSuppliers++;
       // Build a Supplier-shaped object so the frontend can render uniformly.
       // Fields not present on customers are nulled to satisfy the type.
       const supplierLike = {
@@ -505,9 +560,9 @@ async function getPayablesForScope(
       } as unknown as Supplier;
       items.push({
         supplier: supplierLike,
-        totalOutstanding: r.totalOutstanding,
-        aging: r.aging,
-        maxOverdueDays: r.maxOverdueDays,
+        totalOutstanding: position.outstanding,
+        aging: position.aging,
+        maxOverdueDays: position.maxOverdueDays,
         kind: 'carrier',
       });
     }
@@ -522,13 +577,15 @@ async function getPayablesForScope(
     for (const r of results) {
       const supplier = supplierById.get(r.entityId);
       if (!supplier) continue;
-      totalOutstanding += r.totalOutstanding;
-      if (r.maxOverdueDays > 30) overdueSuppliers++;
+      const position = positionFor(r, scope.projectTxnType);
+      if (!position) continue;
+      totalOutstanding += position.outstanding;
+      if (position.maxOverdueDays > 30) overdueSuppliers++;
       items.push({
         supplier: supplier as unknown as Supplier,
-        totalOutstanding: r.totalOutstanding,
-        aging: r.aging,
-        maxOverdueDays: r.maxOverdueDays,
+        totalOutstanding: position.outstanding,
+        aging: position.aging,
+        maxOverdueDays: position.maxOverdueDays,
         kind: 'vendor',
       });
     }
@@ -566,36 +623,45 @@ export async function getPayablesSummary(opts: { asOfDate?: string; category?: P
     kind: 'carrier',
   };
 
-  /** The scope behind each category chip. */
-  const categoryScope = (category: PayablesCategory): PayablesScope => {
-    switch (category) {
-      case 'fuel':
-        return { ...vendorScope, txnTypes: [TxnType.FUEL_EXPENSE] };
-      case 'ancillary':
-        return { ...vendorScope, txnTypes: [TxnType.VENDOR_EXPENSE] };
-      case 'commission':
-        return { ...vendorScope, txnTypes: [TxnType.COMMISSION] };
-      case 'carrier':
-        return carrierScope;
-    }
+  /**
+   * Transaction type behind each non-carrier chip. The chip is the vendor
+   * scope PROJECTED onto that type — same FIFO allocation, same net figure the
+   * supplier detail prints (kanban 101026203120).
+   */
+  const CATEGORY_TXN_TYPE: Record<Exclude<PayablesCategory, 'carrier'>, TxnType> = {
+    fuel: TxnType.FUEL_EXPENSE,
+    ancillary: TxnType.VENDOR_EXPENSE,
+    commission: TxnType.COMMISSION,
   };
 
   if (!opts.category) {
     // The unfiltered view also reports how many suppliers each category chip
     // would show, so the page can hide a chip that would open an empty table
-    // (kanban 091026135140). Those scoped aggregates are cached, so a later
-    // chip switch is a cache hit, not a re-aggregation.
-    const categories: PayablesCategory[] = ['fuel', 'ancillary', 'commission', 'carrier'];
-    const [vendor, carrier, ...categoryResults] = await Promise.all([
+    // (kanban 091026135140). Each count comes from the SAME projection the chip
+    // itself renders, and every projection re-uses the one cached vendor
+    // aggregation — no per-category ledger query.
+    const [vendor, carrier, fuel, ancillary, commission] = await Promise.all([
       getPayablesForScope(vendorScope, opts.asOfDate),
       getPayablesForScope(carrierScope, opts.asOfDate),
-      ...categories.map(c => getPayablesForScope(categoryScope(c), opts.asOfDate)),
+      getPayablesForScope({ ...vendorScope, projectTxnType: CATEGORY_TXN_TYPE.fuel }, opts.asOfDate),
+      getPayablesForScope({ ...vendorScope, projectTxnType: CATEGORY_TXN_TYPE.ancillary }, opts.asOfDate),
+      getPayablesForScope({ ...vendorScope, projectTxnType: CATEGORY_TXN_TYPE.commission }, opts.asOfDate),
     ]);
-    const categoryCounts = Object.fromEntries(
-      categories.map((c, i) => [c, categoryResults[i].totalSuppliers]),
-    ) as Record<PayablesCategory, number>;
+    const categoryCounts = {
+      fuel: fuel.totalSuppliers,
+      ancillary: ancillary.totalSuppliers,
+      commission: commission.totalSuppliers,
+      carrier: carrier.totalSuppliers,
+    } satisfies Record<PayablesCategory, number>;
     return { ...mergePayablesSummaries([vendor, carrier]), categoryCounts };
   }
 
-  return getPayablesForScope(categoryScope(opts.category), opts.asOfDate);
+  if (opts.category === 'carrier') {
+    return getPayablesForScope(carrierScope, opts.asOfDate);
+  }
+
+  return getPayablesForScope(
+    { ...vendorScope, projectTxnType: CATEGORY_TXN_TYPE[opts.category] },
+    opts.asOfDate,
+  );
 }

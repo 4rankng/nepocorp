@@ -149,7 +149,7 @@ export {
 } from './calculations/iso6346';
 export { computeDriverRoadAllowance, computeExVatAmount, computeTripTotals, computeRoadAllowance } from './calculations/tripTotals';
 export type { ComputeTripTotalsInput, ComputeTripTotalsOutput } from './calculations/tripTotals';
-export { computeFifoAging } from './calculations/fifoAging';
+export { computeFifoAging, bucketOpenInvoices, maxOpenInvoiceAgeDays } from './calculations/fifoAging';
 export type { FifoAgingInput, AgingBuckets, OpenInvoice } from './calculations/fifoAging';
 export { computeVehicleAlerts, VEHICLE_ALERT_LABELS } from './calculations/vehicleAlerts';
 export type { VehicleAlertInput } from './calculations/vehicleAlerts';
