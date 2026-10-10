@@ -68,8 +68,8 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 | `GET` | `/api/advance-settlements/:id` | ADMIN / ACCOUNTANT / MANAGER | Xem chi tiết phiếu; MANAGER chỉ có quyền đọc |
 | `PUT` | `/api/advance-settlements/:id` | ADMIN / ACCOUNTANT | Cập nhật phiếu đang chờ xử lý |
 | `PATCH` | `/api/advance-settlements/:id/expenses/:expenseId` | ADMIN / ACCOUNTANT | Điều chỉnh khoản hiện có; bắt buộc lý do |
-| `POST` | `/api/advance-settlements/:id/approve` | ADMIN / ACCOUNTANT | Duyệt trực tiếp một lần |
-| `POST` | `/api/advance-settlements/:id/reject` | ADMIN / ACCOUNTANT | Từ chối phiếu, giữ lịch sử và mở khoản để gửi lại |
+| `POST` | `/api/advance-settlements/:id/approve` | ADMIN / MANAGER / ACCOUNTANT | Duyệt trực tiếp một lần |
+| `POST` | `/api/advance-settlements/:id/reject` | ADMIN / MANAGER / ACCOUNTANT | Từ chối phiếu, giữ lịch sử và mở khoản để gửi lại |
 
 > `POST /api/advance-settlements/:id/check` chỉ được giữ để tương thích client cũ. Giao diện hiện tại không gọi bước này.
 
@@ -269,7 +269,7 @@ ACCOUNTANT mở phiếu PENDING (hoặc dữ liệu cũ CHECKED_BY_ACCOUNTANT)
 → Hệ thống lưu số Ops kê, số kế toán chốt và tính lại totalExpenseAmount
 → POST /api/advance-settlements/:id/approve
 → Phiếu chuyển APPROVED, ghi ledger đúng một lần và gửi thông báo cho Ops
-MANAGER chỉ GET/xem, không có quyền điều chỉnh, duyệt hoặc từ chối
+MANAGER được Duyệt / Từ chối, nhưng không có quyền điều chỉnh số tiền trong phiếu (việc sửa số là của Kế toán)
 ```
 
 `PUT /api/advance-settlements/:id` nhận toàn bộ thành phần phiếu (`advanceRequestIds`, `tripExpenseIds`, `refundAmount`, `reimbursementAmount`, `note`). Hệ thống chỉ chấp nhận tạm ứng đã duyệt và chi phí thuộc phạm vi **Đã kê xong**, cùng giao nhận, chưa nằm trong phiếu khác chưa bị từ chối; đồng thời kiểm tra `tạm ứng + reimbursementAmount = chi phí + refundAmount` trong cùng transaction. `refundAmount` và `reimbursementAmount` là hai hướng thay thế nhau, không được cùng lớn hơn 0; giao diện tự suy ra chiều hiển thị từ chính hai trường này. Chi tiết phiếu trả thêm `eligibleAdvanceRequests` và `eligibleExpenses` để kế toán thay đổi thành phần an toàn.

@@ -60,13 +60,13 @@ router.post('/advance-settlements/:id/check', requireRoles(Role.ADMIN, Role.ACCO
   res.json(result);
 }));
 
-router.post('/advance-settlements/:id/approve', requireRoles(Role.ADMIN, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+router.post('/advance-settlements/:id/approve', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const result = await approveAdvanceSettlement(id, getUser(req).userId);
   res.json(result);
 }));
 
-router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const result = await rejectAdvanceSettlement(id, getUser(req).userId);
   res.json(result);

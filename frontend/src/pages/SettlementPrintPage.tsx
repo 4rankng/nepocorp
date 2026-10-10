@@ -9,6 +9,7 @@ import { useToast } from '../components/shared/Toast';
 import { downloadBlob } from '../lib/download';
 import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
+import { canApproveSettlement, canAdjustSettlementAmounts } from '../features/advances/settlementPermissions';
 import { PageHeader, StatusPill } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
@@ -222,7 +223,11 @@ export default function SettlementPrintPage() {
 
   const plans = groupSettlementExpensesByTrip(expenses);
   const totalFromPlans = plans.reduce((sum, plan) => sum + plan.totalExpense, 0);
-  const canEditExpenses = !isPortal && (user?.role === 'ACCOUNTANT' || user?.role === 'ADMIN') && (s.status === 'PENDING' || s.status === 'CHECKED_BY_ACCOUNTANT');
+  // Both rights need the phiếu to still be awaiting sign-off. They are separate
+  // capabilities, not one: MANAGER may sign the sheet but not rewrite it.
+  const awaitingSignOff = s.status === 'PENDING' || s.status === 'CHECKED_BY_ACCOUNTANT';
+  const canEditExpenses = !isPortal && canAdjustSettlementAmounts(user?.role) && awaitingSignOff;
+  const maySignOff = !isPortal && canApproveSettlement(user?.role) && awaitingSignOff;
   // Ops sở hữu phiếu có thể tự bổ sung/bớt tạm ứng, chi phí khi phiếu còn CHỜ XỬ LÝ.
   const canEditComposition = canEditExpenses || (isPortal && s.status === 'PENDING');
 
@@ -324,7 +329,7 @@ export default function SettlementPrintPage() {
               >
                 <FileSpreadsheet size={14} /> Excel
               </button>
-              {canEditExpenses && (
+              {maySignOff && (
                 <>
                   <button
                     className="btn btn--primary btn--sm"

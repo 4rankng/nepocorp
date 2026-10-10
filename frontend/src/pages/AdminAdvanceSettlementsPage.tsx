@@ -4,6 +4,7 @@ import { Loader2, FileText, Pencil, XCircle, CheckCircle2 } from 'lucide-react';
 import { usePageAnimations } from '../hooks/animations';
 import { formatNumber, formatDate } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
+import { canApproveSettlement } from '../features/advances/settlementPermissions';
 import { AdvanceSettlementStatus, Role } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
 import { PageHeader, StatusPill, Toolbar, FilterPill, ConfirmDialog } from '../components/UI';
@@ -400,7 +401,7 @@ export default function AdminAdvanceSettlementsPage() {
     onReject: (id: number) => rejectMutation.mutate(id),
   };
   const { user } = useAuth();
-  const canApproveReject = user?.role === Role.ADMIN || user?.role === Role.ACCOUNTANT;
+  const canApproveReject = canApproveSettlement(user?.role);
 
   const allSettlements: Settlement[] = useMemo(
     () => (data?.items ?? []) as Settlement[],
