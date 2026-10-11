@@ -4,8 +4,12 @@
  * ========================================================================== */
 
 .settlement-detail {
-  max-width: 1120px;
-  margin: 0 auto;
+  /* Deliberately uncapped. It used to be max-width: 1120px, which at a 1568px
+     window left the parent 1261px wide but the sheet 1120px — 141px unused
+     while 'Chi tiết chi phí' wrapped inside the cap. The table's own columns
+     absorb the extra width (the fee column is the flexible one), and @media
+     print already forces max-width: 100%. */
+  width: 100%;
 }
 
 /* ─── Header Card ─── */
@@ -197,10 +201,13 @@
 .settlement-plan-table__header,
 .settlement-plan-table__row {
   display: grid;
+  /* Columns 1-2 are fixed: a date, a short customer name, a trip code and one
+     container number never need more, and every pixel they claimed came out of
+     the fee column — the only column whose content wraps. */
   grid-template-columns:
-    minmax(145px, .8fr)
-    minmax(145px, .75fr)
-    minmax(280px, 1.8fr)
+    170px
+    160px
+    minmax(0, 1fr)
     120px;
   gap: 14px;
 }
@@ -258,16 +265,22 @@
   overflow-wrap: anywhere;
 }
 
+/* Two fixed columns, not a greedy flex run: wrapped chips left the second
+   column starting at a different height on every row and put the amount of one
+   fee beside the label of the next. */
 .settlement-plan-table__costs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
   min-width: 0;
+  align-content: start;
 }
 
 .settlement-plan-cost {
   display: grid;
-  grid-template-columns: auto auto;
+  /* Label takes the room, amount pinned to the chip's right edge so the figures
+     line up down the column. */
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   gap: 2px 7px;
   padding: 6px 8px;
