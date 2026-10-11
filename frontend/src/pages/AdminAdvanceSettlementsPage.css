@@ -169,8 +169,8 @@
     50px
     130px
     minmax(230px, 1fr)
-    90px
-    150px;
+    110px
+    190px;
   gap: 8px;
 }
 .as-page .as-grid-head {
@@ -236,6 +236,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: var(--control-h);
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--line-2);
@@ -276,7 +277,7 @@
   .as-page .as-batch-action {
     flex: 1 1 auto;
     justify-content: center;
-    min-height: 44px;
+    min-height: var(--control-h);
   }
 }
 .as-page .as-settlement-summary > div {
@@ -455,8 +456,40 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
+}
+
+/* Deciding actor as a label + name pair, on the same left edge as the pill and
+   the row action above/below it. */
+.as-page .as-decider {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  color: var(--ink-3);
+}
+
+.as-page .as-decider__label {
+  flex: 0 0 auto;
+  letter-spacing: 0.01em;
+}
+
+.as-page .as-decider__name {
+  color: var(--ink-2);
+  font-weight: var(--fw-semibold);
+  overflow-wrap: anywhere;
+}
+
+/* The action is a left-aligned row link now, so the old right-aligned history
+   column has nothing left to align. */
+.as-page .as-actions--history {
+  align-items: flex-start;
+  flex-direction: row;
+  gap: 6px;
 }
 .as-page .as-status-actions .as-actions {
   justify-content: flex-start;
@@ -472,7 +505,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
+  min-height: var(--control-h);
   border-radius: 7px;
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
@@ -499,7 +532,7 @@
   border-color: color-mix(in srgb, var(--brand) 24%, var(--line));
 }
 .as-page .as-row-action--quiet {
-  min-height: 36px;
+  min-height: var(--control-h);
   padding: 6px 0;
   border-color: transparent;
   background: transparent;
@@ -529,16 +562,6 @@
 .as-page .as-reject-action:disabled {
   cursor: not-allowed;
   opacity: 0.5;
-}
-.as-page .as-approver {
-  font-size: var(--fs-xs);
-  color: var(--ink-3);
-  text-align: right;
-  line-height: 1.35;
-}
-.as-page .as-approver strong {
-  color: var(--ink-2);
-  font-weight: var(--fw-semibold);
 }
 
 /* ── Loading / empty states ───────────────────────────────────────────── */
@@ -800,7 +823,7 @@
 }
 .as-page .as-mcard__actions .btn {
   justify-content: center;
-  min-height: 44px;
+  min-height: var(--cta-h);
 }
 .as-page .as-mcard__reject {
   border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--line));

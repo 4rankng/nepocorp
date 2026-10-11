@@ -214,36 +214,31 @@ export function SettlementGridRow({
             <Money value={plan?.totalExpense ?? Number(s.totalExpenseAmount)} />
           </div>
 
+          {/* One vertical rhythm, one left edge: status, then who decided it as a
+              label+name pair (not a right-aligned sentence), then the row's
+              action. The block used to stagger a pill, a right-aligned link and
+              a right-aligned "Duyệt bởi …" line, which read like a message rather
+              than a data column (kanban 111026094000). */}
           <div className="as-status-actions">
             <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
               {settlementStatusLabel(s.status)}
             </StatusPill>
 
-            <div className={`as-actions${canAct ? '' : ' as-actions--history'}`}>
-              {canAct ? (
-                <>
-                  <Link
-                    className="as-row-action"
-                    to={`/settlements/${s.id}`}
-                    aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
-                  >
-                    {canApproveReject && <Pencil size={15} aria-hidden="true" />}
-                    {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link className="as-row-action as-row-action--quiet" to={`/settlements/${s.id}`}>
-                    Xem phiếu
-                  </Link>
-                  {(s.approverName || s.checkerName) && (
-                    <div className="as-approver">
-                      {s.approverName ? <>Duyệt bởi <strong>{s.approverName}</strong></> : <>KT <strong>{s.checkerName}</strong></>}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            {(s.approverName || s.checkerName) && (
+              <div className="as-decider">
+                <span className="as-decider__label">{s.approverName ? 'Duyệt' : 'KT kiểm tra'}</span>
+                <strong className="as-decider__name">{s.approverName || s.checkerName}</strong>
+              </div>
+            )}
+
+            <Link
+              className={`as-row-action${canAct ? '' : ' as-row-action--quiet'}`}
+              to={`/settlements/${s.id}`}
+              aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
+            >
+              {canApproveReject && <Pencil size={15} aria-hidden="true" />}
+              {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
+            </Link>
           </div>
         </div>
       ))}
