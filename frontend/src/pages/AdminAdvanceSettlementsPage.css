@@ -158,28 +158,27 @@
   outline-offset: -2px;
 }
 .as-page .as-ledger {
-  /* Six tracks + a full-width fee line fit from ~800px, so the ledger no longer
-     forces a horizontal scroll at common laptop widths (was 1015px, which the
-     seven-column layout needed). */
-  min-width: 800px;
+  min-width: 1015px;
 }
 .as-page .as-grid-head,
-.as-page .as-settle-row {
+.as-page .as-grid-row {
   display: grid;
-  /* One row per phiếu: five tracks for the settlement's own facts, with the fee
-     chips and the disclosed trips spanning the row underneath. The old layout
-     used one row per TRIP, so a 33-trip phiếu rendered 33 rows. */
   grid-template-columns:
-    minmax(180px, 1.6fr)
-    minmax(96px, 0.7fr)
-    minmax(150px, 1.1fr)
-    minmax(120px, 0.9fr)
-    minmax(210px, 1.6fr);
+    126px
+    150px
+    50px
+    130px
+    minmax(230px, 1fr)
+    110px
+    190px;
+  /* 12px column gap (was 8px): at 8px the right-aligned "Tổng chi" figure sat
+     close enough to the status cell that the ₫ glyph read as touching the
+     approver text next to it. */
   column-gap: 12px;
-  row-gap: 3px;
+  row-gap: 6px;
 }
 .as-page .as-grid-head {
-  padding: 8px 14px;
+  padding: 11px 16px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
   align-items: center;
@@ -198,154 +197,51 @@
 .as-page .as-grid-head .col-right { text-align: right; }
 .as-page .as-grid-head .col-center { text-align: center; }
 
-/* ── Desktop settlement row ───────────────────────────────────────────── */
-.as-page .as-settle-row {
-  position: relative;
-  overflow: hidden;
-  padding: 7px 14px;
+/* ── Desktop grid row ─────────────────────────────────────────────────── */
+.as-page .as-grid-row {
+  padding: 12px 16px;
   align-items: center;
   border-bottom: 1px solid var(--line);
   transition: background var(--t-fast);
 }
-.as-page .as-settle-row:last-child { border-bottom: none; }
-.as-page .as-settle-row:hover { background: var(--surface-2); }
-.as-page .as-settle-row > div {
+.as-page .as-grid-row:last-child { border-bottom: none; }
+.as-page .as-grid-row:hover { background: var(--surface-2); }
+.as-page .as-grid-row > div {
   line-height: var(--lh-normal);
   min-width: 0;
 }
-/* ── Settlement row cells ─────────────────────────────────────────────── */
-.as-page .as-settle-code {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
-}
-.as-page .as-settle-code__link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  color: var(--brand);
-  font-family: var(--font-mono);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  text-decoration: none;
-}
-.as-page .as-settle-code__link:hover { text-decoration: underline; }
-.as-page .as-settle-code__link:focus-visible {
-  border-radius: 4px;
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-}
-.as-page .as-settle-code__who {
-  color: var(--ink-3);
-  font-size: var(--fs-xs);
-  overflow-wrap: anywhere;
-}
-.as-page .as-settle-date {
-  color: var(--ink-2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-variant-numeric: tabular-nums;
-}
-.as-page .as-settle-scope { display: flex; min-width: 0; }
-.as-page .as-scope-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 24px;
-  padding: 2px 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-  font-family: inherit;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  transition: border-color var(--t-fast), color var(--t-fast);
-}
-.as-page .as-scope-toggle:hover:not(:disabled) { border-color: var(--line-2); color: var(--ink); }
-.as-page .as-scope-toggle:disabled { cursor: default; opacity: 0.7; }
-.as-page .as-scope-toggle:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-}
-.as-page .as-scope-toggle__caret {
-  flex-shrink: 0;
-  color: var(--ink-3);
-  transition: transform var(--t-fast);
-}
-.as-page .as-scope-toggle__caret.is-open { transform: rotate(180deg); }
-.as-page .as-settle-amount {
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Disclosed trips: one compact two-line block each (identity line, then that
-   trip's own fee chips), only rendered when the row is expanded. */
-.as-page .as-trips {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--line);
-}
-.as-page .as-trip {
+.as-page .as-settlement-summary {
   display: grid;
-  grid-template-columns: 150px 56px minmax(0, 1fr);
-  gap: 2px 10px;
-  align-items: baseline;
-  padding: 3px 0 3px 12px;
-}
-.as-page .as-trip__code {
-  color: var(--brand);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
-  text-decoration: none;
-}
-.as-page .as-trip__code:hover { text-decoration: underline; }
-.as-page .as-trip__cont {
-  color: var(--ink-3);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-}
-.as-page .as-trip__meta {
-  color: var(--ink-2);
-  font-size: var(--fs-xs);
-  overflow-wrap: anywhere;
-}
-.as-page .as-trip__fees {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px 6px;
+  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, auto)) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--brand) 5%, var(--surface));
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  /* The action column is the only variable part of this bar: the container
+     query below reads its real width instead of guessing from the viewport. */
+  container-type: inline-size;
+  container-name: as-settlement-summary;
 }
 
-/* Settlement-level decisions (kanban 20260922_34: once per phiếu, never per
-   trip). They now live in the row's status cell, so they wrap instead of
-   shrinking to icons — the container query that hid their labels belonged to
-   the summary bar this replaced. */
+/* Settlement-level actions live on the header, not repeated per child row
+   (kanban 20260922_34). The two decisions are one row, never a stack: the
+   column gives way first (icon-only fallback below), because a stack hides the
+   second decision from a scanning accountant. */
 .as-page .as-settlement-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 2px;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 .as-page .as-batch-action {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: var(--control-h);
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--line-2);
   background: var(--surface);
@@ -361,8 +257,23 @@
 .as-page .as-batch-action--reject, .as-page .as-batch-action--danger { border-color: color-mix(in srgb, var(--danger) 35%, var(--line-2)); color: var(--danger); }
 .as-page .as-batch-action__label { white-space: nowrap; }
 
-/* Narrow screens: the decisions fill the status cell. */
+/* At or below the ledger's 1015px floor there is no room for both labels next
+   to the money columns (2026-09-26: the buttons wrapped into a two-row stack).
+   The decisions keep their icons and drop the text, so the row stays one line
+   at every width. */
+@container as-settlement-summary (max-width: 1035px) {
+  .as-page .as-batch-action__label {
+    display: none;
+  }
+}
+
+/* Narrow screens: the four stat cells stack, and the actions take their own row. */
 @media (max-width: 900px) {
+  .as-page .as-settlement-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
   .as-page .as-settlement-actions {
     justify-content: stretch;
     margin-top: 4px;
@@ -373,39 +284,114 @@
     min-height: var(--control-h);
   }
 }
+.as-page .as-settlement-summary > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  /* When a settlement carries unusually long amounts, the label/value pair
+     wraps instead of widening the track and starving the action column. */
+  flex-wrap: wrap;
+}
+.as-page .as-settlement-summary span {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+.as-page .as-settlement-summary a,
+.as-page .as-settlement-summary strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-decoration: none;
+  white-space: nowrap;
+}
 
 /* ── Row cells ────────────────────────────────────────────────────────── */
+.as-page .as-record {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+}
+.as-page .as-code-link {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  color: var(--brand, var(--ink));
+  text-decoration: none;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  line-height: 1.35;
+}
+.as-page .as-code-link:hover { text-decoration: underline; }
+.as-page .as-code-link:focus-visible,
 .as-page .as-row-action:focus-visible {
   border-radius: 4px;
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
-/* Fees as boxed chips on their own full-width line. The chips are the original
-   tag affordance (easier to scan than a run of plain text) but compact, and the
-   radius is 6px — NOT a 50% pill: a fully-rounded pill reads as a button next to
-   the row's real actions. In the old narrow column a 150-195px chip allowed only
-   ONE per line, so five fees became five lines and set the row height (~205px
-   rows); full width packs them onto one line. */
+
+.as-page .as-record__forwarder {
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.as-page .as-date-customer {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.as-page .as-date-customer .as-date {
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+.as-page .as-date-customer strong,
+.as-page .as-route {
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.as-page .as-container-count {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-align: center;
+}
 .as-page .as-expense-breakdown {
-  grid-column: 1 / -1;
   display: flex;
   min-width: 0;
   flex-wrap: wrap;
-  align-content: center;
-  gap: 4px 6px;
+  gap: 5px;
 }
 .as-page .as-expense-chip {
   display: inline-flex;
   align-items: baseline;
   gap: 5px;
   max-width: 100%;
-  padding: 1px 7px;
+  padding: 4px 7px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface-2);
   color: var(--ink-2);
   font-size: var(--fs-xs);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 .as-page .as-expense-chip span {
   overflow-wrap: anywhere;
@@ -420,8 +406,56 @@
   color: var(--ink-3);
   font-size: var(--fs-xs);
 }
-/* Status column: pill + row action on the first line, the deciding actor under
-   them, and the settlement's batch decisions last. One left edge throughout. */
+.as-page .as-scope {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.as-page .as-scope__primary {
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+}
+.as-page .as-scope__secondary {
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  white-space: normal;
+}
+.as-page .as-amount,
+.as-page .as-refund {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.as-page .as-refund {
+  color: var(--ink-2);
+  font-weight: var(--fw-semibold);
+}
+.as-page .as-date {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  text-align: center;
+}
+.as-page .as-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Status and its action share one column: the pill sits on top, the action
+   sits directly underneath it, so the ledger stops reserving a whole column
+   for a single link. */
 .as-page .as-status-actions {
   display: flex;
   flex-direction: column;
@@ -429,58 +463,78 @@
   gap: 3px;
   min-width: 0;
 }
-.as-page .as-status-head {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
+
+/* The row action closes the cell on its right edge. */
+.as-page .as-status-actions .as-row-action {
+  align-self: flex-end;
 }
 
-/* Deciding actor as a label + name pair, on the same left edge as the pill. */
+/* Deciding actor as a label + name pair, on the same left edge as the pill and
+   the row action above/below it. */
 .as-page .as-decider {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
   max-width: 100%;
   font-size: var(--fs-xs);
-  line-height: 1.2;
+  line-height: 1.35;
   color: var(--ink-3);
 }
+
 .as-page .as-decider__label {
   flex: 0 0 auto;
   letter-spacing: 0.01em;
 }
+
 .as-page .as-decider__name {
   color: var(--ink-2);
   font-weight: var(--fw-semibold);
   overflow-wrap: anywhere;
 }
 
-.as-page .as-row-action {
+/* The action is a left-aligned row link now, so the old right-aligned history
+   column has nothing left to align. */
+.as-page .as-actions--history {
+  align-items: flex-start;
+  flex-direction: row;
+  gap: 6px;
+}
+.as-page .as-status-actions .as-actions {
+  justify-content: flex-start;
+}
+.as-page .as-actions--history {
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 3px;
+}
+.as-page .as-row-action,
+.as-page .as-reject-action {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   min-height: var(--control-h);
-  padding: 6px 8px;
-  border: 1px solid transparent;
   border-radius: 7px;
-  background: transparent;
-  color: var(--brand);
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   line-height: 1.2;
-  text-decoration: none;
-  white-space: nowrap;
   transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
 }
-.as-page .as-row-action::after {
+.as-page .as-row-action::after,
+.as-page .as-reject-action::after {
   content: "";
   position: absolute;
   inset: -4px;
+}
+.as-page .as-row-action {
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--brand);
+  text-decoration: none;
+  white-space: nowrap;
 }
 .as-page .as-row-action:hover {
   background: var(--accent-soft);
@@ -496,6 +550,27 @@
   border-color: transparent;
   background: transparent;
   text-decoration: underline;
+}
+.as-page .as-reject-action {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+}
+.as-page .as-reject-action:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--danger) 24%, var(--line));
+  background: var(--danger-soft);
+}
+.as-page .as-reject-action:focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+.as-page .as-reject-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* ── Loading / empty states ───────────────────────────────────────────── */
@@ -703,43 +778,6 @@
   letter-spacing: 0.045em;
   text-transform: uppercase;
 }
-/* The plans heading is the disclosure control: collapsed by default so a
-   33-trip phiếu is one compact card instead of a multi-thousand-pixel list. */
-.as-page .as-mcard__plans-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: var(--control-h);
-  padding: 6px 0;
-  border: none;
-  border-top: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink);
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.as-page .as-mcard__plans-toggle:hover { color: var(--brand); }
-.as-page .as-mcard__plans-toggle:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-.as-page .as-mcard__plans-count {
-  margin-left: auto;
-  color: var(--ink-3);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
-}
-/* Settlement-level fee chips on the card — visible without expanding. */
-.as-page .as-mcard__fees {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 6px;
-  margin-top: 8px;
-}
 .as-page .as-mcard__plan {
   padding: 10px;
   border: 1px solid var(--line);
@@ -771,13 +809,10 @@
   font-size: var(--fs-xs);
   line-height: 1.45;
 }
-/* Fees read as a two-column block: a wrapped flex run left ragged right edges
-   and put the amount of one fee next to the label of the next. Two fixed
-   columns keep each "label: amount" pair together and align down the block. */
 .as-page .as-mcard__plan-costs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   margin-top: 7px;
   color: var(--ink-2);
   font-size: var(--fs-xs);

@@ -60,6 +60,11 @@ it('loads further batches when the list is scrolled, and resets the batch on a f
   fireEvent.click(filters.getByRole('button', { name: 'Tạm khoá 1' }));
   expect(mobile.getByText('Khách hàng 16')).toBeTruthy();
 });
+// Renders the whole page twice (mount + a filtered export) and runs two export
+// passes. That is ~0.5s alone, but this file runs in parallel with the other 146
+// test files and CPU contention has pushed it past vitest's 5s default, so it
+// gets headroom. The assertions are unchanged — this only stops the timeout from
+// firing while the machine is saturated.
 it('exports every matching customer and searches beyond the loaded batch', () => {
   mount();
   fireEvent.click(screen.getByRole('button', { name: 'Xuất Excel' }));
@@ -67,7 +72,7 @@ it('exports every matching customer and searches beyond the loaded batch', () =>
   fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'MST16' } });
   fireEvent.click(screen.getByRole('button', { name: 'Xuất Excel' }));
   expect(mocks.exportFile.mock.calls[1][2]).toHaveLength(1);
-});
+}, 20_000);
 it('shows a retry when balances fail instead of asserting every customer owes zero', () => {
   mocks.balances.mockReturnValue({ ...ready(undefined), error: new Error('offline') });
   mount();

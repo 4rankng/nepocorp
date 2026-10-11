@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -101,7 +101,7 @@ describe('admin advance settlement ledger density', () => {
         />
       ),
     },
-  ])('shows one row per phiếu with its fee totals and the trips behind a disclosure in the $layout', ({ layout, component }) => {
+  ])('shows one transport-plan row with decision context in the $layout', ({ layout, component }) => {
     render(
       <MemoryRouter>
         {component}
@@ -113,29 +113,17 @@ describe('admin advance settlement ledger density', () => {
       expect(screen.getByText('Chuyến').previousElementSibling?.textContent).toBe('1');
       expect(screen.getByText('Container').previousElementSibling?.textContent).toBe('2');
     } else {
-      // One row per phiếu: the row carries the settlement's own identity and
-      // scope, not a trip's.
-      expect(screen.getByText('PT-2607-0004')).toBeTruthy();
-      expect(screen.getByText(/1 chuyến · 2 cont/)).toBeTruthy();
+      expect(screen.getByText('Tạm ứng quyết toán')).toBeTruthy();
+      expect(screen.getByText('Tổng chi phí')).toBeTruthy();
+      expect(screen.getByText('Ops tạm ứng')).toBeTruthy();
     }
-
-    // Settlement-level fee totals stay visible without expanding anything, so
-    // the fee list is still readable at a glance.
-    expect(screen.getByText(/Phí nâng container/)).toBeTruthy();
-    expect(screen.getByText(/Phí hải quan/)).toBeTruthy();
-
-    // The trips themselves are disclosed: a 33-trip phiếu used to render 33
-    // rows (desktop) or a multi-thousand-pixel card.
-    expect(screen.queryByText(/TRP-202607-0042/)).toBeNull();
-    expect(screen.queryByText(/Công ty Biển Bạc/)).toBeNull();
-    expect(screen.queryByText(/MSKU-001/)).toBeNull();
-    expect(screen.queryByText(/MSKU-002/)).toBeNull();
-
-    // Expanding reveals the transport plan with its own detail.
-    fireEvent.click(screen.getByRole('button', { name: /chuyến của phiếu/ }));
     expect(screen.getByText(/TRP-202607-0042/)).toBeTruthy();
     expect(screen.getByText(/Công ty Biển Bạc/)).toBeTruthy();
     expect(screen.getByText(/Hải Phòng – Hà Nội/)).toBeTruthy();
+    expect(screen.getByText(/Phí nâng container/)).toBeTruthy();
+    expect(screen.getByText(/Phí hải quan/)).toBeTruthy();
+    expect(screen.queryByText(/MSKU-001/)).toBeNull();
+    expect(screen.queryByText(/MSKU-002/)).toBeNull();
   });
 
   it('shows company reimbursement as the opposite cash direction from a forwarder refund', () => {

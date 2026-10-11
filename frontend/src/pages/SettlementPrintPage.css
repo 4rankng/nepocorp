@@ -37,6 +37,33 @@
   justify-content: flex-end;
 }
 
+/* Two groups, not six same-weight buttons in a row: neutral utilities, then the
+   decisions behind a hairline. The bar keeps exactly one filled button (Duyệt)
+   and one filled red (Từ chối) so the colours stop competing. */
+.settlement-detail__header-tools,
+.settlement-detail__header-decisions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.settlement-detail__header-decisions {
+  padding-left: 10px;
+  border-left: 1px solid var(--line-2);
+}
+
+/* The second destructive action, deliberately quiet: an outline instead of a
+   second saturated red. */
+.settlement-detail__quiet-danger {
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--line-2));
+  background: transparent;
+  color: var(--danger);
+}
+.settlement-detail__quiet-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 48%, var(--line-2));
+}
+
 /* The sheet title must stay on one line. With six decisions (Duyệt / Từ chối /
    Xóa phiếu) the action row squeezed `.page-header-main` to ~330px and the
    title broke mid-phrase ("Phiếu thanh toán PT-2610-" / "0001"). The floor is

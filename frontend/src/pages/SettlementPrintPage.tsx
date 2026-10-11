@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, FileSpreadsheet, Pencil, Save, CheckCircle2, Trash2, XCircle } from 'lucide-react';
+import { Loader2, Pencil, Save, CheckCircle2 } from 'lucide-react';
 import { formatCurrency } from '../lib/format';
-import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
+import type { AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
 import { useConfirm } from '../components/useConfirm';
 import { useToast } from '../components/shared/Toast';
@@ -10,13 +10,14 @@ import { downloadBlob } from '../lib/download';
 import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement, useDeleteSettlement, pendingAction } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { canApproveSettlement, canAdjustSettlementAmounts, canDeleteSettlementNow } from '../features/advances/settlementPermissions';
-import { PageHeader, StatusPill } from '../components/UI';
+import { PageHeader } from '../components/UI';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { groupSettlementExpensesByTrip } from './admin-advance-settlement-summary';
 import { settlementExportEndpoint } from './settlement-export-endpoint';
 import { PrintPreviewDialog } from '../components/shared/PrintPreviewDialog';
 import { SettlementAdvancesSection, SettlementInfoGrid } from './settlement-print-sections';
+import { SettlementHeaderActions } from './settlement-print-header';
 import './SettlementPrintPage.css';
 
 // ─── Expense type Vietnamese labels ───
@@ -29,16 +30,6 @@ const EXPENSE_TYPE_LABELS: Record<string, string> = {
   INSPECTION: 'Kiểm tra',
   OTHER: 'Khác',
 };
-
-function settlementStatusVariant(status: AdvanceSettlementStatus): 'neutral' | 'info' | 'warn' | 'success' | 'danger' {
-  switch (status) {
-    case 'PENDING': return 'warn';
-    case 'CHECKED_BY_ACCOUNTANT': return 'info';
-    case 'APPROVED': return 'success';
-    case 'REJECTED': return 'danger';
-    default: return 'neutral';
-  }
-}
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -330,56 +321,29 @@ export default function SettlementPrintPage() {
           iconName="settlement"
           description={s.forwarderName || ''}
           action={
-            <div className="settlement-detail__header-actions">
-              <StatusPill variant={settlementStatusVariant(s.status)}>
-                {ADVANCE_SETTLEMENT_STATUS_LABELS[s.status] || s.status}
-              </StatusPill>
-              <button className="btn btn--secondary btn--sm" onClick={handleBack}>
-                <ArrowLeft size={14} /> Trở về
-              </button>
-              <button className="btn btn--primary btn--sm" onClick={() => setShowPreview(true)}>
-                <Printer size={14} /> In
-              </button>
-              <button
-                className="btn btn--secondary btn--sm"
-                onClick={() => {
-                  api.getBlob(settlementExportEndpoint(isPortal, s.id, 'xlsx'))
-                    .then(blob => {
-                      downloadBlob(blob, `phieu-thanh-toan-${s.code}.xlsx`);
-                    });
-                }}
-              >
-                <FileSpreadsheet size={14} /> Excel
-              </button>
-              {maySignOff && (
-                <>
-                  <button
-                    className="btn btn--primary btn--sm"
-                    disabled={approvingSettlement || rejectingSettlement}
-                    onClick={() => void handleApproveSettlement()}
-                  >
-                    {approvingSettlement ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />} Duyệt
-                  </button>
-                  <button
-                    className="btn btn--danger btn--sm"
-                    disabled={approvingSettlement || rejectingSettlement}
-                    onClick={() => void handleRejectSettlement()}
-                  >
-                    {rejectingSettlement ? <Loader2 size={14} className="spin" /> : <XCircle size={14} />} Từ chối
-                  </button>
-                </>
-              )}
-              {mayDelete && (
-                <button
-                  className="btn btn--danger btn--sm"
-                  disabled={deleting || savingSettlement || approvingSettlement}
-                  onClick={() => void handleDelete()}
-                  aria-label={`Xóa phiếu hoàn ứng ${s.code}`}
-                >
-                  {deleting ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />} Xóa phiếu
-                </button>
-              )}
-            </div>
+            <SettlementHeaderActions
+              code={s.code}
+              status={s.status}
+              maySignOff={maySignOff}
+              mayDelete={mayDelete}
+              busy={{
+                approving: approvingSettlement,
+                rejecting: rejectingSettlement,
+                deleting,
+                saving: savingSettlement,
+              }}
+              onBack={handleBack}
+              onPreview={() => setShowPreview(true)}
+              onExport={() => {
+                api.getBlob(settlementExportEndpoint(isPortal, s.id, 'xlsx'))
+                  .then(blob => {
+                    downloadBlob(blob, `phieu-thanh-toan-${s.code}.xlsx`);
+                  });
+              }}
+              onApprove={() => void handleApproveSettlement()}
+              onReject={() => void handleRejectSettlement()}
+              onDelete={() => void handleDelete()}
+            />
           }
         />
       </div>

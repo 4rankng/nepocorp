@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Pencil, XCircle, CheckCircle2, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { FileText, Pencil, XCircle, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 import { formatNumber, formatDate } from '../lib/format';
 import { AdvanceSettlementStatus } from '@tingting/shared';
 import type { AdvanceSettlementWithRefs } from '@tingting/shared';
@@ -9,7 +9,6 @@ import { StatusStrip } from '../components/shared/StatusStrip';
 import { Money } from '../components/shared/Money';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
 import {
-  aggregatePlanFees,
   groupSettlementExpensesByTrip,
   summarizeSettlementExpenses,
 } from './admin-advance-settlement-summary';
@@ -62,13 +61,8 @@ export function SettlementGridRow({
   // the approval path and is refused (kanban 101026154020).
   const mayDelete = canDelete && s.status === AdvanceSettlementStatus.PENDING;
   const plans = groupSettlementExpensesByTrip(s.linkedExpenses ?? []);
+  const rows = plans.length > 0 ? plans : [null];
   const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
-  // Trips are disclosed on demand: a 33-trip phiếu used to render 33 rows.
-  const [expanded, setExpanded] = useState(false);
-  // Settlement-level fee totals — the row shows one line of chips for the whole
-  // phiếu, so the fee list stays visible without expanding anything.
-  const fees = aggregatePlanFees(plans);
-  const containerCount = plans.reduce((total, plan) => total + (plan.containerCount ?? 0), 0);
   // Money the accountant is signing off on — shown in the confirm step so a
   // batch action is never a blind tap (kanban 20260922_34).
   const payout = Number(s.reimbursementAmount || 0) > 0
@@ -77,148 +71,81 @@ export function SettlementGridRow({
 
   return (
     <>
-      <div className="as-settle-row" id={focusId}>
-        <StatusStrip color={STATUS_COLORS[s.status]} />
-
-        <div className="as-settle-code">
-          <Link to={`/settlements/${s.id}`} className="as-settle-code__link">{s.code}</Link>
-          <span className="as-settle-code__who">{s.forwarderName || 'Chưa có tên giao nhận'}</span>
+      <div className="as-settlement-summary">
+        <div>
+          <span>Phiếu quyết toán</span>
+          <Link to={`/settlements/${s.id}`}>{s.code}</Link>
         </div>
-
-        <div className="as-settle-date">{formatDate(s.createdAt)}</div>
-
-        {/* The trip count is the disclosure control: the trips themselves are
-            not rows any more, so this is the one place that opens them. */}
-        <div className="as-settle-scope">
-          <button
-            type="button"
-            className="as-scope-toggle"
-            onClick={() => setExpanded(v => !v)}
-            aria-expanded={expanded}
-            aria-label={`${expanded ? 'Ẩn' : 'Xem'} ${plans.length} chuyến của phiếu ${s.code}`}
-            disabled={plans.length === 0}
-          >
-            <span>{plans.length} chuyến · {containerCount} cont</span>
-            <ChevronDown
-              size={14}
-              className={`as-scope-toggle__caret${expanded ? ' is-open' : ''}`}
-              aria-hidden="true"
+        <div>
+          <span>Tạm ứng quyết toán</span>
+          <strong>
+            <Money
+              value={
+                Number(s.totalExpenseAmount)
+                + Number(s.refundAmount)
+                - Number(s.reimbursementAmount || 0)
+              }
             />
-          </button>
+          </strong>
         </div>
-
-        <div className="as-settle-amount">
-          <Money value={Number(s.totalExpenseAmount)} />
+        <div>
+          <span>Tổng chi phí</span>
+          <strong><Money value={Number(s.totalExpenseAmount)} /></strong>
         </div>
-
-        <div className="as-status-actions">
-          <div className="as-status-head">
-            <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
-              {settlementStatusLabel(s.status)}
-            </StatusPill>
-
-            <Link
-              className={`as-row-action${canAct ? '' : ' as-row-action--quiet'}`}
-              to={`/settlements/${s.id}`}
-              aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
-            >
-              {canApproveReject && <Pencil size={15} aria-hidden="true" />}
-              {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
-            </Link>
+        {Number(s.reimbursementAmount || 0) > 0 ? (
+          <div>
+            <span>Công ty hoàn thêm</span>
+            <strong><Money value={Number(s.reimbursementAmount || 0)} /></strong>
           </div>
-
-          {(s.approverName || s.checkerName) && (
-            <div className="as-decider">
-              <span className="as-decider__label">{s.approverName ? 'Duyệt' : 'KT kiểm tra'}</span>
-              <strong className="as-decider__name">{s.approverName || s.checkerName}</strong>
-            </div>
-          )}
-
-          {canAct && (canApproveReject || mayDelete) && (
-            <div className="as-settlement-actions">
-              {canApproveReject && (
-                <>
-                  <button
-                    type="button"
-                    className="as-batch-action as-batch-action--approve"
-                    onClick={() => setPendingAction('approve')}
-                    disabled={isApproving || isRejecting}
-                    aria-label={`Duyệt cả phiếu ${s.code}`}
-                  >
-                    {isApproving ? <Loader2 size={15} className="spin" /> : <CheckCircle2 size={15} aria-hidden="true" />}
-                    <span className="as-batch-action__label">Duyệt</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="as-batch-action as-batch-action--reject"
-                    onClick={() => setPendingAction('reject')}
-                    disabled={isApproving || isRejecting}
-                    aria-label={`Từ chối cả phiếu ${s.code}`}
-                  >
-                    {isRejecting ? <Loader2 size={15} className="spin" /> : <XCircle size={15} aria-hidden="true" />}
-                    <span className="as-batch-action__label">Từ chối</span>
-                  </button>
-                </>
-              )}
-              {/* Removing the phiếu is the settlement's own action — rendered once,
-                  here, never per child row: the repeated-per-row reject button was
-                  the defect of kanban 20260922_34 and delete must not reintroduce
-                  it (kanban 101026154020). MANAGER may delete but not rewrite the
-                  sheet, so this is gated separately from approve/reject. */}
-              {mayDelete && (
+        ) : (
+          <div>
+            <span>Ops tạm ứng</span>
+            <strong><Money value={Number(s.refundAmount)} /></strong>
+          </div>
+        )}
+        {canAct && (canApproveReject || mayDelete) && (
+          <div className="as-settlement-actions">
+            {canApproveReject && (
+              <>
                 <button
                   type="button"
-                  className="as-batch-action as-batch-action--danger"
-                  onClick={() => setPendingAction('delete')}
-                  disabled={isDeleting}
-                  aria-label={`Xóa phiếu ${s.code}`}
+                  className="as-batch-action as-batch-action--approve"
+                  onClick={() => setPendingAction('approve')}
+                  disabled={isApproving || isRejecting}
+                  aria-label={`Duyệt cả phiếu ${s.code}`}
                 >
-                  {isDeleting ? <Loader2 size={15} className="spin" /> : <Trash2 size={15} aria-hidden="true" />}
-                  <span className="as-batch-action__label">Xóa</span>
+                  {isApproving ? <Loader2 size={15} className="spin" /> : <CheckCircle2 size={15} aria-hidden="true" />}
+                  <span className="as-batch-action__label">Duyệt</span>
                 </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Settlement-level fee chips: every trip's category amounts rolled up,
-            so the fee list stays visible on the row without expanding it. */}
-        <div className="as-expense-breakdown">
-          {fees.length > 0
-            ? fees.map(item => (
-                <span className="as-expense-chip" key={item.code}>
-                  <span>{item.label}</span>
-                  <strong><Money value={item.amount} /></strong>
-                </span>
-              ))
-            : <span className="as-expense-empty">Chưa có khoản chi liên kết</span>}
-        </div>
-
-        {expanded && plans.length > 0 && (
-          <div className="as-trips">
-            {plans.map(plan => (
-              <div className="as-trip" key={plan.tripId}>
-                <Link to={`/trips/${plan.tripId}`} className="as-trip__code">
-                  {plan.tripCode || `Chuyến #${plan.tripId}`}
-                </Link>
-                <span className="as-trip__cont">{plan.containerCount} cont</span>
-                <span className="as-trip__meta">
-                  {[
-                    plan.departureDate ? formatDate(plan.departureDate) : null,
-                    plan.customerName,
-                    plan.routeName,
-                  ].filter(Boolean).join(' · ')}
-                </span>
-                <div className="as-trip__fees">
-                  {plan.expenseBreakdown.map(item => (
-                    <span className="as-expense-chip" key={item.code}>
-                      <span>{item.label}</span>
-                      <strong><Money value={item.amount} /></strong>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
+                <button
+                  type="button"
+                  className="as-batch-action as-batch-action--reject"
+                  onClick={() => setPendingAction('reject')}
+                  disabled={isApproving || isRejecting}
+                  aria-label={`Từ chối cả phiếu ${s.code}`}
+                >
+                  {isRejecting ? <Loader2 size={15} className="spin" /> : <XCircle size={15} aria-hidden="true" />}
+                  <span className="as-batch-action__label">Từ chối</span>
+                </button>
+              </>
+            )}
+            {/* Removing the phiếu is the settlement's own action — rendered once,
+                here, never per child row: the repeated-per-row reject button was
+                the defect of kanban 20260922_34 and delete must not reintroduce
+                it (kanban 101026154020). MANAGER may delete but not rewrite the
+                sheet, so this is gated separately from approve/reject. */}
+            {mayDelete && (
+              <button
+                type="button"
+                className="as-batch-action as-batch-action--danger"
+                onClick={() => setPendingAction('delete')}
+                disabled={isDeleting}
+                aria-label={`Xóa phiếu ${s.code}`}
+              >
+                {isDeleting ? <Loader2 size={15} className="spin" /> : <Trash2 size={15} aria-hidden="true" />}
+                <span className="as-batch-action__label">Xóa</span>
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -244,6 +171,75 @@ export function SettlementGridRow({
           else if (action === 'delete') actions.onDelete(s.id);
         }}
       />
+      {rows.map((plan, index) => (
+        <div
+          className="as-grid-row"
+          id={index === 0 ? focusId : undefined}
+          key={plan?.tripId ?? `empty-${s.id}`}
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
+          <StatusStrip color={STATUS_COLORS[s.status]} />
+
+          <div className="as-date-customer">
+            <span className="as-date">{plan?.departureDate ? formatDate(plan.departureDate) : formatDate(s.createdAt)}</span>
+            <strong>{plan?.customerName || 'Chưa có khách hàng'}</strong>
+          </div>
+
+          <div className="as-record">
+            {plan ? (
+              <Link to={`/trips/${plan.tripId}`} className="as-code-link">
+                {plan.tripCode || `Chuyến #${plan.tripId}`}
+              </Link>
+            ) : (
+              <Link to={`/settlements/${s.id}`} className="as-code-link">{s.code}</Link>
+            )}
+            <span className="as-record__forwarder">
+              {s.code} · {s.forwarderName || 'Chưa có tên giao nhận'}
+            </span>
+          </div>
+
+          <div className="as-container-count">{plan?.containerCount ?? 0}</div>
+          <div className="as-route">{plan?.routeName || 'Chưa có tuyến đường'}</div>
+
+          <div className="as-expense-breakdown">
+            {plan && plan.expenseBreakdown.length > 0 ? plan.expenseBreakdown.map(item => (
+              <span className="as-expense-chip" key={item.code}>
+                <span>{item.label}</span>
+                <strong><Money value={item.amount} /></strong>
+              </span>
+            )) : <span className="as-expense-empty">Chưa có khoản chi liên kết</span>}
+          </div>
+
+          <div className="as-amount">
+            <Money value={plan?.totalExpense ?? Number(s.totalExpenseAmount)} />
+          </div>
+
+          {/* Pill on its own line, the deciding actor under it, and the row action
+              on the cell's lower-right: the action reads as the end of the cell
+              rather than as a third left-aligned line with the right half of the
+              column empty. */}
+          <div className="as-status-actions">
+            <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
+              {settlementStatusLabel(s.status)}
+            </StatusPill>
+
+            {(s.approverName || s.checkerName) && (
+              <div className="as-decider">
+                <span className="as-decider__label">{s.approverName ? 'Duyệt' : 'KT kiểm tra'}</span>
+                <strong className="as-decider__name">{s.approverName || s.checkerName}</strong>
+              </div>
+            )}
+
+            <Link
+              className={`as-row-action${canAct ? '' : ' as-row-action--quiet'}`}
+              to={`/settlements/${s.id}`}
+              aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
+            >
+              {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
+            </Link>
+          </div>
+        </div>
+      ))}
     </>
   );
 }
@@ -271,14 +267,8 @@ export function SettlementMobileCard({
   const mayDelete = canDelete && s.status === AdvanceSettlementStatus.PENDING;
   // Destructive and irreversible, so the card confirms it just like the desktop row.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  // Trips are disclosed on demand (see the desktop row): the card used to list
-  // every trip inline.
-  const [expanded, setExpanded] = useState(false);
   const scope = summarizeSettlementExpenses(s.linkedExpenses);
   const plans = groupSettlementExpensesByTrip(s.linkedExpenses ?? []);
-  // Settlement-level fee totals, shown whether or not the trips are expanded —
-  // same contract as the desktop row.
-  const fees = aggregatePlanFees(plans);
 
   return (
     <article className="as-mcard" id={focusId}>
@@ -343,38 +333,10 @@ export function SettlementMobileCard({
         </div>
       </div>
 
-      {fees.length > 0 && (
-        <div className="as-mcard__fees">
-          {fees.map(item => (
-            <span className="as-expense-chip" key={item.code}>
-              <span>{item.label}</span>
-              <strong><Money value={item.amount} /></strong>
-            </span>
-          ))}
-        </div>
-      )}
-
       {plans.length > 0 && (
         <div className="as-mcard__plans">
-          {/* Collapsed by default, like the desktop row: a 33-trip phiếu used to
-              render every trip block inline and the card ran thousands of pixels
-              tall. The settlement's own fee chips stay visible above. */}
-          <button
-            type="button"
-            className="as-mcard__plans-toggle"
-            onClick={() => setExpanded(v => !v)}
-            aria-expanded={expanded}
-            aria-label={`${expanded ? 'Ẩn' : 'Xem'} ${plans.length} chuyến của phiếu ${s.code}`}
-          >
-            <span className="as-mcard__plans-title">Kế hoạch vận chuyển</span>
-            <span className="as-mcard__plans-count">{plans.length} chuyến</span>
-            <ChevronDown
-              size={14}
-              className={`as-scope-toggle__caret${expanded ? ' is-open' : ''}`}
-              aria-hidden="true"
-            />
-          </button>
-          {expanded && plans.map(plan => (
+          <span className="as-mcard__plans-title">Kế hoạch vận chuyển</span>
+          {plans.map(plan => (
             <div className="as-mcard__plan" key={plan.tripId}>
               <div className="as-mcard__plan-head">
                 <Link to={`/trips/${plan.tripId}`}>{plan.tripCode || `Chuyến #${plan.tripId}`}</Link>
