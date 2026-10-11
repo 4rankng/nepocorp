@@ -234,13 +234,13 @@ for (const file of sharedColorFiles) {
 
 async function checkInlineTouchTargets(directoryUrl) {
   const entries = await readdir(directoryUrl, { withFileTypes: true });
-  for (const entry of entries) {
+  await Promise.all(entries.map(async (entry) => {
     const entryUrl = new URL(entry.name, directoryUrl);
     if (entry.isDirectory()) {
       await checkInlineTouchTargets(new URL(`${entry.name}/`, directoryUrl));
-      continue;
+      return;
     }
-    if (extname(entry.name) !== '.tsx') continue;
+    if (extname(entry.name) !== '.tsx') return;
 
     const source = await readFile(entryUrl, 'utf8');
     const displayPath = relative(new URL('..', sourceRoot).pathname, entryUrl.pathname);
@@ -292,12 +292,14 @@ async function checkInlineTouchTargets(directoryUrl) {
     }
 
     inspect(sourceFile);
-  }
+  }));
 }
 
 await checkInlineTouchTargets(sourceRoot);
 
 if (failures.length > 0) {
+  // The walk is parallel, so push order is nondeterministic — sort for stable output.
+  failures.sort();
   console.error('UI contract check failed:');
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);

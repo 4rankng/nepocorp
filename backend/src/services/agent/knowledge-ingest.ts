@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto';
 import { join, basename } from 'node:path';
 import { db } from '../../db';
 import * as schema from '../../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { embedTexts, vecLiteral } from '../llm/embeddings';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -125,6 +125,9 @@ export async function ingestChunks(chunks: KnowledgeChunk[]): Promise<IngestResu
     return result;
   }
 
+  // Build the rows first, then replace them in ONE delete + ONE insert (was a
+  // delete+insert per chunk — N round trips for N chunks).
+  const rows = [];
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     const embedding = embeddings[i];
@@ -132,25 +135,31 @@ export async function ingestChunks(chunks: KnowledgeChunk[]): Promise<IngestResu
       result.skipped++;
       continue;
     }
+    rows.push({
+      sourceType: chunk.sourceType,
+      sourcePath: chunk.sourcePath,
+      heading: chunk.heading,
+      content: chunk.content,
+      embedding: vecLiteral(embedding),
+      docVersion: createHash('md5').update(chunk.content).digest('hex').slice(0, 12),
+      lang: 'vi',
+    });
+  }
+
+  if (rows.length > 0) {
     try {
-      // Delete existing chunk(s) for this source+heading, then insert.
-      await db.delete(schema.knowledgeChunks).where(and(
-        eq(schema.knowledgeChunks.sourceType, chunk.sourceType),
-        eq(schema.knowledgeChunks.sourcePath, chunk.sourcePath),
-        eq(schema.knowledgeChunks.heading, chunk.heading),
-      ));
-      await db.insert(schema.knowledgeChunks).values({
-        sourceType: chunk.sourceType,
-        sourcePath: chunk.sourcePath,
-        heading: chunk.heading,
-        content: chunk.content,
-        embedding: vecLiteral(embedding),
-        docVersion: createHash('md5').update(chunk.content).digest('hex').slice(0, 12),
-        lang: 'vi',
-      });
-      result.embedded++;
+      await db.delete(schema.knowledgeChunks).where(or(...rows.map((r) => and(
+        eq(schema.knowledgeChunks.sourceType, r.sourceType),
+        eq(schema.knowledgeChunks.sourcePath, r.sourcePath),
+        eq(schema.knowledgeChunks.heading, r.heading),
+      ))));
+      await db.insert(schema.knowledgeChunks).values(rows);
+      result.embedded = rows.length;
     } catch (e) {
-      result.errors.push(`Failed to upsert "${chunk.heading}": ${e instanceof Error ? e.message : String(e)}`);
+      // A failed batch writes nothing, so a per-chunk error list would be
+      // misleading — report the batch failure once.
+      result.errors.push(`Batch write failed: ${e instanceof Error ? e.message : String(e)}`);
+      return result;
     }
   }
 

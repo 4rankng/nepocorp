@@ -120,16 +120,23 @@ export async function syncTripWorkDays(
     cur.setDate(cur.getDate() + 1);
   }
 
-  // Upsert each date as TRIP_DAY (overrides WEEKLY_OFF if trip is running)
-  // Single INSERT with onConflictDoUpdate handles both new and existing rows
-  for (const date of dates) {
-    await db.insert(s.driverWorkDays)
-      .values({ driverId, date, status: 'TRIP_DAY', tripId, note: null, createdBy: createdBy ?? null })
-      .onConflictDoUpdate({
-        target: [s.driverWorkDays.driverId, s.driverWorkDays.date],
-        set: { status: 'TRIP_DAY', tripId, updatedAt: new Date() },
-      });
-  }
+  // Upsert each date as TRIP_DAY (overrides WEEKLY_OFF if trip is running).
+  // One batched INSERT … ON CONFLICT so a multi-day trip is one round trip, not
+  // one per date.
+  if (dates.length === 0) return;
+  await db.insert(s.driverWorkDays)
+    .values(dates.map((date) => ({
+      driverId,
+      date,
+      status: 'TRIP_DAY' as const,
+      tripId,
+      note: null,
+      createdBy: createdBy ?? null,
+    })))
+    .onConflictDoUpdate({
+      target: [s.driverWorkDays.driverId, s.driverWorkDays.date],
+      set: { status: sql`excluded.status`, tripId: sql`excluded.trip_id`, updatedAt: new Date() },
+    });
 }
 
 /**

@@ -903,17 +903,30 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
 
     // If the trip was already completed, post the accepted service fee now.
     // Existing rows are never mutated; corrections become ADJUSTMENT entries.
+    // One grouped query gives the SERVICE_FEE debit−credit per expense; the
+    // posted-this-run map carries deltas posted earlier in this loop so a
+    // repeated expenseId sees them (the per-link select used to re-read).
+    const feeExpenseIds = links.map((l) => l.expenseId);
+    const feeSums = feeExpenseIds.length > 0
+      ? await tx.select({
+          txnId: s.ledger.txnId,
+          posted: sql<string>`coalesce(sum(${s.ledger.debit} - ${s.ledger.credit}), 0)`,
+        }).from(s.ledger)
+          .where(and(eq(s.ledger.txnType, TxnType.SERVICE_FEE), inArray(s.ledger.txnId, feeExpenseIds)))
+          .groupBy(s.ledger.txnId)
+      : [];
+    const postedByExpense = new Map(feeSums.map((r) => [r.txnId, Number(r.posted)]));
+    const postedThisRun = new Map<number, number>();
+
     for (const link of links) {
       if (link.tripStatus !== 'COMPLETED' && link.tripStatus !== 'LOCKED') continue;
       const currentSell = Number(link.sellAmount);
-      const existingRows = await tx.select({ debit: s.ledger.debit, credit: s.ledger.credit })
-        .from(s.ledger)
-        .where(and(eq(s.ledger.txnType, TxnType.SERVICE_FEE), eq(s.ledger.txnId, link.expenseId)));
-      const posted = existingRows.reduce((sum, row) => sum + Number(row.debit) - Number(row.credit), 0);
+      const hadExistingFee = postedByExpense.has(link.expenseId) || postedThisRun.has(link.expenseId);
+      const posted = (postedByExpense.get(link.expenseId) ?? 0) + (postedThisRun.get(link.expenseId) ?? 0);
       const delta = round2dp(currentSell - posted);
       if (delta === 0) continue;
       await LedgerService.postEntry(tx, {
-        txnType: existingRows.length === 0 ? TxnType.SERVICE_FEE : TxnType.ADJUSTMENT,
+        txnType: hadExistingFee ? TxnType.ADJUSTMENT : TxnType.SERVICE_FEE,
         txnId: link.expenseId,
         entityType: 'CUSTOMER',
         entityId: link.customerId,
@@ -921,6 +934,7 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
         credit: delta < 0 ? Math.abs(delta) : 0,
         note: `Điều chỉnh phí chi hộ chuyến ${link.tripCode ?? ''}`.trim(),
       });
+      postedThisRun.set(link.expenseId, (postedThisRun.get(link.expenseId) ?? 0) + delta);
     }
 
     await LedgerService.postEntry(tx, {
