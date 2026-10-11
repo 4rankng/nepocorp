@@ -460,13 +460,19 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  /* Stretch to the row's content height: the cell is otherwise vertically
+     centred, so the action sat 33px above the row's bottom border instead of on
+     the cell's lower edge. */
+  align-self: stretch;
   gap: 3px;
   min-width: 0;
 }
 
-/* The row action closes the cell on its right edge. */
+/* Really the lower-right corner: flush with the cell's right edge and pushed to
+   its bottom by margin-top:auto (the row's own padding keeps it off the border). */
 .as-page .as-status-actions .as-row-action {
   align-self: flex-end;
+  margin-top: auto;
 }
 
 /* Deciding actor as a label + name pair, on the same left edge as the pill and
