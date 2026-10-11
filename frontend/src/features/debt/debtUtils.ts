@@ -2,10 +2,9 @@ import { TxnType } from '@tingting/shared';
 import type { LedgerEntry } from '@tingting/shared';
 import { formatCurrency } from '../../lib/format';
 
-// Twin of the page-side helpers in `pages/debt-detail-ledger.tsx`. Feature
-// modules must not import from `src/pages/`, so the two pure helpers the
-// receivable ledger rows need are mirrored here verbatim — keep both copies
-// in sync if the label table ever changes.
+// Label table for the receivable ledger rows. Lives in the feature module (not
+// `src/pages/`) so feature code never imports from `src/pages/`; the page-side
+// twin this used to mirror has been deleted.
 const TXN_META: Record<string, { label: string; pill: string }> = {
   [TxnType.TRIP_REVENUE]: { label: 'DOANH THU CHUYẾN', pill: 'dd-txn-pill dd-txn-pill--rev' },
   [TxnType.SERVICE_FEE]: { label: 'PHÍ CHI HỘ', pill: 'dd-txn-pill dd-txn-pill--fee' },

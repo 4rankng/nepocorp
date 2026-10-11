@@ -16,7 +16,7 @@ import { useAgentOpenable } from '../hooks/useAgentOpenable';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { qk } from '../api/keys';
 import './DebtDetailPage.css';
-import { money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debt-detail-ledger';
+import { money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debtDetailLedger';
 import { normalizeAging, oldestAgingBucketIdx } from '../lib/aging';
 import { PeriodFilter, resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity } from '../components/debt/PeriodFilter';
 import { buildStatementExportUrl, statementExportFilename } from '../lib/statementExport';
