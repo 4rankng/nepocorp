@@ -15,7 +15,7 @@
 }
 
 .adv-page .adv-ledger {
-  min-width: 1013px;
+  min-width: 960px;
 }
 
 .adv-page .adv-panel {
@@ -136,7 +136,7 @@
 /* ── Desktop grid header ──────────────────────────────────────────────── */
 .adv-page .adv-grid-head {
   display: grid;
-  grid-template-columns: minmax(180px, 1.4fr) 130px 110px 130px minmax(160px, 2fr) 150px;
+  grid-template-columns: minmax(150px, 0.85fr) 120px 100px 130px minmax(200px, 2.2fr) 150px;
   padding: 11px 16px;
   gap: 12px;
   background: var(--surface-2);
@@ -160,7 +160,7 @@
 /* ── Desktop grid row ─────────────────────────────────────────────────── */
 .adv-page .adv-grid-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1.4fr) 130px 110px 130px minmax(160px, 2fr) 150px;
+  grid-template-columns: minmax(150px, 0.85fr) 120px 100px 130px minmax(200px, 2.2fr) 150px;
   padding: 12px 16px;
   gap: 12px;
   align-items: center;
@@ -172,6 +172,28 @@
 .adv-page .adv-grid-row > div {
   line-height: var(--lh-normal);
   min-width: 0;
+}
+
+
+/* The approve/reject column is a sticky rail: the requester column no longer
+   needs to hold slack, and the decision stays on screen while the rest of the
+   row scrolls horizontally (kanban 111026110000). Opaque background + neutral
+   1px divider, matched on row hover so the rail never looks detached. */
+.adv-page .adv-grid-head > div:last-child,
+.adv-page .adv-grid-row > div:last-child {
+  position: sticky;
+  right: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  padding-left: 12px;
+}
+
+.adv-page .adv-grid-head > div:last-child {
+  background: var(--surface-2);
+}
+
+.adv-page .adv-grid-row:hover > div:last-child {
+  background: var(--surface-2);
 }
 
 /* ── Row cells ────────────────────────────────────────────────────────── */
