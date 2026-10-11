@@ -12,10 +12,12 @@ export interface SettlementInfo {
   forwarderName?: string | null;
 }
 
-/** Số phiếu / ngày lập / nhân viên — the sheet's identity block. */
+/** Số phiếu / ngày lập / nhân viên — the sheet's identity strip. Inline
+ *  label+value pairs on one row: as a three-column grid inside a padded card it
+ *  read as a tall half-empty panel. */
 export function SettlementInfoGrid({ settlement }: { settlement: SettlementInfo }) {
   return (
-    <div className="settlement-detail__section">
+    <div className="settlement-detail__section settlement-detail__section--strip">
       <div className="settlement-detail__info">
         <div className="settlement-detail__info-item">
           <span className="settlement-detail__info-label">Số phiếu</span>
@@ -55,6 +57,14 @@ export function SettlementAdvancesSection({
     <div className="settlement-detail__section">
       <h2 className="settlement-detail__section-title">Tạm ứng đã nhận</h2>
       <div className="settlement-detail__advances">
+        {/* A labelled column header: without it the amount sat at the far left,
+            the reason drifted in a 1fr track and the date was stranded at the
+            right edge, so the list read as scattered text rather than a table. */}
+        <div className="settlement-detail__advances-head">
+          <span>Số tiền</span>
+          <span>Nội dung</span>
+          <span>Ngày nhận</span>
+        </div>
         {requests.map(r => (
           <div key={r.id} className="settlement-detail__advance-row">
             <span className="settlement-detail__advance-amount">{formatCurrency(Number(r.amount))}</span>

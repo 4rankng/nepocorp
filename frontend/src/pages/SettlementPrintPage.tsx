@@ -322,7 +322,7 @@ export default function SettlementPrintPage() {
   };
 
   return (
-    <div ref={rootRef}>
+    <div ref={rootRef} className="settlement-print-page">
       {/* ── Page Header (hidden in print) ── */}
       <div className="no-print">
         <PageHeader
