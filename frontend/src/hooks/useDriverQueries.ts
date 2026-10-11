@@ -4,7 +4,7 @@ import { qk } from '../api/keys';
 
 export function useDriverTrips(params: { page: number; limit: number; status?: string }) {
   return useQuery({
-    queryKey: [...qk.driver.trips, params],
+    queryKey: qk.driver.tripsList(params),
     queryFn: () => driverClient.getTrips(params),
     placeholderData: keepPreviousData,
   });

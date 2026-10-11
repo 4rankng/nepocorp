@@ -6,6 +6,7 @@ import { useAuthedQuery } from './useAuthedQuery';
 import { api, ApiError } from '../../lib/api';
 import { onSessionExpired } from '../../lib/api/session';
 import { getToken } from './useToken';
+import { qk } from '../../api/keys';
 
 const { logout } = vi.hoisted(() => ({ logout: vi.fn() }));
 vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ logout }) }));
@@ -13,7 +14,7 @@ let client: QueryClient;
 afterEach(() => { cleanup(); client?.clear(); api.clearToken(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 function setup() {
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return renderHook(() => useAuthedQuery({ queryKey: ['restricted'], queryFn: () => api.get('/restricted') }), {
+  return renderHook(() => useAuthedQuery({ queryKey: qk.crud.entity('/restricted'), queryFn: () => api.get('/restricted') }), {
     wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
   });
 }

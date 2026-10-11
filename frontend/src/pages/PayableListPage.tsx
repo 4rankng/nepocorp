@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { formatCurrency, moneyParts } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { PayablesCategory } from '@tingting/shared';

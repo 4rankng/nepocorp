@@ -5,7 +5,7 @@
     "dev": "make dev",
     "setup": "make setup",
     "build": "cd shared && npx tsc && cd ../backend && npx tsc && cd ../frontend && npx vite build",
-    "lint": "eslint ."
+    "lint": "eslint . && pnpm --dir frontend lint"
   },
   "dependencies": {
     "puppeteer": "^25.1.0"

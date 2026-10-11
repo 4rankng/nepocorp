@@ -66,6 +66,8 @@ export const qk = {
       ['customers', page, search] as const,
     allCustomers: ['all-customers'],
     users: ['users'],
+    /** Paged/filtered users list — page params are part of the key. */
+    usersList: (params: unknown) => ['users', params] as const,
     ports: ['ports'],
     portsCatalog: ['ports-catalog'],
     tirePositions: ['tire-positions'],
@@ -165,6 +167,8 @@ export const qk = {
 
   driver: {
     trips: ['driver-trips'],
+    /** Paged/filtered driver trip list — page params are part of the key. */
+    tripsList: (params: unknown) => ['driver-trips', params] as const,
     earnings: (month: number, year: number) =>
       ['driver-earnings', month, year] as const,
     penalties: (params: { dateFrom: string; dateTo: string } | undefined) =>
@@ -283,6 +287,8 @@ export const qk = {
 
   penalties: {
     list: ['penalties'],
+    /** Penalty list bounded by a lower date — dateFrom is part of the key. */
+    byDate: (dateFrom?: string) => ['penalties', dateFrom ?? null] as const,
     catalogs: ['penalty-catalogs'],
     stats: ['/penalty-reasons/stats'],
   },

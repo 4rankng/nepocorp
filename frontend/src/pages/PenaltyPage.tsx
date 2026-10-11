@@ -16,7 +16,7 @@ export default function PenaltyPage() {
   // computes: the selected month, its predecessor (January compare), YTD of
   // the current year, and the longest cutoff filter (ytd). Penalties older
   // than this window never appear in any visible figure.
-  const { month: selMonth, year: selYear } = useMonth();
+  const { year: selYear } = useMonth();
   const currentYear = new Date().getFullYear();
   const windowStartYear = Math.min(selYear - 2, currentYear);
   const windowStart = `${windowStartYear}-01-01`;

@@ -29,7 +29,7 @@ interface PenaltyRow {
  */
 export function usePenalties(dateFrom?: string) {
   return useQuery<PenaltyRow[]>({
-    queryKey: [...qk.penalties.list, dateFrom ?? null],
+    queryKey: qk.penalties.byDate(dateFrom),
     queryFn: async () => {
       const qs = dateFrom ? `?dateFrom=${encodeURIComponent(dateFrom)}&limit=1000` : '?limit=1000';
       const data = await api.get<{ items: PenaltyRow[]; total?: number } | PenaltyRow[]>(`/penalties${qs}`);

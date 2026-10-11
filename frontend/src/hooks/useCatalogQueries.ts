@@ -93,7 +93,7 @@ export function useCustomers(page: number, search: string) {
 
 export function useUsers(params: UsersPageParams) {
   return useQuery({
-    queryKey: [...qk.catalogs.users, params],
+    queryKey: qk.catalogs.usersList(params),
     queryFn: () => userClient.getUsers({ ...params, sortBy: params.sortBy ?? undefined }),
     placeholderData: keepPreviousData,
   });

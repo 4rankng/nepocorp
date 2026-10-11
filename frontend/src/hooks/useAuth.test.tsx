@@ -73,8 +73,9 @@ describe('account session cache isolation', () => {
   it('cancels old in-flight data so it cannot repopulate the next session', async () => {
     const { result } = setup();
     let resolveOld!: (value: string[]) => void;
+    const earningsKey = qk.driver.earnings(1, 2025);
     const oldRequest = client.fetchQuery({
-      queryKey: ['my-earnings'],
+      queryKey: earningsKey,
       queryFn: () => new Promise<string[]>((resolve) => { resolveOld = resolve; }),
     }).catch(() => undefined);
     act(() => result.current.logout());
@@ -82,7 +83,7 @@ describe('account session cache isolation', () => {
     await act(() => result.current.login('second', 'password'));
     resolveOld(['first account salary']);
     await oldRequest;
-    expect(client.getQueryData(['my-earnings'])).toBeUndefined();
+    expect(client.getQueryData(earningsKey)).toBeUndefined();
   });
 
   it('clears stale session data on successful login even if logout was bypassed', async () => {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, moneyParts } from '../lib/format';
 import { oldestAgingBucketIdx } from '../lib/aging';
@@ -6,7 +6,6 @@ import { api } from '../lib/api';
 import { downloadBlob } from '../lib/download';
 import { useToast } from '../components/shared/Toast';
 import {
-  Users,
   Clock,
   CalendarCheck2,
   Hourglass,
@@ -25,7 +24,6 @@ import {
   usePageAnimations,
   useListAnimations,
 } from '../hooks/animations';
-import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import { AssetIcon } from '../components/AssetIcon';
 import './DebtListPage.css';
 import '../components/shared/HeroKpiRow.css';
@@ -126,7 +124,6 @@ export default function DebtListPage() {
   );
 
   /* ── Animation hooks ── */
-  const prefersReduced = usePrefersReducedMotion();
   const compact = false; // full VND everywhere — no short form (e.g. "12,5 tr")
   const { rootRef } = usePageAnimations({
     ready: !loading,

@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { financialClient, type CustomerAging, type CustomerAgingResponse } from '../api/financialClient';
 import { qk } from '../api/keys';
-import type { LedgerEntry, CustomerStatement, PayablesCategory, SupplierStatement } from '@tingting/shared';
+import type { CustomerStatement, PayablesCategory, SupplierStatement } from '@tingting/shared';
 
 export type { CustomerAging };
 
