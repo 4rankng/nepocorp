@@ -4,7 +4,7 @@ import {
   Users, UserCheck, Plus, Download, Search,
   MoreHorizontal, Pencil, Trash2, X, Save, Loader2,
 } from 'lucide-react';
-import { useConfirm } from '../components/UI';
+import { useConfirm } from '../components/useConfirm';
 import { api } from '../lib/api';
 import { labelStyle } from '../utils/formStyles';
 import { downloadCSV } from '../lib/csv';

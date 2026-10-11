@@ -5,7 +5,8 @@ import { Plus, Search, Pencil, Trash2, Sparkles, AlertTriangle } from 'lucide-re
 import { faqClient } from '../../api/faqClient';
 import { qk } from '../../api/keys';
 import { useBackShortcut } from '../../hooks/useBackShortcut';
-import { Modal, useConfirm, PageHeader } from '../../components/UI';
+import { Modal, PageHeader } from '../../components/UI';
+import { useConfirm } from '../../components/useConfirm';
 import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 import type { FaqEntry, FaqEntryCreate } from '@tingting/shared';
 

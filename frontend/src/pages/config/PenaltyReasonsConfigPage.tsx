@@ -7,7 +7,8 @@ import { api } from '../../lib/api';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
 import { useCRUD } from '../../hooks/useCRUD';
-import { Modal, useConfirm, Btn, FormGroup, PageHeader } from '../../components/UI';
+import { Modal, Btn, FormGroup, PageHeader } from '../../components/UI';
+import { useConfirm } from '../../components/useConfirm';
 import type { PenaltyReason } from '@tingting/shared';
 import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 

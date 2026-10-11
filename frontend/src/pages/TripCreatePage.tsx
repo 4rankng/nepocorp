@@ -16,7 +16,7 @@ import { ActionBar } from '../components/trip/ActionBar';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useDirtyGuard } from '../hooks/useDirtyGuard';
-import { useConfirm } from '../components/UI';
+import { useConfirm } from '../components/useConfirm';
 import './TripForm.css';
 import './TripCreatePage.css';
 

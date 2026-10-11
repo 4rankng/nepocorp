@@ -4,7 +4,8 @@ import { Wallet, Loader2, Plus, X, User, AlertCircle, Clock, FileText, CheckCirc
 import { formatCurrency, formatDate } from '../lib/format';
 import { ADVANCE_REQUEST_STATUS_LABELS, AdvanceSettlementStatus, type AdvanceRequestStatus } from '@tingting/shared';
 import type { AdvanceRequestWithRefs, AdvanceSettlementWithRefs } from '@tingting/shared';
-import { PageHeader, FormGroup, useConfirm } from '../components/UI';
+import { PageHeader, FormGroup } from '../components/UI';
+import { useConfirm } from '../components/useConfirm';
 import { useToast } from '../components/shared/Toast';
 import {
   useForwarderAdvanceRequests,

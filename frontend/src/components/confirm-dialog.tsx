@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, HelpCircle } from 'lucide-react';
 import { animate, spring, utils } from 'animejs';
@@ -79,22 +79,8 @@ export function ConfirmDialog({ isOpen, message, confirmLabel = 'Xác nhận', c
   ) : null, portalTarget);
 }
 
-interface ConfirmOptions {
+export interface ConfirmOptions {
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: 'danger' | 'primary' | 'warning';
-}
-
-interface ConfirmState extends ConfirmOptions {
-  message: string;
-  resolve: (value: boolean) => void;
-}
-
-export function useConfirm() {
-  const [state, setState] = useState<ConfirmState | null>(null);
-  const confirm = (message: string, options?: ConfirmOptions): Promise<boolean> => new Promise((resolve) => setState({ message, resolve, ...options }));
-  const handleConfirm = () => { state?.resolve(true); setState(null); };
-  const handleCancel = () => { state?.resolve(false); setState(null); };
-  const dialog = state ? <ConfirmDialog isOpen message={state.message} confirmLabel={state.confirmLabel} cancelLabel={state.cancelLabel} variant={state.variant} onConfirm={handleConfirm} onCancel={handleCancel} /> : null;
-  return { confirm, dialog };
 }

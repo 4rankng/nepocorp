@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, PenLine, Save, Star, Trash2 } from 'lucide-react';
 import { AssetIcon } from '../../components/AssetIcon';
-import { useConfirm } from '../../components/UI';
+import { useConfirm } from '../../components/useConfirm';
 import { useToast } from '../../components/shared/Toast';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';

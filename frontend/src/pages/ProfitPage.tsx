@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { getActiveCapTable } from '../lib/cap-table';
-import { PageHeader, Card, FormGroup, useConfirm } from '../components/UI';
+import { PageHeader, Card, FormGroup } from '../components/UI';
+import { useConfirm } from '../components/useConfirm';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { Alert } from '../components/shared/Alert';
 import { formatCurrency as formatVND } from '../lib/format';

@@ -11,7 +11,7 @@ import {
 } from '../../hooks/useQueries';
 import { useCatalogs } from '../../hooks/useCatalogs';
 import { TripStatus, Role } from '@tingting/shared';
-import { useConfirm } from '../../components/UI';
+import { useConfirm } from '../../components/useConfirm';
 import type { TripDetailPageData, TripDerivedData, TripPermissions, TripUIState } from './types';
 import { getExternalTripFinancials, getTripDisplayGrossProfit, getTripRevenueBasis } from '../trips/tripHelpers';
 

@@ -4,7 +4,7 @@ import { ArrowLeft, Printer, Loader2, FileSpreadsheet, Pencil, Save, CheckCircle
 import { formatCurrency } from '../lib/format';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { api } from '../lib/api';
-import { useConfirm } from '../components/confirm-dialog';
+import { useConfirm } from '../components/useConfirm';
 import { useToast } from '../components/shared/Toast';
 import { downloadBlob } from '../lib/download';
 import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement, useDeleteSettlement, pendingAction } from '../hooks/useForwarderQueries';

@@ -30,11 +30,11 @@ vi.mock('../../hooks/useCRUD', () => ({
 }));
 vi.mock('../../components/UI', () => ({
   Modal: () => null,
-  useConfirm: () => ({ confirm: vi.fn(), dialog: null }),
   Btn: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
   FormGroup: ({ children }: { children: React.ReactNode }) => <label>{children}</label>,
   PageHeader: ({ title, action }: { title: string; action: React.ReactNode }) => <header><h1>{title}</h1>{action}</header>,
 }));
+vi.mock('../../components/useConfirm', () => ({ useConfirm: () => ({ confirm: vi.fn(), dialog: null }) }));
 vi.mock('../../lib/emptyIllustrations', () => ({ resolveEmptyIllustration: () => '' }));
 
 const refetch = vi.fn();

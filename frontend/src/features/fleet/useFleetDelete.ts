@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useConfirm } from '../../components/UI';
+import { useConfirm } from '../../components/useConfirm';
 
 /**
  * Gate a destructive fleet delete behind a confirmation dialog.

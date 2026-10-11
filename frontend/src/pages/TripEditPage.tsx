@@ -3,7 +3,7 @@ import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { ApiError } from '../lib/api';
 import { Role, TripStatus, TRIP_STATUS_LABELS } from '@tingting/shared';
-import { useConfirm } from '../components/UI';
+import { useConfirm } from '../components/useConfirm';
 import { Spinner } from '../components/shared/Spinner';
 import { useTripDetail } from '../hooks/useQueries';
 import { useAuth } from '../hooks/useAuth';

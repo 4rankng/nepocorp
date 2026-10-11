@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { tripClient } from '../../../api/tripClient';
 import { qk } from '../../../api/keys';
 import type { NormalizedTrip } from '../../../hooks/useTripQueries';
-import { useConfirm } from '../../../components/UI';
+import { useConfirm } from '../../../components/useConfirm';
 import type { ReassignState, Toast } from '../utils';
 
 export function useDispatchMutations(pendingTrips: NormalizedTrip[]) {

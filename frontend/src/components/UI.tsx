@@ -7,7 +7,8 @@ import { useAnimatedOverlay, type EntranceFn, type ExitFn } from '../hooks/useAn
 import { usePressAnimation } from '../hooks/animations/usePressAnimation';
 import { Tooltip } from './shared/Tooltip';
 import { Sparkline } from '../design-system/Sparkline';
-import { isTopmostDialog, useDialogFocus } from './shared/useDialogFocus';
+import { useDialogFocus } from './shared/useDialogFocus';
+import { useConfirmShortcuts } from './useConfirmShortcuts';
 
 /* ─── Shared overlay animation defaults ──────────────────────────────────── */
 
@@ -55,55 +56,8 @@ function usePortalTarget() {
   return target;
 }
 
-/* ─── Global confirm shortcuts ──────────────────────────────────────────────
- * Canonical keyboard pattern for any dialog/modal/drawer that asks the user
- * to confirm or cancel something:
- *   - Enter  → triggers the primary/confirm action (if provided)
- *   - Escape → triggers the cancel/close action
- *
- * Used by ConfirmDialog, Modal, Drawer below. Also exported so any one-off
- * custom dialog elsewhere in the app can opt-in by calling this hook.
- *
- * Listener is only attached while `isOpen` is true. Enter is suppressed when
- * focus is inside a <textarea> or contenteditable element so multi-line
- * editing still works naturally.
- * -------------------------------------------------------------------------- */
-// eslint-disable-next-line react-refresh/only-export-components -- shared hook, not a component
-export function useConfirmShortcuts(opts: {
-  isOpen: boolean;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-  dialogRef?: React.RefObject<HTMLElement | null>;
-}) {
-  const { isOpen, onConfirm, onCancel, dialogRef } = opts;
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.repeat || e.isComposing) return;
-      if (dialogRef?.current && !isTopmostDialog(dialogRef.current, e.target)) return;
-      if (e.key === 'Escape' && onCancel) {
-        e.preventDefault();
-        onCancel();
-        return;
-      }
-      if (e.key === 'Enter' && onConfirm) {
-        const target = e.target as HTMLElement | null;
-        if (e.shiftKey || e.isComposing) return;
-        if (target) {
-          const tag = target.tagName;
-          if (tag === 'TEXTAREA') return;
-          if (target.isContentEditable) return;
-          if (tag === 'BUTTON') return;
-          if (tag === 'SELECT' || target.closest('a[href], [role="combobox"], [role="listbox"], [role="menu"]')) return;
-        }
-        e.preventDefault();
-        onConfirm();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [isOpen, onConfirm, onCancel, dialogRef]);
-}
+// useConfirmShortcuts lives in ./useConfirmShortcuts so this module exports
+// only components (React Fast Refresh).
 
 /* ─── KPI Metric Card ───────────────────────────────────────────────────── */
 
@@ -634,4 +588,4 @@ export function Drawer({ isOpen, onClose, title, subtitle, children, footer, onC
   );
 }
 
-export { ConfirmDialog, useConfirm } from './confirm-dialog';
+export { ConfirmDialog } from './confirm-dialog';

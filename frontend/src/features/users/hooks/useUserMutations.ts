@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Role } from '@tingting/shared';
 import { userClient } from '../../../api/userClient';
 import { useToast } from '../../../components/shared/Toast';
-import { useConfirm } from '../../../components/UI';
+import { useConfirm } from '../../../components/useConfirm';
 import type { CreateData, EditData } from '../utils';
 
 /** Normalize driver-profile fields: empty strings become undefined (omitted from API payload). */

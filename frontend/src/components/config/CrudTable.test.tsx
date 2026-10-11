@@ -52,8 +52,9 @@ vi.mock('../UI', () => ({
   ),
   Panel: ({ children }: { children: ReactNode }) => <section>{children}</section>,
   Modal: () => null,
-  useConfirm: () => ({ confirm: vi.fn(), dialog: null }),
 }));
+
+vi.mock('../useConfirm', () => ({ useConfirm: () => ({ confirm: vi.fn(), dialog: null }) }));
 
 vi.mock('../../design-system', () => ({
   EmptyState: () => <div>Trống</div>,

@@ -6,7 +6,8 @@ import {
   ADVANCE_REQUEST_STATUS_LABELS,
   AdvanceRequestStatus,
 } from '@tingting/shared';
-import { PageHeader, StatusPill, Toolbar, FilterPill, useConfirm } from '../components/UI';
+import { PageHeader, StatusPill, Toolbar, FilterPill } from '../components/UI';
+import { useConfirm } from '../components/useConfirm';
 import { useToast } from '../components/shared/Toast';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { AssetIcon, type AssetIconName } from '../components/AssetIcon';

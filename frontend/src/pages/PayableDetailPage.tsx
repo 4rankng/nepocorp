@@ -13,7 +13,7 @@ import { Phone, Building2, ArrowLeft, CreditCard, Download, FileSpreadsheet, Fil
 import { useSupplierStatement } from '../hooks/useQueries';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../components/shared/Toast';
-import { useConfirm } from '../components/UI';
+import { useConfirm } from '../components/useConfirm';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';

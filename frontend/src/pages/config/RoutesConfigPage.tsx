@@ -7,7 +7,7 @@ import { MapPin, Route, Plus, Pencil, Trash2, Loader2, X, Mountain, ArrowLeft } 
 import { configClient } from '../../api/configClient';
 import { tripClient, type TripUsageStats } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
-import { useConfirm } from '../../components/UI';
+import { useConfirm } from '../../components/useConfirm';
 import { AssetIcon } from '../../components/AssetIcon';
 import { calculateRoute } from '../../lib/maps';
 import { LeafletMap } from '../../components/shared/LeafletMap';
