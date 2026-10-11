@@ -117,9 +117,6 @@ const configSchema = z.object({
   // frame (a streamed bubble flashes then gets replaced by the authoritative
   // message). Answers now arrive whole in RUN_FINISHED.
   agentStreamingEnabled: z.boolean().default(false),
-  // P5 Governance: LLM provider failover. When ON, a failed primary provider
-  // call (timeout/http/429) retries on the alternate provider. Kill-switch.
-  agentFailover: z.boolean().default(true),
   // P5 Governance: per-user chat rate limit (messages per minute). Prevents
   // abuse/cost runaway. 0 = disabled.
   agentRateLimitPerMin: z.number().int().nonnegative().default(20),
@@ -158,7 +155,6 @@ const raw = {
   agentNavigateGuardrail: parseFlag(process.env.AGENT_NAVIGATE_GUARDRAIL, true),
   agentIntentRouter: parseFlag(process.env.AGENT_INTENT_ROUTER, true),
   agentStreamingEnabled: parseFlag(process.env.AGENT_STREAMING_ENABLED, false),
-  agentFailover: parseFlag(process.env.AGENT_FAILOVER, true),
   agentRateLimitPerMin: Number(process.env.AGENT_RATE_LIMIT_PER_MIN) || 20,
   agentMessageRetentionDays: Number(process.env.AGENT_MESSAGE_RETENTION_DAYS) || 180,
 };
@@ -196,7 +192,6 @@ const withDefaults = {
   agentNavigateGuardrail: raw.agentNavigateGuardrail,
   agentIntentRouter: raw.agentIntentRouter,
   agentStreamingEnabled: raw.agentStreamingEnabled,
-  agentFailover: raw.agentFailover,
   agentRateLimitPerMin: raw.agentRateLimitPerMin,
   agentMessageRetentionDays: raw.agentMessageRetentionDays,
 };
@@ -246,7 +241,6 @@ export const config = result.success ? result.data : configSchema.parse({
   agentSlaP95AmberMs: 12000,
   agentNavigateGuardrail: true,
   agentIntentRouter: true,
-  agentFailover: true,
   agentRateLimitPerMin: 20,
   agentMessageRetentionDays: 180,
 });

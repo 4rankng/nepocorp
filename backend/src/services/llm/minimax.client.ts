@@ -30,13 +30,6 @@ import { getActiveProvider } from './provider-registry';
 // Re-export so callers (orchestrator) read model + endpoint constants from one
 // place. See models.ts for why these are hardcoded, not env-driven.
 export { MODEL_FAST, MINIMAX_BASE_URL, MINIMAX_TIMEOUT_MS, AGENT_MAX_ITERATIONS };
-// Re-export the live model the active provider is using, so the orchestrator's
-// telemetry/metrics rows reflect the configured provider instead of a hardcoded
-// MiniMax constant. Awaitable because the active provider is DB-resolved.
-export async function getActiveModel(): Promise<string> {
-  return (await getActiveProvider()).model;
-}
-
 export interface MiniMaxFunctionCall {
   id: string;
   name: string;

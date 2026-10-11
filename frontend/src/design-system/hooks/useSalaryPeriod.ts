@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { salaryClient } from '../../api/salaryClient';
 import { configClient } from '../../api/configClient';
 import { qk } from '../../api/keys';
 
@@ -26,12 +25,4 @@ export function useSalaryPeriod(month: number, year: number) {
   });
 }
 
-/**
- * Re-export for callers that imported the function from its old home.
- * @deprecated import from '../../design-system/hooks/useSalaryPeriod' instead.
- */
-export { useSalaryPeriod as useSalaryPeriodLegacy } from './useSalaryPeriod';
 
-// Note: salaryClient is referenced here for any future consolidation; the
-// current implementation only uses configClient for the period resolution.
-void salaryClient;

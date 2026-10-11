@@ -1,15 +1,5 @@
 import { formatCompact } from '../../lib/format';
 
-export const CATEGORY_COLORS: Record<string, string> = {
-  'Sửa chữa': '#8B5CF6',
-  'Phụ tùng': '#F59E0B',
-  'Vật tư': '#6366F1',
-  'Bảo hiểm': '#06B6D4',
-  'Đăng kiểm': '#10B981',
-  'Phí đường bộ': '#EC4899',
-};
-export const FALLBACK_COLORS = ['#8B5CF6', '#F59E0B', '#06B6D4', '#10B981', '#EC4899', '#6366F1'];
-
 export const styles = {
   thinBar: { height: 4 },
 } as const;

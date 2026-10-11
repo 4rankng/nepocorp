@@ -264,37 +264,6 @@ export async function getSummaryByCar(carId: number, range: ReportRange): Promis
   };
 }
 
-export interface OilRow { date: string | null; startTime: string | null; endTime: string | null; fuelStart: number | null; fuelEnd: number | null; litersDrained: number | null; litersFilled: number | null; consumed: number | null; co2Kg: number | null; totalKm: number | null; efficiencyL100: number | null; }
-/** Fuel/oil report: fill/drain/consumption/efficiency per day + totals. */
-export async function getOilManage(carId: number, range: ReportRange): Promise<{ rows: OilRow[]; totals: Partial<OilRow> }> {
-  const html = await fetchReport(carId, '/ReportDN/_ResultReportsOilManage', range, { referer: 'ReportDN/OilManage' });
-  const rows = parseTable(html);
-  if (!headerOk(rows, /dầu (bắt đầu|kết thúc)|tổng tiêu thụ/i)) return { rows: [], totals: {} };
-  // Ngày, Biển, Bắt đầu, Kết thúc, Dầu đầu, Dầu cuối, Rút, Đổ, Tiêu thụ, CO2, TổngKM, TG dừng, ..., L/100km
-  const toOil = (r: string[]): OilRow => ({
-    date: r[0] ?? null,
-    startTime: toIso(parsePortalDateTime(r[2] ?? '')),
-    endTime: toIso(parsePortalDateTime(r[3] ?? '')),
-    fuelStart: toNum(r[4]), fuelEnd: toNum(r[5]),
-    litersDrained: toNum(r[6]), litersFilled: toNum(r[7]),
-    consumed: toNum(r[8]), co2Kg: toNum(r[9]), totalKm: toNum(r[10]),
-    efficiencyL100: toNum((r.find((c) => /lít\s*\/\s*100/i.test(c)) ?? '').match(/[\d.]+/)?.[0] ?? null),
-  });
-  const data = dataRows(rows).filter((r) => /\d{2}\/\d{2}\/\d{4}/.test(r[0] ?? '')).map(toOil);
-  const sum = (sel: (r: OilRow) => number | null): number | null =>
-    data.reduce<number | null>((s, r) => { const v = sel(r); return v == null ? s : (s ?? 0) + v; }, null);
-  return {
-    rows: data,
-    totals: {
-      litersDrained: sum((r) => r.litersDrained),
-      litersFilled: sum((r) => r.litersFilled),
-      consumed: sum((r) => r.consumed),
-      co2Kg: sum((r) => r.co2Kg),
-      totalKm: sum((r) => r.totalKm),
-    },
-  };
-}
-
 export interface CarSpeedSample { time: string | null; speeds: number[]; }
 /** Per-10s speed samples (can be large). */
 export async function getCarSpeed(carId: number, range: ReportRange, maxSamples = 5000): Promise<CarSpeedSample[]> {
@@ -328,35 +297,6 @@ export async function getActivitySummary(carId: number, range: ReportRange): Pro
   };
 }
 
-export interface FuelEvent { startTime: string | null; endTime: string | null; event: string | null; liters: number | null; address: string | null; }
-/** Fuel events (fill/drain) — useful for theft detection. Empty if none. */
-export async function getFuelEvents(carId: number, range: ReportRange): Promise<{ events: FuelEvent[]; increaseCount: number | null; increaseLiters: number | null; decreaseCount: number | null; decreaseLiters: number | null; }> {
-  const html = await fetchReport(carId, '/ReportDN/_ReportFuelEventsReturn', range, { referer: 'ReportDN/FuelEvents' });
-  const rows = parseTable(html);
-  if (!headerOk(rows, /sự kiện|số lần tăng/i)) {
-    return { events: [], increaseCount: null, increaseLiters: null, decreaseCount: null, decreaseLiters: null };
-  }
-  const result = { events: [] as FuelEvent[], increaseCount: null as number | null, increaseLiters: null as number | null, decreaseCount: null as number | null, decreaseLiters: null as number | null };
-  for (const r of rows) {
-    const joined = r.join(' ');
-    let m = joined.match(/Số lần tăng:\s*(\d+)/); if (m) result.increaseCount = +m[1];
-    m = joined.match(/Tổng số lít tăng:\s*([\d.,]+)/); if (m) result.increaseLiters = toNum(m[1]);
-    m = joined.match(/Số lần giảm:\s*(\d+)/); if (m) result.decreaseCount = +m[1];
-    m = joined.match(/Tổng số lít giảm:\s*([\d.,]+)/); if (m) result.decreaseLiters = toNum(m[1]);
-  }
-  // STT, Biển số, Bắt đầu, Kết thúc, Sự kiện, Số lượng, Từ->đến, Địa điểm, Ghi chú
-  result.events = dataRows(rows)
-    .filter((r) => /\d/.test(r[0] ?? '') && r.length >= 8 && !/sự kiện/i.test(r[4] ?? ''))
-    .map((r) => ({
-      startTime: toIso(parsePortalDateTime(r[2] ?? '')),
-      endTime: toIso(parsePortalDateTime(r[3] ?? '')),
-      event: r[4] || null,
-      liters: toNum(r[5]),
-      address: r[7] || null,
-    }));
-  return result;
-}
-
 export interface OfficialStop { time: string | null; durationMin: number | null; lat: number | null; lng: number | null; address: string | null; }
 /** Official BGTVT stop report (params: numberMinute, not timeS). */
 export async function getStopCar(carId: number, range: ReportRange): Promise<OfficialStop[]> {
@@ -377,16 +317,4 @@ export async function getStopCar(carId: number, range: ReportRange): Promise<Off
     });
 }
 
-export const reportService = {
-  resolveCarId,
-  getStopDetail,
-  getTripSegments,
-  getJourney,
-  getOverSpeed,
-  getSummaryByCar,
-  getOilManage,
-  getCarSpeed,
-  getActivitySummary,
-  getFuelEvents,
-  getStopCar,
-};
+

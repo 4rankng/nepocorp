@@ -27,12 +27,6 @@ export function getGradeClass(grade: string): string {
   return 'c';
 }
 
-export function formatPillLabel(filter: 'all' | 'pending' | 'deducted'): string {
-  if (filter === 'all') return 'Tất cả';
-  if (filter === 'pending') return 'Hiệu lực';
-  return 'Đã hủy';
-}
-
 export function formatTenure(createdAt: string): string {
   const start = new Date(createdAt);
   const now = new Date();

@@ -34,39 +34,6 @@ export async function getWorkDays(driverId: number, startDate: string, endDate: 
 }
 
 /**
- * Upsert a single work day status for a driver.
- * Uses onConflictDoUpdate for atomicity — avoids the race condition
- * of the previous select-then-insert-or-update pattern.
- */
-export async function upsertWorkDay(
-  driverId: number,
-  date: string,
-  status: 'TRIP_DAY' | 'STANDBY' | 'PERSONAL_LEAVE' | 'WEEKLY_OFF',
-  note: string | null,
-  createdBy: number,
-) {
-  // Preserve existing tripId atomically in the SET clause (avoids TOCTOU race).
-  // Drizzle's onConflictDoUpdate SET references the existing row's column value,
-  // so just referencing the column preserves whatever is already stored.
-  // For TRIP_DAY: keep existing tripId. For other statuses: clear it.
-  const [result] = await db.insert(s.driverWorkDays)
-    .values({ driverId, date, status, note, createdBy, tripId: null })
-    .onConflictDoUpdate({
-      target: [s.driverWorkDays.driverId, s.driverWorkDays.date],
-      set: {
-        status,
-        note,
-        tripId: status === 'TRIP_DAY'
-          ? sql`${s.driverWorkDays.tripId}`
-          : null,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
-  return result;
-}
-
-/**
  * Delete a work day (set to nothing - clear a STANDBY/PERSONAL_LEAVE)
  */
 export async function deleteWorkDay(driverId: number, date: string) {

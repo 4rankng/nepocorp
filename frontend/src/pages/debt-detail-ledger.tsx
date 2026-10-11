@@ -95,73 +95,6 @@ export function rowDisplayLabel(row: LedgerEntry): string {
   return (TXN_META[row.txnType] ?? DEFAULT_META).label;
 }
 
-export function rowGroupKey(row: LedgerEntry): string | null {
-  if (row.txnType !== TxnType.TRIP_REVENUE && row.txnType !== TxnType.SERVICE_FEE) return null;
-  const day = String(row.timestamp).slice(0, 10);
-  const family = row.serviceFeeLabel || row.txnType === TxnType.SERVICE_FEE ? 'fees' : row.txnType;
-  const tripKey = row.tripId ?? (row.txnType === TxnType.TRIP_REVENUE ? row.txnId : null);
-  if (tripKey) return `${day}|${family}|trip:${tripKey}`;
-  const routeKey = row.routeName?.trim() || '';
-  const containerKey = (row.containerNumbers ?? []).join(',');
-  if (!routeKey && !containerKey) return null;
-  return `${day}|${family}|${routeKey}|${containerKey}`;
-}
-
-export function groupLedgerRows(rows: LedgerEntry[]): LedgerDisplayRow[] {
-  const displayRows: LedgerDisplayRow[] = [];
-  const groups = new Map<string, Extract<LedgerDisplayRow, { kind: 'group' }>>();
-
-  for (const row of rows) {
-    const key = rowGroupKey(row);
-    if (!key) {
-      displayRows.push({ kind: 'single', key: `row:${row.id}`, row });
-      continue;
-    }
-
-    let group = groups.get(key);
-    if (!group) {
-      group = {
-        kind: 'group',
-        key,
-        rows: [],
-        date: row.timestamp,
-        routeName: row.routeName ?? null,
-        containerNumbers: row.containerNumbers ?? [],
-        labels: [],
-        debit: 0,
-        credit: 0,
-        balance: parseFloat(row.balance) || 0,
-        note: '',
-      };
-      groups.set(key, group);
-      displayRows.push(group);
-    }
-
-    group.rows.push(row);
-    group.debit += parseFloat(row.debit) || 0;
-    group.credit += parseFloat(row.credit) || 0;
-    if (!group.labels.includes(rowDisplayLabel(row))) {
-      group.labels.push(rowDisplayLabel(row));
-    }
-    if (!group.routeName && row.routeName) group.routeName = row.routeName;
-    if (group.containerNumbers.length === 0 && row.containerNumbers?.length) {
-      group.containerNumbers = row.containerNumbers;
-    }
-  }
-
-  for (const group of groups.values()) {
-    const notes = Array.from(new Set(group.rows.map((row) => row.note?.trim()).filter(Boolean) as string[]));
-    group.note = group.rows.length > 1
-      ? `${group.rows.length} khoản${notes[0] ? ` - ${notes[0]}` : ''}`
-      : notes[0] ?? '';
-  }
-
-  return displayRows.map((item) => {
-    if (item.kind !== 'group' || item.rows.length > 1) return item;
-    return { kind: 'single', key: `row:${item.rows[0].id}`, row: item.rows[0] };
-  });
-}
-
 export function displayRowAmounts(item: LedgerDisplayRow): { debit: number; credit: number } {
   if (item.kind === 'group') return { debit: item.debit, credit: item.credit };
   return {
@@ -218,42 +151,6 @@ export function ledgerSectionMeta(key: LedgerSectionKey): { title: string; count
   }
 }
 
-export function groupLedgerSections(items: LedgerDisplayRow[]): LedgerSection[] {
-  const order: LedgerSectionKey[] = ['service-fees', 'freight', 'payments', 'adjustments', 'other'];
-  const sectionMap = new Map<LedgerSectionKey, LedgerSection>();
-
-  for (const item of items) {
-    const key = displayRowSectionKey(item);
-    const meta = ledgerSectionMeta(key);
-    let section = sectionMap.get(key);
-    if (!section) {
-      section = {
-        key,
-        title: meta.title,
-        countLabel: '',
-        items: [],
-        debit: 0,
-        credit: 0,
-      };
-      sectionMap.set(key, section);
-    }
-    const amounts = displayRowAmounts(item);
-    section.items.push(item);
-    section.debit += amounts.debit;
-    section.credit += amounts.credit;
-  }
-
-  return order
-    .map(key => {
-      const section = sectionMap.get(key);
-      if (!section) return null;
-      const meta = ledgerSectionMeta(key);
-      section.countLabel = `${section.items.length} ${meta.countUnit}`;
-      return section;
-    })
-    .filter(Boolean) as LedgerSection[];
-}
-
 export function groupDisplayRowsByRoute(items: LedgerDisplayRow[]): LedgerRouteGroup[] {
   const routeGroups: LedgerRouteGroup[] = [];
   const byRoute = new Map<string, LedgerRouteGroup>();
@@ -274,31 +171,6 @@ export function groupDisplayRowsByRoute(items: LedgerDisplayRow[]): LedgerRouteG
   }
 
   return routeGroups;
-}
-
-export function groupItemsByContainer(items: LedgerDisplayRow[]): LedgerContainerGroup[] {
-  const groups: LedgerContainerGroup[] = [];
-  const byContainer = new Map<string, LedgerContainerGroup>();
-
-  for (const item of items) {
-    const containers = displayRowContainers(item);
-    const label = containers.length > 0 ? containers.join(', ') : displayRowFallbackLabel(item);
-    const key = label.trim().toLowerCase();
-    let group = byContainer.get(key);
-    if (!group) {
-      group = { key, label, items: [], itemCount: 0, debit: 0, credit: 0 };
-      byContainer.set(key, group);
-      groups.push(group);
-    }
-
-    const amounts = displayRowAmounts(item);
-    group.items.push(item);
-    group.itemCount += displayRowItemCount(item);
-    group.debit += amounts.debit;
-    group.credit += amounts.credit;
-  }
-
-  return groups;
 }
 
 export function rowTypeLabel(row: LedgerEntry): string {
@@ -329,77 +201,10 @@ export function accountingLinesForItem(item: LedgerDisplayRow): LedgerAccounting
   }];
 }
 
-export function splitRouteTitle(title: string): { origin: string; destination: string } | null {
-  const normalized = title.replace(/\s+/g, ' ').trim();
-  const separator = normalized.match(/\s[-–—]\s/);
-  if (!separator || separator.index === undefined) return null;
-  const origin = normalized.slice(0, separator.index).trim();
-  const destination = normalized.slice(separator.index + separator[0].length).trim();
-  if (!origin || !destination) return null;
-  return { origin, destination };
-}
-
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function money(value: number): string {
   return formatCurrency(value);
-}
-
-export function routeContainers(items: LedgerDisplayRow[]): string[] {
-  const containers = new Set<string>();
-  for (const item of items) {
-    const numbers = item.kind === 'group'
-      ? item.containerNumbers
-      : item.row.containerNumbers ?? [];
-    numbers.forEach((number) => containers.add(number));
-  }
-  return Array.from(containers);
-}
-
-export function LedgerRouteCard({ routeGroup }: { routeGroup: LedgerRouteGroup }) {
-  const sections = groupLedgerSections(routeGroup.items);
-  const freight = sections.find(section => section.key === 'freight');
-  const serviceFees = sections.find(section => section.key === 'service-fees');
-  const containers = routeContainers(routeGroup.items);
-  const containerGroups = groupItemsByContainer(routeGroup.items);
-  const routeParts = splitRouteTitle(routeGroup.title);
-
-  return (
-    <article className="dd-route-card">
-      <div className="dd-route-card-head">
-        <div className="dd-route-title">
-          {routeParts ? (
-            <div className="dd-route-endpoints" aria-label={routeGroup.title}>
-              <div className="dd-route-endpoint">
-                <span>Điểm đi</span>
-                <strong>{routeParts.origin}</strong>
-              </div>
-              <div className="dd-route-endpoint">
-                <span>Điểm đến</span>
-                <strong>{routeParts.destination}</strong>
-              </div>
-            </div>
-          ) : (
-            <h3>{routeGroup.title}</h3>
-          )}
-          <div className="dd-route-metrics">
-            <span>{routeGroup.items.length} mục</span>
-            <span>{containers.length} container</span>
-            {freight && <span>Doanh thu {money(freight.debit)}</span>}
-            {serviceFees && <span>Phí chi hộ {money(serviceFees.debit)}</span>}
-          </div>
-        </div>
-        <div className="dd-route-card-total">
-          <span>Tổng phải thu</span>
-          {routeGroup.debit > 0 && <b>{money(routeGroup.debit)}</b>}
-          {routeGroup.credit > 0 && <em>{money(routeGroup.credit)} đã thu</em>}
-        </div>
-      </div>
-      <div className="dd-route-containers">
-        <LedgerAccountingLines groups={containerGroups} />
-      </div>
-    </article>
-  );
 }
 
 export function LedgerAccountingLines({ groups }: { groups: LedgerContainerGroup[] }) {
