@@ -434,6 +434,7 @@ export default function PenaltyReasonsConfigPage() {
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
+            className="input"
             name="penaltyReasonSearch"
             aria-label="Tìm kiếm lỗi vi phạm"
             placeholder="Tìm kiếm lỗi vi phạm…"

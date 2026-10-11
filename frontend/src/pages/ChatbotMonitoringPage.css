@@ -709,7 +709,7 @@
 
 .cbm-seg__btn {
   appearance: none;
-  min-height: 44px;
+  min-height: var(--control-h);
   border: 0;
   border-radius: 9px;
   background: transparent;

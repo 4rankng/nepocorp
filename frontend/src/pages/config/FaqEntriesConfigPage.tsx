@@ -437,6 +437,7 @@ export default function FaqEntriesConfigPage() {
         <div className="filter-bar__search">
           <Search size={15} />
           <input
+            className="input"
             name="faqSearch"
             aria-label="Tìm câu hỏi thường gặp"
             placeholder="Tìm câu hỏi…"

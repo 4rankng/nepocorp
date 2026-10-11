@@ -441,12 +441,12 @@
 @media (max-width: 640px) {
   /* ── PenaltyPage: larger chip/seg tap targets ── */
   .penalty-chip {
-    min-height: 36px;
+    min-height: var(--control-h);
     padding: 6px 12px;
     font-size: var(--fs-xs);
   }
   .penalty-seg button {
-    min-height: 40px;
+    min-height: var(--control-h);
     padding: 8px 14px;
 
   }
