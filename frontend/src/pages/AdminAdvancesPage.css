@@ -5,6 +5,19 @@
  * TripListPage (≤760px for mobile card switch).
  * ========================================================================== */
 
+/* The desktop ledger's min-content is wider than a narrow laptop panel, and the
+   panel clips (overflow: hidden) — so every column must live inside one
+   horizontal scroller instead of being painted past the edge. Mirrors the
+   settlements ledger (kanban 111026093700). */
+.adv-page .adv-ledger-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.adv-page .adv-ledger {
+  min-width: 1013px;
+}
+
 .adv-page .adv-panel {
   background: linear-gradient(180deg, var(--surface), rgba(248, 250, 249, 0.94));
   border: 1px solid var(--line);
@@ -217,8 +230,8 @@
 .adv-page .adv-decision-btn {
   width: 44px;
   min-width: 44px;
-  height: 44px;
-  min-height: 44px;
+  height: var(--control-h);
+  min-height: var(--control-h);
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -414,7 +427,7 @@
 .adv-page .adv-mcard__actions .btn {
   flex: 1;
   justify-content: center;
-  min-height: 44px;
+  min-height: var(--cta-h);
 }
 
 /* ── Responsive: compact tablets and phones ───────────────────────────── */

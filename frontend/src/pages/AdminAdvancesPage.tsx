@@ -502,7 +502,14 @@ export default function AdminAdvancesPage() {
           </div>
         ) : (
           <>
-            {/* Desktop: grid header + rows */}
+            {/* Desktop: one scroll region keeps every column reachable when the
+                grid's min-content is wider than the panel — the panel itself
+                clips (overflow: hidden), which used to cut the approver name and
+                the decision buttons off with no way to reach them
+                (kanban 111026093700). Either way, a trailing card wraps the
+                header + rows so the scroller owns both. */}
+            <div className="adv-ledger-scroll" role="region" aria-label="Danh sách yêu cầu tạm ứng" tabIndex={0}>
+              <div className="adv-ledger">
             <div className="adv-grid-head">
               <div>Người yêu cầu</div>
               <div className="col-right">Số tiền</div>
@@ -521,6 +528,8 @@ export default function AdminAdvancesPage() {
                   focusId={`adv-${req.id}`}
                 />
               ))}
+            </div>
+              </div>
             </div>
 
             {/* Mobile: stacked cards */}
