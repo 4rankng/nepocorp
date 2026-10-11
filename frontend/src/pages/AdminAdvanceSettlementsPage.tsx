@@ -212,7 +212,6 @@ export default function AdminAdvanceSettlementsPage() {
                   <div>Kế hoạch / Phiếu</div>
                   <div className="col-center">Số cont</div>
                   <div>Tuyến đường</div>
-                  <div>Chi phí theo hạng mục</div>
                   <div className="col-right">Tổng chi</div>
                   <div>Trạng thái</div>
                 </div>

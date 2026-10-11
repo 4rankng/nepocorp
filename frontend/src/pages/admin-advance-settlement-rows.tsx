@@ -201,28 +201,30 @@ export function SettlementGridRow({
           <div className="as-container-count">{plan?.containerCount ?? 0}</div>
           <div className="as-route">{plan?.routeName || 'Chưa có tuyến đường'}</div>
 
-          <div className="as-expense-breakdown">
-            {plan && plan.expenseBreakdown.length > 0 ? plan.expenseBreakdown.map(item => (
-              <span className="as-expense-chip" key={item.code}>
-                <span>{item.label}</span>
-                <strong><Money value={item.amount} /></strong>
-              </span>
-            )) : <span className="as-expense-empty">Chưa có khoản chi liên kết</span>}
-          </div>
-
           <div className="as-amount">
             <Money value={plan?.totalExpense ?? Number(s.totalExpenseAmount)} />
           </div>
 
-          {/* One vertical rhythm, one left edge: status, then who decided it as a
-              label+name pair (not a right-aligned sentence), then the row's
-              action. The block used to stagger a pill, a right-aligned link and
-              a right-aligned "Duyệt bởi …" line, which read like a message rather
-              than a data column (kanban 111026094000). */}
+          {/* Two lines, one left edge: the status pill and the row action share
+              the first line (a 32px control beside the pill), the deciding actor
+              sits under them as a label+name pair. Three stacked lines made this
+              column the tallest cell and set the row height (kanban 111026094000
+              kept the single left edge; density rework 111026). */}
           <div className="as-status-actions">
-            <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
-              {settlementStatusLabel(s.status)}
-            </StatusPill>
+            <div className="as-status-head">
+              <StatusPill variant={advanceSettlementStatusVariant(s.status)}>
+                {settlementStatusLabel(s.status)}
+              </StatusPill>
+
+              <Link
+                className={`as-row-action${canAct ? '' : ' as-row-action--quiet'}`}
+                to={`/settlements/${s.id}`}
+                aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
+              >
+                {canApproveReject && <Pencil size={15} aria-hidden="true" />}
+                {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
+              </Link>
+            </div>
 
             {(s.approverName || s.checkerName) && (
               <div className="as-decider">
@@ -230,15 +232,20 @@ export function SettlementGridRow({
                 <strong className="as-decider__name">{s.approverName || s.checkerName}</strong>
               </div>
             )}
+          </div>
 
-            <Link
-              className={`as-row-action${canAct ? '' : ' as-row-action--quiet'}`}
-              to={`/settlements/${s.id}`}
-              aria-label={`${canApproveReject ? 'Kiểm tra' : 'Xem'} ${s.code}`}
-            >
-              {canApproveReject && <Pencil size={15} aria-hidden="true" />}
-              {canApproveReject ? 'Kiểm tra' : 'Xem phiếu'}
-            </Link>
+          {/* Fee breakdown spans the whole row on its own line: the longest
+              content gets the widest space, and the six metadata/status columns
+              above stop being squeezed to make room for it. In a narrow single
+              column the five fees stacked one per line and set the row height
+              (~205px rows). */}
+          <div className="as-expense-breakdown">
+            {plan && plan.expenseBreakdown.length > 0 ? plan.expenseBreakdown.map(item => (
+              <span className="as-expense-chip" key={item.code}>
+                <span>{item.label}</span>
+                <strong><Money value={item.amount} /></strong>
+              </span>
+            )) : <span className="as-expense-empty">Chưa có khoản chi liên kết</span>}
           </div>
         </div>
       ))}
