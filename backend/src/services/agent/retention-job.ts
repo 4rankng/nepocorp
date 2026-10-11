@@ -12,7 +12,7 @@
 
 import { db } from '../../db';
 import * as schema from '../../db/schema';
-import { sql, lt } from 'drizzle-orm';
+import { inArray, lt } from 'drizzle-orm';
 import { config } from '../../config';
 
 export interface RetentionResult {
@@ -30,11 +30,16 @@ export async function runRetentionJob(): Promise<RetentionResult> {
 
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  // 1. Delete metrics rows for messages that will be pruned.
+  // 1. Delete metrics rows for messages that will be pruned. The subquery uses
+  //    the drizzle operators (not a raw sql template): postgres.js cannot bind a
+  //    JS Date passed raw inside `sql`, so the old form threw on every run.
   const metricsResult = await db.delete(schema.agentTurnMetrics).where(
-    sql`${schema.agentTurnMetrics.messageId} IN (
-      SELECT id FROM ${schema.agentMessages} WHERE ${schema.agentMessages.createdAt} < ${cutoff}
-    )`,
+    inArray(
+      schema.agentTurnMetrics.messageId,
+      db.select({ id: schema.agentMessages.id })
+        .from(schema.agentMessages)
+        .where(lt(schema.agentMessages.createdAt, cutoff)),
+    ),
   );
 
   // 2. Delete the old messages.

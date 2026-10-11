@@ -14,6 +14,7 @@ import { globalErrorHandler } from './middleware/errorHandler';
 import { initAuditService } from './services/audit.service';
 import { initNotificationService } from './services/notification.service';
 import { initPushService } from './services/push.service';
+import { runRetentionJob } from './services/agent/retention-job';
 import authRoutes from './routes/auth';
 import configRoutes, { auditLogRouter, catalogBootstrapRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
 import tripRoutes from './routes/trips';
@@ -168,6 +169,17 @@ const server = app.listen(config.port, () => {
   console.log(`NEPO API running on port ${config.port} [${config.nodeEnv}]`);
 });
 
+// P5 Governance retention: prune agent_messages past config.agentMessageRetentionDays.
+// Runs once shortly after boot and then daily; the job is idempotent and a
+// retention window of 0 disables it (see retention-job.ts). unref() so neither
+// timer keeps the process alive on shutdown.
+const retentionRun = () =>
+  runRetentionJob().catch((e) => console.error('[retention-job] failed:', e));
+const retentionBootTimer = setTimeout(retentionRun, 60_000);
+const retentionTimer = setInterval(retentionRun, 24 * 60 * 60 * 1000);
+retentionBootTimer.unref();
+retentionTimer.unref();
+
 // Command-and-insight assistant real-time transport. Attached to the same
 // http.Server Express uses; returns null when the bot is disabled.
 const agentIo = initAgentSocket(server);
@@ -179,6 +191,8 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   console.log(`\n${signal} received — shutting down…`);
 
+  clearTimeout(retentionBootTimer);
+  clearInterval(retentionTimer);
   agentIo?.close();              // stop the assistant socket.io server
   server.close();                // stop accepting new connections
   await dbClient.end();          // drain Postgres pool
