@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, ChevronRight, ChevronLeft, AlertTriangle, X, Loader2, Download, Printer } from 'lucide-react';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
-import { formatCurrency, formatNumber, formatDate } from '../lib/format';
+import { formatCurrency, formatNumber, formatDate, formatDatePadded } from '../lib/format';
 import { splitKpi } from '../features/dashboard/utils';
 import { PageHeader } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
@@ -499,8 +499,13 @@ export default function ExpenseListPage() {
                 </div>
                 <div className="m-card__meta">
                   {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10)
-                    ? <>phát sinh {formatDate(e.expenseDate)}<span className="m-card__meta-sep">·</span><span style={{ color: 'var(--ink-4)' }}>nhập {formatDate(e.createdAt)}</span></>
-                    : formatDate(e.expenseDate)}
+                    ? <>
+                        {formatDatePadded(e.expenseDate)}
+                        <span className="m-card__meta-sep">·</span>
+                        <span className="expense-date__label">Nhập</span>
+                        {formatDatePadded(e.createdAt)}
+                      </>
+                    : formatDatePadded(e.expenseDate)}
                   {e.category && <><span className="m-card__meta-sep">·</span>{e.category.name}</>}
                 </div>
                 <div className="expense-mobile-card__summary">
@@ -566,15 +571,17 @@ export default function ExpenseListPage() {
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                     onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); navigate(`/expenses/${e.id}/edit`); } }}
                   >
-                    <td style={{ whiteSpace: 'nowrap', color: 'var(--ink-2)', position: 'relative' }}>
+                    <td className="expense-date">
                       <StatusStrip color={EXPENSE_STATUS_COLORS[e.paymentStatus] ?? '#999'} />
-                      {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10)
-                        ? <>phát sinh {formatDate(e.expenseDate)}</>
-                        : formatDate(e.expenseDate)}
+                      <span className="expense-date__primary">{formatDatePadded(e.expenseDate)}</span>
                       {e.createdAt?.slice(0, 10) && e.createdAt.slice(0, 10) !== e.expenseDate.slice(0, 10) && (
-                        <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--ink-4)' }} title="Ngày nhập dữ liệu (khác ngày phát sinh = nhập luồng)">
-                          nhập {formatDate(e.createdAt)}
-                        </div>
+                        <span
+                          className="expense-date__meta"
+                          title="Ngày nhập dữ liệu (khác ngày phát sinh = nhập luồng)"
+                        >
+                          <span className="expense-date__label">Nhập</span>
+                          {formatDatePadded(e.createdAt)}
+                        </span>
                       )}
                     </td>
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>

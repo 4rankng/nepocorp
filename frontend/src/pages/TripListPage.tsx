@@ -127,6 +127,10 @@ export default function TripListPage() {
     initialSearch: '',
     accumulate: true,
   });
+  // `table.query.refetch` is the stable react-query refetch; bind it so the
+  // callbacks below can list a real dependency instead of a member expression
+  // the exhaustive-deps rule cannot verify.
+  const refetchTrips = table.query.refetch;
   // Apply the form-state filters and search into the table hook. We do
   // this via a one-way assignment so the table hook stays the source of
   // truth for query execution.
@@ -283,7 +287,7 @@ export default function TripListPage() {
         ? `Đã lưu ${response.updated} dòng, ${rejected} dòng cần kiểm tra lại.`
         : `Đã lưu ${response.updated} dòng.`);
       if (response.updated > 0) {
-        await table.query.refetch();
+        await refetchTrips();
         setSelectedIds((prev) => {
           const next = new Set(prev);
           for (const result of response.results) {
@@ -297,7 +301,7 @@ export default function TripListPage() {
     } finally {
       setSavingQuickEdit(false);
     }
-  }, [quickDrafts, savingQuickEdit, selectedDirtyTrips, table.query.refetch]);
+  }, [quickDrafts, savingQuickEdit, selectedDirtyTrips, refetchTrips]);
 
   const handleCopyPlan = useCallback(async (tripId: number) => {
     if (copyingPlanId) return;
@@ -308,7 +312,7 @@ export default function TripListPage() {
     try {
       const created = await tripClient.copyTrip(tripId);
       await Promise.all([
-        table.query.refetch(),
+        refetchTrips(),
         queryClient.invalidateQueries({ queryKey: qk.trips.summary(dateFrom, dateTo) }),
         queryClient.invalidateQueries({ queryKey: qk.trips.all }),
       ]);
@@ -319,7 +323,7 @@ export default function TripListPage() {
     } finally {
       setCopyingPlanId(null);
     }
-  }, [copyingPlanId, dateFrom, dateTo, queryClient, table.query.refetch]);
+  }, [copyingPlanId, dateFrom, dateTo, queryClient, refetchTrips]);
 
   // ── Export ──
   const handleExport = useCallback(async () => {

@@ -41,12 +41,15 @@ export function FuelAllocationEditor() {
   // navigation between two trips) replaces the rows with saved-only entries,
   // and without re-normalizing the catalog points would silently disappear.
   const rowKeys = form.fuelAllocations.map(row => row._key).join(',');
+  // Bound outside the effect so the dependency list names a plain function
+  // instead of a member expression the exhaustive-deps rule cannot verify.
+  const setFuelAllocations = form.setFuelAllocations;
   useEffect(() => {
-    form.setFuelAllocations((previous) => {
+    setFuelAllocations((previous) => {
       const next = normalizeFuelAllocationRows(previous, fuelSuppliers);
       return sameRows(previous, next) ? previous : next;
     });
-  }, [form.setFuelAllocations, fuelSuppliers, rowKeys]);
+  }, [setFuelAllocations, fuelSuppliers, rowKeys]);
 
   const allocatedLiters = form.fuelAllocations.reduce(
     (total, allocation) => total + (Number(allocation.liters) || 0),

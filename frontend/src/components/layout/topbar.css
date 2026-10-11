@@ -484,14 +484,20 @@
 .topbar__actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  /* 10px (was 6px): the notification badge overhangs its button by 3px, so the
+     gap must clear it or the badge reads as part of the neighbouring control. */
+  gap: 10px;
   margin-left: auto;
 }
 
 .icon-btn .badge {
   position: absolute;
-  top: 5px; right: 5px;
-  min-width: 16px; height: 16px;
+  /* Anchored to the button's top-right CORNER, growing outward. It used to sit
+     at top:5px/right:5px inside a 32px bell, so a 34px-wide "99+" badge spilled
+     ~2px past the button's left edge and landed on top of the period control
+     next to it (measured: badge x=1146 vs pill right edge 1148). */
+  top: -3px; right: -3px;
+  min-width: 16px; height: 18px;
   padding: 0 4px;
   border-radius: 999px;
   background: var(--accent-2);
@@ -504,7 +510,7 @@
   /* override generic .badge */
   letter-spacing: 0;
   min-width: 20px;
-  min-height: 20px;
+  min-height: 18px;
   line-height: 1.35;
   padding: 0 5px;
 }

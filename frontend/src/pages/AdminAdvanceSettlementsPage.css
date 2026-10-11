@@ -213,15 +213,19 @@
   line-height: var(--lh-normal);
   min-width: 0;
 }
+/* Settlement group header. It must read as the start of a group when scanning
+   the ledger, so it carries a deeper brand tint and a heavier brand top edge —
+   at a 5% tint with 1px neutral borders it blended into the plan rows below it.
+   (No colored left rail: the UI contract bans full-height left borders.) */
 .as-page .as-settlement-summary {
   display: grid;
   grid-template-columns: minmax(200px, 1fr) repeat(3, minmax(140px, auto)) auto;
   gap: 14px;
   align-items: center;
-  padding: 6px 14px;
-  background: color-mix(in srgb, var(--brand) 5%, var(--surface));
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--brand) 12%, var(--surface));
+  border-top: 2px solid color-mix(in srgb, var(--brand) 42%, var(--line));
+  border-bottom: 1px solid color-mix(in srgb, var(--brand) 22%, var(--line));
   /* The action column is the only variable part of this bar: the container
      query below reads its real width instead of guessing from the viewport. */
   container-type: inline-size;
@@ -287,29 +291,38 @@
     min-height: var(--control-h);
   }
 }
-.as-page .as-settlement-summary > div {
+/* Every field is an eyebrow label over its value, so the bar reads as one
+   header band. The inline label+value form wrapped the first cell (label+code
+   is wider than its track) and left the bar taller than the rows it heads.
+   The actions cell keeps its own row layout. */
+.as-page .as-settlement-summary > div:not(.as-settlement-actions) {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   min-width: 0;
-  /* When a settlement carries unusually long amounts, the label/value pair
-     wraps instead of widening the track and starving the action column. */
-  flex-wrap: wrap;
 }
 .as-page .as-settlement-summary span {
-  color: var(--ink-3);
+  color: color-mix(in srgb, var(--brand) 68%, var(--ink-2));
   font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 .as-page .as-settlement-summary a,
 .as-page .as-settlement-summary strong {
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   font-weight: var(--fw-bold);
   text-decoration: none;
   white-space: nowrap;
+}
+.as-page .as-settlement-summary a {
+  color: var(--brand);
+}
+.as-page .as-settlement-summary a:hover {
+  text-decoration: underline;
 }
 
 /* ── Row cells ────────────────────────────────────────────────────────── */

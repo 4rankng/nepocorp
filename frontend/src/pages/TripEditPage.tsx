@@ -154,7 +154,7 @@ export default function TripEditPage() {
         navigate(`/trips/${trip.id}`, { replace: true, state: location.state });
       }
     }
-  }, [cameFromTripDetail, trip, navigate]);
+  }, [cameFromTripDetail, trip, navigate, location.state]);
 
   if (loading) {
     return (

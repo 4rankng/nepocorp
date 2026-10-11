@@ -286,6 +286,45 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Ngày phát sinh / ngày nhập ───────────────────────────────────────────
+   Both dates were inline-styled plain text — "phát sinh 3/10/2026" then
+   "nhập 6/10/2026" — lowercase sentence fragments with the SECONDARY line set
+   larger than the primary (--fs-body 12px vs the table's --fs-sm 11px) and
+   washed out at --ink-4. The column now reads as structured data: a prominent
+   tabular date, then a labelled "Nhập" line when the expense was backfilled. */
+.expense-date {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: nowrap;
+}
+.expense-date__primary {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.expense-date__meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.expense-date__label {
+  color: var(--ink-3);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 /* ── Long text columns wrap; status + action stay pinned (kanban 20260921_9) ──
    Supplier/category names used to stretch the table past its container and push
    the status label and the chevron off the right edge. */

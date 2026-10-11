@@ -112,6 +112,17 @@ export function formatDate(d: string | null): string {
 }
 
 /**
+ * Zero-padded `dd/mm/yyyy` (Asia/Ho_Chi_Minh). Use in date COLUMNS: the vi-VN
+ * form `formatDate` returns drops the leading zero, so a single-digit day and a
+ * two-digit day produce different string widths and a monospaced date column
+ * cannot align. Same timezone contract as `formatDate`.
+ */
+export function formatDatePadded(d: string | null): string {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
+/**
  * Format a timestamp as Vietnam wall-clock (Asia/Ho_Chi_Minh) on ANY host.
  * The locale argument alone ('vi-VN') only shapes numbers/dates — it does NOT
  * set the timezone, so toLocaleString would otherwise render in the runtime's
