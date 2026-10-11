@@ -183,7 +183,7 @@ export default function TruckOwnersConfigPage() {
       />
 
       <div style={{ marginBottom: 16 }}>
-        <button className="btn btn--secondary" style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 8 }} onClick={handleBack}>
+        <button className="btn btn--secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} onClick={handleBack}>
           <ArrowLeft size={14} /> Quay lại danh sách xe
         </button>
       </div>

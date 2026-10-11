@@ -1115,7 +1115,7 @@
   align-items: center;
   justify-content: center;
   width: 30px;
-  height: 30px;
+  height: var(--control-h);
   border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--surface);

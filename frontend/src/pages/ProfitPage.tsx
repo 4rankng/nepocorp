@@ -379,7 +379,7 @@ export default function ProfitPage() {
                 <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
                   <button
                     className="btn btn--secondary"
-                    style={{ height: 38, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
                     onClick={handlePreview}
                     disabled={previewing}
                   >
@@ -388,7 +388,7 @@ export default function ProfitPage() {
                   </button>
                   <button
                     className="btn btn--primary"
-                    style={{ height: 38, display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 auto', justifyContent: 'center' }}
                     onClick={handleDistributeProfit}
                     disabled={distributing}
                   >

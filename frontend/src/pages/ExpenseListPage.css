@@ -458,7 +458,7 @@
 
 .expense-page-btn {
   min-width: 44px;
-  min-height: 44px;
+  min-height: var(--control-h);
   padding: 0 8px;
   border-radius: 8px;
   color: var(--ink-2);

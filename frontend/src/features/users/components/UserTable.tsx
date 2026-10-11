@@ -229,7 +229,7 @@ export function UserTable({
                     disabled={currentPage === 1}
                     onClick={() => onPageChange(currentPage - 1)}
                     style={{
-                      minHeight: 44, padding: '8px 12px', border: '1px solid var(--line-2)', borderRadius: 9,
+                      minHeight: 'var(--control-h)', padding: '0 12px', border: '1px solid var(--line-2)', borderRadius: 9,
                       background: currentPage === 1 ? 'var(--surface-2)' : '#fff',
                       cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: 'var(--fs-body)',
                       color: currentPage === 1 ? 'var(--ink-4)' : 'var(--ink-2)'
@@ -245,7 +245,7 @@ export function UserTable({
                         className={`btn-page users-pagination__page${currentPage === page ? ' is-active' : ''}`}
                         onClick={() => onPageChange(page)}
                         style={{
-                          minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          minWidth: 'var(--control-h)', minHeight: 'var(--control-h)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           borderRadius: 9, border: currentPage === page ? '1px solid var(--brand)' : '1px solid var(--line-2)',
                           background: currentPage === page ? 'var(--brand)' : '#fff',
                           color: currentPage === page ? '#fff' : 'var(--ink)',
@@ -262,7 +262,7 @@ export function UserTable({
                     disabled={currentPage === totalPages}
                     onClick={() => onPageChange(currentPage + 1)}
                     style={{
-                      minHeight: 44, padding: '8px 12px', border: '1px solid var(--line-2)', borderRadius: 9,
+                      minHeight: 'var(--control-h)', padding: '0 12px', border: '1px solid var(--line-2)', borderRadius: 9,
                       background: currentPage === totalPages ? 'var(--surface-2)' : '#fff',
                       cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: 'var(--fs-body)',
                       color: currentPage === totalPages ? 'var(--ink-4)' : 'var(--ink-2)'

@@ -220,7 +220,7 @@
   .payables-page .page-actions .btn {
     width: 100%;
     justify-content: center;
-    min-height: 44px;
+    min-height: var(--control-h);
   }
 
   .payables-page .hero-kpi-row {
@@ -296,7 +296,7 @@
   .payables-toolbar__search {
     width: 100%;
     order: -1;
-    min-height: 44px;
+    min-height: var(--control-h);
   }
 
   .payables-page .payables-category-chips {
@@ -310,8 +310,8 @@
   }
 
   .payables-page .payables-category-chip {
-    min-height: 44px;
-    padding: 9px 14px;
+    min-height: var(--control-h);
+    padding: 5px 14px;
   }
 
   /* Mobile amount text in card list */
@@ -361,8 +361,8 @@
   font-size: var(--fs-sm);
   font-weight: 600;
   line-height: 1.35;
-  min-height: 44px;
-  padding: 9px 16px;
+  min-height: var(--control-h);
+  padding: 5px 16px;
   border-radius: 999px;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -481,7 +481,7 @@
 }
 
 .commission-form .input {
-  height: 44px;
+  height: var(--control-h);
 
 }
 

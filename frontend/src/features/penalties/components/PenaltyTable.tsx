@@ -419,7 +419,7 @@ export function PenaltyTable({
                         Lọc theo: {drv.name}
                       </span>
                       <button
-                        style={{ minHeight: 44, fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', background: 'var(--bg-2)', border: 'none', borderRadius: 6, padding: '0 10px', cursor: 'pointer' }}
+                        style={{ minHeight: 'var(--control-h)', fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', background: 'var(--bg-2)', border: 'none', borderRadius: 6, padding: '0 10px', cursor: 'pointer' }}
                         onClick={() => setLogDriverFilter(null)}
                       >
                         ✕ Xóa lọc

@@ -182,7 +182,7 @@ font-weight: 500;
   color: inherit; cursor: pointer;
   appearance: none; padding: 0;
   line-height: 1.35;
-  height: 100%;
+  height: var(--control-h);
   min-height: 0;
   width: 100%;
   max-width: 100%;
@@ -220,7 +220,7 @@ font-weight: 500;
   }
 
   .trip-list-page .filter-pill select {
-    height: 100%;
+    height: var(--control-h);
     min-height: 0;
   }
 }

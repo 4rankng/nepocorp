@@ -142,7 +142,7 @@ const itemStyle: React.CSSProperties = {
   alignItems: 'center',
   gap: 10,
   width: '100%',
-  minHeight: 44,
+  minHeight: 'var(--control-h)',
   padding: '10px 12px',
   border: 'none',
   borderRadius: 7,

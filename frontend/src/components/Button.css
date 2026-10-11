@@ -8,7 +8,11 @@
   justify-content: center;
   gap: 7px;
   min-height: var(--control-h);
-  padding: 8px 12px;
+  /* Vertical padding is tuned so a single 12px line renders EXACTLY
+     --control-h: 16.2 + 12 + 2 borders = 30.2, and the token's min-height lifts
+     it to the token. A larger padding made every button 2px taller than every
+     input beside it. */
+  padding: 6px 12px;
   border-radius: 11px;
   font-family: var(--font-body);
   font-size: var(--fs-control, var(--fs-md));

@@ -334,7 +334,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
+  min-height: var(--control-h);
   padding: 0;
   border: 0;
   color: inherit;
@@ -738,7 +738,7 @@
   background: var(--wf-card);
 }
 .dash-wf .wf-chart-toggle__btn {
-  min-height: 45px;
+  min-height: var(--control-h);
   padding: 8px 14px;
   font-family: var(--font-body);
   font-size: var(--fs-xs);
@@ -749,7 +749,7 @@
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
   line-height: 1.4;
-  min-height: 45px;
+  min-height: var(--control-h);
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);

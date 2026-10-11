@@ -34,7 +34,7 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  min-height: 44px;
+  min-height: var(--control-h);
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid transparent;
@@ -76,7 +76,7 @@
 .vehicle-schedule-picker__search {
   display: flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--control-h);
   gap: 9px;
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -233,7 +233,7 @@
 }
 
 .vehicle-schedule-banner__action {
-  min-height: 44px;
+  min-height: var(--control-h);
   flex: 0 0 auto;
   gap: 4px;
   padding: 0 10px;
@@ -397,7 +397,7 @@
 }
 
 .vehicle-schedule-form__select-content [role='option'] {
-  min-height: 40px;
+  min-height: var(--control-h);
 }
 
 .vehicle-schedule-form__field textarea {
@@ -431,7 +431,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: var(--control-h);
   max-width: 100%;
   gap: 6px;
   padding: 6px 10px;
@@ -507,7 +507,7 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  min-height: 40px;
+  min-height: var(--control-h);
   gap: 7px;
   padding: 0 12px;
   border: 1px solid transparent;
@@ -716,7 +716,7 @@
   }
 
   .vehicle-schedule-form__select-content [role='option'] {
-    min-height: 44px;
+    min-height: var(--control-h);
   }
 
   .vehicle-schedule-form__footer {
@@ -725,7 +725,7 @@
   }
 
   .vehicle-schedule-form__footer .btn {
-    min-height: 44px;
+    min-height: var(--cta-h);
   }
 
   .vehicle-schedule-manager__toolbar {
@@ -756,7 +756,7 @@
   .vehicle-schedule-manager__add {
     width: 44px;
     min-width: 44px;
-    min-height: 44px;
+    min-height: var(--control-h);
     padding: 0;
   }
 
@@ -787,7 +787,7 @@
   }
 
   .vehicle-schedule-row__actions .btn {
-    min-height: 44px;
+    min-height: var(--control-h);
     padding-inline: 8px;
 
   }
