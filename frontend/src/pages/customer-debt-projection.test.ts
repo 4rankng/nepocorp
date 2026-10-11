@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TxnType, type LedgerEntry } from '@tingting/shared';
-import { buildCustomerDebtMap } from './CustomersPage';
+import { buildCustomerDebtMap } from './customerDebtMap';
 
 function entry(overrides: Partial<LedgerEntry>): LedgerEntry {
   return {

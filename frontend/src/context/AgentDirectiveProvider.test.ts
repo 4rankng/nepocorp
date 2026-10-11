@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolvePath } from './AgentDirectiveProvider';
+import { resolvePath } from './agentDirectivePath';
 
 /**
  * Regression guard for the directive-bridge path resolver. The bot emits a

@@ -13,7 +13,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useMonth } from '../hooks/useMonth';
 import { useToast } from '../components/shared/Toast';
 import { EmptyIllustration } from '../components/shared';
-import { CalCell, DOW_LABELS, DriverPayoutModal, MobileDayList, SalarySummaryCard, STATUS_CONFIG } from './salary-attendance-components';
+import { CalCell, DriverPayoutModal, MobileDayList, SalarySummaryCard } from './salary-attendance-components';
+import { DOW_LABELS, STATUS_CONFIG } from './salary-attendance-constants';
 import './SalaryAttendancePage.css';
 import { useSalaryPeriod } from '../hooks/useCatalogQueries';
 

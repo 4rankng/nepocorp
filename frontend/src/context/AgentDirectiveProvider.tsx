@@ -13,40 +13,16 @@ import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { highlightElement } from '../lib/agentHighlight';
 import { useToast } from '../components/shared/Toast';
-import { PAGE_CATALOG, type AgentDirective, type AgentRouteKey } from '@tingting/shared';
+import { type AgentDirective } from '@tingting/shared';
 import {
   AgentDirectiveContext,
   type DirectiveOutcome,
   type OpenHandler,
 } from './AgentDirectiveContext';
+import { resolvePath } from './agentDirectivePath';
 
-/** Resolve a routeKey + optional params to an SPA path via the page catalog.
- *  Typed (no more `as Record<string, unknown>` cast): the catalog knows which
- *  entries are parametric. Detail/edit routes take a single id; accept any of
- *  the common param keys the LLM may emit (id, tripId, payableId, debtId,
- *  expenseId, …) and fall back to the first numeric value present — otherwise
- *  the builder gets 0 and the user lands on an empty /path/0 page. */
-export function resolvePath(routeKey: AgentRouteKey, params?: Record<string, string | number>): string {
-  const entry = PAGE_CATALOG[routeKey];
-  if (typeof entry.path === 'function') {
-    const id =
-      params?.id ??
-      params?.tripId ??
-      params?.payableId ??
-      params?.debtId ??
-      params?.expenseId ??
-      (params ? Object.values(params).find((v) => typeof v === 'number' || /^\d+$/.test(String(v))) : undefined) ??
-      0;
-    // Pass the resolved id under the builder's declared key. Most routes read
-    // `p.id`, but tire pages read `p.truckId` / `p.trailerId` — hardcoding
-    // `{ id }` would land on /fleet/undefined/tires. requiresParams is declared
-    // per parametric catalog entry and is the authoritative key name.
-    const key = entry.requiresParams[0] ?? 'id';
-    return entry.path({ [key]: id });
-  }
-  return entry.path;
-}
-
+// resolvePath lives in ./agentDirectivePath so this module exports only the
+// AgentDirectiveProvider component (React Fast Refresh).
 export function AgentDirectiveProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

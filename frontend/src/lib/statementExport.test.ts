@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildStatementExportUrl, statementExportFilename } from './statementExport';
-import { periodFromLatestActivity } from '../components/debt/PeriodFilter';
+import { periodFromLatestActivity } from '../components/debt/periodFilterRange';
 
 describe('buildStatementExportUrl', () => {
   const base = '/ledger/suppliers/10/statement/export';

@@ -1,50 +1,9 @@
 import { formatCurrency } from '../../lib/format';
+import { parseAdvanceBalanceFigures, type AdvanceBalanceFigures } from './advanceBalanceFormula';
 import './AdvanceBalanceNote.css';
 
-/**
- * The three sides of the TỒN TẠM ỨNG formula, as `/advance-balances` sends them
- * (money as strings).
- */
-export interface AdvanceBalanceFigures {
-  totalOutstanding?: string | number | null;
-  approvedTotal?: string | number | null;
-  settledTotal?: string | number | null;
-}
-
-export interface ParsedAdvanceBalance {
-  /** Σ APPROVED advance requests. */
-  approved: number;
-  /** Σ APPROVED requests already linked to an APPROVED settlement. */
-  settled: number;
-  /** approved − settled, as the API reports it. */
-  total: number;
-}
-
-/**
- * Parse the formula's sides, or null when the payload does not carry them.
- *
- * The components are optional on purpose: a stale module graph or a mocked hook
- * can hand the page only `totalOutstanding` + `items` (both admin advance pages
- * have a test that mounts them with exactly that payload), and the note must
- * then render nothing instead of "NaN ₫".
- */
-export function parseAdvanceBalanceFigures(
-  figures?: AdvanceBalanceFigures | null,
-): ParsedAdvanceBalance | null {
-  if (!figures || figures.approvedTotal == null || figures.settledTotal == null) return null;
-  const approved = Number(figures.approvedTotal);
-  const settled = Number(figures.settledTotal);
-  const total = figures.totalOutstanding == null ? approved - settled : Number(figures.totalOutstanding);
-  if (!Number.isFinite(approved) || !Number.isFinite(settled) || !Number.isFinite(total)) return null;
-  return { approved, settled, total };
-}
-
-/** "991.606.600 ₫ − 782.274.800 ₫ = 209.331.800 ₫" */
-export function advanceBalanceFormula(figures?: AdvanceBalanceFigures | null): string | null {
-  const parsed = parseAdvanceBalanceFigures(figures);
-  if (!parsed) return null;
-  return `${formatCurrency(parsed.approved)} − ${formatCurrency(parsed.settled)} = ${formatCurrency(parsed.total)}`;
-}
+// The formula types + helpers live in ./advanceBalanceFormula so this module
+// exports only the AdvanceBalanceNote component (React Fast Refresh).
 
 /**
  * Publishes TỒN TẠM ỨNG as an auditable subtraction instead of a bare total.

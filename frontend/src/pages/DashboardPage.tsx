@@ -14,7 +14,8 @@ import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueu
 import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
 import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
 import './DashboardPage.css';
-import { greeting, runningSum, type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
+import { type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
+import { greeting, runningSum } from '../features/dashboard/components/dashboardFormatters';
 import { DashboardKpiRow } from '../features/dashboard/components/DashboardKpiRow';
 import { AttentionBoard } from '../features/dashboard/components/AttentionBoard';
 import {

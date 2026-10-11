@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { payableDetailHref } from './PayableListPage';
+import { payableDetailHref } from '../features/payables/payableListUtils';
 import { payableBillingDocumentEntityType } from './payable-billing-document';
 
 describe('payableDetailHref', () => {

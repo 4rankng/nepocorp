@@ -1,23 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, Coffee, XCircle, Moon, DollarSign, Info, Edit } from 'lucide-react';
+import { Truck, Coffee, XCircle, DollarSign, Info, Edit } from 'lucide-react';
 import { Money } from '../components/shared/Money';
 import { Modal } from '../components/UI';
 import { usePostDriverPayout } from '../hooks/useFinancialQueries';
 import type { WorkDayRecord, AttendanceSalary } from '../api/salaryClient';
 import { useToast } from '../components/shared/Toast';
 import './SalaryAttendancePage.css';
+import { DOW_LABELS, STATUS_CONFIG } from './salary-attendance-constants';
 
-export const DOW_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-
-
-export const STATUS_CONFIG = {
-  TRIP_DAY:      { label: 'Đi chuyến',    bg: 'var(--accent-soft)',  color: 'var(--success-text)', icon: Truck,   emoji: '🚛' },
-  STANDBY:       { label: 'Chờ việc',     bg: 'var(--warning-soft)', color: 'var(--warning-text)', icon: Coffee,  emoji: '⏳' },
-  PERSONAL_LEAVE:{ label: 'Nghỉ riêng',   bg: 'var(--danger-soft)',  color: 'var(--danger-text)',  icon: XCircle, emoji: '🏖' },
-  WEEKLY_OFF:    { label: 'Nghỉ tuần',    bg: 'var(--bg-3)',         color: 'var(--ink-2)',        icon: Moon,    emoji: '💤' },
-};
-
+// DOW_LABELS / STATUS_CONFIG live in ./salary-attendance-constants so this
+// module exports only components (React Fast Refresh).
 
 // ── Calendar Cell ─────────────────────────────────────────────────────────────
 export interface CalCellProps {

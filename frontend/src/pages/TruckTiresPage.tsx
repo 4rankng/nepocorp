@@ -413,6 +413,7 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
 }
 
 
-import { AddTireForm, TirePositionsManagerDialog, computeNextSortOrder } from '../features/tires/tire-controls';
+import { AddTireForm, TirePositionsManagerDialog } from '../features/tires/tire-controls';
+import { computeNextSortOrder } from '../features/tires/tirePositionOrder';
 import { TireEditDialog, UnmountTireDialog, InstallTireDialog, TransferTireDialog } from '../features/tires/tire-dialogs';
 import { TireTable, DisposedTireTable } from '../features/tires/tire-tables';

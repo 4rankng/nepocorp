@@ -1,8 +1,8 @@
-import React from 'react';
-import { FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
-import type { AncillaryExpenseType } from '@tingting/shared';
+// Totals rows + empty state for the ancillary-fees card (was
+// `ancillary-fees-card-utils.tsx`). Exports only components; the pure helpers
+// and form constants live in ./ancillary-fees-card-utils (React Fast Refresh).
+
 import { formatNumber } from '../../lib/format';
-import type { CatalogData } from '../../hooks/useCatalogs';
 
 export function AncillaryTableTotals({ buy, sell }: { buy: number; sell: number }) {
   return <tfoot><tr><td colSpan={1}>Tổng</td><td className="num">{formatNumber(buy)}</td>
@@ -47,45 +47,3 @@ export interface AncillaryFeesCardProps {
   readOnly?: boolean;
   hideAddButton?: boolean;
 }
-
-export const EXPENSE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
-  Object.entries(FORWARDER_EXPENSE_TYPE_DEFAULTS).map(([k, v]) => [k, v.name])
-);
-
-export function feeTypeLabel(code: string): string {
-  return EXPENSE_TYPE_LABELS[code] ?? code;
-}
-
-// Single source of truth for the markup formula. Changing the multiplier
-// (e.g. to 1.18) or per-type override only requires editing this one helper —
-// previously the same `Math.round(buy * 1.2)` lived in 3 places including
-// the prefill-detection check, which silently produced wrong auto-suggestions
-// when the formula drifted out of sync.
-export const MARKUP_MULTIPLIER = 1.2;
-export function suggestedSellFor(buyNum: number, hasMarkup: boolean): string {
-  if (!hasMarkup) return String(buyNum);
-  if (!buyNum) return '';
-  return String(Math.round(buyNum * MARKUP_MULTIPLIER));
-}
-
-export function resolveMarkupConfig(
-  catalogTypes: CatalogData['forwarderExpenseTypes'] | undefined,
-  code: string,
-): boolean {
-  const fromCatalog = catalogTypes?.find(t => t.code === code)?.defaultMarkup;
-  return fromCatalog ?? (FORWARDER_EXPENSE_TYPE_DEFAULTS[code]?.defaultMarkup ?? false);
-}
-
-export const EMPTY_FORM = {
-  expenseType: 'LIFTING' as AncillaryExpenseType,
-  buyAmount: '',
-  sellAmount: '',
-  settlementMethod: 'FORWARDER_ADVANCE' as 'COMPANY_DIRECT' | 'FORWARDER_ADVANCE',
-  supplierId: '',
-  forwarderId: '',
-  containerNumber: '',
-  invoiceNumber: '',
-  invoiceDate: '',
-  declarationNumber: '',
-  note: '',
-};

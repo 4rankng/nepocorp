@@ -8,6 +8,7 @@ import { useToast } from "../../components/shared/Toast";
 import { useDialogFocus } from "../../components/shared/useDialogFocus";
 import { formatErrorMessage } from "../../lib/api";
 import { cleanText, normalizedCatalogLabel, positionPayloadFromLabel, supplierIdFromText, textMatches, todayISO } from "../../features/tires/tireUtils";
+import { computeNextSortOrder } from "./tirePositionOrder";
 import "../../pages/TruckTiresPage.css";
 
 export type PositionManagerOpener = (onSelect?: (value: string) => void) => void;
@@ -326,10 +327,8 @@ function sortTirePositions(positions: TirePosition[]) {
   return [...positions].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "vi"));
 }
 
-/** Next sort_order value: 10 past the current max (or 10 for the first row). */
-export function computeNextSortOrder(positions: TirePosition[]): number {
-  return positions.length ? Math.max(...positions.map((p) => p.sortOrder)) + 10 : 10;
-}
+// computeNextSortOrder lives in ./tirePositionOrder so this module exports only
+// components (React Fast Refresh).
 
 export function TirePositionsManagerDialog({
   positions,

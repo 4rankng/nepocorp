@@ -11,7 +11,8 @@ import { InputWithPrefix } from './InputWithPrefix';
 import { StatusPill, useConfirm, Modal } from '../UI';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { qk } from '../../api/keys';
-import { AncillaryEmptyState, AncillaryMobileTotals, AncillaryTableTotals, EMPTY_FORM, feeTypeLabel, resolveMarkupConfig, suggestedSellFor, type AncillaryFeesCardProps } from './ancillary-fees-card-utils';
+import { AncillaryEmptyState, AncillaryMobileTotals, AncillaryTableTotals, type AncillaryFeesCardProps } from './ancillary-fees-totals';
+import { EMPTY_FORM, feeTypeLabel, resolveMarkupConfig, suggestedSellFor } from './ancillary-fees-card-utils';
 
 export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = false }: AncillaryFeesCardProps) {
   const queryClient = useQueryClient();

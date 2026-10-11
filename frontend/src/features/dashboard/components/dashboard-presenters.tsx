@@ -1,20 +1,7 @@
-import type { DashboardDecisionKind, DashboardDecisionSeverity } from '@tingting/shared';
-import type { AssetIconName } from '../../../components/AssetIcon';
 import { Money } from '../../../components/shared/Money';
 
-export const greeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Chào buổi sáng';
-  if (hour < 18) return 'Chào buổi chiều';
-  return 'Chào buổi tối';
-};
-
-export const fmtVN = (value: number) => Math.round(value).toLocaleString('vi-VN');
-
-export const runningSum = (values: number[]): number[] => {
-  let total = 0;
-  return values.map((value) => (total += value));
-};
+// greeting / fmtVN / runningSum / decisionIcon / severityLabel live in
+// ./dashboardFormatters so this module exports only components (React Fast Refresh).
 
 export function DeltaPill({ mom, suffix = '', flatLabel = '0%' }: { mom: string | null; suffix?: string; flatLabel?: string }) {
   if (!mom) return <span className="d-badge d-badge-ghost d-badge-sm delta flat">{flatLabel}</span>;
@@ -24,22 +11,6 @@ export function DeltaPill({ mom, suffix = '', flatLabel = '0%' }: { mom: string 
   const badgeClass = isUp ? 'd-badge-success' : isDown ? 'd-badge-error' : 'd-badge-ghost';
   const symbol = isUp ? '▲' : isDown ? '▼' : '·';
   return <span className={`d-badge d-badge-soft d-badge-sm ${badgeClass} ${className}`}>{symbol} {mom.replace(/^[+-]/, '')}{suffix}</span>;
-}
-
-const DECISION_ICONS: Record<DashboardDecisionKind, AssetIconName> = {
-  receivables: 'receivables', dispatch: 'dispatch', renewal: 'schedule', fuel: 'fuel',
-  'trip-lock': 'checklist', 'trip-data': 'document', 'profit-close': 'profit', 'all-clear': 'paid',
-};
-
-export function decisionIcon(kind: DashboardDecisionKind): AssetIconName {
-  return DECISION_ICONS[kind] ?? 'alert';
-}
-
-export function severityLabel(severity: DashboardDecisionSeverity): string {
-  if (severity === 'critical') return 'Gấp';
-  if (severity === 'warning') return 'Cần xử lý';
-  if (severity === 'success') return 'Ổn';
-  return 'Theo dõi';
 }
 
 export interface CostBreakdownItem {

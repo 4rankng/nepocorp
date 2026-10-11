@@ -12,7 +12,6 @@ import './FuelAllocationEditor.css';
 
 // The pure row helpers live in ./fuelAllocationRows so state hooks (which
 // cannot import from a component module) share the exact same logic.
-export { normalizeFuelAllocationRows, fuelSupplierLabel, activeFuelSuppliers } from './fuelAllocationRows';
 
 function sameRows(left: FuelAllocationFormRow[], right: FuelAllocationFormRow[]): boolean {
   return left.length === right.length && left.every((row, index) => {

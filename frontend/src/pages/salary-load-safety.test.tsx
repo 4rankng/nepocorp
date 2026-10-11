@@ -16,8 +16,9 @@ vi.mock('../hooks/useBackShortcut', () => ({ useBackShortcut: vi.fn() }));
 vi.mock('../components/shared/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('./salary-attendance-components', () => ({
   CalCell: () => <button>Attendance cell</button>, MobileDayList: () => <button>Mobile attendance</button>,
-  DriverPayoutModal: () => null, SalarySummaryCard: () => <div>Salary summary</div>, STATUS_CONFIG: {}, DOW_LABELS: [],
+  DriverPayoutModal: () => null, SalarySummaryCard: () => <div>Salary summary</div>,
 }));
+vi.mock('./salary-attendance-constants', () => ({ STATUS_CONFIG: {}, DOW_LABELS: [] }));
 const loaded = (data: unknown) => ({ data, error: null, isLoading: false, refetch: mocks.retry });
 const mount = () => render(<MemoryRouter><SalaryAttendancePage /></MemoryRouter>);
 beforeEach(() => {

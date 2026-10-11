@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { DateInput, isoToDmy, parseDmy } from './DateInput';
+import { DateInput } from './DateInput';
+import { isoToDmy, parseDmy } from './dateInputFormat';
 
 describe('isoToDmy / parseDmy', () => {
   it('renders an ISO value as zero-padded DD/MM/YYYY — never MM/DD', () => {

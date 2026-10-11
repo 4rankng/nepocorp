@@ -3,7 +3,7 @@ import { ChevronRight, ChevronUp } from 'lucide-react';
 import type { DashboardDecisionItem } from '@tingting/shared';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { AssetIcon } from '../../../components/AssetIcon';
-import { decisionIcon, severityLabel } from './dashboard-presenters';
+import { decisionIcon, severityLabel } from './dashboardFormatters';
 
 const DECISION_STRIP_COLORS: Record<DashboardDecisionItem['severity'], string> = {
   critical: 'var(--wf-red)',

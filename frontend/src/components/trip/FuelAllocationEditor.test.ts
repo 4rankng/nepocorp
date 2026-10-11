@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Supplier } from '@tingting/shared';
 import type { FuelAllocationFormRow } from '../../hooks/useTripFormState';
-import { activeFuelSuppliers, fuelSupplierLabel, normalizeFuelAllocationRows } from './FuelAllocationEditor';
-import { groupFuelAllocationRows } from './fuelAllocationRows';
+import { activeFuelSuppliers, fuelSupplierLabel, groupFuelAllocationRows, normalizeFuelAllocationRows } from './fuelAllocationRows';
 
 const suppliers = [
   { id: 1, name: 'Petrolimex Mộc Châu', shortName: 'Petrolimex', status: 'ACTIVE', isFuelSupplier: true },

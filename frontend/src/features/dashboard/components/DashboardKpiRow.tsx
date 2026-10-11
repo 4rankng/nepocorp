@@ -2,7 +2,8 @@ import React from 'react';
 import { formatNumber } from '../../../lib/format';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { AssetIcon } from '../../../components/AssetIcon';
-import { DeltaPill, fmtVN } from './dashboard-presenters';
+import { DeltaPill } from './dashboard-presenters';
+import { fmtVN } from './dashboardFormatters';
 
 type DashboardStatTone = 'revenue' | 'cost' | 'gross' | 'net' | 'debt';
 

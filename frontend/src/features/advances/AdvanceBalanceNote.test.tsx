@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { AdvanceBalanceNote, advanceBalanceFormula, parseAdvanceBalanceFigures } from './AdvanceBalanceNote';
+import { AdvanceBalanceNote } from './AdvanceBalanceNote';
+import { advanceBalanceFormula, parseAdvanceBalanceFigures } from './advanceBalanceFormula';
 
 /** The live local numbers: 991.606.600 − 782.274.800 = 209.331.800. */
 const liveFigures = {

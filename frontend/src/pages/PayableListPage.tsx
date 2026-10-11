@@ -15,14 +15,10 @@ import {
   AGING_BUCKET_LABELS,
   CATEGORY_CHIPS,
   computeAgingTotals,
-  payableDetailHref,
   type PayablesResponse,
 } from '../features/payables/payableListUtils';
 import { PayableAgingGrid, PayableHeroKpiRow } from '../features/payables/payableListPanels';
 import { PayableDesktopTable, PayableMobileCardList } from '../features/payables/payableListRows';
-
-// Re-exported for modules/tests that import it from the page.
-export { payableDetailHref };
 
 /* ─── Commission modal ────────────────────────────────────────────────────── */
 

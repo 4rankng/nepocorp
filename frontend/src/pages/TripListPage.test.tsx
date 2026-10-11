@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { TripStatus, type TripDetail } from '@tingting/shared';
-import { buildTripListExportRows, QuickEditTripSummary, TRIP_LIST_EXPORT_HEADERS } from './TripListPage';
+import { buildTripListExportRows, TRIP_LIST_EXPORT_HEADERS } from '../features/trips/tripListExport';
+import { QuickEditTripSummary } from '../features/trips/tripQuickEditCard';
 
 describe('QuickEditTripSummary', () => {
   it('keeps vehicle-shift cost visible without repeating two-point delivery', () => {

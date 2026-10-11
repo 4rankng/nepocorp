@@ -23,11 +23,6 @@ import { useTripListAnimations } from './use-trip-list-animations';
 import './TripListPage.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
-// The export helpers and the quick-edit summary now live in features/trips;
-// they are re-exported here so the page keeps its public surface unchanged.
-export { TRIP_LIST_EXPORT_HEADERS, buildTripListExportRows } from '../features/trips/tripListExport';
-export { QuickEditTripSummary } from '../features/trips/tripQuickEditCard';
-
 export default function TripListPage() {
   const rootRef = useTripListAnimations();
   const navigate = useNavigate();

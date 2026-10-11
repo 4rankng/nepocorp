@@ -14,6 +14,7 @@ import {
   getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
 } from './tripHelpers';
 import { XeNgoaiBadge } from './XeNgoaiBadge';
+import { QuickMoneyInput } from './tripQuickEditCells';
 
 export interface TripQuickEditDraft {
   fuelLiters: string;
@@ -65,29 +66,6 @@ function moneyCell(value: number, extraClass = '') {
         </>
       ) : '—'}
     </div>
-  );
-}
-
-function QuickMoneyInput({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <input
-      className="quick-money-input"
-      type="text"
-      inputMode="numeric"
-      value={value}
-      disabled={disabled}
-      onClick={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-      onChange={(e) => onChange(e.target.value)}
-    />
   );
 }
 

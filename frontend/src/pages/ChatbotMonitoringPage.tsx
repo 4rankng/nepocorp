@@ -20,7 +20,8 @@ import { Panel } from '../components/UI';
 import { EmptyState } from '../components/shared';
 import { useAuth } from '../hooks/useAuth';
 import { useChatbotMetricsSummary, useChatbotLatencyBreakdown, useChatbotTools, useChatbotTimeseries, useChatbotRecent } from '../hooks/useChatbotMetrics';
-import { BotHealthHero, IntentDistribution, OperationalInsights, roleLabel, SummaryKpis } from './chatbot-monitoring-summary';
+import { BotHealthHero, IntentDistribution, OperationalInsights, SummaryKpis } from './chatbot-monitoring-summary';
+import { roleLabel } from './chatbot-monitoring-format';
 import { LatencyBreakdownBars, LatencyTrendChart, ReactEfficiency, RecentTurnsTable, ToolsTable } from './chatbot-monitoring-details';
 import './ChatbotMonitoringPage.css';
 
