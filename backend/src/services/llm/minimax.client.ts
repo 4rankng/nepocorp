@@ -30,6 +30,19 @@ import { getActiveProvider } from './provider-registry';
 // Re-export so callers (orchestrator) read model + endpoint constants from one
 // place. See models.ts for why these are hardcoded, not env-driven.
 export { MODEL_FAST, MINIMAX_BASE_URL, MINIMAX_TIMEOUT_MS, AGENT_MAX_ITERATIONS };
+
+/** Model the active provider will actually call. Falls back to MODEL_FAST when no
+ *  provider resolves (no key configured) so telemetry never breaks a turn — the LLM
+ *  call path still raises the no_key error itself. `resolve` is injectable for tests. */
+export async function getTelemetryModel(
+  resolve: () => Promise<{ model: string }> = getActiveProvider,
+): Promise<string> {
+  try {
+    return (await resolve()).model;
+  } catch {
+    return MODEL_FAST;
+  }
+}
 export interface MiniMaxFunctionCall {
   id: string;
   name: string;

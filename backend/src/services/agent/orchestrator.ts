@@ -37,7 +37,7 @@ import {
   callMiniMax,
   callMiniMaxStream,
   stripThink,
-  MODEL_FAST,
+  getTelemetryModel,
   AGENT_MAX_ITERATIONS,
   MiniMaxError,
   type MiniMaxMessage,
@@ -320,6 +320,8 @@ export async function runAgent(opts: {
     finalAvoided: false,
   };
 
+  const model = await getTelemetryModel();
+
   // P0 — turn start anchor for time-to-first-token. Captured once, before the
   // ReAct loop begins. Both stamp sites (first streamed delta, first tool
   // result) guard on `latencyFirstTokenMs === undefined` so only the EARLIEST
@@ -336,7 +338,7 @@ export async function runAgent(opts: {
   const rootAttrs: SpanAttrs = {
     conversation_id: opts.conversationId ?? 'new',
     role: ctx.role,
-    model: MODEL_FAST,
+    model,
     route_context: ctx.currentRouteKey ?? 'none',
     // NOTE: no user_id span attr (low-cardinality only) — userId goes in the
     // metrics DB row, not on the trace.
@@ -465,7 +467,7 @@ export async function runAgent(opts: {
         try {
           const wrapped = await withSpan(
             'agent.llm.react_call',
-            { 'gen_ai.request.model': MODEL_FAST },
+            { 'gen_ai.request.model': model },
             async () =>
               config.agentStreamingEnabled
                 ? callMiniMaxStream(
@@ -884,7 +886,7 @@ export async function runAgent(opts: {
         userId: ctx.userId,
         role: ctx.role,
         conversationId: conversationId !== undefined ? Number(conversationId) : undefined,
-        model: MODEL_FAST,
+        model,
         latencyUserPerceivedMs: Math.round(lat.latencyUserPerceivedMs),
         latencyTotalMs: Math.round(lat.latencyTotalMs),
         latencyLlmMs: Math.round(metrics.latencyLlmMs),
