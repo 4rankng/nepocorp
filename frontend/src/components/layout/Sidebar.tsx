@@ -16,6 +16,7 @@ import type { SidebarProps, SectionName } from './types';
 import { useSidebarAnimations } from '../../hooks/useSidebarAnimations';
 import { BRAND } from '../../brand';
 import { useDialogFocus } from '../shared/useDialogFocus';
+import { AppVersion } from '../shared/AppVersion';
 import { useClickOutside } from '../../hooks/useClickOutside';
 
 function getRoleLabel(role: Role): string {
@@ -259,7 +260,7 @@ function Sidebar({
                 <LogOut size={16} />
                 Đăng xuất
               </button>
-              <div className="sidebar-user-dropdown-version">Bản dựng {__BUILD_SHA__}</div>
+              <div className="sidebar-user-dropdown-version"><AppVersion /></div>
             </div>
           )}
         </div>

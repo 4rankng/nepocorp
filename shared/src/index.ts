@@ -19,6 +19,7 @@ export {
   TRUCK_CAP_ROLE_LABELS,
   FINANCIAL_ROLES, isFinancialRole,
   TIRES, VEHICLE_SCHEDULES,
+  APP_VERSION,
 } from './constants';
 
 export type { PushAudience, TireStatus } from './constants';

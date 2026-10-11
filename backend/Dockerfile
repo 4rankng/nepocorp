@@ -60,6 +60,10 @@ RUN mkdir -p /app/backend/uploads
 WORKDIR /app/backend
 
 ENV NODE_ENV=production
+# The deploy passes the same commit to both images, so the API and the web
+# bundle report ONE app version (GET /api/health -> version).
+ARG BUILD_SHA=dev
+ENV BUILD_SHA=${BUILD_SHA}
 EXPOSE 3090
 
 CMD ["node", "dist/index.js"]

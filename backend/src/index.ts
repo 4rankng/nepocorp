@@ -8,7 +8,7 @@ import { initEnforcer } from './casbin/enforcer';
 import { authMiddleware, assetAuthMiddleware } from './middleware/auth';
 import { casbinAuthz } from './middleware/casbin';
 import { requireRoles } from './middleware/casbin';
-import { Role } from '@tingting/shared';
+import { APP_VERSION, Role } from '@tingting/shared';
 import { auditLogMiddleware } from './middleware/audit';
 import { globalErrorHandler } from './middleware/errorHandler';
 import { initAuditService } from './services/audit.service';
@@ -86,7 +86,20 @@ app.use(auditLogMiddleware);
 
 // ── Public routes ──────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    /**
+     * The app version: the commit both images were built from, injected at build
+     * time (backend/Dockerfile BUILD_SHA <- backend/Makefile GIT_SHA). The web
+     * bundle carries the same value as __BUILD_SHA__, so the UI can show ONE
+     * version and still flag the impossible case where the API lags behind.
+     */
+    version: APP_VERSION,
+    build: process.env.BUILD_SHA || 'dev',
+    env: process.env.NODE_ENV || 'development',
+    startedAt: new Date(Date.now() - Math.round(process.uptime() * 1000)).toISOString(),
+  });
 });
 
 // Auth routes: login is public, /me and /users use their own authMiddleware

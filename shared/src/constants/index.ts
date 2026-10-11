@@ -17,6 +17,17 @@ export enum TripStatus {
  *  non-canceled trip") and must not be called LOCKED-only. */
 export const BILLABLE_TRIP_STATUSES = [TripStatus.COMPLETED, TripStatus.LOCKED] as const;
 
+/**
+ * The application version — ONE number for the whole product (API + web), shown
+ * in the UI and reported by GET /api/health. Both images are built from the same
+ * commit, so there is no such thing as a separate "backend version"; the commit
+ * itself travels as the build stamp (`BUILD_SHA` / `__BUILD_SHA__`) and is only
+ * used to spot an API that lags behind the web bundle.
+ *
+ * Cutting a release = change this one line (format `vMAJOR.MINOR.PATCH`).
+ */
+export const APP_VERSION = 'v1.2.0';
+
 export enum FuelMode {
   AUTO = 'AUTO',
   FLAT_RATE = 'FLAT_RATE',

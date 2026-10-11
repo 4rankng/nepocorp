@@ -43,6 +43,7 @@ import { useBottomNavAnimations } from '../hooks/useBottomNavAnimations';
 import { routes, titleForPath } from '../lib/routes';
 import { BRAND } from '../brand';
 import { useDialogFocus } from './shared/useDialogFocus';
+import { AppVersion } from './shared/AppVersion';
 import { useButtonLabelLayout } from './shared/useButtonLabelLayout';
 
 // ─── Navigation config ────────────────────────────────────────────────────
@@ -537,7 +538,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="mobile-user-sheet-footer">
-              <span className="app-version">{BRAND.productName} v1.2.0 · bản dựng {typeof __BUILD_SHA__ !== 'undefined' ? __BUILD_SHA__ : 'dev'}</span>
+              <span className="app-version">{BRAND.productName} · <AppVersion /></span>
             </div>
           </div>
         </div>
