@@ -346,63 +346,25 @@ async function parseSSEStream(
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  let content = '';
-  let finishReason: string | null = null;
-  let promptTokens = 0;
-  let completionTokens = 0;
-  // Tool calls arrive fragmented across chunks, indexed by `delta.tool_calls[].index`.
-  // Accumulate id/name (first fragment) + arguments (concatenated across fragments).
-  const toolCallAccum = new Map<
-    number,
-    { id: string; name: string; arguments: string }
-  >();
+  const acc: SseAccum = {
+    content: '',
+    finishReason: null,
+    promptTokens: 0,
+    completionTokens: 0,
+    toolCalls: new Map(),
+  };
 
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
-
-      // SSE events are separated by a blank line. Process complete events only.
-      let newlineIdx: number;
-      while ((newlineIdx = buffer.indexOf('\n\n')) !== -1) {
-        const rawEvent = buffer.slice(0, newlineIdx);
-        buffer = buffer.slice(newlineIdx + 2);
-        const parsed = parseOneSseEvent(rawEvent);
-        if (!parsed) continue;
-        if (parsed.done) {
-          // [DONE] sentinel — stream is over.
-          return finalize();
-        }
-        const choice = parsed.chunk.choices?.[0];
-        const delta = choice?.delta;
-        if (delta?.content) {
-          content += delta.content;
-          onText(delta.content);
-        }
-        if (delta?.tool_calls) {
-          for (const tc of delta.tool_calls) {
-            const existing = toolCallAccum.get(tc.index);
-            if (existing) {
-              if (tc.function?.arguments) existing.arguments += tc.function.arguments;
-            } else {
-              toolCallAccum.set(tc.index, {
-                id: tc.id ?? `call_${tc.index}`,
-                name: tc.function?.name ?? '',
-                arguments: tc.function?.arguments ?? '',
-              });
-            }
-          }
-        }
-        if (choice?.finish_reason) finishReason = choice.finish_reason;
-        if (parsed.chunk.usage) {
-          promptTokens = parsed.chunk.usage.prompt_tokens ?? promptTokens;
-          completionTokens = parsed.chunk.usage.completion_tokens ?? completionTokens;
-        }
-      }
+      const drained = drainSseBuffer(buffer, acc, onText);
+      buffer = drained.buffer;
+      if (drained.done) return finalizeSse(acc);
     }
     // Stream ended without an explicit [DONE] — finalize from whatever arrived.
-    return finalize();
+    return finalizeSse(acc);
   } catch (e) {
     if (signal.aborted) {
       // Re-throw as AbortError so the caller maps it consistently.
@@ -418,24 +380,88 @@ async function parseSSEStream(
       /* already released / errored — ignore */
     }
   }
+}
 
-  function finalize() {
-    // Preserve `index` order: the Map is keyed by the provider's tool_call
-    // index, and conformant streams emit in index order (so insertion order
-    // already matches). Sort defensively by index in case a provider emits
-    // out of order — the orchestrator feeds these back to the model in array
-    // order, so order matters for the tool-calling protocol.
-    const toolCalls: MiniMaxFunctionCall[] = [...toolCallAccum.entries()]
-      .sort(([a], [b]) => a - b)
-      .map(([, tc]) => tc)
-      .filter((tc) => tc.name || tc.arguments);
-    return {
-      content: content.length > 0 ? content : null,
-      toolCalls,
-      usage: { promptTokens, completionTokens },
-      finishReason,
-    };
+/** Mutable accumulator for one SSE stream: content, tool-call fragments, usage
+ *  and finish reason are filled by `applySseChunk` and read by `finalizeSse`. */
+interface SseAccum {
+  content: string;
+  finishReason: string | null;
+  promptTokens: number;
+  completionTokens: number;
+  toolCalls: Map<number, { id: string; name: string; arguments: string }>;
+}
+
+/** Fold one parsed chunk into the accumulator, forwarding content deltas. */
+function applySseChunk(chunk: StreamChunk, acc: SseAccum, onText: (delta: string) => void): void {
+  const choice = chunk.choices?.[0];
+  const delta = choice?.delta;
+  if (delta?.content) {
+    acc.content += delta.content;
+    onText(delta.content);
   }
+  if (delta?.tool_calls) {
+    for (const tc of delta.tool_calls) {
+      const existing = acc.toolCalls.get(tc.index);
+      if (existing) {
+        if (tc.function?.arguments) existing.arguments += tc.function.arguments;
+      } else {
+        acc.toolCalls.set(tc.index, {
+          id: tc.id ?? `call_${tc.index}`,
+          name: tc.function?.name ?? '',
+          arguments: tc.function?.arguments ?? '',
+        });
+      }
+    }
+  }
+  if (choice?.finish_reason) acc.finishReason = choice.finish_reason;
+  if (chunk.usage) {
+    acc.promptTokens = chunk.usage.prompt_tokens ?? acc.promptTokens;
+    acc.completionTokens = chunk.usage.completion_tokens ?? acc.completionTokens;
+  }
+}
+
+/** Consume every complete SSE event in `buffer` (events are separated by a blank
+ *  line). Returns the unconsumed tail plus whether a `[DONE]` sentinel was seen. */
+function drainSseBuffer(
+  buffer: string,
+  acc: SseAccum,
+  onText: (delta: string) => void,
+): { buffer: string; done: boolean } {
+  let newlineIdx: number;
+  while ((newlineIdx = buffer.indexOf('\n\n')) !== -1) {
+    const rawEvent = buffer.slice(0, newlineIdx);
+    buffer = buffer.slice(newlineIdx + 2);
+    const parsed = parseOneSseEvent(rawEvent);
+    if (!parsed) continue;
+    if (parsed.done) return { buffer, done: true };
+    applySseChunk(parsed.chunk, acc, onText);
+  }
+  return { buffer, done: false };
+}
+
+/** Build the buffered result from the accumulator (raw content, pre-cleanContent). */
+function finalizeSse(acc: SseAccum): {
+  content: string | null;
+  toolCalls: MiniMaxFunctionCall[];
+  usage: { promptTokens: number; completionTokens: number };
+  finishReason: string | null;
+} {
+  // Preserve `index` order: the Map is keyed by the provider's tool_call index,
+  // and conformant streams emit in index order (so insertion order already
+  // matches). Sort defensively by index in case a provider emits out of order —
+  // the orchestrator feeds these back to the model in array order, so order
+  // matters for the tool-calling protocol.
+  const toolCalls: MiniMaxFunctionCall[] = [...acc.toolCalls.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([, tc]) => tc)
+    .filter((tc) => tc.name || tc.arguments);
+  return {
+    content: acc.content.length > 0 ? acc.content : null,
+    toolCalls,
+    usage: { promptTokens: acc.promptTokens, completionTokens: acc.completionTokens },
+    finishReason: acc.finishReason,
+  };
 }
 
 /** Parse one raw SSE event block into either a `{done:true}` sentinel or a
