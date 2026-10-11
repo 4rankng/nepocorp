@@ -212,11 +212,11 @@ prod-migrate-file:
 backup:
 	@echo "💾 Starting database backup from production..."
 	@TIMESTAMP=$$(date +%Y-%m-%d_%H%M%S) && \
-	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/tingting_db_backup" && \
-	BACKUP_FILE="tingting_pg_backup_$$TIMESTAMP.sql" && \
-	BACKUP_FILE_GZ="tingting_pg_backup_$$TIMESTAMP.sql.gz" && \
+	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/nepocorp_db_backup" && \
+	BACKUP_FILE="nepocorp_pg_backup_$$TIMESTAMP.sql" && \
+	BACKUP_FILE_GZ="nepocorp_pg_backup_$$TIMESTAMP.sql.gz" && \
 	mkdir -p "$$BACKUP_DIR" && \
-	echo "📊 Creating PostgreSQL dump of tingting database..." && \
+	echo "📊 Creating PostgreSQL dump of nepocorp database..." && \
 	ssh root@$(PROD_SERVER) \
 		"docker exec nepocorp-postgres-1 \
 		pg_dump -U nepocorp nepocorp > /tmp/$$BACKUP_FILE" && \
@@ -238,8 +238,8 @@ restore:
 		docker-compose -f docker-compose.dev.yml up -d db && \
 	echo "⏳ Waiting for DB to be ready..." && \
 	until docker exec tingting-db pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done && \
-	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/tingting_db_backup" && \
-	LATEST=$$(ls -t "$$BACKUP_DIR"/tingting_pg_backup_*.sql.gz 2>/dev/null | head -1) && \
+	BACKUP_DIR="/Users/dev/Library/CloudStorage/OneDrive-Personal/backup/nepocorp_db_backup" && \
+	LATEST=$$(ls -t "$$BACKUP_DIR"/nepocorp_pg_backup_*.sql.gz 2>/dev/null | head -1) && \
 	if [ -z "$$LATEST" ]; then echo "❌ No backup files found in $$BACKUP_DIR"; exit 1; fi && \
 	echo "📂 Using backup: $$LATEST" && \
 	echo "📊 Size: $$(du -h "$$LATEST" | cut -f1)" && \
