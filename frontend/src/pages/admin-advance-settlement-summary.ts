@@ -41,6 +41,30 @@ export interface SettlementExpenseSummary {
   label: string;
 }
 
+export interface SettlementFeeTotal {
+  code: string;
+  label: string;
+  amount: number;
+}
+
+/**
+ * Roll every trip's category amounts up to the settlement. The ledger shows one
+ * row per phiếu, so the fee chips on that row must be settlement-level: the same
+ * fee type across trips is summed (first-seen label wins). Without this the row
+ * would have to repeat a chip per trip and the list would sprawl again.
+ */
+export function aggregatePlanFees(plans: SettlementPlanRow[]): SettlementFeeTotal[] {
+  const totals = new Map<string, SettlementFeeTotal>();
+  for (const plan of plans) {
+    for (const item of plan.expenseBreakdown) {
+      const existing = totals.get(item.code);
+      if (existing) existing.amount += item.amount;
+      else totals.set(item.code, { code: item.code, label: item.label, amount: item.amount });
+    }
+  }
+  return [...totals.values()];
+}
+
 export function summarizeSettlementExpenses(
   expenses: SettlementExpenseSummaryItem[] | undefined,
 ): SettlementExpenseSummary {
