@@ -272,11 +272,12 @@
   flex-shrink: 0;
   position: relative;
 }
-/* Build marker in the user dropdown: tells which bundle is on screen
-   (kanban 20260923_18). */
+/* App version in the user dropdown: the dropdown is a WHITE surface, so the line
+   must use the light-surface muted ink — the sidebar's own muted token rendered
+   it invisible here (kanban 111026110000). */
 .sidebar-user-dropdown-version {
   padding: 6px 12px 0;
-  color: var(--sb-text-muted);
+  color: var(--ink-3);
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
 }
