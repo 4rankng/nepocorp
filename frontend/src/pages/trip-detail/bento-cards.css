@@ -216,6 +216,9 @@
   /* Mirrors the .tc-card-head gradient on TripEditPage — a faint surface-2
      fade at the top of the header to add depth without color noise. */
   background: var(--surface-2);
+  /* The band spans the full card width, so its top corners must follow the
+     card's rounded edge (inner radius) instead of sitting square over it. */
+  border-radius: calc(var(--r) - 1px) calc(var(--r) - 1px) 0 0;
 }
 
 .card-head h2 {
