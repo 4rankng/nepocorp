@@ -266,10 +266,9 @@ export default function ExpenseEntryPage() {
       supplierId: Number(form.supplierId),
       categoryId: Number(form.categoryId),
       truckId: form.truckId ? Number(form.truckId) : null,
-      // Schema rejects explicit `null` for vehicleComponent (enum + default).
-      // For company-wide expenses (no truck), omit the field entirely so the
-      // default kicks in. Was previously sending null and the page silently
-      // failed validation without surfacing an error to the user.
+      // Company-wide expense (no truck): omit vehicleComponent — the API
+      // normalizes it to NULL (company rows store vehicle_component = NULL,
+      // which is exactly what the 'Chi phí công ty' list filter matches on).
       ...(form.truckId ? { vehicleComponent: form.vehicleComponent } : {}),
       amount: form.amount,
       paymentStatus: form.paymentStatus,
