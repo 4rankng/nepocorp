@@ -227,6 +227,9 @@ export async function getTrips(filters: TripListFilters) {
     externalFreightCost: s.trips.externalFreightCost,
     externalPlateNumber: s.trips.externalPlateNumber, externalDriverName: s.trips.externalDriverName,
     createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt,
+    // The list splits revenue into its VAT bases on the client (kanban
+    // 101026203100), so the rows must carry the rate the split needs.
+    vatRate: s.trips.vatRate,
     ...TRIP_RELATION_FIELDS,
   }).from(s.trips))
     .where(and(...conditions))
@@ -480,12 +483,21 @@ export async function getTripById(id: number) {
 
   const [legs, photos, instructions, gpsTrackRow, fuelAllocations] = await Promise.all([
     db.select().from(s.tripLegs).where(eq(s.tripLegs.tripId, id)).orderBy(s.tripLegs.sequence),
-    // Only general (`OTHER`) photos belong in the trip-level `photoUrls`.
-    // CONTAINER/SEAL photos are surfaced separately by the "Container & Seal"
-    // card via GET /trips/:id/containers (contPhotoKeys/sealPhotoKeys), so
-    // including them here would duplicate them across both sections.
+    // General (`OTHER`) photos belong in the trip-level `photoUrls`, and so
+    // does every photo whose container binding is gone (trip_container_id IS
+    // NULL after ON DELETE SET NULL when a container row is replaced — e.g. a
+    // stale full-list save from a second session; prod trip 375, kanban
+    // 101026101540). A downgraded CONTAINER/SEAL photo has no other read path,
+    // so filtering it out here made surviving evidence disappear from the UI
+    // entirely. Still-bound CONTAINER/SEAL photos stay excluded — the
+    // "Container & Seal" card surfaces those via GET /trips/:id/containers
+    // (contPhotoKeys/sealPhotoKeys), so including them would duplicate them
+    // across both sections.
     db.select({ storageKey: s.tripPhotos.storageKey }).from(s.tripPhotos)
-      .where(and(eq(s.tripPhotos.tripId, id), eq(s.tripPhotos.type, 'OTHER'))),
+      .where(and(
+        eq(s.tripPhotos.tripId, id),
+        or(eq(s.tripPhotos.type, 'OTHER'), isNull(s.tripPhotos.tripContainerId)),
+      )),
     // Manager-authored contact + guidance (N2 / B1.3). Included here so the
     // edit form can populate the TripInstructionsCard fields from the same
     // detail payload (one row per trip; null when none exists yet).

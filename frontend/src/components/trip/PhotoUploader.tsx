@@ -8,9 +8,10 @@ import { getAuthenticatedPhotoUrl } from "../../lib/api";
  *
  * Container & seal photos are managed per-container in `ContainerInstancesCard`
  * (and surfaced on the detail page by the "Container & Seal" card), so this
- * uploader only handles general (`type='OTHER'`) photos. The backend's
- * `GET /trips/:id` already narrows `photoUrls` to `type='OTHER'`, so every URL
- * here is a general photo — no client-side type classification needed.
+ * uploader only handles general (`type='OTHER'`) photos. Besides those,
+ * `GET /trips/:id` hands down any container/seal photo that lost its container
+ * binding (downgraded to trip-level evidence, kanban 101026101540) so it can
+ * never disappear; no client-side type classification is needed either way.
  */
 interface PhotoUploaderProps {
   tripId?: number;
