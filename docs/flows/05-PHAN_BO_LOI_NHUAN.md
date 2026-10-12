@@ -50,7 +50,7 @@ Phân bổ mỗi đối tác = Lợi nhuận ròng × Tỷ lệ (%)
 
 1. Chọn **Tháng** (1-12) và **Năm** từ bộ lọc
 2. Trang hiển thị: Doanh thu, Chi phí, LN gộp, Phí quản lý, Thu nhập khác, LN ròng
-3. Chỉ tính chuyến **LOCKED** trong tháng đã chọn
+3. Chỉ tính chuyến **COMPLETED + LOCKED** (đã ghi nhận doanh thu) trong tháng đã chọn
 
 ### 2.2 Xem Cap Table
 
@@ -111,7 +111,7 @@ Một cá nhân có thể vừa là cổ đông công ty (capTable) vừa là nh
 
 ```
 Chọn Tháng/Năm → GET /api/reports/pnl?month=X&year=Y
-→ Tính từ chuyến LOCKED trong tháng
+→ Tính từ chuyến COMPLETED + LOCKED trong tháng
 → revenue = customer_price / (1 + vatRate) — ex-VAT
 → costs = tổng chi phí — incl. VAT
 → grossProfit = revenue (ex-VAT) − costs (incl. VAT)
@@ -125,7 +125,7 @@ Chọn Tháng/Năm → GET /api/reports/pnl?month=X&year=Y
 Chọn Quý/Năm → "Chốt & phân bổ" → Confirm
 → POST /api/reports/distribute-profit { quarter, year }
 → Kiểm tra role: chỉ ADMIN/MANAGER (ACCOUNTANT → 403)
-→ Lấy cap table → tính gross profit quý → phân bổ theo %
+→ Lấy cap table → tính gross profit quý từ chuyến COMPLETED + LOCKED trong quý → phân bổ theo %
 → INSERT vào bảng distributions
 → Response: { quarter, year, netProfit, distributions[] }
 ```
@@ -176,7 +176,7 @@ Chọn Quý/Năm → "Chốt & phân bổ" → Confirm
 |-------|---------|----------------|----------|-------------------|---------|
 | TC-PL-001 | P&L tháng có dữ liệu | ADMIN, có chuyến locked | Chọn tháng 5/2026 | Hiển thị đầy đủ: revenue, costs, profit, managementFee, otherIncome | High |
 | TC-PL-002 | P&L tháng rỗng | ADMIN | Chọn tháng không có dữ liệu | Tất cả giá trị = 0, không crash | High |
-| TC-PL-003 | P&L chỉ tính locked | Có chuyến unlocked + locked | Xem P&L | Chỉ tính chuyến locked | High |
+| TC-PL-003 | P&L chỉ tính chuyến đã ghi nhận | Có chuyến đang chạy + completed/locked | Xem P&L | Chỉ tính chuyến completed + locked | High |
 | TC-PL-004 | P&L công thức đúng | revenue=100M, costs=60M, fee=5M, other=2M | Xem P&L | grossProfit=40M, netProfit=37M | High |
 | TC-PL-005 | P&L chi tiết theo xe | Nhiều xe hoạt động | Xem trucks[] | Mỗi xe: plate, revenue, costs, profit, trips | Medium |
 | TC-PL-006 | P&L DRIVER bị chặn | DRIVER | Gọi GET /api/reports/pnl | 403 Forbidden | High |
@@ -202,7 +202,7 @@ Chọn Quý/Năm → "Chốt & phân bổ" → Confirm
 | TC-PB-001 | Phân bổ Q1 hợp lệ | ADMIN, có locked trips Q1 | POST { quarter:1, year:2026 } | 200, distributions có 2 đối tác, số tiền đúng | High |
 | TC-PB-002 | ACCOUNTANT bị từ chối | ACCOUNTANT | POST distribute-profit | 403: chỉ ADMIN/MANAGER | High |
 | TC-PB-003 | MANAGER phân bổ được | MANAGER | POST distribute-profit | 200 OK | High |
-| TC-PB-004 | Quý không có chuyến | ADMIN | POST Q không có locked | netProfit=0, distributions amount=0 | Medium |
+| TC-PB-004 | Quý không có chuyến | ADMIN | POST Q không có chuyến hoàn thành/chốt sổ | netProfit=0, distributions amount=0 | Medium |
 | TC-PB-005 | Quarter ngoài phạm vi | ADMIN | POST quarter=5 | Lỗi 400 | Medium |
 | TC-PB-006 | Thiếu quarter | ADMIN | POST chỉ có year | Lỗi 400 | Medium |
 | TC-PB-007 | Confirm dialog | ADMIN | Nhấn "Chốt & phân bổ" | Hiển thị dialog, Hủy không gọi API | Medium |
@@ -215,7 +215,7 @@ Chọn Quý/Năm → "Chốt & phân bổ" → Confirm
 ## 6. Ghi chú & Lưu ý
 
 - **ACCOUNTANT bị chặn ở service layer** — dù Casbin cho phép financial:write, service kiểm tra role cụ thể và từ chối ACCOUNTANT
-- **Chỉ tính chuyến LOCKED** — chuyến COMPLETED chưa chốt không xuất hiện trong P&L
+- **Chỉ tính chuyến COMPLETED + LOCKED** — chuyến đã hoàn thành hoặc chốt sổ đều ghi nhận doanh thu và cùng là cơ sở của P&L lẫn phân bổ theo quý; CREATED/IN_TRANSIT/CANCELED chưa phát sinh doanh thu nên không tính
 - **Phân bổ theo quý** — Q1: T1-T3, Q2: T4-T6, Q3: T7-T9, Q4: T10-T12
 - **Cap table tổng % nên ≈ 100%** — hệ thống không enforce, cần kiểm tra thủ công
 - **Distributions immutable** — bản ghi phân bổ lưu vĩnh viễn vào bảng distributions

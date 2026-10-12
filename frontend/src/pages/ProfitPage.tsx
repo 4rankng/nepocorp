@@ -61,12 +61,8 @@ interface DistributionResult {
     profit: number;
     partners: Array<{ partnerName: string; percentage: number; amount: number; role?: TruckCapRole | string | null }>;
   }>;
-  /** F3 — Σ profit of ownerless trucks (held aside, not distributed). */
+  /** Σ profit held aside (trips without a truck + ownerless trucks). */
   undistributedProfit?: number;
-  /** Trips finished in the quarter but not locked yet — excluded from the plan. */
-  pendingTripCount?: number;
-  /** Σ grossProfit of those not-yet-locked trips. */
-  pendingProfit?: number;
 }
 
 export default function ProfitPage() {
@@ -234,7 +230,7 @@ export default function ProfitPage() {
             >
               <div className="calc-breakdown" style={{ border: 'none', borderRadius: 0, flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div className="calc-row">
-                  <div className="calc-row__label calc-row__label--bold">Doanh thu vận hành</div>
+                  <div className="calc-row__label calc-row__label--bold">Doanh thu vận hành (chưa VAT)</div>
                   <div className="calc-row__value"><Money value={report?.totalRevenue || 0} /></div>
                 </div>
                 <div className="calc-row">
@@ -403,22 +399,15 @@ export default function ProfitPage() {
                 <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
                   <h4 style={{ margin: '0 0 10px', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--fg-1)' }}>📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}</h4>
                   <p style={{ margin: '0 0 12px', fontSize: 'var(--fs-body)', color: 'var(--fg-2)' }}>
-                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến đã chốt sổ (khóa)</strong>: <strong style={{ color: preview.netProfit < 0 ? 'var(--danger)' : undefined }}>{formatVND(preview.netProfit)}</strong>
+                    {/* The plan covers the quarter's reportable trips — the same
+                        completed + locked set the monthly P&L counts (kanban
+                        101026211500). */}
+                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến đã hoàn thành / chốt sổ trong quý</strong>: <strong style={{ color: preview.netProfit < 0 ? 'var(--danger)' : undefined }}>{formatVND(preview.netProfit)}</strong>
                   </p>
-
-                  {(preview.pendingTripCount ?? 0) > 0 && (
-                    // Explains a 0 ₫ quarter on a month that shows trips: they
-                    // finished but were never locked, and only locked trips are
-                    // distributable (kanban 101026211500).
-                    <div style={{ marginBottom: 10, padding: 10, background: 'var(--bg-2)', color: 'var(--fg-2)', borderRadius: 6, fontSize: 'var(--fs-body)' }}>
-                      Quý này còn <strong>{preview.pendingTripCount}</strong> chuyến đã hoàn thành nhưng <strong>chưa chốt sổ</strong>
-                      {preview.pendingProfit != null && <> (lợi nhuận gộp {formatVND(preview.pendingProfit)})</>} — chỉ chuyến đã chốt sổ mới được phân phối.
-                    </div>
-                  )}
 
                   {(preview.undistributedProfit ?? 0) > 0 && (
                     <div style={{ marginBottom: 10, padding: 10, background: 'var(--warn-soft)', color: 'var(--warn)', borderRadius: 6, fontSize: 'var(--fs-body)' }}>
-                      ⚠️ <strong>{formatVND(preview.undistributedProfit ?? 0)}</strong> lợi nhuận từ xe chưa cấu hình đối tác sở hữu sẽ <strong>không được phân phối</strong>. Cài đặt tại <a href="/config/trucks" style={{ color: 'var(--warn)', fontWeight: 700 }}>Cấu hình → Xe → Sở hữu</a>.
+                      ⚠️ <strong>{formatVND(preview.undistributedProfit ?? 0)}</strong> lợi nhuận chưa gán được đối tác sở hữu (chuyến chưa gán xe hoặc xe chưa cấu hình sở hữu) sẽ <strong>không được phân phối</strong>. Cài đặt tại <a href="/config/trucks" style={{ color: 'var(--warn)', fontWeight: 700 }}>Cấu hình → Xe → Sở hữu</a>.
                     </div>
                   )}
 

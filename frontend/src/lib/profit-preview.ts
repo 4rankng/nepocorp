@@ -11,11 +11,11 @@ export function getProfitPreviewEmptyMessage(preview: ProfitPreviewState): strin
   if (hasEntityRows || hasDistributionRows) return null;
 
   if ((preview.tripCount ?? 0) === 0) {
-    return 'Chưa có chuyến nào được chốt sổ (khóa) trong quý này để phân phối.';
+    return 'Chưa có chuyến hoàn thành hoặc chốt sổ nào trong quý này để phân phối.';
   }
 
   if ((preview.undistributedProfit ?? 0) > 0) {
-    return 'Các chuyến trong quý chưa có cấu hình sở hữu xe hợp lệ nên chưa thể phân phối.';
+    return 'Lợi nhuận quý này chưa gán được cho đối tác sở hữu xe nào nên chưa thể phân phối.';
   }
 
   return 'Chưa có dữ liệu phân phối cho quý đã chọn.';

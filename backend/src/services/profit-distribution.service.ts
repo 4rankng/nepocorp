@@ -4,8 +4,9 @@
  * Quarterly profit distribution to cap-table partners, distribution preview,
  * cap-table history, and distribution records.
  *
- * F3 (per-vehicle): each truck distributes its quarter profit (Σ of its LOCKED
- * trips' grossProfit) across THAT truck's active owners (from `truck_cap_table`).
+ * F3 (per-vehicle): each truck distributes its quarter profit (Σ of its
+ * COMPLETED + LOCKED trips' grossProfit) across THAT truck's active owners
+ * (from `truck_cap_table`).
  * The entity view is derived — group rows by partner_name, Σ amount. Trucks
  * with profit but no configured owners are held aside as `undistributedProfit`.
  *
@@ -16,7 +17,7 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, isNotNull, desc, sql, gte, inArray } from 'drizzle-orm';
+import { eq, and, isNull, desc, sql, gte, inArray } from 'drizzle-orm';
 import { TripStatus } from '@tingting/shared';
 import { ApiError } from '../errors';
 import { localDateStr, quarterDateRange, resolveTruckCapSnapshot } from './reporting-shared';
@@ -53,17 +54,11 @@ export interface DistributionPlan {
   entity: Array<{ partnerName: string; amount: number }>;
   /** Per-truck breakdown for display. */
   perTruck: PerTruckDistribution[];
-  /** Σ profit of ownerless trucks (profit but no truck_cap_table owners). */
-  undistributedProfit: number;
   /**
-   * Trips that finished inside the quarter but are NOT chốt sổ (LOCKED) yet, so
-   * they are excluded from the plan. Reported so a quarter that legitimately
-   * holds nothing to distribute can say so instead of looking broken while the
-   * month view shows trips (kanban 101026211500).
+   * Σ profit held aside — profit that reaches no payee: trips without a truck
+   * and trucks with no configured owners.
    */
-  pendingTripCount: number;
-  /** Σ grossProfit of those not-yet-locked trips. */
-  pendingProfit: number;
+  undistributedProfit: number;
 }
 
 /**
@@ -115,12 +110,11 @@ export async function distributeProfit(quarter: number, year: number) {
     quarter,
     year,
     netProfit: plan.netProfit,
+    tripCount: plan.tripCount,
     distributions: plan.distributions,
     perTruck: plan.perTruck,
     entity: plan.entity,
     undistributedProfit: plan.undistributedProfit,
-    pendingTripCount: plan.pendingTripCount,
-    pendingProfit: plan.pendingProfit,
   };
 }
 
@@ -139,8 +133,6 @@ export async function previewDistribution(quarter: number, year: number) {
     perTruck: plan.perTruck,
     entity: plan.entity,
     undistributedProfit: plan.undistributedProfit,
-    pendingTripCount: plan.pendingTripCount,
-    pendingProfit: plan.pendingProfit,
   };
 }
 
@@ -189,61 +181,56 @@ export function distributeTruckProfit(
  * Compute a per-vehicle profit distribution plan for a quarter.
  * Shared by both distributeProfit (persists) and previewDistribution (returns only).
  *
- * D5 — reads `trips.grossProfit` for LOCKED trips only; never recomputes a
- * locked trip's totals. Per-vehicle grouping changes only attribution.
+ * D5 — reads `trips.grossProfit` for the quarter's reportable trips
+ * (COMPLETED + LOCKED) and never recomputes a trip's totals. Per-vehicle
+ * grouping changes only attribution.
  */
 async function computeDistribution(quarter: number, year: number): Promise<DistributionPlan> {
   const { start: qStart, end: qEnd } = await quarterDateRange(quarter, year);
 
+  // The distributable basis is the same reportable set the monthly P&L counts
+  // (COMPLETED + LOCKED): a trip's revenue has posted once it is COMPLETED, and
+  // chốt sổ (LOCKED) only freezes the books. Counting LOCKED alone made a
+  // quarter of finished trips preview and distribute 0 ₫ while the month view
+  // showed those trips (kanban 101026211500).
   const trips = await db.select({
     truckId: s.trips.truckId,
     grossProfit: s.trips.grossProfit,
   }).from(s.trips).where(
     and(
-      eq(s.trips.status, TripStatus.LOCKED),
+      inArray(s.trips.status, [TripStatus.COMPLETED, TripStatus.LOCKED]),
       isNull(s.trips.deletedAt),
       gte(s.trips.departureDate, qStart),
       sql`${s.trips.departureDate} < ${qEnd}`,
     ),
   );
 
-  // Finished-but-not-locked trips in the same window. They carry revenue and
-  // cost already, but their figures are not frozen, so they are NOT part of the
-  // distributable plan — only counted so the UI can explain the difference.
-  const pendingTrips = await db.select({ grossProfit: s.trips.grossProfit })
-    .from(s.trips)
-    .where(
-      and(
-        eq(s.trips.status, TripStatus.COMPLETED),
-        isNotNull(s.trips.truckId),
-        isNull(s.trips.deletedAt),
-        gte(s.trips.departureDate, qStart),
-        sql`${s.trips.departureDate} < ${qEnd}`,
-      ),
-    );
-  const pendingTripCount = pendingTrips.length;
-  const pendingProfit = pendingTrips.reduce((sum, t) => sum + parseFloat(t.grossProfit || '0'), 0);
-
-  // Σ LOCKED grossProfit per truck (D5 — read stored value, never recompute).
+  // Σ reportable grossProfit per truck (D5 — read stored value, never
+  // recompute). Trips without a truck reach no owner pool, so their profit is
+  // held aside from the start.
   const profitByTruck = new Map<number, number>();
   let tripCount = 0;
+  let unattributedProfit = 0;
   for (const t of trips) {
-    if (t.truckId == null) continue; // trips without a truck cannot be attributed
     tripCount++;
     const profit = parseFloat(t.grossProfit || '0');
+    if (t.truckId == null) {
+      unattributedProfit += profit;
+      continue;
+    }
     profitByTruck.set(t.truckId, (profitByTruck.get(t.truckId) ?? 0) + profit);
   }
 
   const truckIds = Array.from(profitByTruck.keys());
-  const netProfit = Array.from(profitByTruck.values()).reduce((a, b) => a + b, 0);
+  const netProfit = Array.from(profitByTruck.values()).reduce((a, b) => a + b, 0) + unattributedProfit;
 
   // No profit-bearing trucks → nothing to distribute. Legacy callers may have
   // thrown when there were zero entity-wide partners; here the honest answer
-  // is an empty plan with zero undistributed profit.
+  // is an empty plan that holds the quarter's unattributable profit aside.
   if (truckIds.length === 0) {
     return {
-      netProfit: 0, tripCount, distributions: [], entity: [], perTruck: [], undistributedProfit: 0,
-      pendingTripCount, pendingProfit,
+      netProfit, tripCount, distributions: [], entity: [], perTruck: [],
+      undistributedProfit: netProfit,
     };
   }
 
@@ -262,7 +249,8 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
 
   const distributions: DistributionRow[] = [];
   const perTruck: PerTruckDistribution[] = [];
-  let undistributedProfit = 0;
+  // Truckless trips are already held aside; ownerless trucks join below.
+  let undistributedProfit = unattributedProfit;
 
   for (const truckId of truckIds) {
     const profit = profitByTruck.get(truckId) ?? 0;
@@ -325,5 +313,5 @@ async function computeDistribution(quarter: number, year: number): Promise<Distr
     .map(([partnerName, amount]) => ({ partnerName, amount }))
     .sort((a, b) => b.amount - a.amount);
 
-  return { netProfit, tripCount, distributions, entity, perTruck, undistributedProfit, pendingTripCount, pendingProfit };
+  return { netProfit, tripCount, distributions, entity, perTruck, undistributedProfit };
 }
