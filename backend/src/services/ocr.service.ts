@@ -11,7 +11,8 @@
  * The primary model is Claude Haiku 5.5 (`anthropic/claude-haiku-5.5`) called
  * through the OpenRouter Chat Completions transport — the same API shape the
  * previous Qwen3-VL build used, so no new secrets or clients are needed (prod
- * only carries OPENROUTER_API_KEY). Override per environment with OCR_MODEL.
+ * only carries OPENROUTER_API_KEY). The model is the code constant `OCR_MODEL`
+ * below — deliberately not env-configurable.
  * The earlier Qwen3-VL-32B slug stopped recognizing numbers reliably on
  * container/seal photos (empty extractions, seal numbers never returned);
  * Haiku 5.5 restored extraction quality.
@@ -54,12 +55,15 @@ const MAX_DETECT = 10;
 const CONTAINER_RE = /^[A-Z]{4}\d{7}$/;
 const CONTAINER_RE_G = /[A-Z]{4}\d{7}/g;
 
-// OpenRouter vision transport — endpoint is a hardcoded constant, NOT an env
-// var (fixed OpenAI-compatible endpoint; mirrors the MiniMax LLM pattern,
-// services/llm/models.ts). The MODEL is env-configurable (config.ocrModel,
-// default `anthropic/claude-haiku-5.5`) — only the API key
+// OpenRouter vision transport — endpoint AND model are hardcoded constants,
+// NOT env vars (fixed OpenAI-compatible endpoint; mirrors the MiniMax LLM
+// pattern, services/llm/models.ts). Only the API key
 // (config.openrouterApiKey) is required.
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+// Anthropic Claude Haiku 5.5, verified against the OpenRouter model list —
+// the best number-recognition model measured on container/seal photos. A
+// model swap is a code change here, not a config change (owner's call).
+const OCR_MODEL = 'anthropic/claude-haiku-5.5';
 
 // OpenRouter (OpenAI-compatible) call budget. Reasoning models can wrap
 // chain-of-thought in `think…` blocks; strip both closed blocks and an
@@ -312,7 +316,7 @@ export async function callOpenRouterVision(
 
   const dataUri = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
   const payload = {
-    model: config.ocrModel,
+    model: OCR_MODEL,
     temperature: 0,
     // Parity with Gemini (maxOutputTokens 4096). The completion budget INCLUDES
     // any <think> reasoning tokens; 2048 can truncate the answer mid-JSON when
@@ -350,7 +354,7 @@ export async function callOpenRouterVision(
         text: null,
         error: `HTTP ${response.status}`,
         provider: 'openrouter',
-        model: config.ocrModel,
+        model: OCR_MODEL,
       };
     }
 
@@ -363,7 +367,7 @@ export async function callOpenRouterVision(
         text: null,
         error: 'Empty OpenRouter response',
         provider: 'openrouter',
-        model: result.model ?? config.ocrModel,
+        model: result.model ?? OCR_MODEL,
       };
     }
     return {
@@ -371,7 +375,7 @@ export async function callOpenRouterVision(
       text,
       error: null,
       provider: 'openrouter',
-      model: result.model ?? config.ocrModel,
+      model: result.model ?? OCR_MODEL,
     };
   } catch (e) {
     const msg = e instanceof Error
@@ -382,7 +386,7 @@ export async function callOpenRouterVision(
       text: null,
       error: msg,
       provider: 'openrouter',
-      model: config.ocrModel,
+      model: OCR_MODEL,
     };
   } finally {
     clearTimeout(timer);

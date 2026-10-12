@@ -246,7 +246,6 @@ describe('OCR: Haiku 5.5 model + prompt contract', () => {
   };
 
   test('vision calls target Claude Haiku 5.5 (anthropic/claude-haiku-5.5)', async () => {
-    assert.equal(config.ocrModel, 'anthropic/claude-haiku-5.5', 'Haiku 5.5 is the OCR default');
     const captured = capture();
     try {
       const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
