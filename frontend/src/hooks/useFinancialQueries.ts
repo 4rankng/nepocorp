@@ -10,17 +10,29 @@ export function useCustomerAging(search?: string) {
     queryKey: qk.financial.customerAging(search),
     queryFn: () => financialClient.getCustomerAging({ search }),
     staleTime: 2 * 60 * 1000,
+    // The key carries the search text, so without this every keystroke blanked
+    // `data` and the DebtListPage hero/aging cards re-rendered as 0 ₫ before
+    // settling on the new totals (kanban 091026010100). Same remedy as
+    // usePayablesSummary for the same symptom class.
+    placeholderData: keepPreviousData,
   });
 }
 
 export function useCustomerStatement(
   id: string | undefined,
   range?: { dateFrom?: string; dateTo?: string },
+  options?: { enabled?: boolean },
 ) {
   return useQuery<CustomerStatement>({
     queryKey: qk.financial.customerStatement(id, range),
-    enabled: !!id,
+    enabled: !!id && (options?.enabled ?? true),
     queryFn: () => financialClient.getCustomerStatement(Number(id), range),
+    // Match the financial siblings. Without staleTime the statement was stale
+    // immediately, so every remount/refocus refetched it — and the AR detail
+    // page holds two of these queries at once (the profile view plus the
+    // period-scoped ledger), which is what made the debt tabs flicker between
+    // reloads (kanban 091026235510).
+    staleTime: 2 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
 }

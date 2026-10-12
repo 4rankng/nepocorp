@@ -45,7 +45,7 @@ export function DebtAccountStrip({
       </article>
       <article className="dd-account-card">
         <span>Phiếu thu gần nhất</span>
-        <strong>{lastPayment ? money(parseFloat(lastPayment.credit) || 0) : '-'}</strong>
+        <strong>{lastPayment ? money(parseFloat(lastPayment.credit) || 0) : '—'}</strong>
         <small>{lastPayment ? formatDate(lastPayment.timestamp) : 'Chưa có phiếu thu'}</small>
       </article>
       <article className="dd-account-card">
@@ -96,9 +96,13 @@ export function DebtAgingSummary({
           )}
         </div>
         <div className="dd-sum-update">
-          Cập nhật lần cuối
-          <b>{new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</b>
-          {ledgerRowCount} giao dịch trong kỳ
+          {/* Explicit spaces around the date: below the mobile breakpoint <b>
+              renders inline and JSX-stripped whitespace glued the two text
+              runs into "cuối12/10/2026" (kanban 091026010110). The count is
+              the profile's whole ledger history, so "trong kỳ" mislabelled it. */}
+          Cập nhật lần cuối{' '}
+          <b>{new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</b>{' '}
+          {ledgerRowCount} giao dịch đã ghi nhận
         </div>
       </div>
 

@@ -176,7 +176,9 @@ export function EditPanel({ isOpen, user, isMe, saving, error, truckList, canEdi
 
   const displayName = user.fullName || user.username || user.email || 'Tài khoản';
   const subtitle = isMe ? `${displayName} (bạn)` : displayName;
-  const title = role === Role.DRIVER ? `Chỉnh sửa lái xe ${displayName}` : 'Chỉnh sửa tài khoản';
+  // The subtitle already carries the name (and "(bạn)"); embedding it in the
+  // driver title too printed it twice on screen (kanban 101026003240).
+  const title = role === Role.DRIVER ? 'Chỉnh sửa lái xe' : 'Chỉnh sửa tài khoản';
 
   return (
     <Drawer
@@ -529,7 +531,7 @@ export function AddPanel({ isOpen, saving, error, truckList, onClose, onSave }: 
       <div className="users-form-divider" />
 
       {/* Role & Password */}
-      <div className="users-form-section__title"><ShieldCheck size={12} /> Quyền & Mật khẩu</div>
+      <div className="users-form-section__title"><ShieldCheck size={12} /> Quyền & mật khẩu</div>
       <div className="row-2">
         <FormGroup label="Vai trò *" error={roleTouched && !role ? 'Vui lòng chọn vai trò' : undefined}>
           <select

@@ -68,17 +68,20 @@ export default function DriverEarningsPage() {
     }
     if (kpiRefs.current.baseSalary) targets.push({ el: kpiRefs.current.baseSalary, value: salaryNum, suffix: ' ₫' });
     // F2 / B2 — trip-income cards always animate (headline breakdown).
+    // animateCounters rewrites the element's whole textContent, so every target
+    // must carry its ' ₫' unit or the count-up wipes it off the value
+    // (kanban 101026004010).
     const productionNum = parseFloat(earnings.productionSalary);
     const roadNum = parseFloat(earnings.roadAllowance);
     const paidOrAdvancedNum = parseFloat(earnings.paidOrAdvanced ?? '0');
     const payableNum = parseFloat(earnings.payableBalance);
-    if (kpiRefs.current.productionSalary) targets.push({ el: kpiRefs.current.productionSalary, value: productionNum });
-    if (kpiRefs.current.roadAllowance) targets.push({ el: kpiRefs.current.roadAllowance, value: roadNum });
+    if (kpiRefs.current.productionSalary) targets.push({ el: kpiRefs.current.productionSalary, value: productionNum, suffix: ' ₫' });
+    if (kpiRefs.current.roadAllowance) targets.push({ el: kpiRefs.current.roadAllowance, value: roadNum, suffix: ' ₫' });
     if (kpiRefs.current.paidOrAdvanced) targets.push({ el: kpiRefs.current.paidOrAdvanced, value: paidOrAdvancedNum, suffix: ' ₫' });
     if (kpiRefs.current.payableBalance) targets.push({ el: kpiRefs.current.payableBalance, value: Math.abs(payableNum), prefix: payableNum < 0 ? '-' : '', suffix: ' ₫' });
     if (penaltyNum > 0 && kpiRefs.current.penalties) targets.push({ el: kpiRefs.current.penalties, value: penaltyNum, prefix: '-', suffix: ' ₫' });
     if (earnings.adjustment !== undefined && earnings.adjustment !== 0 && kpiRefs.current.adjustment) {
-      targets.push({ el: kpiRefs.current.adjustment, value: Math.abs(earnings.adjustment), prefix: earnings.adjustment > 0 ? '+' : '-' });
+      targets.push({ el: kpiRefs.current.adjustment, value: Math.abs(earnings.adjustment), prefix: earnings.adjustment > 0 ? '+' : '-', suffix: ' ₫' });
     }
     if (targets.length > 0) animateCounters(targets);
   }, [earnings, animateCounters]);
@@ -215,7 +218,8 @@ export default function DriverEarningsPage() {
             {adjustmentNum !== 0 && (
               <div>
                 <dt>{adjustmentLabel}</dt>
-                <dd className={adjustmentNum >= 0 ? 'is-success' : 'is-danger'}>{adjustmentValue} ₫</dd>
+                {/* Bound like its sibling rows so the count-up animates this value too (kanban 101026004010). */}
+                <dd ref={(el) => { kpiRefs.current.adjustment = el; }} className={adjustmentNum >= 0 ? 'is-success' : 'is-danger'}>{adjustmentValue} ₫</dd>
               </div>
             )}
             <div>

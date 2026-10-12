@@ -67,7 +67,12 @@ export function UserTable({
             <button
               className="btn btn--secondary"
               onClick={onExport}
-              disabled={exporting || filteredTotal === 0}
+              // Availability must not key off `filteredTotal`: that server count
+              // is a render snapshot that moves across refetches, and a button
+              // fading dead whenever it read 0 was the reported "lúc ẩn lúc hiện"
+              // (kanban 101026003230). Like the export buttons on the other list
+              // pages it stays live; only an in-flight export disables it.
+              disabled={exporting}
               style={{ display: 'flex', alignItems: 'center', gap: 8 }}
             >
               {exporting ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
@@ -93,11 +98,14 @@ export function UserTable({
             <span className="kpi__label">Tổng tài khoản</span>
           </div>
           <div className="kpi__value">{total}</div>
+          {/* The old meta was a hardcoded "+0 mới" pill and a canned
+              "Đang hoạt động tốt" claim — a dead stat and a promise the data
+              never made (kanban 101026003240). */}
           <div className="kpi__meta">
-            <span className="kpi__meta-pill kpi__meta--up">
-              +0 mới
+            <span className="kpi__meta-pill kpi__meta-pill--neutral">
+              Tất cả vai trò
             </span>
-            <span className="kpi__meta-note">Đang hoạt động tốt</span>
+            <span className="kpi__meta-note">Gồm cả tài khoản bị khoá</span>
           </div>
           <div className="kpi__watermark" aria-hidden="true"><Users size={72} /></div>
         </div>
@@ -288,7 +296,7 @@ export function UserTable({
           <KeyRound size={14} />
           {canEditDriversOnly
             ? 'Bạn chỉ có thể chỉnh sửa thông tin lái xe (lương, xe phân công, liên hệ).'
-            : 'Chỉ quản trị viên hoặc giám đốc mới có thể tạo, sửa hoặc xóa tài khoản.'}
+            : 'Chỉ quản trị viên hoặc quản lý mới có thể tạo, sửa hoặc xóa tài khoản.'}
         </div>
       )}
     </>

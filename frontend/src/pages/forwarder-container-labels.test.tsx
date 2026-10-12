@@ -15,7 +15,10 @@ vi.mock('../hooks/useForwarderQueries', () => ({
   useUpdateForwarderExpense: () => mutation(),
   useSetForwarderExpenseCompletion: () => mutation(),
 }));
-vi.mock('@tanstack/react-query', () => ({ useQuery: () => ({ data: { items: [] } }) }));
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => ({ data: { items: [] } }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
+}));
 vi.mock('../hooks/useCatalogs', () => ({ useCatalogs: () => ({ data: {} }) }));
 vi.mock('../hooks/animations', () => ({ usePageAnimations: () => ({ rootRef: { current: null } }) }));
 vi.mock('../hooks/useBackShortcut', () => ({ useBackShortcut: vi.fn() }));

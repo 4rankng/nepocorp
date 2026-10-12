@@ -14,12 +14,20 @@ import { salaryPeriodDateRange, localDateStr, resolveCapTableSnapshot } from './
 import { getPnlReport } from './pnl.service';
 import { getRenewalReminders } from './expense.service';
 
-export async function getDashboardStats() {
-  return cacheGet('reports:dashboard', 30, async () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const { start: monthStart, end: monthEnd } = await salaryPeriodDateRange(month, year);
+export async function getDashboardStats(month?: number, year?: number) {
+  // The KPI period must come from the caller, not the clock (kanban 101026003200):
+  // the cache key carried no period and month/year were resolved from the server
+  // clock at fill time, so a fill near midnight — or any server/client clock skew
+  // — kept serving a different month's aggregates than the KPI labels and the
+  // /reports/pnl queries used, and the dashboard row drifted between reloads with
+  // no data change. Internal callers without a UI period (agent summary lane) fall
+  // back to "now"; the cache is keyed per period so one period's fill can never
+  // answer another period's request.
+  const now = new Date();
+  const periodMonth = month ?? now.getMonth() + 1;
+  const periodYear = year ?? now.getFullYear();
+  return cacheGet(`reports:dashboard:${periodMonth}:${periodYear}`, 30, async () => {
+    const { start: monthStart, end: monthEnd } = await salaryPeriodDateRange(periodMonth, periodYear);
 
     const [
       [stats],
@@ -64,7 +72,7 @@ export async function getDashboardStats() {
       )),
       getTopOverdueCustomer(),
       getReceivablesSummary(),
-      getPnlReport(month, year),
+      getPnlReport(periodMonth, periodYear),
       db.select({ count: sql<number>`count(*)` }).from(s.trips).where(and(
         isNull(s.trips.deletedAt),
         eq(s.trips.status, TripStatus.CREATED),
@@ -120,8 +128,8 @@ export async function getDashboardStats() {
     const costs = Number(pnlReport.totalCosts || 0);
     const grossProfit = Number(pnlReport.grossProfit || 0);
     const decisionItems = buildDecisionItems({
-      year,
-      month,
+      year: periodYear,
+      month: periodMonth,
       revenue,
       overdueAmount: receivablesSummary.buckets
         .filter((bucket) => bucket.range !== CURRENT_AGING_RANGE)
@@ -139,6 +147,14 @@ export async function getDashboardStats() {
       revenue,
       costs,
       grossProfit,
+      // The full P&L KPI set, straight from the same getPnlReport() snapshot
+      // /reports/pnl serves for this period. The KPI row reads these while the
+      // P&L query is still in flight, so both sources must carry identical
+      // figures — otherwise the row renders one net figure before the query
+      // lands and another after (kanban 101026003200).
+      netProfit: Number(pnlReport.netProfit || 0),
+      otherIncome: Number(pnlReport.otherIncome || 0),
+      companyExpenses: Number(pnlReport.companyExpenses || 0),
       // tripCount reflects ALL active trips in the period (for display in trip list stats).
       // lockedTrips reflects the trips whose revenue/cost are included in the KPIs.
       tripCount: Number(stats?.tripCount || 0),

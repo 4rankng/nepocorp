@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, Calendar, MapPin, Fuel, DollarSign, Navigation, AlertCircle, Loader2, Phone, MessageSquare } from 'lucide-react';
 import { api } from '../lib/api';
-import { formatCurrency, formatDate } from '../lib/format';
+import { formatCurrency, formatDate, formatNumber } from '../lib/format';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
 import { StatusPill } from '../components/UI';
 import TripLegsPanel from '../components/trip/TripLegsPanel';
@@ -195,7 +195,8 @@ export default function DriverTripDetailPage() {
                 Số dầu được cấp
               </div>
               <div className="fuel-alloc-card__value">
-                {trip.fuelLiters ? `${parseFloat(trip.fuelLiters).toFixed(0)} lít` : '— lít'}
+                {/* formatNumber keeps fractional litres ("157,5 lít"); toFixed(0) rounded the allocation away (kanban 101026004010). */}
+                {trip.fuelLiters ? `${formatNumber(trip.fuelLiters)} lít` : '— lít'}
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { NotificationType, Role, TripStatus } from '@tingting/shared';
 import * as tripService from './trip.service';
-import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
+import { cacheInvalidatePattern } from '../lib/redis';
 import { emitNotification, type NotificationPayload } from './notification.service';
 
 type TripRecord = Awaited<ReturnType<typeof tripService.createTrip>>;
@@ -22,7 +22,7 @@ export interface TripCommandDeps {
 
 async function invalidateReportCaches(invalidatePnl?: boolean) {
   await Promise.all([
-    cacheInvalidate('reports:dashboard'),
+    cacheInvalidatePattern('reports:dashboard:*'), // per-period keys (kanban 101026003200)
     cacheInvalidatePattern('reports:entity-results:*'),   // trip writes change AR/AP aging
     cacheInvalidatePattern('reports:fuel-variance:*'),    // trip writes change fuel variance
     invalidatePnl ? cacheInvalidatePattern('reports:pnl:*') : Promise.resolve(),

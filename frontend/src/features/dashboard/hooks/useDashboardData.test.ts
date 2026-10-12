@@ -2,17 +2,26 @@ import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDashboardData } from './useDashboardData';
 
-const mocks = vi.hoisted(() => ({ pnl: vi.fn(), trips: vi.fn(() => ({})) }));
+const mocks = vi.hoisted(() => ({
+  pnl: vi.fn(),
+  trips: vi.fn(() => ({})),
+  stats: vi.fn(() => ({ data: { revenue: 0, costs: 0, grossProfit: 0 }, isLoading: false })),
+}));
 vi.mock('@tanstack/react-query', () => ({ useQuery: () => ({ data: undefined }) }));
 vi.mock('../../../hooks/useAuth', () => ({ useAuth: () => ({ user: { role: 'ADMIN' } }) }));
 vi.mock('../../../hooks/useQueries', () => ({
-  useDashboardStats: () => ({ data: { revenue: 0, costs: 0, grossProfit: 0 }, isLoading: false }),
+  useDashboardStats: mocks.stats,
   usePnlReport: mocks.pnl,
   useMonthlyTrips: mocks.trips, useCreatedTrips: () => ({}),
   useYearlyPnl: () => ({}), useFuelConfig: () => ({}), useRenewalReminders: () => ({}),
 }));
 
-afterEach(() => { cleanup(); vi.clearAllMocks(); mocks.trips.mockReturnValue({}); });
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+  mocks.trips.mockReturnValue({});
+  mocks.stats.mockReturnValue({ data: { revenue: 0, costs: 0, grossProfit: 0 }, isLoading: false });
+});
 
 describe('dashboard month comparisons', () => {
   it.each([
@@ -73,5 +82,29 @@ describe('dashboard month comparisons', () => {
     expect(result.current.derived?.slicesWithPct.map(slice => [slice.label, slice.value])).toEqual([
       ['Chi phí chuyến', 6_000_000], ['Chi phí phương tiện', 1_000_000],
     ]);
+  });
+
+  it('renders identical KPI figures before and after the P&L query lands for one fixed dataset', () => {
+    // kanban 101026003200: the row used to compute net profit with
+    // companyExpenses/otherIncome silently zeroed while the P&L query was still
+    // in flight, so every reload caught a different figure on its way to the
+    // settled value. For a fixed dataset the figures must not depend on which
+    // query has landed.
+    const fixed = {
+      revenue: 215_349_049, costs: 151_026_765, grossProfit: 64_322_284,
+      netProfit: 62_322_284, otherIncome: 1_000_000, companyExpenses: 3_000_000,
+    };
+    mocks.stats.mockReturnValue({ data: fixed, isLoading: false });
+    mocks.pnl.mockReturnValue({ data: undefined }); // P&L query still in flight
+    const before = renderHook(() => useDashboardData(9, 2026)).result.current.derived!;
+    mocks.pnl.mockReturnValue({ data: {
+      totalRevenue: fixed.revenue, totalCosts: fixed.costs, grossProfit: fixed.grossProfit,
+      netProfit: fixed.netProfit, otherIncome: fixed.otherIncome, companyExpenses: fixed.companyExpenses,
+    } });
+    const after = renderHook(() => useDashboardData(9, 2026)).result.current.derived!;
+
+    expect([before.revenue, before.costs, before.grossProfit, before.netProfit])
+      .toEqual([after.revenue, after.costs, after.grossProfit, after.netProfit]);
+    expect(before.netProfit).toBe(62_322_284);
   });
 });

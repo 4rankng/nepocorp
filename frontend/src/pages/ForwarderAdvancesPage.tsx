@@ -32,7 +32,7 @@ type StatusFilter = '' | AdvanceRequestStatus;
 /**
  * An approved request has already been credited to the ledger at its original
  * amount, so the service refuses both amend and delete on it. Mirror that here
- * so the buttons never appear on a row they would fail on.
+ * so the buttons never appear on a row they would fail on (kanban 101026121000).
  */
 function canModify(status: string): boolean {
   return status !== 'APPROVED';

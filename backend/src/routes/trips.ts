@@ -12,7 +12,7 @@ import { getDriverByUserId } from '../services/driver.service';
 import { db } from '../db';
 import * as dbSchema from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
+import { cacheInvalidatePattern } from '../lib/redis';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
 import type { Request, Response } from 'express';
@@ -42,7 +42,7 @@ const router = Router();
 
 async function invalidateReportCaches(invalidatePnl?: boolean) {
   await Promise.all([
-    cacheInvalidate('reports:dashboard'),
+    cacheInvalidatePattern('reports:dashboard:*'), // per-period keys (kanban 101026003200)
     cacheInvalidatePattern('reports:entity-results:*'),   // trip writes change AR/AP aging
     cacheInvalidatePattern('reports:fuel-variance:*'),    // trip writes change fuel variance
     invalidatePnl ? cacheInvalidatePattern('reports:pnl:*') : Promise.resolve(),

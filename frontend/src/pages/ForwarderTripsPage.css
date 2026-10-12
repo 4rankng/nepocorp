@@ -94,8 +94,9 @@
   margin: 0 0 16px;
 }
 
-/* Role boundary hint — the portal is read-only for trip creation/assignment
-   (kanban 101026101510). */
+/* Role boundary hint — the portal is read-only for trip creation
+   (kanban 101026101510); driver assignment itself lives in the portal since
+   kanban 101026005000. */
 .fwd-trips-note {
   margin: 0 0 12px;
   font-size: var(--fs-sm);

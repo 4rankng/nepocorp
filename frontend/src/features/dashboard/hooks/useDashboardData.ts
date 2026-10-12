@@ -68,7 +68,7 @@ export interface DashboardAuditEntry {
 
 export function useDashboardData(currentMonth: number, currentYear: number) {
 
-  const { data: stats, isLoading: loading } = useDashboardStats();
+  const { data: stats, isLoading: loading } = useDashboardStats(currentMonth, currentYear);
   const { data: pnlReport } = usePnlReport(currentMonth, currentYear);
   const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
@@ -150,15 +150,19 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
   const derived = useMemo((): DerivedData | null => {
     if (!stats) return null;
 
-    // Use P&L report as single source of truth for all 4 KPIs when available,
-    // so net profit is always consistent with revenue/costs/gross.
-    // Falls back to dashboard stats (which lack otherIncome/companyExpenses).
+    // KPI figures must be identical no matter which query has landed yet
+    // (kanban 101026003200). Dashboard stats embed the same getPnlReport()
+    // snapshot /reports/pnl serves for this period, so both carry the same
+    // figures — which means the fallbacks may never zero-out inputs: net profit
+    // computed with companyExpenses/otherIncome defaulted to 0 rendered one
+    // figure while the P&L query was in flight and another once it landed, and
+    // every reload sampled a different moment of that transition.
     const revenue = pnlReport?.totalRevenue ?? stats.revenue ?? 0;
     const costs = pnlReport?.totalCosts ?? stats.costs ?? 0;
     const grossProfit = pnlReport?.grossProfit ?? stats.grossProfit ?? 0;
-    const otherIncome = pnlReport?.otherIncome ?? 0;
-    const companyExpenses = pnlReport?.companyExpenses ?? 0;
-    const netProfit = pnlReport?.netProfit ?? (grossProfit - companyExpenses + otherIncome);
+    const otherIncome = pnlReport?.otherIncome ?? stats.otherIncome ?? 0;
+    const companyExpenses = pnlReport?.companyExpenses ?? stats.companyExpenses ?? 0;
+    const netProfit = pnlReport?.netProfit ?? stats.netProfit ?? (grossProfit - companyExpenses + otherIncome);
 
     const sortedTrucks = pnlReport?.trucks
       ? [...pnlReport.trucks].sort((a, b) => b.profit - a.profit).slice(0, 5)

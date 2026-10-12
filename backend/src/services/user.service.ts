@@ -220,9 +220,21 @@ export async function createUser(data: {
   baseSalary?: number;
   socialInsurance?: number;
   assignedTruckId?: number | null;
-}) {
+}, actorUserId: number) {
   const passwordHash = await bcrypt.hash(data.password, 10);
   return db.transaction(async (tx) => {
+    // Only an ADMIN may hand out the ADMIN role — a MANAGER assigns strictly
+    // below it (kanban 101026003220). Enforced where the role is actually
+    // written, not only in the route handler, so no caller can grant ADMIN past
+    // the API layer; the actor's role is read fresh inside the transaction like
+    // the ADMIN delete rule in deleteUser() below.
+    if (data.role === Role.ADMIN) {
+      const [actor] = await tx.select({ role: users.role }).from(users)
+        .where(and(eq(users.id, actorUserId), isNull(users.deletedAt))).limit(1);
+      if (actor?.role !== Role.ADMIN) {
+        throw new ApiError(403, 'Chỉ quản trị viên mới có thể gán vai trò ADMIN');
+      }
+    }
     await assertIdentifierFree(tx, users.username, data.username, 'Username');
     await assertIdentifierFree(tx, users.email, data.email, 'Email');
     await assertIdentifierFree(tx, users.phone, data.phone, 'Số điện thoại');
@@ -297,7 +309,7 @@ export async function updateUser(id: number, data: {
   assignedTruckId?: number | null;
   /** If true, throws 403 when target user is not DRIVER — used for accountant scoping. */
   requireDriverTarget?: boolean;
-}) {
+}, actorUserId: number) {
   // Hash password outside transaction — CPU-intensive work should not hold a DB connection.
   const passwordHash = data.password ? await bcrypt.hash(data.password, 10) : undefined;
 
@@ -305,6 +317,17 @@ export async function updateUser(id: number, data: {
     const [existing] = await tx.select({ role: users.role }).from(users)
       .where(and(eq(users.id, id), isNull(users.deletedAt))).limit(1);
     if (!existing) throw new ApiError(404, 'Không tìm thấy người dùng');
+
+    // Same grant rule as createUser (kanban 101026003220): only ADMIN may put an
+    // account into the ADMIN role. Checked here, at the write, with the actor's
+    // role as it is now rather than as the request was authorised.
+    if (data.role === Role.ADMIN) {
+      const [actor] = await tx.select({ role: users.role }).from(users)
+        .where(and(eq(users.id, actorUserId), isNull(users.deletedAt))).limit(1);
+      if (actor?.role !== Role.ADMIN) {
+        throw new ApiError(403, 'Chỉ quản trị viên mới có thể gán vai trò ADMIN');
+      }
+    }
 
     // Driver-target check inside the transaction to avoid TOCTOU race.
     if (data.requireDriverTarget && existing.role !== Role.DRIVER) {

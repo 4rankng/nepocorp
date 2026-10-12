@@ -110,13 +110,14 @@ export default function UsersPage() {
   // Xuất Excel (kanban 101026003230): /users was the only list page without an
   // export. It exports the CURRENT filtered set (search + role tab + sort), not
   // just the page on screen, so the file matches what the list claims to show.
+  // The set is resolved by getUsersAll from the server's own count — never from
+  // `filteredTotal`, a render snapshot that moves across refetches and left the
+  // button flapping between dead and live (and could size the fetch wrong).
   const [exporting, setExporting] = useState(false);
   const handleExport = async () => {
     setExporting(true);
     try {
-      const all = await userClient.getUsers({
-        page: 1,
-        limit: Math.max(filteredTotal, 1),
+      const all = await userClient.getUsersAll({
         search: debouncedSearch || undefined,
         filter,
         sortBy: sortBy ?? undefined,
@@ -131,7 +132,7 @@ export default function UsersPage() {
           u.email ?? '',
           u.phone ?? '',
           ROLE_LABELS[u.role] ?? u.role,
-          u.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khoá',
+          u.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khoá',
         ]),
         {
           title: 'Danh sách người dùng',

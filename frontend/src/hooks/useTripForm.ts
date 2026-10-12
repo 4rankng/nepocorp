@@ -8,7 +8,6 @@ import type { CompletionStatus } from './useTripFormState';
 import type { ContainerFormRow, FuelAllocationFormRow } from './useTripFormState';
 import { useTripFormState } from './useTripFormState';
 import { useTripFormDispatch } from './useTripFormDispatch';
-import type { OcrSignal } from './useTripFormDispatch';
 import type { UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 
 export type { FuelMode } from '@tingting/shared';
@@ -118,7 +117,7 @@ export interface UseTripFormReturn {
   instructionsNotes: string;
   setInstructionsNotes: (v: string) => void;
   photoUrls: string[];
-  uploadPhotos: (files: FileList, tripId?: number, type?: 'CONTAINER' | 'SEAL' | 'OTHER') => Promise<void>;
+  uploadPhotos: (files: FileList, tripId?: number) => Promise<void>;
   removePhoto: (idx: number) => void;
   uploadContainerPhoto: (file: File, tripId: number | undefined, rowKey: string, type: 'CONTAINER' | 'SEAL', containerId?: number) => Promise<ContainerPhotoUploadResult>;
   revokeRowPhotos: (rowKey: string) => void;
@@ -139,7 +138,6 @@ export interface UseTripFormReturn {
 
   submitting: boolean;
   uploading: UploadingState;
-  ocrResult: OcrSignal | null;
   error: string;
   setError: (v: string) => void;
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
@@ -225,7 +223,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     completionStatus: d.completionStatus,
     requiredFieldsFilled: d.requiredFieldsFilled,
     totalRequiredFields: d.totalRequiredFields,
-    submitting: s.submitting, uploading: d.uploading, ocrResult: d.ocrResult, error: s.error, setError: s.setError, handleSubmit: d.handleSubmit, createdTripId: d.createdTripId,
+    submitting: s.submitting, uploading: d.uploading, error: s.error, setError: s.setError, handleSubmit: d.handleSubmit, createdTripId: d.createdTripId,
     tripId: isEditMode ? existingTrip?.id : undefined,
     tripStatus: isEditMode ? existingTrip?.status : undefined,
     version: isEditMode && existingTrip ? String(existingTrip.version) : undefined,

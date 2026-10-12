@@ -93,7 +93,7 @@ const BUCKET_ICONS: Record<string, typeof CalendarCheck2> = {
 
 export default function DebtListPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const { data, isLoading: loading, error: queryError } = useCustomerAging(search);
   const { toast: showToast } = useToast();
@@ -115,13 +115,22 @@ export default function DebtListPage() {
   const rawCustomers = useMemo(() => data?.customers ?? [], [data?.customers]);
   const totalCustomers = data?.total ?? rawCustomers.length;
   const error = queryError ? (queryError as Error).message : null;
-  const [filterMode, setFilterMode] = useState<BucketFilterMode>(
-    searchParams.get('filter') === 'current' ? 'current'
-      : searchParams.get('filter') === 'd30' ? 'd30'
-      : searchParams.get('filter') === 'd60' ? 'd60'
-      : searchParams.get('filter') === 'over90' ? 'over90'
-      : 'all',
-  );
+  // The active bucket tab lives in the ?filter= param so a reload keeps the
+  // user's selection — the dashboard links here as /debt?filter=over90. The
+  // page used to read the param once into useState but never wrote it back, so
+  // every reload dropped the tab to "Tất cả" and the list jumped (kanban
+  // 091026235510).
+  const filterParam = searchParams.get('filter');
+  const filterMode: BucketFilterMode =
+    filterParam === 'current' || filterParam === 'd30' || filterParam === 'd60' || filterParam === 'over90'
+      ? filterParam
+      : 'all';
+  const setFilterMode = (mode: BucketFilterMode) => {
+    const next = new URLSearchParams(searchParams);
+    if (mode === 'all') next.delete('filter');
+    else next.set('filter', mode);
+    setSearchParams(next, { replace: true });
+  };
 
   /* ── Animation hooks ── */
   const compact = false; // full VND everywhere — no short form (e.g. "12,5 tr")
@@ -210,11 +219,12 @@ export default function DebtListPage() {
   // reason as on /payables — money must render authoritatively from React so
   // the card and the buckets can never describe two different totals
   // (kanban 091026010100, re-verified as 091026211500 on /debt).
+  //
+  // While the first aging report is still in flight the summary renders "—"
+  // placeholders instead of zeros: a 0 ₫ total (and "0 khách hàng") that later
+  // jumps to the real figures is exactly the flicker QA logged, so the card
+  // shows "no value yet", never a wrong one (kanban 091026010100).
   const heroMoney = moneyParts(totals.total, false);
-
-  const handleBucketClick = (bucket: AgingBucket) => {
-    setFilterMode(bucket.filterMode);
-  };
 
   return (
     <div ref={rootRef} className="debt-list-page">
@@ -230,7 +240,7 @@ export default function DebtListPage() {
       />
       <PageHeader
         title="Công nợ phải thu"
-        description={`${totalCustomers} khách hàng · cập nhật vừa xong`}
+        description={loading ? 'Đang tải dữ liệu công nợ…' : `${totalCustomers} khách hàng · cập nhật vừa xong`}
         iconName="receivables"
         action={
           <div className="page-actions">
@@ -262,12 +272,12 @@ export default function DebtListPage() {
             </span>
             <div className="hero-kpi-card__amount debt-hero__amount">
               <span>
-                {heroMoney.num}
+                {loading ? '—' : heroMoney.num}
               </span>
               <span className="debt-hero__currency">{heroMoney.unit}</span>
             </div>
             <span className="hero-kpi-card__subtitle">
-              {totalCustomers} khách hàng · cập nhật vừa xong
+              {loading ? 'Đang tải dữ liệu công nợ…' : `${totalCustomers} khách hàng · cập nhật vừa xong`}
             </span>
           </div>
           <div className="debt-hero__art" aria-hidden="true">
@@ -286,7 +296,7 @@ export default function DebtListPage() {
             <div className="hero-kpi-mini__body">
               <span className="hero-kpi-mini__value">
                 <span>
-                  {totals.overdueCount}
+                  {loading ? '—' : totals.overdueCount}
                 </span>
               </span>
               <span className="hero-kpi-mini__label">quá hạn</span>
@@ -299,7 +309,7 @@ export default function DebtListPage() {
             <div className="hero-kpi-mini__body">
               <span className="hero-kpi-mini__value">
                 <span>
-                  {totals.highRiskCount}
+                  {loading ? '—' : totals.highRiskCount}
                 </span>
               </span>
               <span className="hero-kpi-mini__label">rủi ro cao</span>
@@ -327,9 +337,11 @@ export default function DebtListPage() {
               key={bucket.key}
               type="button"
               className={`debt-aging-card${isActive ? ' is-active' : ''}`}
-              onClick={() => handleBucketClick(bucket)}
+              onClick={() => setFilterMode(bucket.filterMode)}
               style={{ '--bucket-color': bucket.color } as React.CSSProperties}
-              aria-label={`${bucket.label}: ${formatCurrency(amount)}, ${count} khách hàng`}
+              aria-label={loading
+                ? `${bucket.label}, đang tải dữ liệu`
+                : `${bucket.label}: ${formatCurrency(amount)}, ${count} khách hàng`}
             >
               <div className="debt-aging-card__header">
                 {BucketIcon && (
@@ -345,11 +357,11 @@ export default function DebtListPage() {
               </div>
               <div className="debt-aging-card__amount">
                 <span>
-                  {money.num}
+                  {loading ? '—' : money.num}
                 </span>
                 <span className="debt-aging-card__unit">{money.unit}</span>
               </div>
-              <div className="debt-aging-card__count">{count} khách hàng</div>
+              <div className="debt-aging-card__count">{loading ? '—' : count} khách hàng</div>
             </button>
           );
         })}
@@ -362,7 +374,9 @@ export default function DebtListPage() {
         label="Lọc công nợ khách hàng"
         value={filterMode}
         onChange={setFilterMode}
-        options={[{ value: 'all', label: 'Tất cả', count: customerDebts.length }]}
+        // While the report is loading, render no count rather than a misleading
+        // "Tất cả 0" (same rule as the payables chip row, kanban 091026235510).
+        options={[{ value: 'all', label: 'Tất cả', count: loading ? undefined : customerDebts.length }]}
         search={{ value: search, onChange: setSearch, label: 'Tìm công nợ theo khách hàng', placeholder: 'Tìm khách hàng…' }}
       />
       <div className="debt-data-card" data-tour-id="debt-customer-list">
@@ -385,7 +399,9 @@ export default function DebtListPage() {
                 {filteredDebts.length === 0 ? (
                   <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                     <img src={resolveEmptyIllustration('empty-debts')} alt="" aria-hidden="true" style={{ width: 140, height: 116, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    Không tìm thấy dữ liệu.
+                    {/* Same sentence as the desktop table's empty row — the
+                        mobile card list used a shorter variant (kanban 091026010110). */}
+                    Không tìm thấy dữ liệu công nợ thỏa mãn bộ lọc.
                   </div>
                 ) : (
                   filteredDebts.map(d => {
@@ -442,7 +458,10 @@ export default function DebtListPage() {
                       <tr>
                         <th>Khách hàng</th>
                         <th className="num">Tổng nợ</th>
-                        <th className="num">Net công nợ</th>
+                        {/* "Số ròng" matches the same figure's label on the AR
+                            detail's linked-AP summary; "Net công nợ" was the
+                            only English word in the row (kanban 091026010110). */}
+                        <th className="num">Số ròng</th>
                         <th className="num" style={{ textAlign: 'center' }}>Tuổi nợ</th>
                       </tr>
                     </thead>
@@ -476,7 +495,10 @@ export default function DebtListPage() {
                             <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginLeft: 16 }}>
                               {d.totalOutstanding > 0
                                 ? (oldestAgingBucketIdx([d.aging.current, d.aging.d30, d.aging.d60, d.aging.over90]) > 0 ? "Nợ quá hạn" : "Trong hạn")
-                                : (d.totalOutstanding < 0 ? "Trả trước" : "Cân bằng")}
+                                // "Cân bằng" disagreed with the detail header's
+                                // badge for the same zero-balance state (kanban
+                                // 091026010110).
+                                : (d.totalOutstanding < 0 ? "Trả trước" : "Đã thanh toán đủ")}
                             </div>
                           </td>
 

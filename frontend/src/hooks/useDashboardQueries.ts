@@ -7,10 +7,12 @@ import type { PnlReport, RenewalReminder } from '@tingting/shared';
 export type { PnlReport, PnlTruck } from '@tingting/shared';
 export type { ExtendedDashboardStats };
 
-export function useDashboardStats() {
+export function useDashboardStats(month: number, year: number) {
   return useQuery<ExtendedDashboardStats>({
-    queryKey: qk.dashboard.main,
-    queryFn: () => reportClient.getDashboard(),
+    // Keyed per period: switching the month picker must never serve one month's
+    // aggregates under another month's label (kanban 101026003200).
+    queryKey: qk.dashboard.stats(month, year),
+    queryFn: () => reportClient.getDashboard(month, year),
     staleTime: 2 * 60 * 1000,
     retry: false,
     refetchOnWindowFocus: true,

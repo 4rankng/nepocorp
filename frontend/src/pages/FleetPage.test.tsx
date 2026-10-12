@@ -6,13 +6,21 @@ import FleetPage from './FleetPage';
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
-  useQuery: () => ({ data: [] }),
+  useQuery: () => ({
+    data: [
+      { id: 21, licensePlate: '15R-067.95', type: 'FT40', status: 'ACTIVE' },
+      { id: 22, licensePlate: '15R-050.37', type: 'FT40', status: 'ACTIVE' },
+    ],
+  }),
 }));
 
 vi.mock('../hooks/useCatalogQueries', () => ({
   useTrucksAndDrivers: () => ({
     data: {
-      trucks: [{ id: 11, licensePlate: '15C-136.31', status: 'ACTIVE' }],
+      trucks: [
+        { id: 11, licensePlate: '15C-136.31', status: 'ACTIVE' },
+        { id: 12, licensePlate: '15C-139.82', status: 'ACTIVE', currentTrailerId: 21 },
+      ],
       drivers: [],
     },
   }),
@@ -91,23 +99,30 @@ vi.mock('../features/fleet/schedules/VehicleScheduleVehiclePicker', () => ({
   VehicleScheduleVehiclePicker: ({
     isOpen,
     onSelect,
+    trailers,
   }: {
     isOpen: boolean;
     onSelect: (
       vehicleComponent: 'TRUCK' | 'TRAILER',
       vehicle: { id: number; plate: string; meta: string },
     ) => void;
+    trailers: Array<{ id: number; plate: string; meta: string }>;
   }) => isOpen ? (
-    <button
-      type="button"
-      onClick={() => onSelect('TRUCK', {
-        id: 11,
-        plate: '15C-136.31',
-        meta: 'Hoạt động',
-      })}
-    >
-      Chọn xe đầu kéo 15C-136.31
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => onSelect('TRUCK', {
+          id: 11,
+          plate: '15C-136.31',
+          meta: 'Hoạt động',
+        })}
+      >
+        Chọn xe đầu kéo 15C-136.31
+      </button>
+      {trailers.map(t => (
+        <div key={t.id}>{t.plate} {t.meta}</div>
+      ))}
+    </>
   ) : null,
 }));
 
@@ -150,5 +165,23 @@ describe('FleetPage scheduling action', () => {
 
     expect(screen.getByTestId('vehicle-schedule-manager').textContent)
       .toBe('create:15C-136.31');
+  });
+
+  /**
+   * The picker's rơ-moóc rows name the tractor holding each trailer — the same
+   * secondary info as the fleet truck dialog — with a fallback for unpaired
+   * ones (kanban 091026010130).
+   */
+  it('labels each rơ-moóc row with the paired tractor and falls back for unpaired trailers', () => {
+    render(
+      <MemoryRouter>
+        <FleetPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm lịch' }));
+
+    expect(screen.getByText(/15R-067\.95/).textContent).toContain('đang ghép 15C-139.82');
+    expect(screen.getByText(/15R-050\.37/).textContent).toContain('trống');
   });
 });

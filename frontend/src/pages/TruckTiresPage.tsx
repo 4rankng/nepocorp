@@ -95,7 +95,15 @@ export default function TruckTiresPage({ vehicle = "truck" }: { vehicle?: Vehicl
   // current vehicle so a tire can't be "moved" onto the vehicle it's already on).
   const transferVehicles = useMemo(() => {
     const truckOpts = (trucksDrivers?.trucks ?? []).filter((t) => !(isTruck && t.id === vehicleId)).map((t) => ({ id: t.id, kind: "truck" as const, label: t.licensePlate }));
-    const trailerOpts = trailers.filter((t) => !(!isTruck && t.id === vehicleId)).map((t) => ({ id: t.id, kind: "trailer" as const, label: t.licensePlate }));
+    // Trailer targets also carry the tractor holding them so the dropdown rows
+    // can show it (kanban 091026010130). `label` stays the bare plate — the
+    // dialog reuses it in its messages.
+    const trailerOpts = trailers.filter((t) => !(!isTruck && t.id === vehicleId)).map((t) => ({
+      id: t.id,
+      kind: "trailer" as const,
+      label: t.licensePlate,
+      tractorPlate: trucksDrivers?.trucks.find((tr) => tr.currentTrailerId === t.id)?.licensePlate ?? null,
+    }));
     return [...truckOpts, ...trailerOpts];
   }, [trucksDrivers, trailers, isTruck, vehicleId]);
 

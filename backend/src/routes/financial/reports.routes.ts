@@ -16,8 +16,16 @@ const router = Router();
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
-router.get('/reports/dashboard', asyncHandler(async (_req: Request, res: Response) => {
-  res.json(await getDashboardStats());
+router.get('/reports/dashboard', asyncHandler(async (req: Request, res: Response) => {
+  // Optional period — the same (month, year) the KPI labels and /reports/pnl
+  // use, so the fallback figures can never describe another month (kanban
+  // 101026003200). Omitted → the server's current month.
+  const month = typeof req.query.month === 'string' ? parseInt(req.query.month) : undefined;
+  const year = typeof req.query.year === 'string' ? parseInt(req.query.year) : undefined;
+  if (month !== undefined && (!month || month < 1 || month > 12)) {
+    return res.status(400).json({ error: 'Tháng là bắt buộc (month 1-12)' });
+  }
+  res.json(await getDashboardStats(month, year));
 }));
 
 router.get('/dashboard/approval-queue', asyncHandler(async (req: Request, res: Response) => {

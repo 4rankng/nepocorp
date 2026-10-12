@@ -14,10 +14,14 @@ import {
   getForwarderOwnedExpenseId,
   deleteExpensePhoto,
   listActiveSuppliersForForwarder,
+  listActiveDriversForForwarder,
+  assignForwarderTripDriver,
   getTripExpenseAuditInfo,
   updateForwarderTripExpense,
   setTripExpenseCompletion,
 } from '../services/forwarder.service';
+import { ApiError } from '../errors';
+import { invalidateReportCaches } from '../lib/redis';
 import { exportSettlementXlsx, exportSettlementHtml, previewSettlementHtml, previewSettlementXlsx } from '../services/settlement-export.service';
 import { formatLocalDate } from '../lib/format';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -64,6 +68,25 @@ router.get('/trips/:id', asyncHandler(async (req: Request, res: Response) => {
   const forwarder = req.forwarder!;
   const trip = await getForwarderTripDetail(parseInt(req.params.id as string, 10), forwarder.id);
   if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+  res.json(trip);
+}));
+
+// Giao nhận tự phân công lái xe cho chuyến chưa xuất phát (kanban 101026005000).
+// Both routes live under the forwarder mount (casbinAuthz('forwarder_portal')),
+// so the FORWARDER role needs no `trips` resource and the office trip APIs stay
+// closed to it.
+router.get('/drivers', asyncHandler(async (_req: Request, res: Response) => {
+  const items = await listActiveDriversForForwarder();
+  res.json({ items });
+}));
+
+router.patch('/trips/:id/driver', asyncHandler(async (req: Request, res: Response) => {
+  const tripId = parseInt(req.params.id as string, 10);
+  const driverId = Number((req.body as { driverId?: unknown } | null | undefined)?.driverId);
+  if (!Number.isInteger(tripId) || tripId <= 0) throw new ApiError(400, 'Chuyến đi không hợp lệ');
+  if (!Number.isInteger(driverId) || driverId <= 0) throw new ApiError(400, 'Lái xe không hợp lệ');
+  const trip = await assignForwarderTripDriver(tripId, driverId);
+  await invalidateReportCaches();
   res.json(trip);
 }));
 

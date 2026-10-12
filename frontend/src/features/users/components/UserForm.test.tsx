@@ -90,6 +90,23 @@ describe('assignable roles in the account form', () => {
     openAdd();
     expect(roleOptions()).not.toContain(Role.ADMIN);
   });
+
+  // The QA pass checked the add dialog only ("chưa mở dialog sửa bằng quyền
+  // quản lý"); the edit dialog filters through the same assignableRoles() and
+  // must hide ADMIN from a MANAGER there too (kanban 101026003220).
+  it('hides ADMIN from a MANAGER in the edit dialog as well', () => {
+    authMock.user = { role: 'MANAGER' };
+    render(
+      <EditPanel
+        isOpen saving={false} error={null} truckList={[]} onClose={vi.fn()} onSave={vi.fn()}
+        isMe={false}
+        user={{ id: 7, role: Role.ACCOUNTANT, status: 'ACTIVE', fullName: 'Kế toán QA', username: 'qa-edit', email: '', phone: '' } as UserRow}
+      />,
+    );
+    expect(roleOptions()).not.toContain(Role.ADMIN);
+    expect(roleOptions()).toContain(Role.DRIVER);
+    expect(roleOptions()).toContain(Role.ACCOUNTANT);
+  });
 });
 
 /**

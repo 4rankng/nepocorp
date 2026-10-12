@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Truck, Container, UserCheck, Download, CheckCircle, CalendarPlus } from "lucide-react";
 import { downloadCSV } from "../lib/csv";
+import { trailerCouplingSuffix } from "../lib/trailerCoupling";
 import { PageHeader, Btn, KPI } from "../components/UI";
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { SkeletonKPIs } from '../components/shared/Skeleton';
@@ -148,8 +149,10 @@ export default function FleetPage() {
   const scheduleTrailerOptions = useMemo<VehicleSchedulePickerOption[]>(() => trailers.map(trailer => ({
     id: trailer.id,
     plate: trailer.licensePlate,
-    meta: `${TRAILER_TYPE_LABELS[trailer.type]} · ${TRAILER_STATUS_LABELS[trailer.status]}`,
-  })), [trailers]);
+    // Trailer rows name the tractor holding them, like every other trailer
+    // dropdown (kanban 091026010130).
+    meta: `${TRAILER_TYPE_LABELS[trailer.type]} · ${TRAILER_STATUS_LABELS[trailer.status]}${trailerCouplingSuffix(trucks.find(t => t.currentTrailerId === trailer.id)?.licensePlate)}`,
+  })), [trailers, trucks]);
 
   return (
     <div className="fleet-page" ref={rootRef}>

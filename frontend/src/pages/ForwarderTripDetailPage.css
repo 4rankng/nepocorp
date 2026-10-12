@@ -2,8 +2,8 @@
   font-size: var(--fs-label);
 }
 
-/* Assignment ownership note — unassigned trips explain where the driver
-   control lives (kanban 101026101510). */
+/* Assignment note — only departed trips still defer the driver change to
+   Quản lý (kanban 101026005000); undeparted trips get the picker below. */
 .fwd-assign-note {
   display: flex;
   align-items: flex-start;
@@ -34,6 +34,33 @@
 .fwd-assign-note__unassigned {
   color: var(--fg-3);
   font-style: italic;
+}
+
+/* Inline driver picker in the "Lái xe" row (kanban 101026005000). */
+.fwd-assign-btn {
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.fwd-driver-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fwd-driver-picker__select {
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.fwd-driver-picker__error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--fs-caption);
+  line-height: 1.35;
+  color: var(--danger);
 }
 
 .forwarder-trip-detail-page .info-row__value,

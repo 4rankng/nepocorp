@@ -9,18 +9,21 @@ export interface PeriodRange {
   dateTo: string;
 }
 
-/**
- * Resolve the active mode + inputs into a single { dateFrom, dateTo } range
- * the parent can pass into the API hook. Kept here so both detail pages share
- * one source of truth for "first/last day of month" math.
- */
-export function resolvePeriodRange(opts: {
+/** Full draft/applied state of a detail page's period filter. */
+export interface PeriodState {
   mode: PeriodMode;
   month: number;
   year: number;
   dateFrom: string;
   dateTo: string;
-}): PeriodRange {
+}
+
+/**
+ * Resolve the active mode + inputs into a single { dateFrom, dateTo } range
+ * the parent can pass into the API hook. Kept here so both detail pages share
+ * one source of truth for "first/last day of month" math.
+ */
+export function resolvePeriodRange(opts: PeriodState): PeriodRange {
   if (opts.mode === 'range') {
     return { dateFrom: opts.dateFrom, dateTo: opts.dateTo };
   }
@@ -43,9 +46,9 @@ export function monthToRange(year: number, month: number): PeriodRange {
  *   - Switching TO month: nothing to re-derive (month mode reads month/year).
  */
 export function applyModeSwitch(
-  prev: { mode: PeriodMode; month: number; year: number; dateFrom: string; dateTo: string },
+  prev: PeriodState,
   nextMode: PeriodMode,
-): { mode: PeriodMode; month: number; year: number; dateFrom: string; dateTo: string } {
+): PeriodState {
   if (nextMode === prev.mode) return prev;
   if (nextMode === 'range') {
     const seeded = monthToRange(prev.year, prev.month);
@@ -55,7 +58,7 @@ export function applyModeSwitch(
 }
 
 /** Default initial state for a detail page's period filter (current month). */
-export function initialPeriodState() {
+export function initialPeriodState(): PeriodState {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1; // 1–12
@@ -80,7 +83,7 @@ export function initialPeriodState() {
  */
 export function periodFromLatestActivity(
   latestActivityDate: string | null | undefined,
-): { mode: PeriodMode; month: number; year: number; dateFrom: string; dateTo: string } | null {
+): PeriodState | null {
   if (!latestActivityDate || !/^\d{4}-\d{2}-\d{2}/.test(latestActivityDate)) return null;
   const [year, month] = latestActivityDate.split('-').map(Number);
   if (!year || !month || month < 1 || month > 12) return null;

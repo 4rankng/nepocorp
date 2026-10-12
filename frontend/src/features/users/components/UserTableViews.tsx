@@ -181,14 +181,14 @@ export function DesktopTable({
                     <button
                       type="button"
                       className="users-row-action users-row-action--danger"
-                      aria-label={`Xoá tài khoản ${u.fullName || u.username || `#${u.id}`}`}
+                      aria-label={`Xóa tài khoản ${u.fullName || u.username || `#${u.id}`}`}
                       disabled={!!deleting || isMe}
-                      title={isMe ? 'Không thể xoá tài khoản đang đăng nhập' : 'Xoá tài khoản'}
+                      title={isMe ? 'Không thể xóa tài khoản đang đăng nhập' : 'Xóa tài khoản'}
                       onClick={() => { if (!isMe) onDelete(u.id); }}
                       style={{ opacity: isMe ? 0.4 : 1 }}
                     >
                       {deleting === u.id ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
-                      <span>Xoá</span>
+                      <span>Xóa</span>
                     </button>
                   </td>
                   )}
@@ -308,7 +308,7 @@ export function MobileCardList({ filtered, canManage, canDelete, isAdminViewer =
                           <button role="menuitem" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', fontSize: 'var(--fs-control)', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--danger)', opacity: isMe ? 0.4 : 1 }}
                             disabled={!!deleting || isMe}
                             onClick={() => { setActiveMenuId(null); if (!isMe) onDelete(u.id); }}>
-                            {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xoá
+                            {deleting === u.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Xóa
                           </button>
                         )}
                       </div>

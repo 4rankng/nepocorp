@@ -166,15 +166,21 @@ export const qk = {
   /* ── Driver portal ──────────────────────────────────────────────────── */
 
   driver: {
-    trips: ['driver-trips'],
-    /** Paged/filtered driver trip list — page params are part of the key. */
-    tripsList: (params: unknown) => ['driver-trips', params] as const,
-    earnings: (month: number, year: number) =>
-      ['driver-earnings', month, year] as const,
-    penalties: (params: { dateFrom: string; dateTo: string } | undefined) =>
-      ['driver-penalties', params] as const,
+    /**
+     * Driver-portal payloads are derived from the logged-in account server-side,
+     * so the account id MUST be part of every key. An identity-blind key hashes
+     * together across accounts and can render the previous account's cache on
+     * open — a privacy-leak flash (kanban 101026004000).
+     */
+    /** Paged/filtered driver trip list — account + page params are part of the key. */
+    tripsList: (userId: number | null, params: unknown) =>
+      ['driver-trips', userId, params] as const,
+    earnings: (userId: number | null, month: number, year: number) =>
+      ['driver-earnings', userId, month, year] as const,
+    penalties: (userId: number | null, params: { dateFrom: string; dateTo: string } | undefined) =>
+      ['driver-penalties', userId, params] as const,
     /** N5 / B4: the driver's truck compliance/service reminders. */
-    vehicleAlerts: ['driver-vehicle-alerts'],
+    vehicleAlerts: (userId: number | null) => ['driver-vehicle-alerts', userId] as const,
   },
 
   /* ── Forwarder portal ──────────────────────────────────────────────── */
@@ -188,6 +194,8 @@ export const qk = {
     /** Broad prefix — matches all forwarder-trip-detail queries. */
     tripDetailAll: ['forwarder-trip-detail'] as const,
     suppliers: ['forwarder-suppliers'],
+    /** Assignable drivers for the trip's driver picker (kanban 101026005000). */
+    drivers: ['forwarder-drivers'],
     advanceRequests: (filters?: { status?: string; dateFrom?: string; dateTo?: string }) =>
       ['forwarder-advance-requests', filters] as const,
     eligibleAdvanceRequests: ['forwarder-advance-requests', 'eligible-for-settlement'] as const,
@@ -226,6 +234,8 @@ export const qk = {
 
   dashboard: {
     main: ['dashboard'],
+    /** Per-period KPI aggregates — never serve one month under another's label. */
+    stats: (month: number, year: number) => ['dashboard-stats', month, year] as const,
     pnl: (month: number, year: number) => ['pnl', month, year] as const,
     yearlyPnl: (year: number) => ['yearly-pnl', year] as const,
     renewalReminders: ['renewal-reminders'],

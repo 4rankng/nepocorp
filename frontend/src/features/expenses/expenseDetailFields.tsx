@@ -5,6 +5,8 @@
  * second copy of the form.
  */
 
+import { trailerCouplingSuffix } from '../../lib/trailerCoupling';
+
 interface VehicleOption { id: number; licensePlate: string; currentTrailerId?: number | null }
 
 /** Display-only thousands grouping for the amount input (vi-VN). */
@@ -97,9 +99,14 @@ export function ExpenseDetailFields({
                     onChange={e => onTruckIdChange(e.target.value ? Number(e.target.value) : '')}
                   >
                     <option value="">Chọn rơ-moóc…</option>
+                    {/* Rows carry the paired tractor, like every other trailer
+                        dropdown, so the right rơ-moóc can be chosen from the
+                        list itself (kanban 091026010130). */}
                     {trailers
                       .map(t => (
-                        <option key={t.id} value={t.id}>{t.licensePlate}</option>
+                        <option key={t.id} value={t.id}>
+                          {t.licensePlate}{trailerCouplingSuffix(trucks.find(tr => tr.currentTrailerId === t.id)?.licensePlate)}
+                        </option>
                       ))}
                   </select>
                   {errors.truckId && <p style={{ fontSize: 'var(--fs-body)', color: 'var(--danger)', marginTop: 4 }}>{errors.truckId}</p>}

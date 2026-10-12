@@ -11,6 +11,7 @@ type VehicleKind = "truck" | "trailer";
 type PositionManagerOpener = (onSelect?: (value: string) => void) => void;
 
 import { PositionPicker, SupplierPicker } from './tire-controls';
+import { trailerCouplingSuffix } from '../../lib/trailerCoupling';
 function occupiedPositionsOn(tires: Tire[], kind: VehicleKind, vehicleId: number): Set<string> { return new Set(tires.filter(t => t.status === 'IN_USE' && (kind === 'truck' ? t.truckId === vehicleId : t.trailerId === vehicleId) && t.position).map(t => t.position!)); }
 
 export function TireEditDialog({
@@ -312,7 +313,7 @@ export function TransferTireDialog({
 }: {
   tire: Tire;
   tires: Tire[];
-  vehicles: { id: number; kind: "truck" | "trailer"; label: string }[];
+  vehicles: { id: number; kind: "truck" | "trailer"; label: string; tractorPlate?: string | null }[];
   currentVehicleLabel: string;
   positionLabels: string[];
   saving: boolean;
@@ -383,7 +384,7 @@ export function TransferTireDialog({
                   .filter((v) => v.kind === "trailer")
                   .map((v) => (
                     <option key={`trailer-${v.id}`} value={`trailer:${v.id}`}>
-                      {v.label}
+                      {v.label}{trailerCouplingSuffix(v.tractorPlate)}
                     </option>
                   ))}
               </optgroup>

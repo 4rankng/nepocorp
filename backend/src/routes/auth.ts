@@ -106,9 +106,8 @@ router.post('/users', authMiddleware, casbinAuthz('users'), asyncHandler(async (
     throw new ApiError(403, 'Kế toán không thể tạo người dùng');
   }
   const data = createUserSchema.parse(req.body);
-  if (req.user?.role !== Role.ADMIN && data.role === Role.ADMIN) {
-    throw new ApiError(403, 'Chỉ quản trị viên mới có thể gán vai trò ADMIN');
-  }
+  // The "only ADMIN may grant ADMIN" rule is enforced in userService.createUser,
+  // next to the write itself (kanban 101026003220).
   const created = await userService.createUser({
     username: data.username,
     email: data.email,
@@ -120,7 +119,7 @@ router.post('/users', authMiddleware, casbinAuthz('users'), asyncHandler(async (
     baseSalary: data.baseSalary,
     socialInsurance: data.socialInsurance,
     assignedTruckId: data.assignedTruckId,
-  });
+  }, getUser(req).userId);
   res.status(201).json(created);
 }));
 
@@ -139,13 +138,12 @@ router.patch('/users/:id', authMiddleware, casbinAuthz('users'), asyncHandler(as
       socialInsurance: data.socialInsurance,
       assignedTruckId: data.assignedTruckId,
       requireDriverTarget: true,
-    });
+    }, getUser(req).userId);
     res.json(updated);
     return;
   }
-  if (req.user?.role !== Role.ADMIN && data.role === Role.ADMIN) {
-    throw new ApiError(403, 'Chỉ quản trị viên mới có thể gán vai trò ADMIN');
-  }
+  // The "only ADMIN may grant ADMIN" rule is enforced in userService.updateUser,
+  // next to the write itself (kanban 101026003220).
   const updated = await userService.updateUser(id, {
     role: data.role,
     status: data.status,
@@ -157,7 +155,7 @@ router.patch('/users/:id', authMiddleware, casbinAuthz('users'), asyncHandler(as
     baseSalary: data.baseSalary,
     socialInsurance: data.socialInsurance,
     assignedTruckId: data.assignedTruckId,
-  });
+  }, getUser(req).userId);
   res.json(updated);
 }));
 

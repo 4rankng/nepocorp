@@ -20,7 +20,7 @@ Module Quản trị hệ thống bao gồm 2 trang:
 | Vai trò | `/users` | `/audit-logs` |
 |--------|----------|---------------|
 | ADMIN (Quản trị) | Đầy đủ: xem, tạo, sửa, xoá | Xem đầy đủ |
-| MANAGER (Quản lý) | Chỉ xem (không CRUD) | Xem đầy đủ |
+| MANAGER (Quản lý) | Xem, tạo, sửa, xoá — **trừ gán vai trò ADMIN** (chỉ ADMIN mới gán được ADMIN; service từ chối 403) | Xem đầy đủ |
 | ACCOUNTANT (Kế toán) | Chỉ xem (không CRUD) | Xem đầy đủ |
 | DRIVER (Lái xe) | Không truy cập → redirect | Không truy cập → redirect |
 

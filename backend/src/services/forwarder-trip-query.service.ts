@@ -162,10 +162,9 @@ export async function getForwarderTripDetail(tripId: number, _forwarderId: numbe
     containerCount: s.trips.containerCount,
     cargoTypeName: s.cargoTypes.name,
     notes: s.trips.notes,
-    // Read-only assignment state: the forwarder portal never writes it (Casbin
-    // gives FORWARDER no `trips` resource), but the detail must say whether a
-    // driver is already assigned instead of rendering an unexplained blank
-    // (kanban 101026101510).
+    // Assignment state: the Giao nhận portal writes driver_id via its own
+    // /trips/:id/driver endpoint while the trip is CREATED (kanban 101026005000);
+    // the detail must reflect the stored driver after reload.
     driverId: s.trips.driverId,
     driverName: s.drivers.name,
   }).from(s.trips)

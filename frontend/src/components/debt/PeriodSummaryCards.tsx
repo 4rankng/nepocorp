@@ -1,5 +1,5 @@
 import type { PeriodSummary } from '@tingting/shared';
-import { formatCurrency } from '../../lib/format';
+import { formatCurrency, formatDate } from '../../lib/format';
 
 /**
  * Three-card summary row (Số dư đầu kỳ / Phát sinh trong kỳ / Số dư cuối kỳ)
@@ -57,7 +57,9 @@ export function PeriodSummaryCards({ summary, isLoading, entityType }: PeriodSum
         <div className="d-stat-title">Số dư đầu kỳ</div>
         <div className="d-stat-value">{formatCurrency(openingBalance)}</div>
         <div className="d-stat-desc">
-          {summary.dateFrom ? `Tính đến trước ${summary.dateFrom}` : 'Toàn bộ lịch sử'}
+          {/* vi-VN dates like every other date on the detail screens — the raw
+              ISO "2026-09-01" was the only yyyy-mm-dd in view (kanban 091026235520). */}
+          {summary.dateFrom ? `Tính đến trước ${formatDate(summary.dateFrom)}` : 'Toàn bộ lịch sử'}
         </div>
       </div>
 
@@ -75,7 +77,7 @@ export function PeriodSummaryCards({ summary, isLoading, entityType }: PeriodSum
         <div className="d-stat-title">Số dư cuối kỳ</div>
         <div className="d-stat-value">{formatCurrency(closingBalance)}</div>
         <div className="d-stat-desc">
-          {summary.dateTo ? `Đến ${summary.dateTo}` : 'Đến hiện tại'}
+          {summary.dateTo ? `Đến ${formatDate(summary.dateTo)}` : 'Đến hiện tại'}
         </div>
       </div>
     </div>

@@ -44,6 +44,16 @@ export const forwarderClient = {
     return api.get<{ items: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null }> }>(FORWARDER.SUPPLIERS);
   },
 
+  // Driver assignment from the Giao nhận portal (kanban 101026005000). The
+  // catalog bootstrap blanks `drivers` for portal roles, hence the own list.
+  listDrivers: async () => {
+    return api.get<{ items: Array<{ id: number; name: string; phone: string | null }> }>('/forwarder/me/drivers');
+  },
+
+  assignTripDriver: async (tripId: number, driverId: number) => {
+    return api.patch<{ id: number; driverId: number }>(`/forwarder/me/trips/${tripId}/driver`, { driverId });
+  },
+
   createContainer: async (tripId: number, data: { containerTypeId?: number; containerNumber: string; sealNumber?: string; notes?: string }) => {
     return api.post(FORWARDER.CONTAINERS(tripId), data);
   },

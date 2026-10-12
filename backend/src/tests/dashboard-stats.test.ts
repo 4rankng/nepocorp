@@ -3,9 +3,10 @@ import { after, test } from 'node:test';
 import { eq, inArray, isNull, sql } from 'drizzle-orm';
 import { client, db } from '../db';
 import * as s from '../db/schema';
-import { cacheInvalidate, disconnectRedis } from '../lib/redis';
+import { cacheInvalidatePattern, disconnectRedis } from '../lib/redis';
 import { TripStatus } from '@tingting/shared';
 import { getDashboardStats } from '../services/dashboard-stats.service';
+import { getPnlReport } from '../services/pnl.service';
 import { salaryPeriodDateRange } from '../services/reporting-shared';
 
 after(async () => {
@@ -26,9 +27,9 @@ test('dashboard sums real PostgreSQL fleet counts as numbers and excludes delete
   ]).returning({ id: s.trucks.id });
   t.after(async () => {
     await db.delete(s.trucks).where(inArray(s.trucks.id, trucks.map((truck) => truck.id)));
-    await cacheInvalidate('reports:dashboard');
+    await cacheInvalidatePattern('reports:dashboard:*');
   });
-  await cacheInvalidate('reports:dashboard');
+  await cacheInvalidatePattern('reports:dashboard:*');
 
   const stats = await getDashboardStats();
 
@@ -55,9 +56,9 @@ test('dashboard splits in-transit trips into own-truck and subcontracted counts'
     await db.delete(s.cargoTypes).where(eq(s.cargoTypes.id, cargo.id));
     await db.delete(s.routes).where(eq(s.routes.id, route.id));
     await db.delete(s.customers).where(eq(s.customers.id, customer.id));
-    await cacheInvalidate('reports:dashboard');
+    await cacheInvalidatePattern('reports:dashboard:*');
   });
-  await cacheInvalidate('reports:dashboard');
+  await cacheInvalidatePattern('reports:dashboard:*');
 
   const stats = await getDashboardStats();
 
@@ -73,7 +74,7 @@ test('dashboard splits in-transit trips into own-truck and subcontracted counts'
 
 test('dashboard financial warnings use subcontracted freight instead of company fuel and driver costs', async (t) => {
   const missingCount = async () => {
-    await cacheInvalidate('reports:dashboard');
+    await cacheInvalidatePattern('reports:dashboard:*');
     const stats = await getDashboardStats();
     const item = stats.decisionItems.find(item => item.id === 'missing-trip-financials');
     return item ? Number.parseInt(item.title, 10) : 0;
@@ -86,7 +87,7 @@ test('dashboard financial warnings use subcontracted freight instead of company 
     if (ids.cargo) await db.delete(s.cargoTypes).where(eq(s.cargoTypes.id, ids.cargo));
     if (ids.route) await db.delete(s.routes).where(eq(s.routes.id, ids.route));
     if (ids.customer) await db.delete(s.customers).where(eq(s.customers.id, ids.customer));
-    await cacheInvalidate('reports:dashboard');
+    await cacheInvalidatePattern('reports:dashboard:*');
   });
   const [customer] = await db.insert(s.customers).values({ name: `DASH financial customer ${suffix}` }).returning();
   ids.customer = customer.id;
@@ -114,4 +115,75 @@ test('dashboard financial warnings use subcontracted freight instead of company 
   assert.equal(await missingCount(), baseline + 2, 'the existing own-truck completeness checks remain active');
   await db.update(s.trips).set({ deletedAt: new Date() }).where(inArray(s.trips.id, ids.trips));
   assert.equal(await missingCount(), baseline, 'deleted trips do not contribute warnings');
+});
+
+test('dashboard KPIs are pinned to the requested period and reproduce the P&L report for it', async (t) => {
+  // kanban 101026003200: KPI values drifted between reloads with no data
+  // change. For a fixed dataset the dashboard aggregates must (a) cover exactly
+  // the requested (month, year) instead of the server clock's "now", (b)
+  // reproduce identically on every recompute, and (c) carry the same KPI
+  // figures /reports/pnl serves for that period, so the KPI row cannot render
+  // different numbers depending on which query landed first.
+  const bustReports = async () => {
+    await cacheInvalidatePattern('reports:dashboard:*');
+    await cacheInvalidatePattern('reports:pnl:*');
+  };
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const ids: { customer?: number; route?: number; cargo?: number; supplier?: number; category?: number; trips: number[]; expenses: number[] } = { trips: [], expenses: [] };
+  t.after(async () => {
+    if (ids.trips.length) await db.delete(s.trips).where(inArray(s.trips.id, ids.trips));
+    if (ids.expenses.length) await db.delete(s.expenses).where(inArray(s.expenses.id, ids.expenses));
+    if (ids.category) await db.delete(s.expenseCategories).where(eq(s.expenseCategories.id, ids.category));
+    if (ids.supplier) await db.delete(s.suppliers).where(eq(s.suppliers.id, ids.supplier));
+    if (ids.cargo) await db.delete(s.cargoTypes).where(eq(s.cargoTypes.id, ids.cargo));
+    if (ids.route) await db.delete(s.routes).where(eq(s.routes.id, ids.route));
+    if (ids.customer) await db.delete(s.customers).where(eq(s.customers.id, ids.customer));
+    await bustReports();
+  });
+
+  await bustReports();
+  const before = await getDashboardStats(3, 2026);
+
+  const [customer] = await db.insert(s.customers).values({ name: `DASH period customer ${suffix}` }).returning();
+  ids.customer = customer.id;
+  const [route] = await db.insert(s.routes).values({ name: `DASH period route ${suffix}` }).returning();
+  ids.route = route.id;
+  const [cargo] = await db.insert(s.cargoTypes).values({ name: `DASH period cargo ${suffix}` }).returning();
+  ids.cargo = cargo.id;
+  const [supplier] = await db.insert(s.suppliers).values({ name: `DASH period supplier ${suffix}` }).returning();
+  ids.supplier = supplier.id;
+  const [category] = await db.insert(s.expenseCategories).values({ name: `DASH period category ${suffix}` }).returning();
+  ids.category = category.id;
+
+  const { start } = await salaryPeriodDateRange(3, 2026);
+  const [trip] = await db.insert(s.trips).values({
+    tripCode: `DASH-PERIOD-${suffix}`.slice(0, 50),
+    customerId: customer.id, routeId: route.id, cargoTypeId: cargo.id,
+    departureDate: start, status: TripStatus.COMPLETED, carrierType: 'OWN',
+    revenue: '2000000', totalCost: '1200000',
+  }).returning({ id: s.trips.id });
+  ids.trips = [trip.id];
+  const [expense] = await db.insert(s.expenses).values({
+    expenseDate: start, supplierId: supplier.id, categoryId: category.id,
+    truckId: null, vehicleComponent: null, amount: '500000', paymentStatus: 'PAID',
+  }).returning({ id: s.expenses.id });
+  ids.expenses = [expense.id];
+
+  await bustReports();
+  const first = await getDashboardStats(3, 2026);
+  assert.equal(first.tripCount, before.tripCount + 1, 'the requested period must cover the seeded trip');
+
+  await bustReports();
+  const second = await getDashboardStats(3, 2026);
+  assert.deepEqual(second, first, 'a fixed dataset must reproduce identical figures on every recompute');
+
+  await bustReports();
+  const pnl = await getPnlReport(3, 2026);
+  assert.equal(first.revenue, pnl.totalRevenue);
+  assert.equal(first.costs, pnl.totalCosts);
+  assert.equal(first.grossProfit, pnl.grossProfit);
+  assert.equal(first.netProfit, pnl.netProfit);
+  assert.equal(first.otherIncome, pnl.otherIncome);
+  assert.equal(first.companyExpenses, pnl.companyExpenses);
+  assert.notEqual(first.netProfit, first.grossProfit, 'the seeded company expense must separate net from gross');
 });

@@ -845,3 +845,39 @@ export async function listActiveSuppliersForForwarder() {
     .from(s.suppliers)
     .where(and(isNull(s.suppliers.deletedAt), eq(s.suppliers.status, 'ACTIVE')));
 }
+
+/**
+ * Assignable drivers for the Giao nhận picker (kanban 101026005000). The
+ * catalog bootstrap blanks `drivers` for portal roles, so the portal needs its
+ * own trimmed list — id/name/phone only, same shape as the suppliers list.
+ */
+export async function listActiveDriversForForwarder() {
+  return db
+    .select({ id: s.drivers.id, name: s.drivers.name, phone: s.drivers.phone })
+    .from(s.drivers)
+    .where(and(isNull(s.drivers.deletedAt), eq(s.drivers.status, 'ACTIVE')));
+}
+
+/**
+ * Assign (or change) the trip's driver from the Giao nhận portal
+ * (kanban 101026005000). Same status gate as tripService.reassignTrip: only a
+ * trip that has not departed may change driver. Writes trips.driver_id so the
+ * assignment persists and is projected back by getForwarderTripDetail.
+ */
+export async function assignForwarderTripDriver(tripId: number, driverId: number) {
+  return await db.transaction(async (tx) => {
+    const [trip] = await tx.select({ id: s.trips.id, status: s.trips.status }).from(s.trips)
+      .where(and(eq(s.trips.id, tripId), isNull(s.trips.deletedAt))).limit(1);
+    if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
+    if (trip.status !== 'CREATED') throw new ApiError(409, 'Chỉ có thể gán lái xe cho chuyến chưa xuất phát');
+    const [driver] = await tx.select({ id: s.drivers.id }).from(s.drivers)
+      .where(and(eq(s.drivers.id, driverId), isNull(s.drivers.deletedAt), eq(s.drivers.status, 'ACTIVE'))).limit(1);
+    if (!driver) throw new ApiError(400, 'Lái xe không tồn tại hoặc đã ngừng hoạt động');
+    const [updated] = await tx.update(s.trips).set({
+      driverId,
+      version: sql`${s.trips.version} + 1`,
+      updatedAt: new Date(),
+    }).where(eq(s.trips.id, tripId)).returning({ id: s.trips.id, driverId: s.trips.driverId });
+    return updated;
+  });
+}

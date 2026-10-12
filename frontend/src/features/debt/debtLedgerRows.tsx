@@ -40,10 +40,10 @@ export function ReceivableLedgerRow({ row }: { row: LedgerEntry }) {
       </td>
       <td><span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span></td>
       <td className={`dd-num ${debit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
-        {debit > 0 ? money(debit) : '–'}
+        {debit > 0 ? money(debit) : '—'}
       </td>
       <td className={`dd-num ${credit > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
-        {credit > 0 ? money(credit) : '–'}
+        {credit > 0 ? money(credit) : '—'}
       </td>
       <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
         {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
@@ -82,11 +82,11 @@ export function ReceivableLedgerCard({ row }: { row: LedgerEntry }) {
       <dl className="dd-ledger-mobile-card__amounts">
         <div>
           <dt>Phải thu</dt>
-          <dd>{debit > 0 ? money(debit) : '–'}</dd>
+          <dd>{debit > 0 ? money(debit) : '—'}</dd>
         </div>
         <div>
           <dt>Đã thu</dt>
-          <dd className={credit > 0 ? 'text-success' : ''}>{credit > 0 ? money(credit) : '–'}</dd>
+          <dd className={credit > 0 ? 'text-success' : ''}>{credit > 0 ? money(credit) : '—'}</dd>
         </div>
         <div className="dd-ledger-mobile-card__balance">
           <dt>Số dư</dt>

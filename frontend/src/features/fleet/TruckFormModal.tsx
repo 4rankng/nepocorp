@@ -3,6 +3,7 @@ import { Save, X, Loader2 } from 'lucide-react';
 import { Modal } from '../../components/UI';
 import { TrailerType, TRAILER_TYPE_LABELS } from '@tingting/shared';
 import type { Truck as TruckType } from '@tingting/shared';
+import { trailerCouplingSuffix } from '../../lib/trailerCoupling';
 import { TRUCK_STATUS } from './constants';
 
 /**
@@ -106,7 +107,7 @@ export function TruckFormModal({ saving, item, trailers, trucks = [], onsave, on
                   return (
                     <option key={t.id} value={t.id}>
                       {t.licensePlate} ({TRAILER_TYPE_LABELS[t.type as TrailerType] || t.type})
-                      {owner ? ` — đang ghép ${owner}` : ' — trống'}
+                      {trailerCouplingSuffix(owner)}
                     </option>
                   );
                 })}

@@ -55,7 +55,7 @@ describe('create trip recovery', () => {
         state: { ...state, ...baseState, ...overrides },
         isEditMode: false, existingTrip: undefined, legs: legs ?? validLegs,
         hasOptionalData: true, photoUrls: [],
-        flushPendingPhotos: async () => [], flushPendingContainerPhotos: async () => new Map(),
+        flushPendingContainerPhotos: async () => new Map(),
       });
       return { ...submit, error: state.error };
     }, { initialProps: initial });

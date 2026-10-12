@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDate } from '../lib/format';
@@ -19,7 +19,7 @@ import './DebtDetailPage.css';
 import { money, FILTER_OPTIONS, type LedgerFilter, type WorkspaceTab } from './debtDetailLedger';
 import { normalizeAging, oldestAgingBucketIdx } from '../lib/aging';
 import { PeriodFilter } from '../components/debt/PeriodFilter';
-import { resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity } from '../components/debt/periodFilterRange';
+import { resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity, type PeriodState } from '../components/debt/periodFilterRange';
 import { buildStatementExportUrl, statementExportFilename } from '../lib/statementExport';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
 import { matchLinkedSupplierStatement } from './linked-supplier-statement';
@@ -50,16 +50,6 @@ export default function DebtDetailPage() {
   const billingCreatePath = `${detailPath}/billing/new`;
   const isCreatingBillingDocument = location.pathname === billingCreatePath;
 
-  // ── Period filter (ledger tab only) ──────────────────────────────────────
-  // Declared before useCustomerStatement because the resolved range feeds the
-  // statement query. Defaults to current month.
-  const [period, setPeriod] = useState(() => initialPeriodState());
-  const [appliedPeriod, setAppliedPeriod] = useState(period);
-  const appliedPeriodRange = useMemo(
-    () => resolvePeriodRange(appliedPeriod),
-    [appliedPeriod],
-  );
-
   // The customer profile is a current-state view. Keep it independent from
   // the period-scoped statement used by the ledger below.
   const {
@@ -67,27 +57,44 @@ export default function DebtDetailPage() {
     isLoading: isProfileLoading,
     error: profileQueryError,
   } = useCustomerStatement(id);
+
+  // ── Period filter (ledger tab only) ──────────────────────────────────────
+  // The filter opens on the month that actually carries ledger activity,
+  // resolved at render time from the profile's `latestActivityDate`. The old
+  // two-phase init rendered the current month first (fetching it too) and only
+  // then jumped the filter to the activity month, so every reload showed the
+  // period tabs reset to default before the jump and the ledger flash the
+  // default month's empty content before settling (kanban 091026235510).
+  const latestActivityDate = profileStatement?.latestActivityDate;
+  const fallbackPeriod = useMemo(() => initialPeriodState(), []);
+  const alignedPeriod = useMemo(
+    () => periodFromLatestActivity(latestActivityDate) ?? fallbackPeriod,
+    [latestActivityDate, fallbackPeriod],
+  );
+  // Draft (`period`) and applied (`appliedPeriod`) start derived from the
+  // aligned month; the first user interaction freezes both so a later profile
+  // refresh can never move a filter that is being edited. `appliedPeriodRange`
+  // feeds the period-scoped statement query below.
+  const [periodOverride, setPeriodOverride] = useState<PeriodState | null>(null);
+  const [appliedOverride, setAppliedOverride] = useState<PeriodState | null>(null);
+  const period = periodOverride ?? alignedPeriod;
+  const appliedPeriod = appliedOverride ?? alignedPeriod;
+  const appliedPeriodRange = useMemo(
+    () => resolvePeriodRange(appliedPeriod),
+    [appliedPeriod],
+  );
+  const touchPeriod = (next: PeriodState) => {
+    setAppliedOverride(prev => prev ?? appliedPeriod);
+    setPeriodOverride(next);
+  };
+
   const {
     data: statement,
     isFetching: isStatementFetching,
     refetch,
-  } = useCustomerStatement(id, appliedPeriodRange);
+  } = useCustomerStatement(id, appliedPeriodRange, { enabled: !!profileStatement });
   const error = profileQueryError ? (profileQueryError as Error).message : null;
   const { rootRef } = usePageAnimations({ ready: !isProfileLoading && !!profileStatement });
-
-  // Align the period filter to the month with actual ledger activity — once,
-  // on first profile load, and only while the user hasn't touched the filter.
-  const periodTouchedRef = useRef(false);
-  const latestActivityDate = profileStatement?.latestActivityDate;
-  useEffect(() => {
-    if (!latestActivityDate || periodTouchedRef.current) return;
-    const aligned = periodFromLatestActivity(latestActivityDate);
-    if (aligned) {
-      setPeriod(aligned);
-      setAppliedPeriod(aligned);
-    }
-  }, [latestActivityDate]);
-  const markPeriodTouched = () => { periodTouchedRef.current = true; };
 
   const handleBack = () => navigate(backPath);
   useBackShortcut(handleBack);
@@ -253,7 +260,8 @@ export default function DebtDetailPage() {
             <ArrowLeft size={20} />
           </button>
           <div className="dd-meta">
-            <h1>Sổ kế toán</h1>
+            {/* "Sổ kế toán" named nothing else on this screen (kanban 091026010110). */}
+            <h1>Chi tiết công nợ</h1>
           </div>
         </div>
         <div className="dd-summary">
@@ -264,12 +272,20 @@ export default function DebtDetailPage() {
   }
 
   const { customer, ledgerRows } = profileStatement;
+  // Before the first period statement lands the ledger must read as "loading",
+  // not as "Không có giao dịch" — the empty flash on every reload is what QA
+  // logged as the tab content flickering (kanban 091026235510). Same wording
+  // pattern as the linked AP ledger below.
+  const ledgerStatusMessage = statement ? 'Không có giao dịch' : 'Đang tải giao dịch…';
   const hasDebt = totalOutstanding > 0;
   const unpaidTrips = profileStatement.unpaidTrips ?? [];
   const oldestUnpaidTrip = unpaidTrips[0] ?? null;
   const activeAgingAmount = activeAgingIdx >= 0 ? agingAmounts[activeAgingIdx] : 0;
   const workspaceTabs: Array<{ key: WorkspaceTab; label: string; meta: string }> = [
-    { key: 'ledger', label: 'Chi tiết công nợ', meta: `${statement?.ledgerRows.length ?? 0} khoản phát sinh` },
+    // No "0 khoản phát sinh" before the statement exists — a tab claiming zero
+    // transactions and then jumping to the real count is the tab flicker QA
+    // logged (kanban 091026235510).
+    { key: 'ledger', label: 'Chi tiết công nợ', meta: statement ? `${statement.ledgerRows.length} khoản phát sinh` : 'Đang tải…' },
     { key: 'payments', label: 'Thanh toán', meta: hasDebt ? `${unpaidTrips.length} chuyến chưa thu` : 'Không còn nợ' },
     { key: 'statement', label: 'Bảng kê', meta: 'Lập chứng từ thanh toán' },
     { key: 'debit-note', label: 'Giấy báo nợ', meta: 'Nhắc nợ theo mẫu' },
@@ -510,20 +526,23 @@ export default function DebtDetailPage() {
               {/* Period filter + period summary (số dư đầu kỳ / phát sinh / cuối kỳ) */}
               <PeriodFilter
                 mode={period.mode}
-                onModeChange={(m) => { markPeriodTouched(); setPeriod(p => applyModeSwitch(p, m)); }}
+                onModeChange={(m) => touchPeriod(applyModeSwitch(period, m))}
                 month={period.month}
                 year={period.year}
-                onMonthYearChange={({ month, year }) => { markPeriodTouched(); setPeriod(p => ({ ...p, month, year })); }}
+                onMonthYearChange={({ month, year }) => touchPeriod({ ...period, month, year })}
                 dateFrom={period.dateFrom}
                 dateTo={period.dateTo}
-                onRangeChange={(next) => { markPeriodTouched(); setPeriod(p => ({ ...p, ...next })); }}
-                onApply={() => setAppliedPeriod(period)}
+                onRangeChange={(next) => touchPeriod({ ...period, ...next })}
+                onApply={() => setAppliedOverride(period)}
                 isApplying={isStatementFetching}
                 isApplyDisabled={!isPeriodDirty || isStatementFetching}
               />
               <PeriodSummaryCards
                 summary={statement?.periodSummary}
-                isLoading={isStatementFetching}
+                // Skeletons only before the first statement lands — on refetch
+                // the loaded summary stays put instead of flashing back to
+                // skeletons (kanban 091026010100).
+                isLoading={isStatementFetching && !statement}
                 entityType="CUSTOMER"
               />
 
@@ -533,7 +552,7 @@ export default function DebtDetailPage() {
                     <ReceivableLedgerCard key={row.id} row={row} />
                   ))}
                   {filteredRows.length === 0 && (
-                    <li className="dd-ledger-mobile-empty">Không có giao dịch</li>
+                    <li className="dd-ledger-mobile-empty">{ledgerStatusMessage}</li>
                   )}
                 </ul>
               ) : (
@@ -556,7 +575,7 @@ export default function DebtDetailPage() {
                       ))}
                       {filteredRows.length === 0 && (
                         <tr>
-                          <td colSpan={7} className="dd-table-empty">Không có giao dịch</td>
+                          <td colSpan={7} className="dd-table-empty">{ledgerStatusMessage}</td>
                         </tr>
                       )}
                     </tbody>

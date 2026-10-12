@@ -54,15 +54,15 @@ function LinkedSupplierPayableRow({ row }: { row: LedgerEntry }) {
       <td className="dd-reference"><strong>{reference}</strong></td>
       <td><span className={meta.pill}>{meta.label}</span></td>
       <td className={`dd-num ${payable > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
-        {payable > 0 ? money(payable) : '–'}
+        {payable > 0 ? money(payable) : '—'}
       </td>
       <td className={`dd-num ${paid > 0 ? 'dd-num--credit' : 'dd-num--dash'}`}>
-        {paid > 0 ? money(paid) : '–'}
+        {paid > 0 ? money(paid) : '—'}
       </td>
       <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
         {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
       </td>
-      <td className="dd-td-note">{row.note || '–'}</td>
+      <td className="dd-td-note">{row.note || '—'}</td>
     </tr>
   );
 }
@@ -83,11 +83,11 @@ function LinkedSupplierPayableCard({ row }: { row: LedgerEntry }) {
       <dl className="dd-ledger-mobile-card__amounts">
         <div>
           <dt>Phải trả</dt>
-          <dd>{payable > 0 ? money(payable) : '–'}</dd>
+          <dd>{payable > 0 ? money(payable) : '—'}</dd>
         </div>
         <div>
           <dt>Đã trả</dt>
-          <dd className={paid > 0 ? 'text-success' : ''}>{paid > 0 ? money(paid) : '–'}</dd>
+          <dd className={paid > 0 ? 'text-success' : ''}>{paid > 0 ? money(paid) : '—'}</dd>
         </div>
         <div className="dd-ledger-mobile-card__balance">
           <dt>Số dư</dt>

@@ -1,7 +1,7 @@
 import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { useState, useRef, useEffect } from 'react';
 import { Truck, Calendar, ArrowRight, Loader2, Package, Search } from 'lucide-react';
-import { formatDate } from '../lib/format';
+import { formatDatePadded } from '../lib/format';
 import { TripStatus, TRIP_STATUS_LABELS, TRIP_STATUS_COLORS } from '@tingting/shared';
 import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
@@ -141,7 +141,7 @@ export default function ForwarderTripsPage() {
 
       {/* ── Search + date-range filter (N4) ── */}
       <p className="fwd-trips-note">
-        Cổng Giao nhận theo dõi chuyến và nhập chi phí — chuyến đi do <strong>Quản lý điều vận</strong> tạo và phân công lái xe.
+        Cổng Giao nhận theo dõi chuyến, phân công lái xe và nhập chi phí — chuyến đi do <strong>Quản lý điều vận</strong> tạo.
       </p>
       <div className="fwd-trip-filters">
         <div className="fwd-trip-filters__search">
@@ -259,7 +259,7 @@ export default function ForwarderTripsPage() {
                   )}
                   <span className="driver-trip-card__meta-item">
                     <Calendar size={12} />
-                    {formatDate(trip.departureDate)}
+                    {formatDatePadded(trip.departureDate)}
                   </span>
                   {trip.customerName && (
                     <span className="driver-trip-card__meta-item">

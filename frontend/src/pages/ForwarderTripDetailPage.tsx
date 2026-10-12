@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, Calendar, MapPin, Package, Plus, CheckCircle2, RotateCcw, User, Info } from 'lucide-react';
-import { formatDate } from '../lib/format';
+import { formatDatePadded } from '../lib/format';
 import { api } from '../lib/api';
 import { ExpenseEntryStatus, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import { TRIP_STATUS_LABELS, type TripStatus } from '@tingting/shared';
@@ -12,7 +12,7 @@ import { qk } from '../api/keys';
 import { useForwarderTripDetail, useCreateForwarderContainer, useCreateForwarderExpense, useDeleteForwarderExpense } from '../hooks/useQueries';
 import { useUpdateForwarderExpense, useSetForwarderExpenseCompletion } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { forwarderClient } from '../api/forwarderClient';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
@@ -51,6 +51,23 @@ export default function ForwarderTripDetailPage() {
     staleTime: 5 * 60 * 1000,
   });
   const supplierOptions = suppliersResp?.items ?? [];
+
+  // Driver assignment (kanban 101026005000): the Giao nhận portal assigns the
+  // driver itself for trips that have not departed. The picker needs its own
+  // forwarder-scoped driver list — the catalog bootstrap blanks `drivers` for
+  // portal roles.
+  const { data: driversResp } = useQuery({
+    queryKey: qk.forwarder.drivers,
+    queryFn: () => forwarderClient.listDrivers(),
+    staleTime: 5 * 60 * 1000,
+    enabled: trip?.status === 'CREATED',
+  });
+  const driverOptions = driversResp?.items ?? [];
+  const queryClient = useQueryClient();
+  const [showDriverPicker, setShowDriverPicker] = useState(false);
+  const [selectedDriverId, setSelectedDriverId] = useState('');
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState(false);
 
   const [showContainerForm, setShowContainerForm] = useState(false);
   const [containerForm, setContainerForm] = useState({ containerNumber: '', sealNumber: '', notes: '' });
@@ -123,6 +140,31 @@ export default function ForwarderTripDetailPage() {
       },
       { onSuccess: () => { setContainerForm({ containerNumber: '', sealNumber: '', notes: '' }); setShowContainerForm(false); } },
     );
+  };
+
+  const openDriverPicker = () => {
+    setSelectedDriverId(trip.driverId ? String(trip.driverId) : '');
+    setAssignError(null);
+    setShowDriverPicker(true);
+  };
+
+  const handleAssignDriver = async () => {
+    const driverId = parseInt(selectedDriverId, 10);
+    if (!driverId) { setAssignError('Cần chọn lái xe'); return; }
+    setAssigning(true);
+    setAssignError(null);
+    try {
+      await forwarderClient.assignTripDriver(tripId, driverId);
+      // Reload the detail so the persisted assignment is what a fresh page load
+      // would show (kanban 101026005000).
+      await queryClient.invalidateQueries({ queryKey: qk.forwarder.tripDetail(tripId) });
+      setShowDriverPicker(false);
+      setSelectedDriverId('');
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : 'Không thể gán lái xe');
+    } finally {
+      setAssigning(false);
+    }
   };
 
   const handleExpenseTypeChange = (newType: string) => {
@@ -297,22 +339,21 @@ export default function ForwarderTripDetailPage() {
         </div>
       </div>
 
-      {/* Assignment ownership — the portal is read-only for truck/driver, so an
-          unassigned trip must explain where the control actually lives instead
-          of looking like a broken page (kanban 101026101510). */}
-      {!trip.driverName && (
+      {/* Assignment (kanban 101026005000): the portal assigns the driver itself
+          while the trip is CREATED. Once departed the change stays with Quản lý
+          (trang sửa chuyến), so say so instead of a dead "Chưa phân công". */}
+      {!trip.driverName && trip.status !== 'CREATED' && (
         <div className="fwd-assign-note" role="note">
           <span className="fwd-assign-note__icon" aria-hidden="true"><Info size={16} /></span>
           <p className="fwd-assign-note__text">
-            Chuyến chưa được phân công lái xe. Việc gán hoặc đổi lái xe do <strong>Quản lý điều vận</strong> thực hiện
-            ở màn hình <strong>Phân xe</strong> hoặc trang sửa chuyến — cổng Giao nhận chỉ theo dõi chuyến và nhập chi phí.
+            Chuyến đã xuất phát mà chưa phân công lái xe — việc gán hoặc đổi lái xe do <strong>Quản lý điều vận</strong> thực hiện ở trang sửa chuyến.
           </p>
         </div>
       )}
 
       {/* Trip Info Card */}
       <div className="panel" style={{ marginBottom: 16 }}>
-        <div style={{ padding: '4px 20px 4px', borderBottom: '1px solid var(--border-1)' }}>
+        <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border-1)' }}>
           <span style={{ fontSize: 'var(--fs-section)', lineHeight: 1.35, fontWeight: 600, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Thông tin chuyến
           </span>
@@ -329,14 +370,52 @@ export default function ForwarderTripDetailPage() {
             <span className="info-row__icon"><User size={16} /></span>
             <div className="info-row__body">
               <div className="info-row__label">Lái xe</div>
-              <div className="info-row__value">{trip.driverName || <span className="fwd-assign-note__unassigned">Chưa phân công</span>}</div>
+              <div className="info-row__value">
+                {trip.driverName || <span className="fwd-assign-note__unassigned">Chưa phân công</span>}
+                {trip.status === 'CREATED' && !showDriverPicker && (
+                  <button type="button" className="btn btn--secondary btn--sm fwd-assign-btn" onClick={openDriverPicker}>
+                    {trip.driverName ? 'Đổi lái xe' : 'Gán lái xe'}
+                  </button>
+                )}
+              </div>
+              {showDriverPicker && (
+                <div className="fwd-driver-picker">
+                  <select
+                    className="input fwd-driver-picker__select"
+                    aria-label="Chọn lái xe"
+                    value={selectedDriverId}
+                    onChange={e => setSelectedDriverId(e.target.value)}
+                    disabled={assigning}
+                  >
+                    <option value="">-- Chọn lái xe --</option>
+                    {driverOptions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn--primary btn--sm"
+                    onClick={handleAssignDriver}
+                    disabled={assigning || !selectedDriverId}
+                  >
+                    {assigning ? 'Đang lưu…' : 'Lưu'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => setShowDriverPicker(false)}
+                    disabled={assigning}
+                  >
+                    Hủy
+                  </button>
+                  {assignError && <p className="fwd-driver-picker__error" role="alert">{assignError}</p>}
+                </div>
+              )}
             </div>
           </div>
           <div className="info-row">
             <span className="info-row__icon"><Calendar size={16} /></span>
             <div className="info-row__body">
               <div className="info-row__label">Ngày khởi hành</div>
-              <div className="info-row__value">{formatDate(trip.departureDate)}</div>
+              <div className="info-row__value">{formatDatePadded(trip.departureDate)}</div>
             </div>
           </div>
           {trip.cargoTypeName && (

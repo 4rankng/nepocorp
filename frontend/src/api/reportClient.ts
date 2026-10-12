@@ -9,8 +9,10 @@ export interface ExtendedDashboardStats extends DashboardStats {
 }
 
 export const reportClient = {
-  getDashboard: async () => {
-    return api.get<ExtendedDashboardStats>(REPORTS.DASHBOARD);
+  getDashboard: async (month: number, year: number) => {
+    // Period-scoped: the KPI row must always read the month it displays
+    // (kanban 101026003200).
+    return api.get<ExtendedDashboardStats>(`${REPORTS.DASHBOARD}${toQuery({ month, year })}`);
   },
 
   getPnl: async (month: number, year: number) => {

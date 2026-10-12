@@ -68,12 +68,15 @@ export default function DriverTripsPage() {
   const { rootRef: listRef } = useListAnimations({ itemSelector: '.driver-trip-card', mode: 'cards', deps: [listKey] });
 
   if (loading && trips.length === 0) return (
-    <Panel>
-      <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>
-        <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
-        <p style={{ marginTop: 8 }}>Đang tải danh sách lệnh…</p>
-      </div>
-    </Panel>
+    <div>
+      <PageHeader title="Hành trình" description="Danh sách lệnh vận chuyển đã nhận" />
+      <Panel>
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)' }}>
+          <Loader2 size={20} className="spin" style={{ display: 'inline-block' }} />
+          <p style={{ marginTop: 8 }}>Đang tải danh sách lệnh…</p>
+        </div>
+      </Panel>
+    </div>
   );
 
   if (error) return (
@@ -94,7 +97,7 @@ export default function DriverTripsPage() {
     <div>
       <PageHeader title="Hành trình" description="Danh sách lệnh vận chuyển đã nhận" />
       <div className="empty-state">
-        <img src={resolveEmptyIllustration('empty-trips')} alt="No trips" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        <img src={resolveEmptyIllustration('empty-trips')} alt="" aria-hidden="true" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         <h3 className="empty-state-title">Chưa có lệnh vận chuyển nào</h3>
         <p className="empty-state-desc">
           Bạn chưa được phân công lệnh vận chuyển nào. Khi có chuyến đi mới, thông tin chi tiết sẽ xuất hiện tại đây.

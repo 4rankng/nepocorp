@@ -38,6 +38,24 @@ export const userClient = {
     return api.get<UserRow>(AUTH.USER(id));
   },
 
+  /**
+   * The full filtered set for the Excel export. The list endpoint caps `limit`
+   * at 100 (parsePagination) and the on-screen total is only a render snapshot
+   * that moves across refetches, so page through the server's own count instead
+   * of trusting either (kanban 101026003230).
+   */
+  getUsersAll: async (params?: Omit<UsersPageParams, 'page' | 'limit'>) => {
+    const items: UserRow[] = [];
+    let total = 0;
+    for (let page = 1; ; page++) {
+      const res = await api.get<UsersPage>(`${AUTH.USERS}${toQuery({ ...params, page, limit: 100 })}`);
+      total = res.total;
+      items.push(...res.items);
+      if (res.items.length === 0 || items.length >= total) break;
+    }
+    return { items, total };
+  },
+
   createUser: async (data: unknown) => {
     return api.post<UserRow>(AUTH.USERS, data);
   },

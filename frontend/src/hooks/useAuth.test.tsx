@@ -73,7 +73,7 @@ describe('account session cache isolation', () => {
   it('cancels old in-flight data so it cannot repopulate the next session', async () => {
     const { result } = setup();
     let resolveOld!: (value: string[]) => void;
-    const earningsKey = qk.driver.earnings(1, 2025);
+    const earningsKey = qk.driver.earnings(1, 1, 2025);
     const oldRequest = client.fetchQuery({
       queryKey: earningsKey,
       queryFn: () => new Promise<string[]>((resolve) => { resolveOld = resolve; }),
