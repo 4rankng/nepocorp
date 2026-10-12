@@ -30,6 +30,21 @@
   gap: 8px;
 }
 
+/* ── Warning banner — same slot as the error banner but non-blocking
+   (e.g. fuel drawn without a supplier: completable, kế toán chốt số sau) ── */
+.tdp-warn-banner {
+  padding: 10px 14px;
+  background: var(--warning-soft, #FFF4E0);
+  color: var(--warning-text);
+  border-radius: var(--radius-md, 10px);
+  font-size: var(--fs-sm);
+  margin-bottom: 16px;
+  border: 1px solid color-mix(in srgb, var(--warning) 25%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ── Notes card (replaces inline <section class="card">) ── */
 .tdp-notes-card {
   background: var(--surface);

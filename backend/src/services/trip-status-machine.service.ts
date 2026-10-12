@@ -153,26 +153,16 @@ export async function transitionTripStatus(
         );
       }
 
-      // Fuel without a supplier posts NOTHING to any payable ledger:
-      // LedgerService falls back to `trip.totalFuelCost` keyed on
-      // `trip.fuelSupplierId`, and a null id means the cost is silently
-      // dropped. TRP-202609-0048 slipped through on 18/09 with 152 lít and
-      // 4.550.880đ of fuel that reached no bảng kê at all.
-      //
-      // A trip that has an allocation row is exempt: a CASH allocation
-      // legitimately carries supplierId = NULL (enforced by a schema CHECK)
-      // and must not be forced into a credit purchase.
-      const [fuelAllocationCount] = await tx.select({ n: sql<number>`count(*)::int` })
-        .from(s.tripFuelAllocations)
-        .where(eq(s.tripFuelAllocations.tripId, trip.id));
-      const hasFuel = Number(trip.fuelLiters ?? 0) > 0 || Number(trip.fuelLitersOverride ?? 0) > 0;
-      if (hasFuel && !trip.fuelSupplierId && (fuelAllocationCount?.n ?? 0) === 0) {
-        throw new ApiError(
-          422,
-          'Chuyến đi có số lít dầu nhưng chưa gán nhà cung cấp, nên chi phí nhiên liệu sẽ không được ghi vào công nợ. '
-          + 'Vui lòng chọn nhà cung cấp hoặc ghi nhận số dầu mua bằng tiền mặt trước khi hoàn thành chuyến.',
-        );
-      }
+      // Fuel without a supplier posts NOTHING to any payable ledger
+      // (LedgerService keys the fallback on `trip.fuelSupplierId`, and a null
+      // id drops the cost), but completion MUST stay permissive about it: xe
+      // nhà has to reach "Hoàn thành" before the truck can be dispatched
+      // again, while kế toán only chốt số the next day (kanban 121026194100).
+      // The dropped cost stays visible on the supplier fuel statement
+      // ("chuyến lấy dầu nhưng chưa gán NCC") — gán NCC rồi chốt lại chuyến
+      // posts it. The trip detail page shows a non-blocking warning instead of
+      // the former 422. Xe ngoài never carries a fuel supplier at all (the
+      // figures schema rejects one), so nothing is ever required here.
       // B2: completion is permissive — a trip may be marked "Hoàn thành"
       // without photos, and photo evidence (CONTAINER/SEAL) can be added or
       // edited afterwards ("allow to complete, user can edit later"). The

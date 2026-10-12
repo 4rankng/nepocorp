@@ -317,8 +317,9 @@ test('E2E — Trip dispatch lifecycle (Create, Reassign, Pre-departure, Dispatch
       cargoTypeId,
       containerTypeId,
       departureDate: '2026-06-10',
-      // AUTO fuel mode always books fuel, and a trip with fuel but no supplier
-      // is refused at completion (the cost would post to no payable ledger).
+      // AUTO fuel mode always books fuel; naming the supplier up front keeps
+      // the cost on the payable ledger from the first completion (an
+      // unassigned cost only lands after gán NCC + chốt lại — kanban 121026194100).
       fuelSupplierId,
       notes: 'Comprehensive E2E test trip'
     })

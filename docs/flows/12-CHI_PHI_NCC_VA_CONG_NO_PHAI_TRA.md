@@ -159,7 +159,7 @@ Khi file bảng kê của NCC (ví dụ `Tha_ng_9.xls`) **không có dòng tổn
    - **Tổng theo NGÀY GHI SỔ** — gom theo ngày hạch toán, khớp với sổ kế toán của NEPO.
    - **Chênh lệch** = phần dầu lấy tháng này nhưng ghi sổ tháng sau. Đây là lý do hai tổng không bằng nhau và là câu trả lời cho câu hỏi "đối chiếu theo mốc nào".
 3. Bảng chi tiết bên dưới gom theo **ngày chuyến**; cột **NGÀY GHI SỔ** cho biết chuyến nào đã ghi sổ sang tháng khác.
-4. Mục **"chuyến lấy dầu nhưng chưa gán NCC"** liệt kê các chuyến có số lít dầu nhưng không gắn nhà cung cấp nhiên liệu — các chuyến này **không vào bảng kê và không vào công nợ** (bút toán nhiên liệu dựa trên `fuel_supplier_id`). Xử lý: gán NCC nhiên liệu cho chuyến rồi chốt lại.
+4. Mục **"chuyến lấy dầu nhưng chưa gán NCC"** liệt kê các chuyến có số lít dầu nhưng không gắn nhà cung cấp nhiên liệu — các chuyến này **không vào bảng kê và không vào công nợ** (bút toán nhiên liệu dựa trên `fuel_supplier_id`). Xử lý: gán NCC nhiên liệu cho chuyến rồi chốt lại. Hoàn thành chuyến **không bị chặn** khi thiếu NCC nhiên liệu (kanban 121026194100) — trang chi tiết chuyến chỉ cảnh báo; **xe ngoài** không có chi phí nhiên liệu của công ty nên không bao giờ cần gán NCC.
 
 > Nếu số dư đầu kỳ trên màn `/payables/:id` khác file NCC: kiểm tra bảng kê đang tổng hợp theo mốc nào (mục 2) và xác nhận với kế toán con số của họ tính theo ngày chuyến hay ngày ghi sổ.
 

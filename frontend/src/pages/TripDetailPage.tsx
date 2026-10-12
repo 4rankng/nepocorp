@@ -14,7 +14,7 @@ import { TripStatus } from '@tingting/shared';
 
 // Feature: logic (.ts) + UI (.tsx)
 import { createTripEditReturnState, readTripListReturnState } from '../features/trips';
-import { useTripDetailPage } from '../features/trip-detail';
+import { useTripDetailPage, fuelSupplierCompletionWarning } from '../features/trip-detail';
 import {
   TripHeader, KpiStrip, BasicInfoCard, ContainersCard, FinancialCard,
   FuelCard, ServiceCostsCard, JourneyCard,
@@ -77,6 +77,9 @@ export default function TripDetailPage() {
   const { trip, derived, permissions, ui, fuelPriceConfig, adjustments } = page;
   const liveVehicle = liveFleet?.vehicles.find((v) => v.tripId === trip.id) ?? null;
   const displayError = ui.actionError || page.error;
+  // Warning only — completion is never blocked on an unassigned fuel supplier
+  // (kanban 121026194100): xe nhà finishes the trip, kế toán chốt số sau.
+  const fuelSupplierWarning = fuelSupplierCompletionWarning(trip);
 
   /* ── Main render ───────────────────────────────────────────────────── */
   return (
@@ -122,6 +125,12 @@ export default function TripDetailPage() {
       {displayError && (
         <div className="tdp-error-banner">
           {displayError}
+        </div>
+      )}
+
+      {fuelSupplierWarning && (
+        <div className="tdp-warn-banner">
+          {fuelSupplierWarning}
         </div>
       )}
 
