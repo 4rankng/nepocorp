@@ -982,9 +982,17 @@ export const tripContainerPatchSchema = z.object({
 // carry a full seals[] list, reconciled the same way by id. sealNumber
 // (scalar) is kept for back-compat — when seals[] is absent, backend writes
 // the scalar value as the container's first seal row.
+//
+// `clientKey` is the client's stable row identity (the editor's `_key`). It is
+// NEVER persisted — the backend echoes it on the matching returned item so the
+// caller can map its pre-save rows to the saved rows exactly. Matching rows to
+// saved containers by content/position (number, list index) misattributed
+// photos to the wrong container when rows were blank/reordered; the echoed key
+// makes that binding exact (prod trip TRP-202610-0029).
 export const tripContainerBatchSchema = z.object({
   containers: z.array(z.object({
     id: z.coerce.number().int().positive().optional(),
+    clientKey: z.string().min(1).max(64).optional(),
     containerTypeId: z.coerce.number().int().positive().optional().nullable(),
     containerNumber: z.string().max(50, 'Số container không được quá 50 ký tự').optional().nullable().transform(v => (v === '' ? null : v)),
     sealNumber: z.string().optional().nullable().transform(v => (v === '' ? null : v)),

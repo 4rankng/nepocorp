@@ -46,16 +46,20 @@ const configSchema = z.object({
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   googleMapsApiKey: z.string().default(''),
   geminiApiKey: z.string().default(''),
-  // OpenRouter (OpenAI-compatible) — primary OCR provider (Qwen3-VL). Optional;
-  // when the key is set, container/seal OCR tries OpenRouter first and falls
-  // back to Gemini on any error. Gated by key presence — no enable flag, per
+  // OpenRouter (OpenAI-compatible) — OCR provider transport. Optional; when
+  // the key is set, container/seal OCR tries OpenRouter first and falls back
+  // to Gemini on any error. Gated by key presence — no enable flag, per
   // the project's no-feature-flags stance (see ocr-openrouter-qwen-migration.md).
-  // ONLY the key is env-driven. The base URL (https://openrouter.ai/api/v1) and
-  // model (qwen/qwen3-vl-32b-instruct) are hardcoded constants in
-  // services/ocr.service.ts (OPENROUTER_BASE_URL / OPENROUTER_MODEL) — change
-  // them in code, not here.
+  // The base URL (https://openrouter.ai/api/v1) is a hardcoded constant in
+  // services/ocr.service.ts; the model is `ocrModel` below.
   openrouterApiKey: z.string().default(''),
-  // Bách Khoa GPS provider (dvbk.vn) — live vehicle positions. Optional; the
+  // OCR vision model, called through the OpenRouter transport above. Default
+  // is Anthropic Claude Haiku 5.5 (`anthropic/claude-haiku-5.5`, verified
+  // against the OpenRouter model list) — the best number-recognition model we
+  // have measured on container/seal photos. Env-overridable (OCR_MODEL) so a
+  // model swap is a config change, not a code change.
+  ocrModel: z.string().default('anthropic/claude-haiku-5.5'),
+  // Bách Khoa GPS provider (dvbk.vn) — live vehicle positions. Optional; when
   // live-fleet endpoint degrades to an empty result when these are unset.
   // HTTPS base avoids sending credentials over plaintext (host redirects HTTP→HTTPS).
   bachKhoaApiUrl: z.string().url().default('https://dvbk.vn/BachKhoaAPI/'),
@@ -135,6 +139,7 @@ const raw = {
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
   geminiApiKey: process.env.GEMINI_API_KEY,
   openrouterApiKey: process.env.OPENROUTER_API_KEY,
+  ocrModel: process.env.OCR_MODEL,
   bachKhoaApiUrl: process.env.BACH_KHOA_API_URL,
   bachKhoaUsername: process.env.BACH_KHOA_USERNAME,
   bachKhoaPassword: process.env.BACH_KHOA_PASSWORD,
@@ -172,6 +177,7 @@ const withDefaults = {
   googleMapsApiKey: raw.googleMapsApiKey || '',
   geminiApiKey: raw.geminiApiKey || '',
   openrouterApiKey: raw.openrouterApiKey || '',
+  ocrModel: raw.ocrModel || 'anthropic/claude-haiku-5.5',
   bachKhoaApiUrl: raw.bachKhoaApiUrl || 'https://dvbk.vn/BachKhoaAPI/',
   bachKhoaUsername: raw.bachKhoaUsername || '',
   bachKhoaPassword: raw.bachKhoaPassword || '',
@@ -222,6 +228,7 @@ export const config = result.success ? result.data : configSchema.parse({
   googleMapsApiKey: '',
   geminiApiKey: '',
   openrouterApiKey: '',
+  ocrModel: 'anthropic/claude-haiku-5.5',
   bachKhoaApiUrl: 'https://dvbk.vn/BachKhoaAPI/',
   bachKhoaUsername: '',
   bachKhoaPassword: '',

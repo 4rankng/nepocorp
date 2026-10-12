@@ -283,6 +283,11 @@ export async function batchUpsertTripContainers(
   userId: number | null,
   containers: Array<{
     id?: number;
+    /** Client's stable row identity — echoed on the returned item, never
+     *  persisted. Lets the caller bind pre-save rows (and their buffered
+     *  photos) to the saved containers exactly, instead of matching by
+     *  content/position (which misattributed photos across containers). */
+    clientKey?: string | null;
     containerTypeId?: number | null;
     containerNumber?: string | null;
     sealNumber?: string | null;
@@ -309,6 +314,7 @@ export async function batchUpsertTripContainers(
     }
 
     const upsertedContainerIds: number[] = [];
+    const clientKeyByContainerId = new Map<number, string>();
     for (const c of containers) {
       // `containerTypeId` is optional in the batch schema: absent = keep the stored
       // type (editing a container's number/seal must not drop it), explicit null =
@@ -343,6 +349,7 @@ export async function batchUpsertTripContainers(
         }).returning({ id: s.tripContainers.id });
         containerId = inserted.id;
       }
+      if (c.clientKey) clientKeyByContainerId.set(containerId, c.clientKey);
       upsertedContainerIds.push(containerId);
     }
 
@@ -425,6 +432,14 @@ export async function batchUpsertTripContainers(
       }
     }
 
-    return listTripContainers(tripId, tx);
+    // Echo the caller's clientKey on each item it sent so the client can map
+    // its pre-save rows to the saved containers exactly (stable identity —
+    // never content/position matching). Items for rows the caller did not send
+    // (e.g. a concurrently-added container) come back with clientKey: null.
+    const rows = await listTripContainers(tripId, tx);
+    return rows.map(r => ({
+      ...r,
+      clientKey: clientKeyByContainerId.get(r.id) ?? null,
+    }));
   });
 }

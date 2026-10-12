@@ -1,12 +1,14 @@
 /**
- * OCR OpenRouter (Qwen3-VL) migration — provider ordering, failover, and the
- * OpenRouter-specific parsing edge cases (<think> stripping, parts-array
- * content, HTTP error handling). Run with the project's tsx --test runner.
+ * OCR OpenRouter transport (Anthropic Claude Haiku 5.5) — provider ordering,
+ * failover, the model/prompt contract, and the OpenRouter-specific parsing
+ * edge cases (`think` stripping, parts-array content, HTTP error handling).
+ * Run with the project's tsx --test runner.
  *
  * globalThis.fetch is mocked per-test and routed by URL so we can prove:
  *   - OpenRouter is tried FIRST and, on success, Gemini is never called.
  *   - an OpenRouter failure (HTTP 429) transparently fails over to Gemini.
- *   - <think> reasoning and parts-array `content` are normalized before parsing.
+ *   - the vision call targets Claude Haiku 5.5 with the type-specific prompt.
+ *   - `think` reasoning and parts-array `content` are normalized before parsing.
  *
  * Note: no before/after hooks — this Node/tsx ESM surface doesn't expose
  * `afterAll`. Config keys are pinned at module top-level (each test file runs
@@ -47,10 +49,10 @@ function res(body: unknown, status = 200): Response {
   } as Response;
 }
 
-const orBody = (content: unknown) => ({ choices: [{ message: { content } }], model: 'qwen/qwen3-vl-32b-instruct' });
+const orBody = (content: unknown) => ({ choices: [{ message: { content } }], model: 'anthropic/claude-haiku-5.5' });
 const geminiBody = (text: string) => ({ candidates: [{ content: { parts: [{ text }] } }] });
 
-describe('OCR: OpenRouter (Qwen3-VL) migration', () => {
+describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
   test('callOpenRouterVision: success → provider=openrouter + parsed JSON text', async () => {
     const urls: string[] = [];
     globalThis.fetch = (async (url: string | URL | Request) => {
@@ -61,7 +63,7 @@ describe('OCR: OpenRouter (Qwen3-VL) migration', () => {
       const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg');
       assert.equal(r.success, true);
       assert.equal(r.provider, 'openrouter');
-      assert.equal(r.model, 'qwen/qwen3-vl-32b-instruct');
+      assert.equal(r.model, 'anthropic/claude-haiku-5.5');
       assert.deepEqual(JSON.parse(r.text!), { container_numbers: [VALID_CONTAINER] });
     } finally {
       globalThis.fetch = originalFetch;
@@ -216,6 +218,72 @@ describe('OCR: OpenRouter (Qwen3-VL) migration', () => {
     } finally {
       config.openrouterApiKey = savedOr;
       config.geminiApiKey = savedG;
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+// The extraction contract: WHICH model answers and WHAT it is asked. The
+// previous Qwen3-VL slug stopped recognizing numbers on container/seal photos;
+// the calls must target Claude Haiku 5.5 with the type-specific prompts below,
+// or extraction silently regresses again.
+describe('OCR: Haiku 5.5 model + prompt contract', () => {
+  interface CapturedRequest { model?: string; messages?: Array<{ content?: Array<{ type: string; text?: string; image_url?: { url: string } }> }> }
+  const capture = () => {
+    const captured: CapturedRequest[] = [];
+    globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+      captured.push(JSON.parse(String(init?.body)) as CapturedRequest);
+      return res(orBody(JSON.stringify({ container_numbers: [VALID_CONTAINER] })));
+    }) as unknown as typeof globalThis.fetch;
+    return captured;
+  };
+  const textAndImage = (req: CapturedRequest) => {
+    const content = req.messages?.[0]?.content ?? [];
+    return {
+      text: content.find((p) => p.type === 'text')?.text ?? '',
+      image: content.find((p) => p.type === 'image_url')?.image_url?.url ?? '',
+    };
+  };
+
+  test('vision calls target Claude Haiku 5.5 (anthropic/claude-haiku-5.5)', async () => {
+    assert.equal(config.ocrModel, 'anthropic/claude-haiku-5.5', 'Haiku 5.5 is the OCR default');
+    const captured = capture();
+    try {
+      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
+      assert.equal(r.success, true);
+      assert.equal(captured[0].model, 'anthropic/claude-haiku-5.5');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('CONTAINER extraction sends the ISO 6346 prompt and the image payload', async () => {
+    const captured = capture();
+    try {
+      await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
+      const { text, image } = textAndImage(captured[0]);
+      // The contract the recognition quality depends on: the 4+7 format rule,
+      // the JSON output shape, and the ISO size/type + seal exclusions.
+      assert.match(text, /4 uppercase letters followed by exactly 7 digits/);
+      assert.match(text, /"container_numbers"/);
+      assert.match(text, /ignore ISO size\/type codes/);
+      assert.match(text, /ignore any seal number/);
+      assert.match(image, /^data:image\/jpeg;base64,/);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('SEAL extraction sends the seal prompt (never the container prompt)', async () => {
+    const captured = capture();
+    try {
+      await extractContainerAndSeal(IMG, 'SEAL', 'image/jpeg');
+      const { text } = textAndImage(captured[0]);
+      assert.match(text, /"seal_number"/);
+      assert.match(text, /ignore ISO container numbers/);
+      assert.match(text, /Seal numbers have no fixed length/);
+      assert.doesNotMatch(text, /"container_numbers"/);
+    } finally {
       globalThis.fetch = originalFetch;
     }
   });

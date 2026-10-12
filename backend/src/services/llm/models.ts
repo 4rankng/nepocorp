@@ -41,8 +41,8 @@ export const AGENT_MAX_ITERATIONS = 4;
 // optimized MoE (284B total / 13B active, 1M context, ~$0.077/$0.154 per M tokens)
 // explicitly built for chat systems + agent workflows with reasoning + tool use.
 // Change here (one line) to route to a different OpenRouter model. NOTE: OCR has
-// its OWN OpenRouter usage (qwen/qwen3-vl-32b-instruct in ocr.service.ts) — these
-// constants are for the agent only and do not overlap.
+// its OWN OpenRouter usage (Claude Haiku 5.5 via config.ocrModel in
+// ocr.service.ts) — these constants are for the agent only and do not overlap.
 export const OPENROUTER_MODEL = 'deepseek/deepseek-v4-flash';
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 /** Per-call HTTP timeout — matches MiniMax so agent latency budgets are

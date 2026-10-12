@@ -24,7 +24,7 @@ export function PhotoUploader({ tripId }: PhotoUploaderProps) {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      await uploadPhotos(e.target.files, tripId, "OTHER");
+      await uploadPhotos(e.target.files, tripId);
       e.target.value = "";
     }
   };

@@ -109,6 +109,22 @@ export async function saveTripPhoto(
   const uuid = crypto.randomUUID();
   const key = `trips/${tripId}/${type.toLowerCase()}-${uuid}${ext}`;
 
+  // Same-trip binding guard (defense-in-depth): a photo may only link to a
+  // container of the SAME trip. Nothing at the DB level enforces
+  // trip_photos.trip_id = trip_containers.trip_id for the FK, so without this
+  // check a buggy/malicious caller could silently rebind photo evidence across
+  // trips/containers. saveTripPhoto is the single writer of trip_photos — every
+  // upload path (OCR capture/flush, photo routes) goes through here.
+  if (opts.containerId != null) {
+    const [container] = await db.select({ id: s.tripContainers.id })
+      .from(s.tripContainers)
+      .where(and(eq(s.tripContainers.id, opts.containerId), eq(s.tripContainers.tripId, tripId)))
+      .limit(1);
+    if (!container) {
+      throw new ApiError(400, 'Container không thuộc chuyến này');
+    }
+  }
+
   await storageService.upload(processedBuffer, key);
   await db.insert(s.tripPhotos).values({
     tripId,

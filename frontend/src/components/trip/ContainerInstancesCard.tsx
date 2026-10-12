@@ -21,11 +21,11 @@ interface Props {
 
   requiresPhotos?: boolean;
 }
-import { checkContainerNumber, emptyRow, emptySeal, hasEditableContainerData, photoStorageKey, rowKey, sealKey, type ContainerRow, type ServerContainer } from "./container-instance-helpers";
+import { checkContainerNumber, emptyRow, emptySeal, hasEditableContainerData, photoKeysFromServer, photoStorageKey, rowKey, sealKey, type ContainerRow, type ServerContainer } from "./container-instance-helpers";
 
 export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhotos }: Props) {
   const { toast } = useToast();
-  const { ocrResult, containerRows: rows, setContainerRows: setRows, uploadContainerPhoto, revokeRowPhotos, revokeContainerPhoto, plannedContainerTypeId } = useTripFormContext();
+  const { containerRows: rows, setContainerRows: setRows, uploadContainerPhoto, revokeRowPhotos, revokeContainerPhoto, plannedContainerTypeId } = useTripFormContext();
   const plannedTypeValue = plannedContainerTypeId ? Number(plannedContainerTypeId) : "";
   const seededTripRef = useRef<number | null>(null);
   const createSeededRef = useRef(false);
@@ -34,43 +34,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
   const [uploading, setUploading] = useState<Record<string, { cont: boolean; seal: boolean }>>({});
   const [deletingPhotos, setDeletingPhotos] = useState<Record<string, { cont: boolean; seal: boolean }>>({});
   const [lightbox, setLightbox] = useState<{ rowKey: string; type: "CONTAINER" | "SEAL"; urls: string[]; index: number } | null>(null);
-
-  const consumedNonceRef = useRef<number | undefined>(undefined);
-  useEffect(() => {
-    if (!ocrResult) return;
-    if (ocrResult.nonce === consumedNonceRef.current) return;
-    consumedNonceRef.current = ocrResult.nonce;
-
-    const hasContainers = ocrResult.containerNumbers.length > 0;
-    const hasSeal = !!ocrResult.sealNumber;
-    if (!hasContainers && !hasSeal) return;
-
-    setRows((prev) => {
-      const next = prev.map((r) => ({ ...r }));
-      for (const value of ocrResult.containerNumbers) {
-        let slot = next.find((r) => !r.containerNumber.trim());
-        if (!slot) {
-          slot = emptyRow(plannedTypeValue);
-          next.push(slot);
-        }
-        slot.containerNumber = value;
-      }
-      if (hasSeal) {
-        const sn = ocrResult.sealNumber!;
-        if (!next.length) next.push(emptyRow(plannedTypeValue));
-        const target = next[0];
-        const slotIndex = target.seals.findIndex((sl) => !sl.sealNumber.trim());
-        const sealIndex = slotIndex >= 0 && slotIndex < 2 ? slotIndex : Math.min(target.seals.length, 1);
-        const seals = [...target.seals];
-        const seal = seals[sealIndex] ?? emptySeal();
-        seals[sealIndex] = { ...seal, sealNumber: sn.toUpperCase() };
-        target.seals = seals.slice(0, 2);
-        target.sealNumber = target.seals[0]?.sealNumber ?? "";
-      }
-      return next;
-    });
-    toast({ kind: "info", message: "Đã nhận diện số cont/seal — xem lại trước khi lưu." });
-  }, [ocrResult, plannedTypeValue, setRows, toast]);
 
   const { data: existing, isLoading } = useQuery<{
     items: ServerContainer[];
@@ -109,11 +72,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
       } else {
         seals = [];
       }
-      const photos = c.photos ?? [];
-      const photoKeys = {
-        cont: photos.filter((p) => p.type === "CONTAINER").map((p) => p.storageKey),
-        seal: photos.filter((p) => p.type === "SEAL").map((p) => p.storageKey),
-      };
+      const photoKeys = photoKeysFromServer(c.photos);
       return {
         id: c.id,
         _key: rowKey(),
@@ -186,9 +145,11 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     setRows((prev) =>
       prev.map((r) => {
         if (r._key !== rowKeyValue) return r;
-        const seals = [...r.seals];
-        const seal = seals[index] ?? emptySeal();
-        seals[index] = { ...seal, [field]: value };
+        // Dense slots: pad with empty seals instead of leaving holes — a hole
+        // becomes `undefined` on the next spread and crashes every `seal.x`
+        // read downstream (payload build, photo-slot alignment).
+        const seals = Array.from({ length: Math.max(r.seals.length, index + 1) }, (_, i) => r.seals[i] ?? emptySeal());
+        seals[index] = { ...seals[index], [field]: value };
         return { ...r, seals, sealNumber: seals[0]?.sealNumber ?? "" };
       }),
     );
@@ -198,7 +159,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     setRows((prev) =>
       prev.map((r) => {
         if (r._key !== rowKeyValue) return r;
-        const seals = [...r.seals];
+        const seals = Array.from({ length: Math.max(r.seals.length, index + 1) }, (_, i) => r.seals[i] ?? emptySeal());
         seals[index] = emptySeal();
         return { ...r, seals, sealNumber: index === 0 ? "" : (seals[0]?.sealNumber ?? "") };
       }),
@@ -208,8 +169,14 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
   const renderPhotoLane = (row: ContainerRow, pType: "CONTAINER" | "SEAL", sealIndex?: 0 | 1) => {
     const field = pType === "CONTAINER" ? "cont" : "seal";
     const title = pType === "CONTAINER" ? "Ảnh container" : `Ảnh seal ${(sealIndex ?? 0) + 1}`;
-    const allUrls = row.photoKeys[field].filter(Boolean);
-    const urls = pType === "SEAL" && sealIndex != null ? allUrls.slice(sealIndex, sealIndex + 1) : allUrls.slice(-1);
+    // Slot-indexed access — never compact the array first: `seal[i]` is the
+    // photo of seal slot i (empty string = no photo), and `cont`'s LAST entry
+    // is the row's current container photo. Compacting shifted photos between
+    // slots, so a photo captured for one slot showed up under another.
+    const slotUrl = pType === "SEAL" && sealIndex != null
+      ? row.photoKeys.seal[sealIndex]
+      : row.photoKeys.cont[row.photoKeys.cont.length - 1];
+    const urls = slotUrl ? [slotUrl] : [];
     const busy = (uploading[row._key]?.[field] ?? false) || (deletingPhotos[row._key]?.[field] ?? false);
     const isCont = pType === "CONTAINER";
     return (
@@ -295,7 +262,11 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     }
     const field = target.type === "CONTAINER" ? "cont" : "seal";
     const sealIndex = target.sealIndex ?? 0;
-    const previousUrls = target.type === "SEAL" ? row.photoKeys.seal.filter(Boolean).slice(sealIndex, sealIndex + 1) : row.photoKeys.cont.filter(Boolean).slice(-1);
+    // The photo(s) being replaced: the seal slot's own photo, or the row's
+    // current cont photo(s). Read by slot — never compacted.
+    const previousUrls = target.type === "SEAL"
+      ? [row.photoKeys.seal[sealIndex]].filter(Boolean)
+      : row.photoKeys.cont.filter(Boolean);
     setScanner(null);
     setUploading((prev) => ({
       ...prev,
@@ -311,7 +282,11 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
         prev.map((r) => {
           if (r._key !== target.rowKey) return r;
           if (target.type === "SEAL") {
-            const sealPhotos = r.photoKeys.seal.filter(Boolean);
+            // Slot-preserving write — pad up to the slot instead of compacting
+            // (`filter(Boolean)` used to drop earlier holes and overwrite the
+            // photo of a different seal slot).
+            const sealPhotos = [...r.photoKeys.seal];
+            while (sealPhotos.length <= sealIndex) sealPhotos.push("");
             sealPhotos[sealIndex] = url;
             return { ...r, photoKeys: { ...r.photoKeys, seal: sealPhotos } };
           }
@@ -338,10 +313,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
           setRows((prev) =>
             prev.map((r) => {
               if (r._key !== target.rowKey) return r;
-              const seals = [...r.seals];
               const sealNumber = sn.toUpperCase();
-              const seal = seals[sealIndex] ?? emptySeal();
-              seals[sealIndex] = { ...seal, sealNumber };
+              const seals = Array.from({ length: Math.max(r.seals.length, sealIndex + 1) }, (_, i) => r.seals[i] ?? emptySeal());
+              seals[sealIndex] = { ...seals[sealIndex], sealNumber };
               return {
                 ...r,
                 seals,
@@ -369,7 +343,16 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
 
   const removePhotoFromRow = async (row: ContainerRow, type: "CONTAINER" | "SEAL", url: string) => {
     const field = type === "CONTAINER" ? "cont" : "seal";
-    const dropFromState = () => setRows((prev) => prev.map((r) => (r._key === row._key ? { ...r, photoKeys: { ...r.photoKeys, [field]: r.photoKeys[field].filter((u) => u !== url) } } : r)));
+    // Seal photos are slot-indexed: blank the slot instead of removing the
+    // entry — removal would shift later slots up (a photo would "jump" to
+    // another seal). Cont photos are a plain replace-list.
+    const dropFromState = () => setRows((prev) => prev.map((r) => {
+      if (r._key !== row._key) return r;
+      const next = type === "SEAL"
+        ? r.photoKeys.seal.map((u) => (u === url ? "" : u))
+        : r.photoKeys.cont.filter((u) => u !== url);
+      return { ...r, photoKeys: { ...r.photoKeys, [field]: next } };
+    }));
 
     if (url.startsWith("blob:")) {
       revokeContainerPhoto(row._key, type, url);
@@ -408,7 +391,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     );
   }
 
-  const hasAnyContainerPhoto = rows.some((r) => r.photoKeys.cont.length > 0 || r.photoKeys.seal.length > 0);
+  const hasAnyContainerPhoto = rows.some((r) => r.photoKeys.cont.some(Boolean) || r.photoKeys.seal.some(Boolean));
   const showRequiresWarning = !!requiresPhotos && !hasAnyContainerPhoto;
 
   const renderSealFields = (row: ContainerRow, index: 0 | 1) => {

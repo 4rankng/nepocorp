@@ -2,11 +2,19 @@
  * OCR service for extracting container & seal numbers from photos.
  *
  * Providers are tried in order, each gated by its API key being set:
- *   1. OpenRouter (Qwen3-VL) — primary (callOpenRouterVision)
- *   2. Gemini                — fallback (callGeminiVision)
+ *   1. OpenRouter (Anthropic Claude Haiku 5.5) — primary (callOpenRouterVision)
+ *   2. Gemini                              — fallback (callGeminiVision)
  * The first provider to return a type-valid result wins; on any error/empty/
  * type-miss the request transparently falls through. With only a Gemini key
  * configured this behaves exactly like the previous Gemini-only build.
+ *
+ * The primary model is Claude Haiku 5.5 (`anthropic/claude-haiku-5.5`) called
+ * through the OpenRouter Chat Completions transport — the same API shape the
+ * previous Qwen3-VL build used, so no new secrets or clients are needed (prod
+ * only carries OPENROUTER_API_KEY). Override per environment with OCR_MODEL.
+ * The earlier Qwen3-VL-32B slug stopped recognizing numbers reliably on
+ * container/seal photos (empty extractions, seal numbers never returned);
+ * Haiku 5.5 restored extraction quality.
  *
  * Ported (faithfully) from vantaiphucloc:
  *   - app/contexts/operations/infrastructure/openrouter.py → callOpenRouterVision
@@ -16,7 +24,7 @@
  * Accuracy techniques:
  *   - Structured JSON output via Gemini responseSchema; prompt-only + regex net for OpenRouter (temperature 0.0)
  *   - Hard-coded 2-model Gemini fallback chain (mirrors vantaiphucloc ai.py)
- *   - <think> stripping for Qwen reasoning output
+ *   - `think` stripping for reasoning-model output (defensive; cheap)
  *   - Image preprocessing: downscale + auto-contrast (.normalise())
  *   - ISO 6346 check-digit auto-correction for near-miss container numbers
  *
@@ -46,16 +54,15 @@ const MAX_DETECT = 10;
 const CONTAINER_RE = /^[A-Z]{4}\d{7}$/;
 const CONTAINER_RE_G = /[A-Z]{4}\d{7}/g;
 
-// OpenRouter (Qwen3-VL) — endpoint + model are hardcoded constants, NOT env
-// vars. The base URL is a fixed OpenAI-compatible endpoint and the model is a
-// pinned slug that should not drift per environment; only the API key
-// (config.openrouterApiKey) is env-driven. Mirrors the MiniMax LLM pattern
-// (services/llm/models.ts: MODEL_FAST / MINIMAX_BASE_URL) — change in code.
+// OpenRouter vision transport — endpoint is a hardcoded constant, NOT an env
+// var (fixed OpenAI-compatible endpoint; mirrors the MiniMax LLM pattern,
+// services/llm/models.ts). The MODEL is env-configurable (config.ocrModel,
+// default `anthropic/claude-haiku-5.5`) — only the API key
+// (config.openrouterApiKey) is required.
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const OPENROUTER_MODEL = 'qwen/qwen3-vl-32b-instruct';
 
-// OpenRouter (OpenAI-compatible) call budget. Qwen reasoning models can wrap
-// chain-of-thought in <think>…</think>; strip both closed blocks and an
+// OpenRouter (OpenAI-compatible) call budget. Reasoning models can wrap
+// chain-of-thought in `think…` blocks; strip both closed blocks and an
 // unclosed trailing one (truncation mid-thought). Ported from vantaiphucloc
 // openrouter.py.
 const OPENROUTER_TIMEOUT_MS = 60_000;
@@ -252,7 +259,7 @@ export async function callGeminiVision(
   };
 }
 
-// ── OpenRouter (Qwen3-VL) vision client ────────────────────────────────────
+// ── OpenRouter vision client (Anthropic Claude Haiku 5.5) ───────────────────
 // Faithful port of vantaiphucloc openrouter.py: OpenAI-compatible Chat
 // Completions, image as a base64 data URI, temperature 0, NO response_format
 // (model support for json_object is uneven — a 400 would silently regress
@@ -305,7 +312,7 @@ export async function callOpenRouterVision(
 
   const dataUri = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
   const payload = {
-    model: OPENROUTER_MODEL,
+    model: config.ocrModel,
     temperature: 0,
     // Parity with Gemini (maxOutputTokens 4096). The completion budget INCLUDES
     // any <think> reasoning tokens; 2048 can truncate the answer mid-JSON when
@@ -343,7 +350,7 @@ export async function callOpenRouterVision(
         text: null,
         error: `HTTP ${response.status}`,
         provider: 'openrouter',
-        model: OPENROUTER_MODEL,
+        model: config.ocrModel,
       };
     }
 
@@ -356,7 +363,7 @@ export async function callOpenRouterVision(
         text: null,
         error: 'Empty OpenRouter response',
         provider: 'openrouter',
-        model: result.model ?? OPENROUTER_MODEL,
+        model: result.model ?? config.ocrModel,
       };
     }
     return {
@@ -364,7 +371,7 @@ export async function callOpenRouterVision(
       text,
       error: null,
       provider: 'openrouter',
-      model: result.model ?? OPENROUTER_MODEL,
+      model: result.model ?? config.ocrModel,
     };
   } catch (e) {
     const msg = e instanceof Error
@@ -375,7 +382,7 @@ export async function callOpenRouterVision(
       text: null,
       error: msg,
       provider: 'openrouter',
-      model: OPENROUTER_MODEL,
+      model: config.ocrModel,
     };
   } finally {
     clearTimeout(timer);
@@ -480,8 +487,8 @@ export interface ExtractResult {
 
 /**
  * Ordered OCR providers, each enabled by its API key being non-empty.
- * OpenRouter (Qwen3-VL) is tried first whenever its key is set; Gemini is the
- * fallback. No enable booleans — key presence is the switch.
+ * OpenRouter (Claude Haiku 5.5) is tried first whenever its key is set; Gemini
+ * is the fallback. No enable booleans — key presence is the switch.
  */
 function orderedProviders(): VisionProvider[] {
   const list: VisionProvider[] = [];

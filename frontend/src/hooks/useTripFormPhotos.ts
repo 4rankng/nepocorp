@@ -1,8 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
 
-type PhotoType = 'CONTAINER' | 'SEAL' | 'OTHER';
-
 /** Result shape from POST /api/ocr. */
 export interface OcrResponse {
   ok: boolean;
@@ -13,13 +11,6 @@ export interface OcrResponse {
   storageKey?: string;
   model?: string | null;
   error?: string | null;
-}
-
-/** A create-mode OCR photo held in RAM until the trip has an id. */
-interface PendingPhoto {
-  file: File;
-  type: 'CONTAINER' | 'SEAL';
-  objectUrl: string;
 }
 
 /** A per-container OCR photo held in RAM until its row has a server id
@@ -42,115 +33,46 @@ export interface ContainerPhotoUploadResult {
   pending: boolean;
 }
 
-export type OcrResultHandler = (
-  containerNumbers: string[],
-  sealNumber: string | null,
-  type: 'CONTAINER' | 'SEAL',
-) => void;
+/** Trip-level ("Ảnh đính kèm") upload-in-progress flag. Container/seal capture
+ *  tracks its own per-row busy state in `ContainerInstancesCard`. */
+export type UploadingState = { OTHER: boolean };
 
-/** Per-zone upload-in-progress flag. Tracks CONTAINER, SEAL, and OTHER
- *  independently so a pending container upload doesn't grey out the seal
- *  button (and vice-versa). */
-export type UploadingState = Record<PhotoType, boolean>;
-
-/** True when any zone is currently uploading. Use this for save/submit
- *  disable checks where any in-flight upload should block the action. */
+/** True while a trip-level photo upload is in flight. Used for save/submit
+ *  disable checks — an in-flight upload must block the action. */
 export function isAnyUploading(uploading: UploadingState): boolean {
   return Object.values(uploading).some(Boolean);
 }
 
-export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: OcrResultHandler) {
+export function useTripFormPhotos(onError: (msg: string) => void) {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [uploading, setUploading] = useState<UploadingState>({ CONTAINER: false, SEAL: false, OTHER: false });
-  // Create-mode OCR photos are kept in RAM (no trip id yet) and uploaded once
-  // the trip is created — see flushPendingPhotos.
-  const pendingRef = useRef<PendingPhoto[]>([]);
+  const [uploading, setUploading] = useState<UploadingState>({ OTHER: false });
   // Per-container OCR photos buffered until the row has a server id — see
   // uploadContainerPhoto / flushPendingContainerPhotos / revokeRowPhotos.
   const pendingContainerPhotosRef = useRef<PendingContainerPhoto[]>([]);
 
-  const uploadPhotos = useCallback(async (files: FileList, tripId?: number, type: PhotoType = 'OTHER') => {
-    setUploading(prev => ({ ...prev, [type]: true }));
+  /** Trip-level general photos (`type='OTHER'`). Container/seal photos never go
+   *  through here — they are captured per row via `uploadContainerPhoto`. */
+  const uploadPhotos = useCallback(async (files: FileList, tripId?: number) => {
+    setUploading({ OTHER: true });
     try {
       for (const file of Array.from(files)) {
-        if (type === 'CONTAINER' || type === 'SEAL') {
-          // Route container/seal uploads through OCR (auto-fill + persist when trip exists).
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('type', type);
-          if (tripId) formData.append('trip_id', String(tripId));
-
-          const result = await api.upload('/ocr', formData) as OcrResponse;
-          onOcrResult?.(result.containerNumbers ?? [], result.sealNumber ?? null, type);
-
-          if (result.photoUrl) {
-            // Edit branch: photo persisted server-side.
-            setPhotoUrls(prev => [...prev, result.photoUrl!]);
-          } else if (!tripId) {
-            // Create branch: hold the file in RAM + local preview until the trip exists.
-            const objectUrl = URL.createObjectURL(file);
-            pendingRef.current.push({ file, type, objectUrl });
-            setPhotoUrls(prev => [...prev, objectUrl]);
-          }
-
-          // Surface a friendly OCR error (e.g. key not configured, no numbers) —
-          // the photo may still have been saved (Edit) so this is informational.
-          if (result.error) onError(result.error);
-        } else {
-          // OTHER → existing upload endpoint.
-          const formData = new FormData();
-          formData.append('file', file);
-          if (tripId) formData.append('trip_id', String(tripId));
-          formData.append('type', type);
-          const result = await api.upload('/upload', formData) as { url: string };
-          setPhotoUrls(prev => [...prev, result.url]);
-        }
+        const formData = new FormData();
+        formData.append('file', file);
+        if (tripId) formData.append('trip_id', String(tripId));
+        formData.append('type', 'OTHER');
+        const result = await api.upload('/upload', formData) as { url: string };
+        setPhotoUrls(prev => [...prev, result.url]);
       }
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Lỗi khi tải ảnh.');
     } finally {
-      setUploading(prev => ({ ...prev, [type]: false }));
+      setUploading({ OTHER: false });
     }
-  }, [onError, onOcrResult]);
+  }, [onError]);
 
   const removePhoto = useCallback((idx: number) => {
-    setPhotoUrls(prev => {
-      const url = prev[idx];
-      // Revoke any local object-URL preview we were holding.
-      if (url && url.startsWith('blob:')) {
-        pendingRef.current = pendingRef.current.filter(p => p.objectUrl !== url);
-        URL.revokeObjectURL(url);
-      }
-      return prev.filter((_, i) => i !== idx);
-    });
+    setPhotoUrls(prev => prev.filter((_, i) => i !== idx));
   }, []);
-
-  /**
-   * After a trip is created (create mode), upload the held OCR photos with the
-   * new trip id and replace their local object-URL previews with real server
-   * URLs. Returns the final photoUrls array so the caller can use it directly
-   * in the create payload (state updates are async).
-   */
-  const flushPendingPhotos = useCallback(async (tripId: number): Promise<string[]> => {
-    const pending = pendingRef.current;
-    if (pending.length === 0) return photoUrls;
-    pendingRef.current = [];
-
-    const objToReal = new Map<string, string>();
-    for (const p of pending) {
-      const formData = new FormData();
-      formData.append('file', p.file);
-      formData.append('trip_id', String(tripId));
-      formData.append('type', p.type);
-      const result = await api.upload('/upload', formData) as { url: string };
-      objToReal.set(p.objectUrl, result.url);
-      URL.revokeObjectURL(p.objectUrl);
-    }
-
-    const finalUrls = photoUrls.map(u => objToReal.get(u) ?? u);
-    setPhotoUrls(finalUrls);
-    return finalUrls;
-  }, [photoUrls]);
 
   /**
    * Capture a container/seal photo FOR A SPECIFIC ROW. Runs OCR immediately so
@@ -159,9 +81,9 @@ export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: 
    * (edit mode, row already saved); otherwise buffers the file in RAM
    * (`pending: true`) for flush after `saveContainers` assigns an id.
    *
-   * Deliberately does NOT broadcast via `onOcrResult` — row-scoped capture
-   * fills only the originating row, not the first empty slot (side-panel
-   * trip-level OCR still uses `uploadPhotos` for that).
+   * Row-scoped by `rowKey`: the OCR result and the buffered photo always belong
+   * to the row whose capture button was pressed — never to "the first empty
+   * row" or whatever the list happens to point at.
    *
    * We avoid sending `trip_id` alone: `/ocr` would persist the photo at trip
    * level with no container link, creating an orphan we can't re-link after the
@@ -199,10 +121,11 @@ export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: 
    * photos and return a map of `blob:` → server URL so the caller can patch
    * `photoKeys`. Rows deleted before save are dropped (object URL revoked).
    *
-   * Uses `/ocr/persist-only` (NOT `/ocr`): recognition already ran at capture
-   * (`uploadContainerPhoto`), so flushing via the full `/ocr` endpoint would
-   * re-run Gemini for nothing. `/persist-only` persists + links the photo and
-   * SKIPS recognition. The consumed response shape is unchanged (`result.photoUrl`).
+   * Each buffered photo is bound to the container id of ITS OWN row
+   * (`rowKeyToContainerId` is keyed by the row's stable `_key`) — the binding is
+   * exact, never positional. Uses `/ocr/persist-only` (NOT `/ocr`): recognition
+   * already ran at capture (`uploadContainerPhoto`), so flushing via the full
+   * `/ocr` endpoint would re-run the vision model for nothing.
    */
   const flushPendingContainerPhotos = useCallback(async (
     tripId: number,
@@ -258,7 +181,7 @@ export function useTripFormPhotos(onError: (msg: string) => void, onOcrResult?: 
   }, []);
 
   return {
-    photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto, flushPendingPhotos,
+    photoUrls, setPhotoUrls, uploading, uploadPhotos, removePhoto,
     uploadContainerPhoto, flushPendingContainerPhotos, revokeRowPhotos, revokeContainerPhoto,
   };
 }

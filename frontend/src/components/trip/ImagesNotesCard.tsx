@@ -15,7 +15,7 @@ export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCa
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      uploadPhotos(e.target.files, undefined, 'OTHER');
+      uploadPhotos(e.target.files);
       e.target.value = '';
     }
   };

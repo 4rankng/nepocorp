@@ -24,7 +24,7 @@
 | **Vehicle alerts** | Configurable alerts for oil service, registration, insurance renewal (last-date + N-month interval). | [07-DOI_XE](flows/07-DOI_XE_VA_FLEET.md) |
 | **Trip instructions** | Per-trip instruction notes with before-departure delivery flow. | |
 | **Debit-note templates** | Form-driven XLSX template builder per customer. `debit_note_templates` table + frozen JSON snapshot. | [giay-bao-no-template-system](../.claude/projects/-Users-dev-Documents-projects-nepocorp/memory/giay-bao-no-template-system.md) |
-| **OCR (container/seal)** | OpenRouter Qwen3-VL-32B primary + Gemini fallback. Auto-fills on upload with ISO 6346 check-digit validation. | [plans/ocr-openrouter-qwen-migration.md](plans/ocr-openrouter-qwen-migration.md) |
+| **OCR (container/seal)** | Claude Haiku 5.5 (via OpenRouter) primary + Gemini fallback. Auto-fills on upload with ISO 6346 check-digit validation. | [plans/ocr-openrouter-qwen-migration.md](plans/ocr-openrouter-qwen-migration.md) |
 | **Bach Khoa GPS tracking** | Live vehicle tracking via Bach Khoa portal API. Pull-through Redis cache. | [plans/gps-actual-route-database.md](plans/gps-actual-route-database.md) |
 | **Agent chatbot** | MiniMax-M3 LLM + Socket.io + tool-use orchestration. Navigate/highlight, tour engine, admin perf monitoring. | [plans/agent-semantic-data-gateway.md](plans/agent-semantic-data-gateway.md) |
 | **Mobile push notifications** | Web Push API + service worker. Notification bell dropdown with unread badge and mark-all-read. | |

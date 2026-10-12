@@ -6,7 +6,7 @@
  * toll cost, profit, completion), orchestrates effects (route auto-fill,
  * pricing, driver salary), and exposes the submit handler.
  */
-import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { FuelMode, LoadingType, FUEL_PRICE_PER_LITER_FALLBACK, FUEL_LOADED_NORM_FALLBACK, FUEL_EMPTY_NORM_FALLBACK, computeTripDriverSalary } from '@tingting/shared';
@@ -19,7 +19,7 @@ import type { TripOptions, RouteOption } from './useTripOptions';
 import { useTripFormLegs } from './useTripFormLegs';
 import type { FormLeg } from './useTripFormLegs';
 import { useTripFormPhotos } from './useTripFormPhotos';
-import type { OcrResultHandler, UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
+import type { UploadingState, ContainerPhotoUploadResult } from './useTripFormPhotos';
 import { createDefaultFuelAllocations, type UseTripFormStateReturn, type CompletionStatus } from './useTripFormState';
 import { activeFuelSuppliers, normalizeFuelAllocationRows } from '../components/trip/fuelAllocationRows';
 import { useCatalogs } from './useCatalogs';
@@ -40,16 +40,6 @@ function moneyOrZero(value: string): number {
   return moneyInputToNumber(value) ?? 0;
 }
 
-/** OCR recognition result broadcast to container-aware components (e.g. the
- *  container instances card) via the trip-form context. `nonce` lets consumers
- *  detect a fresh result even when the values are identical. */
-export interface OcrSignal {
-  containerNumbers: string[];
-  sealNumber: string | null;
-  type: 'CONTAINER' | 'SEAL';
-  nonce: number;
-}
-
 export interface UseTripFormDispatchParams {
   state: UseTripFormStateReturn;
   options: TripOptions;
@@ -63,7 +53,7 @@ export interface UseTripFormDispatchReturn {
   removeLeg: (idx: number) => void;
   updateLeg: (idx: number, field: keyof FormLeg, value: string) => void;
   photoUrls: string[];
-  uploadPhotos: (files: FileList, tripId?: number, type?: 'CONTAINER' | 'SEAL' | 'OTHER') => Promise<void>;
+  uploadPhotos: (files: FileList, tripId?: number) => Promise<void>;
   removePhoto: (idx: number) => void;
   uploadContainerPhoto: (file: File, tripId: number | undefined, rowKey: string, type: 'CONTAINER' | 'SEAL', containerId?: number) => Promise<ContainerPhotoUploadResult>;
   revokeRowPhotos: (rowKey: string) => void;
@@ -76,7 +66,6 @@ export interface UseTripFormDispatchReturn {
   requiredFieldsFilled: number;
   totalRequiredFields: number;
   uploading: UploadingState;
-  ocrResult: OcrSignal | null;
   handleSubmit: (e?: React.FormEvent) => Promise<number | undefined>;
   createdTripId: number | null;
   selectedRouteData: RouteOption | null;
@@ -104,12 +93,6 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     refreshNonce: s.resetToggle,
   });
 
-  // Broadcast OCR results to container-aware components via context.
-  const [ocrResult, setOcrResult] = useState<OcrSignal | null>(null);
-  const onOcrResult = useCallback<OcrResultHandler>((containerNumbers, sealNumber, type) => {
-    setOcrResult({ containerNumbers, sealNumber, type, nonce: Math.random() });
-  }, []);
-
   const { data: roadConfig } = useQuery({
     queryKey: qk.catalogs.roadConfig,
     queryFn: () => configClient.getRoadConfig(),
@@ -131,8 +114,8 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
   }, [s.revenueEmptyReturn, s.revenueCombine]);
 
   const { legs, setLegs, addLeg, removeLeg, updateLeg } = useTripFormLegs(options.routes, s.routeId, isEditMode);
-  const { photoUrls, uploading, uploadPhotos, removePhoto, flushPendingPhotos,
-    uploadContainerPhoto, flushPendingContainerPhotos, revokeRowPhotos, revokeContainerPhoto } = useTripFormPhotos(s.setError, onOcrResult);
+  const { photoUrls, uploading, uploadPhotos, removePhoto,
+    uploadContainerPhoto, flushPendingContainerPhotos, revokeRowPhotos, revokeContainerPhoto } = useTripFormPhotos(s.setError);
 
   useEffect(() => {
     if (!isEditMode || !existingTrip) return;
@@ -521,13 +504,12 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     ],
   );
 
-  const { handleSubmit, createdTripId } = useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, hasOptionalData, photoUrls, flushPendingPhotos, flushPendingContainerPhotos });
+  const { handleSubmit, createdTripId } = useTripFormSubmit({ state: s, isEditMode, existingTrip, legs, hasOptionalData, photoUrls, flushPendingContainerPhotos });
 
   return {
     legs, addLeg, removeLeg, updateLeg,
     photoUrls, uploading, uploadPhotos, removePhoto,
     uploadContainerPhoto, revokeRowPhotos, revokeContainerPhoto,
-    ocrResult,
     suggestedPrice,
     estimatedFuelCost,
     estimatedTollCost,

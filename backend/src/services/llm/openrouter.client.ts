@@ -6,7 +6,7 @@
 // does not leak `<think>` blocks for the models we route to, so no
 // cleanContent hook is needed (the runner defaults to identity).
 //
-// OCR has its OWN OpenRouter usage (qwen/qwen3-vl-32b-instruct in
+// OCR has its OWN OpenRouter usage (Claude Haiku 5.5 via config.ocrModel in
 // ocr.service.ts) — this module is for the agent only.
 import {
   OPENROUTER_MODEL,

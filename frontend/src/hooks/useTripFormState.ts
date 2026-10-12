@@ -54,11 +54,17 @@ export interface ContainerFormRow {
   sealNumber: string;
   cargoWeightKg: string;
   notes: string;
+  /** Seal slots 0–1 (dense — empty slots are `emptySeal()` rows, never holes):
+   *  slot i owns its own photo (`photoKeys.seal[i]`). New edits go through the
+   *  seal sub-list; the scalar `sealNumber` above is derived from slot 0. */
   seals: SealFormRow[];
-  /** Server-persisted photo keys per type (bare storage keys from the
-   *  containers API) PLUS in-flight `blob:` previews for create-mode / unsaved
-   *  rows. `photoSrc()` renders both. A `blob:` prefix marks a photo as
-   *  pending flush ("chưa lưu"). */
+  /** Photo slots per type: server-persisted photo keys (bare storage keys from
+   *  the containers API) PLUS in-flight `blob:` previews for create-mode /
+   *  unsaved rows. `photoSrc()` renders both. A `blob:` prefix marks a photo as
+   *  pending flush ("chưa lưu").
+   *  `seal[i]` is the photo of seal slot i (`''` = empty slot) so photos never
+   *  shift between slots; `cont`'s LAST entry is the row's current container
+   *  photo (a recapture replaces the list). */
   photoKeys: { cont: string[]; seal: string[] };
 }
 

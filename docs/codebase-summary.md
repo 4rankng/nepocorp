@@ -69,7 +69,7 @@ Express v5 REST API on port 3090.
 | `salary.ts` | `/api/v1/salary` | Salary periods and processing |
 | `agent.ts` | `/api/v1/agent` | AI chatbot (LLM orchestration) |
 | `upload.ts` | `/api/v1/upload` | File/image upload (Multer + Sharp) |
-| `ocr.ts` | `/api/v1/ocr` | Container/seal OCR (OpenRouter Qwen3-VL + Gemini) |
+| `ocr.ts` | `/api/v1/ocr` | Container/seal OCR (OpenRouter Claude Haiku 5.5 + Gemini) |
 | `maps.ts` | `/api/v1/maps` | Location autocomplete, distance |
 | `notifications.ts` | `/api/v1/notifications` | In-app notifications, push subscription |
 | `admin-gps.ts` | `/api/v1/admin/gps` | Bach Khoa GPS tracking (ADMIN only) |

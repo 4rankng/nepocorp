@@ -924,7 +924,7 @@ export interface ForwarderTripDetail {
   status: TripStatus;
   routeName: string | null;
   truckPlate: string | null;
-  /** Assigned driver — null until a Quản lý phân xe. Read-only in the portal. */
+  /** Assigned driver — null until phân công. The portal assigns it while the trip is CREATED (kanban 101026005000). */
   driverId: number | null;
   driverName: string | null;
   customerName: string | null;
@@ -1156,6 +1156,15 @@ export interface DashboardStats {
   revenue: number;
   costs: number;
   grossProfit: number;
+  /**
+   * The rest of the P&L KPI set for the same period, copied from the same
+   * getPnlReport() snapshot /reports/pnl serves, so the two sources can never
+   * render different KPI figures for one period (kanban 101026003200).
+   * Optional because payloads cached before this field existed lack it.
+   */
+  netProfit?: number;
+  otherIncome?: number;
+  companyExpenses?: number;
   tripCount: number;
   /** Count of LOCKED trips — the subset whose revenue/costs contribute to the KPIs. */
   lockedTrips?: number;

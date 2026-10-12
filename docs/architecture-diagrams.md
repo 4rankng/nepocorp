@@ -25,7 +25,7 @@ flowchart TB
 
   subgraph External["External services"]
     MM["MiniMax-M3<br/>chatbot LLM"]
-    OR["OpenRouter Qwen3-VL<br/>OCR (primary)"]
+    OR["OpenRouter Claude Haiku 5.5<br/>OCR (primary)"]
     GEM["Gemini<br/>OCR (fallback)"]
     BK["Bách Khoa<br/>GPS portal API"]
     WP["Web Push<br/>VAPID"]
