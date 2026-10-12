@@ -1,6 +1,7 @@
 import { db } from '../db';
 import * as s from '../db/schema';
 import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import type { Writable } from 'stream';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
 import type { AgingBucket, PeriodSummary, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
@@ -1030,6 +1031,11 @@ export async function getSupplierFuelStatement(
       .where(and(
         isNull(s.trips.fuelSupplierId),
         isNull(s.trucks.deletedAt),
+        // Xe ngoài can never hold a fuel supplier (the figures schema rejects
+        // one), so it must never surface in the "gán NCC" follow-up —
+        // explicitly, not via the trucks join side effect (a reassigned trip
+        // may keep a truckId while being EXTERNAL).
+        sql`coalesce(${s.trips.carrierType}, 'OWN') = 'OWN'`,
         sql`${s.trips.fuelLiters} > 0`,
         gte(s.trips.departureDate, dateFrom),
         lte(s.trips.departureDate, dateTo),
@@ -1108,7 +1114,7 @@ export async function getSupplierFuelStatement(
 export async function exportSupplierFuelStatementXlsx(
   data: SupplierFuelStatement,
   dateStr: string,
-  writable: import('stream').Writable,
+  writable: Writable,
 ): Promise<void> {
   const ExcelJSMod = await import('exceljs');
   const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
@@ -1479,7 +1485,7 @@ export async function getCarrierPayableStatement(
 export async function exportSupplierStatementXlsx(
   data: SupplierStatementData,
   dateStr: string,
-  writable: import('stream').Writable,
+  writable: Writable,
 ): Promise<void> {
   return buildStatementXlsx({
     heading: 'Sao kê công nợ nhà cung cấp',

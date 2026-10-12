@@ -71,6 +71,11 @@ async function main() {
     .where(and(
       isNull(s.trips.fuelSupplierId),
       isNull(s.trucks.deletedAt),
+      // Xe ngoài can never hold a fuel supplier (the figures schema rejects
+      // one), so the repair must never touch it — explicitly, not via the
+      // trucks join side effect (a reassigned trip may keep a truckId while
+      // being EXTERNAL).
+      sql`coalesce(${s.trips.carrierType}, 'OWN') = 'OWN'`,
       sql`${s.trips.fuelLiters} > 0`,
     ))
     .orderBy(s.trips.departureDate, s.trips.id);

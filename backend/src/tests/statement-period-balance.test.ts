@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { eq } from 'drizzle-orm';
 import { db, client } from '../db';
 import * as s from '../db/schema';
-import { getSupplierStatement } from '../services/statement.service';
+import { getSupplierFuelStatement, getSupplierStatement } from '../services/statement.service';
 import { disconnectRedis } from '../lib/redis';
 
 const SUFFIX = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -24,6 +24,7 @@ let cargoTypeId: number;
 let septTripId: number;
 let augTripId: number;
 let orphanFuelTripId: number;
+let externalFuelTripId: number;
 
 const row = (over: Omit<typeof s.ledger.$inferInsert, 'entityType' | 'entityId' | 'balance'>) => db.insert(s.ledger).values({
   entityType: 'VENDOR',
@@ -72,6 +73,15 @@ before(async () => {
   await row({ timestamp: new Date('2097-09-28T10:00:00Z'), txnType: 'FUEL_EXPENSE', txnId: augTripId = await mkTrip('CB-C', '2097-08-20', '10', '30000000'), credit: '30000000', debit: '0', note: '10 lít' });
   // A trip with fuel and no supplier — never posted to any payable ledger.
   orphanFuelTripId = await mkTrip('CB-D', '2097-09-18', '152', '4550880');
+  // Xe ngoài that kept a truckId through a reassignment — the join alone would
+  // list it, but it can never hold a fuel supplier (the figures schema rejects
+  // one), so it must never be offered for NCC attribution.
+  const [ext] = await db.insert(s.trips).values({
+    tripCode: 'CB-E', truckId, customerId, routeId, cargoTypeId, status: 'COMPLETED',
+    departureDate: '2097-09-22', fuelLiters: '92', totalFuelCost: '2515300', carrierType: 'EXTERNAL',
+    externalCarrierId: customerId, externalPlateNumber: '15C-99999',
+  }).returning({ id: s.trips.id });
+  externalFuelTripId = ext.id;
 });
 
 after(async () => {
@@ -136,7 +146,6 @@ describe('statement balance separation (whole-ledger vs period)', () => {
 
 describe('fuel statement surfaces unposted trips', () => {
   it('lists a fuel trip with no supplier so it cannot vanish silently', async () => {
-    const { getSupplierFuelStatement } = await import('../services/statement.service');
     const d = await getSupplierFuelStatement(supplierId, '2097-09-01', '2097-09-30');
     const unassigned = d.unassignedTrips.find(t => t.tripId === orphanFuelTripId);
     assert.ok(unassigned, 'the orphaned-fuel trip must be listed');
@@ -144,8 +153,15 @@ describe('fuel statement surfaces unposted trips', () => {
     assert.equal(unassigned.totalFuelCost, 4_550_880);
   });
 
+  it('never offers a xe ngoài trip for NCC attribution, even one with a truck row', async () => {
+    const d = await getSupplierFuelStatement(supplierId, '2097-09-01', '2097-09-30');
+    assert.ok(!d.unassignedTrips.some(t => t.tripId === externalFuelTripId),
+      'xe ngoài can never hold a fuel supplier — it must not appear in the gán NCC follow-up');
+    assert.ok(d.unassignedTrips.some(t => t.tripId === orphanFuelTripId),
+      'while the genuine xe nhà orphan stays listed');
+  });
+
   it('detail rows are cut on departure date; the Aug trip is not in a Sept sheet', async () => {
-    const { getSupplierFuelStatement } = await import('../services/statement.service');
     const d = await getSupplierFuelStatement(supplierId, '2097-09-01', '2097-09-30');
     const ids = d.rows.map(r => r.tripId);
     assert.ok(ids.includes(septTripId), 'September trip present');

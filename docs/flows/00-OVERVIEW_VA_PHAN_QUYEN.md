@@ -43,7 +43,9 @@
 | **Giám đốc** | `MANAGER` | `giamdoc` / `admin123` | `/dashboard` | Quản lý vận hành, tài chính, điều vận, phân bổ lợi nhuận |
 | **Kế toán** | `ACCOUNTANT` | `ketoan` / `admin123` | `/dashboard` | Tạo/sửa chuyến, ghi nhận thanh toán, công nợ |
 | **Lái xe** | `DRIVER` | `laixe` / `admin123` | `/my-trips` | Xem lịch trình, thu nhập, phạt (chỉ đọc) |
-| **Nhân viên giao nhận** | `FORWARDER` | `giaonhan` / `admin123` | `/my-forwarder-trips` | Xem chuyến, nhập container/seal, ghi chi phí phát sinh |
+| **Nhân viên giao nhận** | `FORWARDER` | `giaonhan` / `admin123` | `/my-forwarder-trips` | Xem chuyến, nhập container/seal, ghi chi phí phát sinh, gán/đổi lái xe cho chuyến chưa xuất phát |
+
+> **DB khôi phục từ dump prod thiếu tài khoản demo?** Chạy `pnpm --dir backend seed:qa` — chỉ tạo các tài khoản còn thiếu (mật khẩu `admin123`), không đụng tài khoản đang hoạt động.
 
 ### 1.3 API Endpoints liên quan
 
