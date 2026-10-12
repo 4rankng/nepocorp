@@ -15,7 +15,7 @@ export function PayableHeroKpiRow({
     <div className="hero-kpi-row">
       {/* Hero card — span 3 */}
       <div className="hero-kpi-card">
-        <span className="hero-kpi-card__eyebrow">Tổng công nợ phải trả</span>
+        <span className="hero-kpi-card__eyebrow">Tổng công nợ phải trả (gồm VAT)</span>
         <span className="hero-kpi-card__amount">
           <span>{heroMoney.num}</span>{' '}
           <span className="hero-kpi-card__currency">{heroMoney.unit}</span>

@@ -78,10 +78,10 @@ export default function FinancePage() {
               if (!report) return;
               const headers = ['Khoản mục', `Tháng ${String(month).padStart(2,'0')}/${year}`, `Tháng ${String(month).padStart(2,'0')}/${year - 1}`];
               const rows = [
-                ['Doanh thu vận tải', transRevenue, transRevenueLY],
-                ['Doanh thu điều xe ngoài', report.externalMarginTotal ?? 0, prevReport?.externalMarginTotal ?? 0],
+                ['Doanh thu vận tải (chưa VAT)', transRevenue, transRevenueLY],
+                ['Doanh thu điều xe ngoài (chưa VAT)', report.externalMarginTotal ?? 0, prevReport?.externalMarginTotal ?? 0],
                 ['Thu nhập khác', otherRevenue, otherRevenueLY],
-                ['Tổng doanh thu', totalRevenue, totalRevenueLY],
+                ['Tổng doanh thu (chưa VAT)', totalRevenue, totalRevenueLY],
                 ['Nhiên liệu', fuelCost, ''],
                 ['Tiền đi đường', roadCost, ''],
                 ['Lương lái xe', driverCost, ''],
@@ -107,7 +107,7 @@ export default function FinancePage() {
       {/* ── KPI Hero Strip ──────────────────────────────────── */}
       <div className="pnl-kpi-strip fade-up-2" data-tour-id="finance-kpis">
         <div className="pnl-kpi">
-          <div className="pnl-kpi__label">Tổng doanh thu</div>
+          <div className="pnl-kpi__label">Tổng doanh thu (chưa VAT)</div>
           <div className="pnl-kpi__value"><span>{formatNumber(totalRevenue)}</span><span className="pnl-kpi__unit">₫</span></div>
           {prevReport
             ? <div className={`pnl-kpi__delta ${totalRevenue >= totalRevenueLY ? 'pnl-kpi__delta--up' : 'pnl-kpi__delta--down'}`}>{yoyDeltaLabel(totalRevenue, totalRevenueLY)}</div>
@@ -125,7 +125,7 @@ export default function FinancePage() {
           <AssetIcon name="profit" size={54} className="pnl-kpi__asset" />
         </div>
         <div className="pnl-kpi">
-          <div className="pnl-kpi__label">Biên lợi nhuận gộp</div>
+          <div className="pnl-kpi__label">Biên lợi nhuận gộp (trên DT chưa VAT)</div>
           <div className="pnl-kpi__value"><span>{marginPct(grossProfit, totalRevenue)}</span><span className="pnl-kpi__unit">%</span></div>
           <div className="pnl-kpi__delta pnl-kpi__delta--neutral"
             title="Chốt sổ: chuyến đã chuyển trạng thái 'Đã khóa' trong kỳ — doanh thu và chi phí được ghi nhận vào sổ kế toán"
@@ -185,7 +185,7 @@ export default function FinancePage() {
 
             {/* REVENUE */}
             <div className="pnl-row pnl-row--section">
-              <div>Doanh thu</div>
+              <div>Doanh thu (chưa VAT)</div>
               <div></div><div></div><div></div>
             </div>
 
@@ -234,7 +234,7 @@ export default function FinancePage() {
             </div>
 
             <div className="pnl-row pnl-row--subtotal">
-              <div className="pnl-row__label">Tổng doanh thu</div>
+              <div className="pnl-row__label">Tổng doanh thu (chưa VAT)</div>
               <div className="pnl-row__amount">{formatNumber(totalRevenue)}</div>
               <div className="pnl-row__yoy">{prevReport ? formatNumber(totalRevenueLY) : '—'}</div>
               <div className={`pnl-row__pct ${prevReport ? yoyClass(totalRevenue, totalRevenueLY) : ''}`}>{prevReport ? yoyPct(totalRevenue, totalRevenueLY) : '—'}</div>
@@ -304,7 +304,7 @@ export default function FinancePage() {
 
             <div className="pnl-row pnl-row--subtotal" style={{ background: 'var(--success-soft)' }}>
               <div className="pnl-row__label" style={{ color: 'var(--success)', fontWeight: 700 }}>
-                Lợi nhuận gộp · Biên {marginPct(grossProfit, totalRevenue)}%
+                Lợi nhuận gộp · Biên {marginPct(grossProfit, totalRevenue)}% (trên DT chưa VAT)
               </div>
               <div className="pnl-row__amount" style={{ color: 'var(--success)', fontWeight: 700 }}>{formatNumber(grossProfit)}</div>
               <div className="pnl-row__yoy" style={{ color: 'var(--success)' }}>{prevReport ? formatNumber(grossProfitLY) : '—'}</div>

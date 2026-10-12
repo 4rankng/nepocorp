@@ -78,7 +78,7 @@ export function DashboardKpiRow({
       <DashboardStat
         tone="revenue"
         icon={<AssetIcon name="analytics" size={15} />}
-        label={`Doanh thu · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
+        label={`Doanh thu (chưa VAT) · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
         delta={<DeltaPill mom={revenueMoM} />}
         value={fmtVN(revenue)}
         description={<>Tháng trước · {formatNumber(prevRevenue)} ₫</>}
@@ -89,7 +89,7 @@ export function DashboardKpiRow({
         label="Tổng chi phí"
         delta={<DeltaPill mom={costsMoM} />}
         value={fmtVN(costs)}
-        description={<>{costRatio.toFixed(1)}% doanh thu</>}
+        description={<>{costRatio.toFixed(1)}% doanh thu (chưa VAT)</>}
       />
       <DashboardStat
         tone="gross"
@@ -97,7 +97,7 @@ export function DashboardKpiRow({
         label="Lợi nhuận gộp"
         delta={<DeltaPill mom={grossMoM} />}
         value={fmtVN(grossProfit)}
-        description={<>Biên gộp · {grossMargin.toFixed(1)}%</>}
+        description={<>Biên gộp · {grossMargin.toFixed(1)}% (trên DT chưa VAT)</>}
       />
       <DashboardStat
         tone="net"
@@ -110,7 +110,7 @@ export function DashboardKpiRow({
       <DashboardStat
         tone="debt"
         icon={<AssetIcon name="receivables" size={15} />}
-        label="Công nợ phải thu"
+        label="Công nợ phải thu (gồm VAT)"
         value={fmtVN(totalOutstanding)}
         description={<>{overdueCustomers} khách quá hạn</>}
       />

@@ -76,7 +76,7 @@ export function PayableDesktopTable({ payables }: { payables: PayableSummary[] }
           <thead>
             <tr>
               <th>Nhà cung cấp</th>
-              <th className="num">Tổng nợ</th>
+              <th className="num">Tổng nợ (gồm VAT)</th>
               {AGING_BUCKET_LABELS.map(label => (
                 <th key={label}>{label}</th>
               ))}

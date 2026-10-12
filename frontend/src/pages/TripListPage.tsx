@@ -369,10 +369,10 @@ export default function TripListPage() {
     await downloadCSV(`so-chuyen-${new Date().toISOString().slice(0, 10)}.csv`, TRIP_LIST_EXPORT_HEADERS, rows, {
       title: 'SỔ CHUYẾN ĐI',
       subtitle: filterParts.join(' · ') || 'Tất cả chuyến trong kỳ',
-      columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'text'],
+      columnTypes: ['text', 'text', 'text', 'text', 'date', 'km', 'text', 'text', 'liters', 'text', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'text'],
       // "Trả hàng 2 điểm" remains an audit column, but is already included in
       // "Tổng tiền đi đường lái xe nhận" and must not be summed twice.
-      totalsColumns: [5, 8, 10, 11, 12, 13, 15, 16],
+      totalsColumns: [5, 8, 10, 11, 12, 13, 14, 15, 17, 18],
       totalsLabel: 'TỔNG CỘNG',
     });
   }, [statusFilter, truckFilter, customerFilter, debouncedSearch, listDateFrom, listDateTo]);

@@ -252,7 +252,7 @@ export default function PayableListPage() {
 
   /* ── CSV export ── */
   const handleExport = async () => {
-    const headers = ['Nhà cung cấp', 'Tổng nợ', ...AGING_BUCKET_LABELS];
+    const headers = ['Nhà cung cấp', 'Tổng nợ (gồm VAT)', ...AGING_BUCKET_LABELS];
     const rows = filteredPayables.map(d => [
       d.supplier.name,
       d.totalOutstanding,
@@ -283,7 +283,7 @@ export default function PayableListPage() {
       <PageHeader
         title="Công nợ phải trả"
         iconName="payables"
-        description={`Tổng nợ: ${formatCurrency(totals.total)} · ${totals.supplierCount} nhà cung cấp · cập nhật vừa xong`}
+        description={`Tổng nợ (gồm VAT): ${formatCurrency(totals.total)} · ${totals.supplierCount} nhà cung cấp · cập nhật vừa xong`}
         action={
           <div className="page-actions">
             {canPostCommission && (

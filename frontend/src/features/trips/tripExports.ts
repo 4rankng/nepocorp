@@ -1,5 +1,7 @@
 import { TRIP_STATUS_LABELS, type TripDetail } from '@tingting/shared';
-import { buildTripCode, type TripListRow, getTripDistance } from './tripHelpers';
+import {
+  buildTripCode, type TripListRow, getTripDistance, getTripDisplayRevenue, getTripRevenueBasis,
+} from './tripHelpers';
 
 export type TripExportFilters = {
   status?: string;
@@ -17,17 +19,18 @@ export interface TripExportOptions extends TripExportFilters {
 const EXPORT_HEADERS = [
   'Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM',
   'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu',
-  'Tổng tiền đi đường lái xe nhận', 'Doanh thu', 'Trả hàng 2 điểm', 'Lưu ca xe', 'Trạng thái',
+  'Tổng tiền đi đường lái xe nhận', 'Doanh thu (chưa VAT)', 'Thuế VAT đầu ra', 'Doanh thu (gồm VAT)',
+  'Trả hàng 2 điểm', 'Lưu ca xe', 'Trạng thái',
 ];
 
 const EXPORT_COLUMN_TYPES = [
   'text', 'text', 'text', 'text', 'date', 'km',
   'text', 'text', 'liters', 'text', 'currency',
-  'currency', 'currency', 'currency', 'currency', 'text',
+  'currency', 'currency', 'currency', 'currency', 'currency', 'currency', 'text',
 ] as const;
 
 /* Column indices (0-based) that should be summed in the totals row. */
-const EXPORT_TOTALS_COLUMNS = [5, 8, 10, 11, 12, 14]; // KM, Dầu (L), Giá trị dầu, Tiền đi đường lái xe nhận (đã gồm trả hàng 2 điểm), Doanh thu, Lưu ca xe
+const EXPORT_TOTALS_COLUMNS = [5, 8, 10, 11, 12, 13, 14, 16]; // KM, Dầu (L), Giá trị dầu, Tiền đi đường lái xe nhận (đã gồm trả hàng 2 điểm), Doanh thu (chưa VAT), Thuế VAT đầu ra, Doanh thu (gồm VAT), Lưu ca xe
 
 export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
   const commonParams: TripExportFilters = {
@@ -39,7 +42,7 @@ export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
     dateTo: opts.dateTo,
   };
   const first = await opts.fetcher({ ...commonParams });
-  const allTrips = [...first.items];
+  const allTrips: TripListRow[] = [...first.items];
   const totalPages = Math.ceil(first.total / first.pageSize);
   if (totalPages > 1) {
     const remaining = await Promise.all(
@@ -51,9 +54,11 @@ export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
   }
 
   const rows = allTrips.map((t) => {
-    const containers = (t as TripListRow).containers ?? [];
+    const containers = t.containers ?? [];
     const typeCodes = Array.from(new Set(containers.map((c) => c.containerTypeCode || c.containerTypeName).filter(Boolean))).join(', ');
     const numbers = containers.map((c) => c.containerNumber).join(', ');
+    // Revenue columns carry both bases, each labeled (kanban 101026203100).
+    const basis = getTripRevenueBasis(t);
     return [
       buildTripCode(t),
       t.customer?.name ?? '',
@@ -67,7 +72,9 @@ export async function exportTripsToCSV(opts: TripExportOptions): Promise<void> {
       t.fuelSupplier?.name ?? '',
       t.totalFuelCost ?? '',
       Number(t.totalRoadAllowance ?? 0) || '',
-      t.revenue ?? '',
+      getTripDisplayRevenue(t),
+      basis.vatAmount,
+      basis.contract,
       t.twoPointDeliveryBonus ?? '',
       t.vehicleShiftAllowance ?? '',
       TRIP_STATUS_LABELS[t.status],

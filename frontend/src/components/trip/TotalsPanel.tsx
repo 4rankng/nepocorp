@@ -130,11 +130,18 @@ export function TotalsPanel() {
       {/* 2. Revenue hero (inset) */}
       <section className="tc-totals__revenue">
         <p className="tc-totals__revenue-label">
-          {isExternal ? 'Doanh thu ghi nhận (chưa VAT)' : 'Doanh thu'}
+          {isExternal ? 'Doanh thu ghi nhận (chưa VAT)' : 'Doanh thu (gồm VAT)'}
         </p>
         <p className="tc-totals__revenue-value">
           <Money value={revenueNum} />
         </p>
+        {/* The profit below is computed on the VAT-exclusive freight, so the
+            split is spelled out on the hero figure (kanban 101026203100). */}
+        {!isExternal && Number(revenue) > 0 && totals.freightExVat !== revenueNum && (
+          <p className="tc-totals__revenue-label" style={{ marginTop: 2 }}>
+            chưa VAT: <Money value={totals.freightExVat} />
+          </p>
+        )}
         {(revenueEmpty > 0 || revenueComb > 0) && (
           <dl className="tc-totals__revenue-split">
             <div>

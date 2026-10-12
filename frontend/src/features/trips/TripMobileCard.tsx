@@ -10,6 +10,7 @@ import {
   buildTripCode, calcConsumption, formatMoney, getMissingIndicators, getMissingPlanFields, isTripToday,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
   getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
+  getTripDisplayMarginPct, getTripDisplayRevenue, getTripDisplayTotalCost, getTripRevenueBasis,
 } from './tripHelpers';
 import { XeNgoaiBadge } from './XeNgoaiBadge';
 
@@ -30,9 +31,15 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
   const pillClass = STATUS_PILL_CLASS[trip.status] ?? 'pill-moi';
   const km = getTripDistance(trip);
   const road = Number(trip.totalRoadAllowance ?? 0);
-  const revenue = Number(trip.revenue ?? 0);
-  const totalCost = Number(trip.totalCost ?? 0);
+  // Same display basis as the desktop list: revenue/cost on the ex-VAT figures
+  // the profit is recorded on, VAT-inclusive amounts as labeled memos
+  // (kanban 101026203100).
+  const revenueBasis = getTripRevenueBasis(trip);
+  const revenue = getTripDisplayRevenue(trip);
+  const bookedCost = Number(trip.totalCost ?? 0);
+  const totalCost = getTripDisplayTotalCost(trip);
   const grossProfit = getTripDisplayGrossProfit(trip);
+  const marginPct = getTripDisplayMarginPct(trip);
   const ancillaryCosts = getAncillaryTripCostBreakdown(trip);
   const missingIndicators = getMissingIndicators(trip);
   const missingPlanFields = getMissingPlanFields(trip);
@@ -145,16 +152,26 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
           </span>
         </div>
         <div className="mm">
-          <span className="lab">Doanh thu</span>
+          <span className="lab">Doanh thu (chưa VAT)</span>
           <span className={revenue > 0 ? 'val' : 'val empty'}>
             {revenue > 0 ? `${formatMoney(revenue)} ₫` : '—'}
           </span>
+          {revenueBasis.vatAmount > 0 && (
+            <span className="trip-mcard__cost-details">
+              <span>gồm VAT: {formatMoney(revenueBasis.contract)} ₫</span>
+            </span>
+          )}
         </div>
         <div className="mm">
           <span className="lab">Tổng chi phí</span>
           <span className={totalCost > 0 ? 'val' : 'val empty'}>
             {totalCost > 0 ? `${formatMoney(totalCost)} ₫` : '—'}
           </span>
+          {bookedCost > 0 && bookedCost !== totalCost && (
+            <span className="trip-mcard__cost-details">
+              <span>gồm VAT: {formatMoney(bookedCost)} ₫</span>
+            </span>
+          )}
           {ancillaryCosts.length > 0 && (
             <span className="trip-mcard__cost-details">
               {ancillaryCosts.map((cost) => (
@@ -168,6 +185,11 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
           <span className={grossProfit !== 0 ? `val${grossProfit < 0 ? ' warn' : ''}` : 'val empty'}>
             {grossProfit !== 0 ? `${formatMoney(grossProfit)} ₫` : '—'}
           </span>
+          {grossProfit > 0 && marginPct !== null && (
+            <span className="trip-mcard__cost-details">
+              <span title="Trên doanh thu chưa VAT">Biên LN {marginPct.toFixed(1).replace('.', ',')}%</span>
+            </span>
+          )}
         </div>
         <div className="mm">
           <span className="lab">Dầu</span>

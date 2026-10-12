@@ -12,6 +12,7 @@ import {
   buildTripCode, calcConsumption, formatMoney, getMissingIndicators, getDataCompleteness, getMissingPlanFields, isTripToday,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
   getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
+  getTripDisplayMarginPct, getTripDisplayRevenue, getTripDisplayTotalCost, getTripRevenueBasis,
 } from './tripHelpers';
 import { XeNgoaiBadge } from './XeNgoaiBadge';
 import { QuickMoneyInput } from './tripQuickEditCells';
@@ -405,11 +406,16 @@ export function buildTripColumns(
     },
     {
       id: 'revenue',
-      header: 'Doanh thu',
-      accessorFn: (row) => Number(row.revenue ?? 0),
+      // Reader sees the ex-VAT revenue the "LN gộp" column is computed on,
+      // with the VAT-inclusive contract value as a labeled memo; the quick
+      // editor types that contract value (the same figure the trip form
+      // stores), so the header names the basis per mode (kanban 101026203100).
+      header: quickEdit?.enabled ? 'Doanh thu (gồm VAT)' : 'Doanh thu (chưa VAT)',
+      accessorFn: (row) => getTripDisplayRevenue(row),
       cell: ({ row }) => {
         const trip = row.original;
-        const revenue = Number(trip.revenue ?? 0);
+        const basis = getTripRevenueBasis(trip);
+        const revenue = getTripDisplayRevenue(trip);
         if (quickEdit?.enabled) {
           const editable = isQuickEditable(trip);
           const draft = quickEdit.state.drafts[trip.id];
@@ -420,10 +426,22 @@ export function buildTripColumns(
                 disabled={!editable}
                 onChange={(value) => quickEdit.onDraftChange(trip.id, 'revenue', value)}
               />
+              {basis.vatAmount > 0 && (
+                <div className="trip-cost-cell__ancillary">chưa VAT: {formatMoney(basis.freightExVat)} ₫</div>
+              )}
             </div>
           );
         }
-        return moneyCell(revenue);
+        return (
+          <div className="trip-cost-cell">
+            {moneyCell(revenue)}
+            {basis.vatAmount > 0 && (
+              <div className="trip-cost-cell__ancillary" aria-label="Doanh thu gồm VAT">
+                gồm VAT: {formatMoney(basis.contract)} ₫
+              </div>
+            )}
+          </div>
+        );
       },
     },
     ...(quickEdit?.enabled ? [{
@@ -448,13 +466,23 @@ export function buildTripColumns(
     {
       id: 'totalCost',
       header: 'Tổng chi phí',
-      accessorFn: (row) => Number(row.totalCost ?? 0),
+      accessorFn: (row) => getTripDisplayTotalCost(row),
       cell: ({ row }) => {
         const trip = row.original;
         const ancillaryCosts = getAncillaryTripCostBreakdown(trip);
+        // Hired-carrier freight shows ex-VAT — the cost the "LN gộp" column is
+        // measured against; the as-paid (gồm VAT) AP figure stays as a memo
+        // (kanban 101026203100).
+        const displayCost = getTripDisplayTotalCost(trip);
+        const bookedCost = Number(trip.totalCost ?? 0);
         return (
           <div className="trip-cost-cell">
-            {moneyCell(Number(trip.totalCost ?? 0))}
+            {moneyCell(displayCost)}
+            {bookedCost > 0 && bookedCost !== displayCost && (
+              <div className="trip-cost-cell__ancillary" aria-label="Chi phí gồm VAT">
+                gồm VAT: {formatMoney(bookedCost)} ₫
+              </div>
+            )}
             {ancillaryCosts.length > 0 && (
               <div className="trip-cost-cell__ancillary" aria-label="Chi phí lưu ca và trả hàng 2 điểm">
                 {ancillaryCosts.map((cost) => (
@@ -471,8 +499,19 @@ export function buildTripColumns(
       header: 'LN gộp',
       accessorFn: (row) => getTripDisplayGrossProfit(row),
       cell: ({ row }) => {
-        const grossProfit = getTripDisplayGrossProfit(row.original);
-        return moneyCell(grossProfit, grossProfit < 0 ? 'money-loss' : '');
+        const trip = row.original;
+        const grossProfit = getTripDisplayGrossProfit(trip);
+        const marginPct = getTripDisplayMarginPct(trip);
+        return (
+          <div className="trip-cost-cell">
+            {moneyCell(grossProfit, grossProfit < 0 ? 'money-loss' : '')}
+            {grossProfit > 0 && marginPct !== null && (
+              <div className="trip-cost-cell__ancillary" title="Trên doanh thu chưa VAT">
+                Biên LN {marginPct.toFixed(1).replace('.', ',')}%
+              </div>
+            )}
+          </div>
+        );
       },
     },
     {

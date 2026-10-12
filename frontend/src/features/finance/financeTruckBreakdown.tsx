@@ -95,7 +95,7 @@ export function TruckBreakdownPanel({
                     <span className="truck-card__stat-value">{t.trips}</span>
                   </div>
                   <div className="truck-card__stat">
-                    <span className="truck-card__stat-label">Doanh thu</span>
+                    <span className="truck-card__stat-label">Doanh thu (chưa VAT)</span>
                     <span className="truck-card__stat-value">{formatNumber(t.revenue)}</span>
                   </div>
                   <div className="truck-card__stat">
@@ -120,7 +120,7 @@ export function TruckBreakdownPanel({
                   />
                 </div>
                 <div className="truck-card__margin">
-                  Biên LN {margin}% · Bấm để {isExpanded ? 'thu gọn' : 'xem từng lệnh'}
+                  Biên LN {margin}% (trên DT chưa VAT) · Bấm để {isExpanded ? 'thu gọn' : 'xem từng lệnh'}
                 </div>
                 </button>
                 {isExpanded && (
@@ -137,7 +137,7 @@ export function TruckBreakdownPanel({
                           <CostCheck matches={detail.costMatches} difference={detail.costDifference} />
                         </div>
                         <div className="truck-trip-card__grid">
-                          <TripAmount label="Doanh thu ghi nhận" value={detail.revenue} />
+                          <TripAmount label="Doanh thu ghi nhận (chưa VAT)" value={detail.revenue} />
                           <TripAmount label="Hoa hồng KH" value={detail.customerCommission} />
                           <TripAmount label={detail.isExternal ? 'Thuê xe' : 'Nhiên liệu'} value={detail.fuelOrHireCost} />
                           <TripAmount label="Đi đường" value={detail.roadAllowance} />
@@ -169,7 +169,7 @@ export function TruckBreakdownPanel({
               <tr>
                 <th>Biển số xe</th>
                 <th className="num">Lệnh</th>
-                <th className="num">Doanh thu chặng</th>
+                <th className="num">Doanh thu chặng (chưa VAT)</th>
                 <th className="num">Tổng chi phí</th>
                 {maintenanceCost > 0 && (
                   <>
@@ -227,7 +227,7 @@ export function TruckBreakdownPanel({
                                 <thead>
                                   <tr>
                                     <th>Lệnh / tuyến</th>
-                                    <th className="num">Doanh thu ghi nhận</th>
+                                    <th className="num">Doanh thu ghi nhận (chưa VAT)</th>
                                     <th className="num">Hoa hồng KH</th>
                                     <th className="num">Nhiên liệu / thuê xe</th>
                                     <th className="num">Đi đường</th>

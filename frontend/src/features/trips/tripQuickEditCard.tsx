@@ -6,12 +6,19 @@ import {
   formatMoney,
   getAncillaryTripCostBreakdown,
   getTripDisplayGrossProfit,
+  getTripDisplayMarginPct,
+  getTripDisplayTotalCost,
   STATUS_PILL_CLASS,
 } from './tripHelpers';
 
 export function QuickEditTripSummary({ trip }: { trip: TripDetail }) {
-  const totalCost = Number(trip.totalCost ?? 0);
+  // Quick-edit runs on the same display basis as the list: the cost and LN
+  // gộp figures reconcile, while the Doanh thu input above edits the stored
+  // contract (gồm VAT) value (kanban 101026203100).
+  const bookedCost = Number(trip.totalCost ?? 0);
+  const totalCost = getTripDisplayTotalCost(trip);
   const grossProfit = getTripDisplayGrossProfit(trip);
+  const marginPct = getTripDisplayMarginPct(trip);
   const ancillaryCosts = getAncillaryTripCostBreakdown(trip);
 
   return (
@@ -19,17 +26,25 @@ export function QuickEditTripSummary({ trip }: { trip: TripDetail }) {
       <div>
         <span>Tổng chi phí</span>
         <b>{totalCost > 0 ? `${formatMoney(totalCost)} ₫` : '—'}</b>
-        {ancillaryCosts.length > 0 && (
+        {(bookedCost > 0 && bookedCost !== totalCost) || ancillaryCosts.length > 0 ? (
           <div className="quick-card-cost-details">
+            {bookedCost > 0 && bookedCost !== totalCost && (
+              <span>gồm VAT: {formatMoney(bookedCost)} ₫</span>
+            )}
             {ancillaryCosts.map((cost) => (
               <span key={cost.label}>{cost.label}: {formatMoney(cost.amount)} ₫</span>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
       <div>
         <span>LN gộp</span>
         <b className={grossProfit < 0 ? 'money-loss' : ''}>{grossProfit !== 0 ? `${formatMoney(grossProfit)} ₫` : '—'}</b>
+        {grossProfit > 0 && marginPct !== null && (
+          <div className="quick-card-cost-details">
+            <span title="Trên doanh thu chưa VAT">Biên LN {marginPct.toFixed(1).replace('.', ',')}%</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -38,7 +53,9 @@ export function QuickEditTripSummary({ trip }: { trip: TripDetail }) {
 const QUICK_EDIT_FIELDS: Array<{ key: keyof TripQuickEditDraft; label: string; unit?: string }> = [
   { key: 'fuelLiters', label: 'Dầu', unit: 'L' },
   { key: 'roadAllowance', label: 'Đi đường', unit: '₫' },
-  { key: 'revenue', label: 'Doanh thu', unit: '₫' },
+  // The editor writes the stored contract value (same figure the trip form
+  // enters), so it states the VAT-inclusive basis (kanban 101026230100).
+  { key: 'revenue', label: 'Doanh thu (gồm VAT)', unit: '₫' },
   { key: 'driverSalary', label: 'Lương chuyến', unit: '₫' },
 ];
 

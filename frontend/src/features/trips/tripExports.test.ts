@@ -32,9 +32,36 @@ describe('exportTripsToCSV', () => {
       'Lưu ca xe',
     ]));
     expect(rows[0][11]).toBe(2480000);
-    expect(rows[0][13]).toBe('100000');
-    expect(rows[0][14]).toBe('200000');
-    expect(options.totalsColumns).toEqual(expect.arrayContaining([11, 14]));
-    expect(options.totalsColumns).not.toContain(13);
+    expect(rows[0][15]).toBe('100000');
+    expect(rows[0][16]).toBe('200000');
+    expect(options.totalsColumns).toEqual(expect.arrayContaining([11, 16]));
+    expect(options.totalsColumns).not.toContain(15);
+  });
+
+  it('exports revenue on the ex-VAT basis beside the labeled contract value (kanban 101026203100)', async () => {
+    // Trip 356 / TRP-202610-0002 figures: 8% VAT on a 8.466.120 ₫ contract.
+    const trip = {
+      id: 356,
+      tripCode: 'TRP-202610-0002',
+      status: TripStatus.COMPLETED,
+      revenue: '8466120',
+      vatRate: '0.080',
+      customerCommission: '0',
+      totalCost: '5459525',
+      grossProfit: '2379475',
+    } as TripDetail;
+
+    await exportTripsToCSV({
+      fetcher: vi.fn().mockResolvedValue({ items: [trip], total: 1, pageSize: 100 }),
+    });
+
+    const [, headers, rows] = downloadCSV.mock.calls[0];
+
+    expect(headers[12]).toBe('Doanh thu (chưa VAT)');
+    expect(headers[13]).toBe('Thuế VAT đầu ra');
+    expect(headers[14]).toBe('Doanh thu (gồm VAT)');
+    expect(rows[0][12]).toBe(7839000);
+    expect(rows[0][13]).toBe(627120);
+    expect(rows[0][14]).toBe(8466120);
   });
 });

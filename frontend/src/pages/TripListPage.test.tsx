@@ -37,6 +37,10 @@ describe('buildTripListExportRows', () => {
     expect(TRIP_LIST_EXPORT_HEADERS[11]).toBe('Tổng tiền đi đường lái xe nhận');
     expect(row[11]).toBe(2480000);
     expect(row[11]).not.toBe(3460000);
-    expect(row[13]).toBe('8626606');
+    // Addressed by header, not a magic index — the export gained VAT columns
+    // (kanban 101026203100) and will gain more.
+    const costIndex = TRIP_LIST_EXPORT_HEADERS.indexOf('Tổng chi phí');
+    expect(costIndex).toBeGreaterThan(0);
+    expect(row[costIndex]).toBe(8626606);
   });
 });

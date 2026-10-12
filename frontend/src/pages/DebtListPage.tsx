@@ -268,7 +268,7 @@ export default function DebtListPage() {
         <div className="hero-kpi-card debt-hero">
           <div className="debt-hero__content">
             <span className="hero-kpi-card__eyebrow">
-              Tổng công nợ phải thu
+              Tổng công nợ phải thu (gồm VAT)
             </span>
             <div className="hero-kpi-card__amount debt-hero__amount">
               <span>
@@ -457,11 +457,11 @@ export default function DebtListPage() {
                     <thead>
                       <tr>
                         <th>Khách hàng</th>
-                        <th className="num">Tổng nợ</th>
+                        <th className="num">Tổng nợ (gồm VAT)</th>
                         {/* "Số ròng" matches the same figure's label on the AR
                             detail's linked-AP summary; "Net công nợ" was the
                             only English word in the row (kanban 091026010110). */}
-                        <th className="num">Số ròng</th>
+                        <th className="num">Số ròng (gồm VAT)</th>
                         <th className="num" style={{ textAlign: 'center' }}>Tuổi nợ</th>
                       </tr>
                     </thead>

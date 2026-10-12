@@ -2,6 +2,9 @@ import { useMemo } from 'react';
 import { getActiveCapTable } from '../lib/cap-table';
 import type { TripDetail, CapTableHistory } from '@tingting/shared';
 import type { PnlReport } from '../hooks/useQueries';
+import {
+  getTripDisplayGrossProfit, getTripDisplayRevenue, getTripDisplayTotalCost,
+} from '../features/trips/tripHelpers';
 
 export const EMPTY_TRIPS: TripDetail[] = [];
 export const EMPTY_CAP: CapTableHistory[] = [];
@@ -198,9 +201,13 @@ export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, y
           const isExternal = t.carrierType === 'EXTERNAL';
           const key = isExternal ? 0 : (t.truckId ?? -1);
           const plate = isExternal ? 'Xe ngoài' : (t.truck?.licensePlate ?? 'Chưa gắn xe');
-          const rev = parseFloat(t.revenue ?? '0') + parseFloat(t.revenueEmptyReturn ?? '0');
-          const cost = parseFloat(t.totalCost ?? '0');
-          const gp = rev - cost; // recompute; avoid stale denormalized grossProfit
+          // Same basis as the authoritative report.trucks rows above: revenue
+          // ex-VAT after commission, hired-carrier cost ex-VAT (kanban
+          // 101026203100). This also drops the old `revenue + revenueEmptyReturn`
+          // sum, which double-counted the empty-return part of `revenue`.
+          const rev = getTripDisplayRevenue(t);
+          const cost = getTripDisplayTotalCost(t);
+          const gp = getTripDisplayGrossProfit(t); // recompute; avoid stale denormalized grossProfit
           const existing = truckMap.get(key);
           if (existing) {
             existing.trips++;
@@ -240,8 +247,10 @@ export function useFinanceDerived({ allTrips, report, prevReport, capTableRaw, y
         if (t.status === 'CANCELED') continue;
         const dateKey = t.departureDate?.slice(0, 10);
         if (!dateKey) continue;
-        const rev = Number(t.revenue) || 0;
-        const gp = Number(t.grossProfit) || 0;
+        // Both series on the display basis (revenue ex-VAT after commission),
+        // so the running revenue and profit lines reconcile (kanban 101026203100).
+        const rev = getTripDisplayRevenue(t);
+        const gp = getTripDisplayGrossProfit(t);
         const existing = dayMap.get(dateKey) ?? { revenue: 0, gross: 0 };
         existing.revenue += rev;
         existing.gross += gp;

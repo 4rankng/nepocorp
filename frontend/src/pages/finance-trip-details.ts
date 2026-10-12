@@ -1,4 +1,4 @@
-import { TripStatus, type PnlTripDetail, type TripDetail } from '@tingting/shared';
+import { TripStatus, computeExVatAmount, type PnlTripDetail, type TripDetail } from '@tingting/shared';
 
 export interface FinanceTripDetail {
   id: number;
@@ -60,17 +60,20 @@ export function toFinanceTripDetail(trip: TripDetail): FinanceTripDetail {
   const isExternal = trip.carrierType === 'EXTERNAL';
   const vatRate = amount(trip.vatRate);
   const grossRevenue = amount(trip.revenue);
-  const freightExVat = vatRate > 0 ? Math.round(grossRevenue / (1 + vatRate)) : grossRevenue;
+  // Same rounding and basis as the backend P&L rows this mirrors: revenue
+  // ex-VAT after commission, hired-carrier freight ex-VAT (kanban 101026203100).
+  const freightExVat = computeExVatAmount(grossRevenue, vatRate);
   const customerCommission = amount(trip.customerCommission);
   const revenue = freightExVat - customerCommission;
-  const fuelOrHireCost = isExternal ? amount(trip.externalFreightCost) : amount(trip.totalFuelCost);
+  const externalHireExVat = computeExVatAmount(amount(trip.externalFreightCost), vatRate);
+  const fuelOrHireCost = isExternal ? externalHireExVat : amount(trip.totalFuelCost);
   const roadAllowance = isExternal ? 0 : amount(trip.totalRoadAllowance);
   const tollAndCompanyTickets = isExternal ? 0 : amount(trip.tollCost) + amount(trip.tollsDiscount);
   const driverAndAllowances = isExternal
     ? 0
     : amount(trip.driverSalary) + amount(trip.vehicleShiftAllowance);
   const reconstructedCost = fuelOrHireCost + roadAllowance + tollAndCompanyTickets + driverAndAllowances;
-  const totalCost = amount(trip.totalCost);
+  const totalCost = isExternal ? externalHireExVat : amount(trip.totalCost);
   const costDifference = totalCost - reconstructedCost;
 
   return {

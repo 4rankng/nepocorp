@@ -49,7 +49,8 @@ export const QUICK_DRAFT_FIELD_LABELS: Record<QuickDraftField, string> = {
   fuelLiters: 'Dầu (L)',
   roadAllowance: 'Tiền đi đường',
   driverSalary: 'Lương chuyến',
-  revenue: 'Doanh thu',
+  // The quick editor writes the stored contract value (kanban 101026230100).
+  revenue: 'Doanh thu (gồm VAT)',
 };
 
 /**

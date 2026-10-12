@@ -45,3 +45,55 @@ describe('trip total-cost column', () => {
     expect(screen.getByText('Lưu ca xe: 200.000 ₫')).toBeTruthy();
   });
 });
+
+describe('trip money columns share one VAT basis (kanban 101026203100)', () => {
+  // Trip 356 / TRP-202610-0002: 8% VAT on a 8.466.120 ₫ contract; stored
+  // profit 2.379.475 ₫ = 7.839.000 − 5.459.525 (the ex-VAT basis).
+  const vatTrip = {
+    id: 356,
+    status: TripStatus.COMPLETED,
+    carrierType: 'OWN',
+    revenue: '8466120',
+    vatRate: '0.080',
+    customerCommission: '0',
+    totalCost: '5459525',
+    grossProfit: '2379475',
+  } as TripDetail;
+
+  const renderCell = (columnId: string, trip: TripDetail) => {
+    const column = buildTripColumns(37).find((item) => item.id === columnId);
+    if (!column || typeof column.cell !== 'function') {
+      throw new Error(`Missing ${columnId} cell renderer`);
+    }
+    render(column.cell({ row: { original: trip } } as never));
+  };
+
+  it('prints revenue, cost, profit and margin on the ex-VAT basis with the contract value labeled', () => {
+    const revenueColumn = buildTripColumns(37).find((item) => item.id === 'revenue');
+    expect(revenueColumn?.header).toBe('Doanh thu (chưa VAT)');
+
+    renderCell('revenue', vatTrip);
+    renderCell('totalCost', vatTrip);
+    renderCell('grossProfit', vatTrip);
+
+    // Doanh thu (chưa VAT) 7.839.000 − Tổng chi phí 5.459.525 = LN gộp 2.379.475,
+    // and Biên LN is measured on that same 7.839.000 revenue.
+    expect(screen.getByText('7.839.000')).toBeTruthy();
+    expect(screen.getByText('gồm VAT: 8.466.120 ₫')).toBeTruthy();
+    expect(screen.getByText('5.459.525')).toBeTruthy();
+    expect(screen.getByText('2.379.475')).toBeTruthy();
+    expect(screen.getByText('Biên LN 30,4%')).toBeTruthy();
+    expect(screen.queryByText('8.466.120', { exact: true })).toBeNull();
+  });
+
+  it('names the contract basis on the quick-edit editor, which writes the stored value', () => {
+    const quickEdit = {
+      enabled: true,
+      state: { selectedIds: new Set<number>(), drafts: { 356: { fuelLiters: '', roadAllowance: '', driverSalary: '', revenue: '8466120' } }, errors: {} },
+      onToggleSelect: () => {},
+      onDraftChange: () => {},
+    };
+    const revenueColumn = buildTripColumns(37, quickEdit).find((item) => item.id === 'revenue');
+    expect(revenueColumn?.header).toBe('Doanh thu (gồm VAT)');
+  });
+});

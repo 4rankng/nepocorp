@@ -7,6 +7,9 @@ import {
   getExternalTripPreviewGrossProfit,
   getMissingPlanFields,
   getTripDisplayGrossProfit,
+  getTripDisplayMarginPct,
+  getTripDisplayRevenue,
+  getTripDisplayTotalCost,
   getTripRevenueBasis,
   isTripToday,
 } from './tripHelpers';
@@ -262,6 +265,58 @@ describe('getTripRevenueBasis (kanban 101026203100)', () => {
       vatAmount: 560000,
       vatRate: 0.08,
     });
+  });
+});
+
+describe('display-basis helpers (kanban 101026203100)', () => {
+  const vatTrip = {
+    id: 356,
+    carrierType: 'OWN',
+    revenue: '8466120',
+    vatRate: '0.080',
+    customerCommission: '0',
+    totalCost: '5459525',
+    grossProfit: '2379475',
+  } as TripDetail;
+
+  it('prints the revenue the stored profit is recorded on, not the contract value', () => {
+    expect(getTripDisplayRevenue(vatTrip)).toBe(7839000);
+    expect(getTripDisplayTotalCost(vatTrip)).toBe(5459525);
+    expect(getTripDisplayGrossProfit(vatTrip)).toBe(2379475);
+    // The row the trip list prints must add up on one basis.
+    expect(getTripDisplayRevenue(vatTrip) - getTripDisplayTotalCost(vatTrip))
+      .toBe(getTripDisplayGrossProfit(vatTrip));
+  });
+
+  it('measures the margin on the same ex-VAT revenue', () => {
+    expect((getTripDisplayMarginPct(vatTrip) ?? 0).toFixed(1)).toBe('30.4');
+  });
+
+  it('deducts customer commission from the displayed revenue like the profit does', () => {
+    const commissioned = { ...vatTrip, customerCommission: '200000' } as TripDetail;
+    expect(getTripDisplayRevenue(commissioned)).toBe(7639000);
+  });
+
+  it('keeps hired-carrier freight ex-VAT so a xe ngoài row reconciles too', () => {
+    const external = {
+      carrierType: 'EXTERNAL',
+      revenue: '7560000',
+      externalFreightCost: '7128000',
+      vatRate: '0.080',
+      customerCommission: '200000',
+      totalCost: '7128000',
+    } as TripDetail;
+
+    expect(getTripDisplayRevenue(external)).toBe(6800000);
+    expect(getTripDisplayTotalCost(external)).toBe(6600000);
+    expect(getTripDisplayGrossProfit(external)).toBe(200000);
+    expect(getTripDisplayRevenue(external) - getTripDisplayTotalCost(external))
+      .toBe(getTripDisplayGrossProfit(external));
+    expect((getTripDisplayMarginPct(external) ?? 0).toFixed(1)).toBe('2.9');
+  });
+
+  it('returns no margin when there is no revenue to measure against', () => {
+    expect(getTripDisplayMarginPct({ ...vatTrip, revenue: '0', grossProfit: '0' } as TripDetail)).toBeNull();
   });
 });
 

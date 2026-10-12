@@ -168,6 +168,38 @@ export function getTripRevenueBasis(
   return { contract, freightExVat, vatAmount: contract - freightExVat, vatRate };
 }
 
+/**
+ * The revenue every money surface prints beside `getTripDisplayGrossProfit`:
+ * freight ex-VAT after customer commission — the exact basis the stored profit
+ * is recorded on (kanban 101026203100). The trip list used to print the raw
+ * contract value here, so its "Doanh thu" looked 8% richer than the "LN gộp"
+ * underneath it on a VAT trip.
+ */
+export function getTripDisplayRevenue(trip: TripDetail): number {
+  const externalFinancials = getExternalTripFinancials(trip);
+  if (externalFinancials) return externalFinancials.recordedRevenue;
+  return getTripRevenueBasis(trip).freightExVat - Number(trip.customerCommission ?? 0);
+}
+
+/**
+ * Cost side of the display equation `revenue − cost = LN gộp`: own-truck cost
+ * as recorded, hired-carrier freight ex-VAT (the AP figure stays visible via
+ * the "gồm VAT" memo rows). Matches the cost the trip-detail page shows
+ * (kanban 101026203100).
+ */
+export function getTripDisplayTotalCost(trip: TripDetail): number {
+  const externalFinancials = getExternalTripFinancials(trip);
+  if (externalFinancials) return externalFinancials.externalFreightCost;
+  return Number(trip.totalCost ?? 0);
+}
+
+/** Biên LN on the display basis: `grossProfit / revenue`, both VAT-exclusive. */
+export function getTripDisplayMarginPct(trip: TripDetail): number | null {
+  const revenue = getTripDisplayRevenue(trip);
+  if (revenue <= 0) return null;
+  return (getTripDisplayGrossProfit(trip) / revenue) * 100;
+}
+
 export interface AncillaryTripCost {
   label: 'Lưu ca xe';
   amount: number;

@@ -45,17 +45,21 @@ describe('finance trip detail', () => {
     expect(detail.costDifference).toBe(100_000);
   });
 
-  it('uses external hire cost and the external vehicle bucket', () => {
+  it('uses external hire cost ex-VAT and the external vehicle bucket (kanban 101026203100)', () => {
+    // Stored as-paid hire is 7.560.000 ₫ incl 8% VAT; the P&L measures the
+    // management margin on the 7.000.000 ₫ ex-VAT figure, like the revenue.
     const external = trip({
       carrierType: 'EXTERNAL',
       truckId: null as unknown as number,
-      externalFreightCost: '7000000',
-      totalCost: '7000000',
+      externalFreightCost: '7560000',
+      totalCost: '7560000',
     });
     const detail = toFinanceTripDetail(external);
 
     expect(financeVehicleBucketId(external)).toBe(0);
     expect(detail.fuelOrHireCost).toBe(7_000_000);
+    expect(detail.totalCost).toBe(7_000_000);
+    expect(detail.profit).toBe(2_000_000);
     expect(detail.roadAllowance).toBe(0);
     expect(detail.costMatches).toBe(true);
   });
