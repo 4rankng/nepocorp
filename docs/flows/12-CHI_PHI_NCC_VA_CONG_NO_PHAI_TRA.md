@@ -92,6 +92,7 @@ Form nhập:
 ### 2.4 Công nợ phải trả (/payables, /payables/:id)
 
 - `/payables`: danh sách NCC kèm số dư nợ + tuổi nợ (4 bucket: 0–30 / 31–60 / 61–90 / 90+), giống màn Công nợ phải thu.
+- Các tab nhóm công nợ (Tất cả / Xăng dầu / Phí dịch vụ / Hoa hồng / Vận chuyển thuê ngoài) là các projection của cùng một phép phân bổ FIFO — mọi khoản nợ một tab liệt kê đều phải xuất hiện trên **Tất cả** với số tiền không nhỏ hơn. Mọi thao tác ghi/sửa/xóa phiếu chi phí phải invalidate cache `payables-summary` và `supplier-statement`, để tab 'Tất cả' không hiển thị snapshot cũ hơn các tab khác (một khoản phí dịch vụ 30.000 ₫ từng hiện ở 'Phí dịch vụ' nhưng biến mất khỏi 'Tất cả' — kanban 101026203120).
 - `/expenses`: thanh lọc gồm NCC, hạng mục, xe và **Loại chi phí** (Chi phí công ty / Xe (Đầu kéo) / Rơ-moóc). Lọc "Chi phí công ty" trả về các phiếu không gắn xe (`vehicle_component` NULL). Bộ lọc ngày lọc theo **ngày phát sinh** — đúng cột đang hiển thị.
 - `/payables/:id`: mở trực tiếp bảng chi tiết NCC với các cột Phát sinh phải trả, Đã thanh toán và Số dư chạy + nút **Ghi thanh toán** (một ô số tiền — không khớp từng phiếu). Công cụ tạo Bảng kê nằm phía dưới bảng chi tiết để không che khuất dữ liệu đối chiếu.
 - `/payables/:id?kind=carrier`: sổ phải trả riêng cho nhà vận chuyển thuê ngoài. Chỉ cước thuê ngoài và các khoản chi trả tương ứng được tính; không được chuyển sang hoặc trộn với sổ phải thu của khách hàng dù đối tác dùng chung danh mục khách hàng.

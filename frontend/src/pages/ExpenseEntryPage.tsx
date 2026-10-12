@@ -368,6 +368,14 @@ export default function ExpenseEntryPage() {
       // expensesAll prefix in the factory, so we match the raw prefix here.
       // eslint-disable-next-line @tingting/no-bare-query-key
       await queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      // The payables tabs and the supplier statement read these snapshots. An
+      // UNPAID expense posts a VENDOR_EXPENSE payable, and without this the
+      // 'Tất cả' tab kept serving its pre-write snapshot (global 5-minute
+      // staleTime) while a not-yet-cached category tab fetched post-write data —
+      // a 30.000 ₫ phí dịch vụ showed under 'Phí dịch vụ' but vanished from
+      // 'Tất cả' (kanban 101026203120).
+      await queryClient.invalidateQueries({ queryKey: qk.financial.payablesSummaryAll });
+      await queryClient.invalidateQueries({ queryKey: qk.financial.supplierStatementAll });
       navigate('/expenses');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi lưu chi phí';
@@ -393,6 +401,9 @@ export default function ExpenseEntryPage() {
       // page must refetch so the removed row disappears from all filter views.
       // eslint-disable-next-line @tingting/no-bare-query-key
       await queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      // Deletion reverses the payable (see handleSubmit — kanban 101026203120).
+      await queryClient.invalidateQueries({ queryKey: qk.financial.payablesSummaryAll });
+      await queryClient.invalidateQueries({ queryKey: qk.financial.supplierStatementAll });
       navigate('/expenses');
     } catch (err: unknown) {
       setPageError(err instanceof Error ? err.message : 'Lỗi xóa chi phí');
