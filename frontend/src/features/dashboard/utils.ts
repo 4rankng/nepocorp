@@ -1,4 +1,5 @@
 import { formatCompact } from '../../lib/format';
+import { getTripDisplayRevenue } from '../trips/tripHelpers';
 
 export const styles = {
   thinBar: { height: 4 },
@@ -30,8 +31,12 @@ export interface DailySeriesPoint {
 interface DailyTripLike {
   departureDate?: string | null;
   status?: string;
-  revenue?: unknown;
+  revenue?: string | number | null;
   grossProfit?: unknown;
+  vatRate?: string | number | null;
+  customerCommission?: string | number | null;
+  carrierType?: string | null;
+  externalFreightCost?: string | number | null;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -52,7 +57,11 @@ export function buildDailySeries(trips: readonly DailyTripLike[]): DailySeriesPo
     const dateKey = trip.departureDate?.slice(0, 10);
     if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) continue;
     const point = perDay.get(dateKey) ?? { revenue: 0, gross: 0 };
-    point.revenue += Number(trip.revenue) || 0;
+    // Display basis (freight ex-VAT after commission) — the same figure the
+    // gross line is recorded on, so the two lines share one basis (kanban
+    // 101026230100). Raw contract revenue here made the chart plot incl-VAT
+    // revenue against ex-VAT profit.
+    point.revenue += getTripDisplayRevenue(trip);
     point.gross += Number(trip.grossProfit) || 0;
     perDay.set(dateKey, point);
   }

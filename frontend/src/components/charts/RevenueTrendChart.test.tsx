@@ -15,6 +15,11 @@ beforeAll(() => {
 });
 
 describe('RevenueTrendChart money formatting', () => {
+  it('states the VAT basis of the revenue series (kanban 101026230100)', () => {
+    const { container } = render(<RevenueTrendChart months={['1']} revenue={[1000]} gross={[500]} />);
+    expect(container.textContent).toContain('doanh thu (chưa VAT)');
+  });
+
   it('shows full VND digits on the axis, accessible description, and tooltip', () => {
     const { container } = render(
       <RevenueTrendChart
@@ -25,7 +30,7 @@ describe('RevenueTrendChart money formatting', () => {
     );
 
     expect(screen.getByText('1.000.000.000 ₫')).not.toBeNull();
-    expect(container.querySelector('desc')?.textContent).toContain('doanh thu 1.000.000.000 ₫');
+    expect(container.querySelector('desc')?.textContent).toContain('doanh thu (chưa VAT) 1.000.000.000 ₫');
     expect(container.textContent).not.toContain('tr₫');
     expect(container.textContent).not.toMatch(/\d(?:,\d)? Tr\b/);
 
@@ -53,7 +58,7 @@ describe('RevenueTrendChart money formatting', () => {
     });
 
     const firstPoint = screen.getByRole('button', {
-      name: '1: doanh thu 123.456.789 ₫, lợi nhuận gộp 45.600.000 ₫',
+      name: '1: doanh thu (chưa VAT) 123.456.789 ₫, lợi nhuận gộp 45.600.000 ₫',
     });
     fireEvent.focus(firstPoint);
 

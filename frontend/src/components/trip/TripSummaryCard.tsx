@@ -19,7 +19,7 @@ export function TripSummaryCard() {
       <div className="tc-summary-card__big mono">
         <Money value={revenue} />
       </div>
-      <div className="tc-summary-card__mini">Doanh thu chuyến · chưa trừ chi phí</div>
+      <div className="tc-summary-card__mini">Doanh thu (gồm VAT) · chưa trừ chi phí</div>
 
       <div className="tc-summary-rows">
         <div className="tc-summary-row">

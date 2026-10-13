@@ -20,7 +20,7 @@ const DEFAULT_META = { label: 'KHÁC', pill: 'dd-txn-pill dd-txn-pill--other' };
 
 export function rowTypeLabel(row: LedgerEntry): string {
   if (row.serviceFeeLabel || row.txnType === TxnType.SERVICE_FEE) return 'Phí chi hộ';
-  if (row.txnType === TxnType.TRIP_REVENUE) return 'Doanh thu';
+  if (row.txnType === TxnType.TRIP_REVENUE) return 'Doanh thu (gồm VAT)';
   return (TXN_META[row.txnType] ?? DEFAULT_META).label;
 }
 

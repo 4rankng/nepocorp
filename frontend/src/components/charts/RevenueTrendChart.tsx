@@ -99,7 +99,7 @@ export function RevenueTrendChart({
   const chartTitle = title ?? 'Xu hướng doanh thu và lợi nhuận gộp';
   const lastIndex = Math.max(0, Math.min(months.length, revenue.length, gross.length) - 1);
   const chartDescription = months.length > 0
-    ? `${months.length} kỳ. Kỳ gần nhất ${months[lastIndex]}: doanh thu ${fmtTip(revenue[lastIndex] || 0)}, lợi nhuận gộp ${fmtTip(gross[lastIndex] || 0)}.`
+    ? `${months.length} kỳ. Kỳ gần nhất ${months[lastIndex]}: doanh thu (chưa VAT) ${fmtTip(revenue[lastIndex] || 0)}, lợi nhuận gộp ${fmtTip(gross[lastIndex] || 0)}.`
     : 'Chưa có dữ liệu xu hướng.';
   const tooltipWidth = Math.min(250, Math.max(0, W - 16));
   const tooltipLeft = Math.min(
@@ -186,7 +186,7 @@ export function RevenueTrendChart({
               }}
               tabIndex={0}
               role="button"
-              aria-label={`${months[i]}: doanh thu ${fmtTip(revenue[i] || 0)}, lợi nhuận gộp ${fmtTip(gross[i] || 0)}`}
+              aria-label={`${months[i]}: doanh thu (chưa VAT) ${fmtTip(revenue[i] || 0)}, lợi nhuận gộp ${fmtTip(gross[i] || 0)}`}
             />
           );
         })}
@@ -222,7 +222,7 @@ export function RevenueTrendChart({
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
-              Doanh thu
+              Doanh thu (chưa VAT)
             </div>
             <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
               {fmtTip(revenue[activeIdx] || 0)}

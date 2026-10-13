@@ -160,7 +160,7 @@ export interface TripRevenueBasis {
  * with — so the displayed basis reconciles with the stored figure to the đồng.
  */
 export function getTripRevenueBasis(
-  trip: Pick<TripDetail, 'revenue' | 'vatRate'>,
+  trip: { revenue?: string | number | null; vatRate?: string | number | null },
 ): TripRevenueBasis {
   const contract = Number(trip.revenue ?? 0);
   const vatRate = Number(trip.vatRate ?? 0);
@@ -175,7 +175,7 @@ export function getTripRevenueBasis(
  * contract value here, so its "Doanh thu" looked 8% richer than the "LN gộp"
  * underneath it on a VAT trip.
  */
-export function getTripDisplayRevenue(trip: TripDetail): number {
+export function getTripDisplayRevenue(trip: ExternalTripPreviewInput): number {
   const externalFinancials = getExternalTripFinancials(trip);
   if (externalFinancials) return externalFinancials.recordedRevenue;
   return getTripRevenueBasis(trip).freightExVat - Number(trip.customerCommission ?? 0);

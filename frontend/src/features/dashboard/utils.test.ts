@@ -9,6 +9,20 @@ const trip = (departureDate: string, revenue: number, grossProfit: number, statu
 });
 
 describe('buildDailySeries — the daily chart x-axis', () => {
+  it('plots revenue on the display basis, matching the gross line (kanban 101026230100)', () => {
+    // Contract 10.800.000 at 8% VAT, commission 200.000: the chart must plot
+    // 10.800.000/1.08 − 200.000 = 9.800.000 (chưa VAT), not the raw contract.
+    const series = buildDailySeries([{
+      departureDate: '2026-10-05',
+      status: 'COMPLETED',
+      revenue: 10_800_000,
+      grossProfit: 2_400_000,
+      vatRate: 0.08,
+      customerCommission: 200_000,
+    }]);
+    expect(series[0].revenue).toBe(9_800_000);
+  });
+
   it('keeps a zero point for a day with no trip so the axis has no hole', () => {
     // The reported shape: trips on 1…9 and 11, nothing on the 10th.
     const trips = [
