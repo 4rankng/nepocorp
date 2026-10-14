@@ -6,10 +6,11 @@
  */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, inArray, sql, desc, isNull, gte, lte } from 'drizzle-orm';
+import { eq, and, inArray, sql, desc, isNull, gte, lte, count } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
+import type { Tx } from './trip-shared';
 
 // ─── Payment recording ─────────────────────────────────────────────────────────
 
@@ -20,10 +21,36 @@ export interface PaymentInput {
 }
 
 /**
+ * Result of a payment intake. `duplicate: true` means an identical payment was
+ * already recorded and NOTHING was posted — the caller should surface the
+ * friendly "bản ghi đã tồn tại" message instead of an error.
+ */
+export type RecordPaymentResult =
+  | { duplicate: false }
+  | { duplicate: true; existingId: number; receiptId: string | null };
+
+/** Window (minutes) for the same-amount double-submit dedupe fallback. */
+const PAYMENT_DEDUPE_WINDOW_MINUTES = 10;
+
+/**
  * Record a customer payment against one or more trips.
  * Resolves trip codes for human-readable ledger notes.
+ *
+ * Idempotent on intake (kanban 141026163910): a second identical submission —
+ * the classic "form froze, user clicked again" — must not create a duplicate
+ * ledger entry. A submission is a duplicate when EITHER:
+ *   1. the same customer already has a PAYMENT_RECEIVED entry with the same
+ *      receipt id (the receipt is the client-supplied idempotency key: one
+ *      bank receipt = one posting, ever), OR
+ *   2. this customer was paid the exact same total, split into the same number
+ *      of per-trip rows, within the dedupe window (catches a resubmit where
+ *      the user retyped a different receipt id).
+ *
+ * The check runs inside the transaction, after the per-customer advisory
+ * lock, so two truly concurrent identical requests serialize and the second
+ * one sees the first one's rows.
  */
-export async function recordPayment(input: PaymentInput) {
+export async function recordPayment(input: PaymentInput): Promise<RecordPaymentResult> {
   return db.transaction(async (tx) => {
     const tripIds = Array.from(new Set(input.payments.map(p => p.tripId)));
     const tripRows = tripIds.length > 0
@@ -34,6 +61,10 @@ export async function recordPayment(input: PaymentInput) {
 
     // Advisory lock — serialize concurrent payments for the same customer
     await LedgerService.lockEntity(tx, 'CUSTOMER', input.customerId);
+
+    // ── Idempotency dedupe (runs under the lock; see kanban 141026163910) ──
+    const duplicate = await findDuplicatePayment(tx, input);
+    if (duplicate) return duplicate;
 
     // Per-trip overpayment guard (Flow 04 §5.3 TC-CN-024). One grouped query
     // gives revenue + paid per trip; `postedThisRequest` carries what this very
@@ -78,7 +109,59 @@ export async function recordPayment(input: PaymentInput) {
       });
       postedThisRequest.set(payment.tripId, (postedThisRequest.get(payment.tripId) ?? 0) + payment.amount);
     }
+    return { duplicate: false } as const;
   });
+}
+
+/**
+ * Duplicate-payment detector for recordPayment(). Must be called inside the
+ * customer's advisory-locked transaction. Returns the matched entry when the
+ * incoming payment is a duplicate, null when it should be posted.
+ */
+async function findDuplicatePayment(
+  tx: Tx,
+  input: PaymentInput,
+): Promise<Extract<RecordPaymentResult, { duplicate: true }> | null> {
+  // (1) Receipt-id idempotency — the client message-id. One receipt number
+  // must never post twice for the same customer, regardless of window.
+  const [sameReceipt] = await tx.select({ id: s.ledger.id, receiptId: s.ledger.receiptId })
+    .from(s.ledger)
+    .where(and(
+      eq(s.ledger.entityType, 'CUSTOMER'),
+      eq(s.ledger.entityId, input.customerId),
+      eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+      eq(s.ledger.receiptId, input.receiptId),
+    ))
+    .limit(1);
+  if (sameReceipt) {
+    return { duplicate: true, existingId: sameReceipt.id, receiptId: sameReceipt.receiptId };
+  }
+
+  // (2) Short-window fallback — same total amount, same number of per-trip
+  // rows, posted for this customer within the dedupe window. Rows of one
+  // intake share a receipt id, so grouping by receipt reconstructs the
+  // original request's (total, row-count) shape.
+  const totalAmount = input.payments.reduce((sum, p) => sum + p.amount, 0);
+  const recentGroups = await tx.select({
+    id: sql<number>`min(${s.ledger.id})`,
+    receiptId: s.ledger.receiptId,
+    total: sql<string>`sum(${s.ledger.credit})`,
+    n: count(),
+  }).from(s.ledger)
+    .where(and(
+      eq(s.ledger.entityType, 'CUSTOMER'),
+      eq(s.ledger.entityId, input.customerId),
+      eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+      gte(s.ledger.timestamp, sql`now() - (${PAYMENT_DEDUPE_WINDOW_MINUTES} * interval '1 minute')`),
+    ))
+    .groupBy(s.ledger.receiptId);
+  const windowMatch = recentGroups.find(
+    (g) => Number(g.total) === totalAmount && Number(g.n) === input.payments.length,
+  );
+  if (windowMatch) {
+    return { duplicate: true, existingId: Number(windowMatch.id), receiptId: windowMatch.receiptId };
+  }
+  return null;
 }
 
 // ─── Driver payout (B1 — feedback202606 GAP 4) ───────────────────────────────

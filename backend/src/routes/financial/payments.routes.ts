@@ -20,12 +20,22 @@ const router = Router();
 
 router.post('/payments/receive', asyncHandler(async (req: Request, res: Response) => {
   const data = createPaymentSchema.parse(req.body);
-  await financialService.recordPayment({
+  const result = await financialService.recordPayment({
     customerId: data.customerId,
     receiptId: data.receiptId,
     payments: data.payments.map((p) => ({ tripId: p.tripId, amount: p.amount })),
   });
   await invalidateReportCaches();
+  if (result.duplicate) {
+    // Idempotent intake (kanban 141026163910): the payment is already on the
+    // books (the first submit went through), so answer 200 with the friendly
+    // duplicate notice instead of creating a second entry.
+    return res.status(200).json({
+      ok: true,
+      duplicate: true,
+      message: 'Bản ghi thanh toán đã tồn tại — không ghi nhận trùng lặp.',
+    });
+  }
   emitNotification({
     type: NotificationType.PAYMENT_RECEIVED,
     title: 'Thanh toán nhận được',

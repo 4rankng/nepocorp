@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDate } from '../lib/format';
@@ -123,6 +123,13 @@ export default function DebtDetailPage() {
   const [payError, setPayError] = useState('');
   const queryClient = useQueryClient();
   const { toast: showToast } = useToast();
+
+  // Synchronous in-flight guard (kanban 141026163910). The disabled submit
+  // button alone is NOT enough: the modal's Enter shortcut (useConfirmShortcuts)
+  // fires onConfirm regardless of the button state, and two rapid events can
+  // both observe paySubmitting=false before React re-renders. A ref makes the
+  // guard immediate, so a frozen-looking form can never queue a second POST.
+  const payInFlightRef = useRef(false);
 
   // Agent "open/prefill" target: the bot can open this payment modal (and
   // prefill the amount) when the user is on this page — the "do it for you"
@@ -302,7 +309,24 @@ export default function DebtDetailPage() {
     setShowPay(true);
   };
 
+  // Every surface a payment touches: statement variants, the debt list, AR
+  // aging and the Dashboard overdue KPI all live under separate query keys —
+  // without these the DebtListPage hero cards and the Dashboard attention chip
+  // go stale until staleTime (2m).
+  const invalidatePaymentCaches = async () => {
+    // Broad prefix — invalidates every customer-statement query regardless
+    // of period range, so the AR detail page's month/range-scoped statement
+    // refetches alongside any other cached variant.
+    await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatementAll });
+    await queryClient.invalidateQueries({ queryKey: qk.financial.debt });
+    await queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
+    await queryClient.invalidateQueries({ queryKey: qk.dashboard.receivablesSummary });
+    await refetch();
+  };
+
   const submitPayment = async () => {
+    // Double-submit guard — see payInFlightRef above.
+    if (payInFlightRef.current) return;
     setPayError('');
     const amount = parseFloat(payAmount.replace(/[.,\s]/g, ''));
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -327,28 +351,25 @@ export default function DebtDetailPage() {
       payments.push({ tripId: t.tripId, amount: apply });
       remaining -= apply;
     }
+    payInFlightRef.current = true;
     setPaySubmitting(true);
     try {
-      await api.post('/payments/receive', {
+      const res = await api.post<{ ok: boolean; duplicate?: boolean; message?: string }>('/payments/receive', {
         customerId: Number(id),
         receiptId: payReceipt.trim(),
         payments,
       });
-      // Broad prefix — invalidates every customer-statement query regardless
-      // of period range, so the AR detail page's month/range-scoped statement
-      // refetches alongside any other cached variant.
-      await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatementAll });
-      await queryClient.invalidateQueries({ queryKey: qk.financial.debt });
-      // V1: a payment also changes AR aging + the Dashboard overdue KPI, which
-      // live under separate query keys — without these the DebtListPage hero
-      // cards and the Dashboard attention chip go stale until staleTime (2m).
-      await queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
-      await queryClient.invalidateQueries({ queryKey: qk.dashboard.receivablesSummary });
-      await refetch();
+      await invalidatePaymentCaches();
       setShowPay(false);
+      if (res?.duplicate) {
+        // The backend recognized a re-submission of an already-recorded
+        // payment — nothing new was posted (kanban 141026163910).
+        showToast({ kind: 'info', message: res.message || 'Bản ghi thanh toán đã tồn tại — không ghi nhận trùng lặp.' });
+      }
     } catch (e: unknown) {
       setPayError((e as Error)?.message || 'Lỗi khi ghi nhận thanh toán.');
     } finally {
+      payInFlightRef.current = false;
       setPaySubmitting(false);
     }
   };

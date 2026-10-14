@@ -47,9 +47,10 @@ export function DebtPaymentModal({
             data-tour-id="debt-payment-submit"
             disabled={paySubmitting || !payAmount.trim() || !payReceipt.trim()}
             onClick={onSubmit}
+            aria-busy={paySubmitting}
           >
             {paySubmitting ? <Loader2 size={14} className="spin" /> : <Save size={14} />}
-            Ghi nhận
+            {paySubmitting ? 'Đang ghi nhận…' : 'Ghi nhận'}
           </button>
         </>
       }
