@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { Role, NotificationType, createPaymentSchema, createAdjustmentSchema, vendorPaymentSchema, commissionSchema, driverPayoutSchema } from '@tingting/shared';
+import { Role, NotificationType, createPaymentSchema, updatePaymentSchema, createAdjustmentSchema, vendorPaymentSchema, commissionSchema, driverPayoutSchema } from '@tingting/shared';
 import type { PayablesCategory } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
@@ -72,6 +72,42 @@ router.delete('/payments/:id', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOU
       receipt_id: deleted.receiptId,
     },
     new_balance: deleted.newBalance,
+  });
+}));
+
+// ─── Edit a payment entry (NITODA follow-up) ─────────────────────────────────
+// Corrects amount / receipt code / received date of a PAYMENT_RECEIVED row in
+// place and recomputes the customer's running balance — the sibling of the
+// delete escape hatch, for "right payment, wrong figures" entries. Same
+// permission gate as delete: Casbin scopes `financial` write to the financial
+// roles, requireRoles makes the endpoint-level gate explicit, and the audit
+// middleware logs the PUT with the amounts we stash in auditEntityKey.
+
+router.put('/payments/:id', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const entryId = parseInt(req.params.id as string, 10);
+  if (!Number.isFinite(entryId) || entryId <= 0) {
+    return res.status(400).json({ error: 'ID bản ghi thanh toán không hợp lệ' });
+  }
+  const data = updatePaymentSchema.parse(req.body);
+  const updated = await financialService.updatePaymentEntry(entryId, {
+    amount: data.amount,
+    receiptId: data.receiptId,
+    receivedDate: data.receivedDate,
+  });
+  await invalidateReportCaches();
+  res.locals.auditEntityId = updated.id;
+  res.locals.auditEntityKey = `${updated.amount.toLocaleString('vi-VN')} ₫`
+    + (updated.receiptId ? `, biên lai ${updated.receiptId}` : '');
+  res.json({
+    ok: true,
+    updated: {
+      id: updated.id,
+      customer_id: updated.customerId,
+      amount: updated.amount,
+      receipt_id: updated.receiptId,
+      received_date: updated.receivedDate,
+    },
+    new_balance: updated.newBalance,
   });
 }));
 

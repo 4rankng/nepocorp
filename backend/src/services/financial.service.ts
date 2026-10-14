@@ -274,6 +274,111 @@ export async function deletePaymentEntry(entryId: number): Promise<DeletedPaymen
   });
 }
 
+// ─── Payment editing (NITODA follow-up) ───────────────────────────────────────
+
+export interface UpdatedPaymentEntry {
+  id: number;
+  customerId: number;
+  amount: number;
+  receiptId: string;
+  receivedDate: string;
+  /** Customer's outstanding AR balance after the edit + recompute. */
+  newBalance: number;
+}
+
+/**
+ * Edit a recorded customer payment entry — amount, receipt code, and
+ * "Ngày nhận" (which becomes the row's timestamp, exactly as at intake).
+ *
+ * The sanctioned sibling of deletePaymentEntry: the ledger stays append-only
+ * for everything else, but a mis-keyed receipt, wrong amount or wrong
+ * received date is a correction of the SAME business event, not a new one —
+ * so the row is updated in place and the running balance is rebuilt, under
+ * the same advisory lock, permission gate (ADMIN/MANAGER/ACCOUNTANT) and
+ * audit-logging path as the delete.
+ *
+ * Guards: only PAYMENT_RECEIVED rows of a CUSTOMER are editable; the new
+ * receipt id must stay unique among that customer's payment entries (the
+ * intake dedupe key); and the new amount may not exceed what is still
+ * collectible once this entry's current credit is backed out.
+ */
+export async function updatePaymentEntry(
+  entryId: number,
+  input: { amount: number; receiptId: string; receivedDate: string },
+): Promise<UpdatedPaymentEntry> {
+  return db.transaction(async (tx) => {
+    const [entry] = await tx.select().from(s.ledger)
+      .where(eq(s.ledger.id, entryId))
+      .limit(1);
+    if (!entry) {
+      throw new ApiError(404, 'Không tìm thấy bản ghi thanh toán');
+    }
+    if (entry.txnType !== TxnType.PAYMENT_RECEIVED) {
+      throw new ApiError(422, 'Chỉ được sửa bản ghi thanh toán (PAYMENT_RECEIVED)');
+    }
+    if (entry.entityType !== 'CUSTOMER') {
+      throw new ApiError(422, 'Chỉ được sửa bản ghi thanh toán của khách hàng');
+    }
+    if (!Number.isFinite(input.amount) || input.amount <= 0) {
+      throw new ApiError(422, 'Số tiền phải là số dương');
+    }
+    // Validates format + no-future and converts to the ledger timestamp.
+    const postedAt = receivedDateToTimestamp(input.receivedDate);
+
+    // Serialize against concurrent payment intake / edits / deletes for this
+    // customer before reading what is collectible.
+    await LedgerService.lockEntity(tx, entry.entityType, entry.entityId);
+
+    // Receipt-id uniqueness: the intake dedupe treats one receipt number as
+    // one posting per customer — an edit must not create a second row under
+    // an existing receipt, or later double-submit checks would misfire.
+    if (input.receiptId !== entry.receiptId) {
+      const [clash] = await tx.select({ id: s.ledger.id })
+        .from(s.ledger)
+        .where(and(
+          eq(s.ledger.entityType, entry.entityType),
+          eq(s.ledger.entityId, entry.entityId),
+          eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+          eq(s.ledger.receiptId, input.receiptId),
+        ))
+        .limit(1);
+      if (clash) {
+        throw new ApiError(409,
+          `Mã biên lai ${input.receiptId} đã được dùng cho bản ghi thanh toán khác của khách hàng này`);
+      }
+    }
+
+    // Overpay guard on the same total the intake uses, with this entry's
+    // current credit backed out (the edit replaces it, not adds to it).
+    const currentAmount = Number(entry.credit);
+    const collectible = await collectTripRemainders(tx, entry.entityId);
+    const totalRemainingWithout = collectible.reduce((sum, t) => sum + t.remaining, 0) + currentAmount;
+    if (input.amount > totalRemainingWithout + 1) {  // +1 to absorb rounding
+      throw new ApiError(422,
+        `Số tiền sửa vượt quá tổng số còn có thể thu (Tổng còn có thể thu: ${totalRemainingWithout.toLocaleString('vi-VN')} ₫, nhập ${input.amount.toLocaleString('vi-VN')} ₫)`);
+    }
+
+    await tx.update(s.ledger)
+      .set({
+        credit: String(input.amount),
+        receiptId: input.receiptId,
+        timestamp: postedAt,
+      })
+      .where(eq(s.ledger.id, entryId));
+
+    const newBalance = await LedgerService.recomputeEntityBalances(tx, entry.entityType, entry.entityId);
+
+    return {
+      id: entryId,
+      customerId: entry.entityId,
+      amount: input.amount,
+      receiptId: input.receiptId,
+      receivedDate: input.receivedDate,
+      newBalance,
+    };
+  });
+}
+
 // ─── Driver payout (B1 — feedback202606 GAP 4) ───────────────────────────────
 
 export interface DriverPayoutInput {

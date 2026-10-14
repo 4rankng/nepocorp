@@ -322,6 +322,13 @@ export const createPaymentSchema = z.object({
   receivedDate: receivedDateField.optional(),
 });
 
+/** Editable fields of a recorded receivable payment entry. */
+export const updatePaymentSchema = z.object({
+  amount: positiveNumeric,
+  receiptId: z.string().min(1),
+  receivedDate: receivedDateField,
+});
+
 // ─── Penalty ─────────────────────────────────────────────────────────────────
 
 export const createPenaltySchema = z.object({
@@ -1146,6 +1153,8 @@ export type CreateTripInput = z.infer<typeof createTripSchema>;
 export type UpdateTripFiguresInput = z.infer<typeof updateTripFiguresSchema>;
 export type BulkUpdateTripFiguresInput = z.infer<typeof bulkUpdateTripFiguresSchema>;
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+
+export type UpdatePaymentInput = z.infer<typeof updatePaymentSchema>;
 export type CreatePenaltyInput = z.infer<typeof createPenaltySchema>;
 export type CreateAdjustmentInput = z.infer<typeof createAdjustmentSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

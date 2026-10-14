@@ -135,6 +135,7 @@ const templates: Record<string, (c: TemplateContext) => string> = {
 
   [AuditEvent.PAYMENT_RECEIVED]: (c) => `${subj(c)} đã ghi nhận thanh toán${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.PAYMENT_DELETED]: (c) => `${subj(c)} đã xóa bản ghi thanh toán${c.entityKey ? ` (${c.entityKey}; số dư công nợ đã được tính lại)` : ' (số dư công nợ đã được tính lại)'}`,
+  [AuditEvent.PAYMENT_UPDATED]: (c) => `${subj(c)} đã sửa bản ghi thanh toán${c.entityKey ? ` (${c.entityKey}; số dư công nợ đã được tính lại)` : ' (số dư công nợ đã được tính lại)'}`,
   [AuditEvent.ADJUSTMENT_CREATED]: (c) => `${subj(c)} đã tạo bút toán điều chỉnh công nợ${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.PENALTY_CREATED]: (c) => `${subj(c)} đã ghi nhận quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.PENALTY_CANCELED]: (c) => `${subj(c)} đã hủy bỏ quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
