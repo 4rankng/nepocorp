@@ -45,6 +45,35 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
   res.status(201).json({ ok: true });
 }));
 
+// ─── Delete a payment entry (kanban 141026163920) ────────────────────────────
+// Removes a PAYMENT_RECEIVED ledger row and recomputes the customer's running
+// balance. Escape hatch for duplicated/mis-posted payments. Casbin already
+// scopes `financial` delete to ADMIN/MANAGER/ACCOUNTANT; requireRoles makes
+// the endpoint-level gate explicit. The audit middleware logs the DELETE with
+// the amount + receipt id we stash in res.locals.auditEntityKey.
+
+router.delete('/payments/:id', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const entryId = parseInt(req.params.id as string, 10);
+  if (!Number.isFinite(entryId) || entryId <= 0) {
+    return res.status(400).json({ error: 'ID bản ghi thanh toán không hợp lệ' });
+  }
+  const deleted = await financialService.deletePaymentEntry(entryId);
+  await invalidateReportCaches();
+  res.locals.auditEntityId = deleted.id;
+  res.locals.auditEntityKey = `${deleted.amount.toLocaleString('vi-VN')} ₫`
+    + (deleted.receiptId ? `, biên lai ${deleted.receiptId}` : '');
+  res.json({
+    ok: true,
+    deleted: {
+      id: deleted.id,
+      customer_id: deleted.customerId,
+      amount: deleted.amount,
+      receipt_id: deleted.receiptId,
+    },
+    new_balance: deleted.newBalance,
+  });
+}));
+
 // ─── Adjustment ──────────────────────────────────────────────────────────────
 
 router.post('/adjustments', asyncHandler(async (req: Request, res: Response) => {

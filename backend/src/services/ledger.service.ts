@@ -659,6 +659,37 @@ export class LedgerService {
   }
 
   /**
+   * Rebuild the running `balance` column for every row of one entity, in id
+   * order, using the same sign convention as postEntry (CUSTOMER: debit−credit;
+   * payables: credit−debit). Used after a sanctioned ledger-row deletion
+   * (payment delete, kanban 141026163920) so the latest row's balance — which
+   * getBalance() reads as the entity's current debt — is correct again.
+   *
+   * Must run inside the entity's advisory-locked transaction. One UPDATE with a
+   * window function touches only rows whose balance actually changed.
+   * Returns the entity's recomputed current balance.
+   */
+  static async recomputeEntityBalances(
+    tx: Tx,
+    entityType: string,
+    entityId: number,
+  ): Promise<number> {
+    await tx.execute(sql`
+      UPDATE ledger AS l
+      SET balance = r.new_balance
+      FROM (
+        SELECT id,
+          SUM(CASE WHEN entity_type = 'CUSTOMER' THEN debit - credit ELSE credit - debit END)
+            OVER (ORDER BY id) AS new_balance
+        FROM ledger
+        WHERE entity_type = ${entityType} AND entity_id = ${entityId}
+      ) AS r
+      WHERE l.id = r.id AND l.balance <> r.new_balance
+    `);
+    return this.getBalanceTx(tx, entityType, entityId);
+  }
+
+  /**
    * Batch balance lookup — single query for multiple entities.
    * Replaces N individual getBalance() calls with one DISTINCT ON query.
    * Returns a Map keyed by "entityType:entityId".

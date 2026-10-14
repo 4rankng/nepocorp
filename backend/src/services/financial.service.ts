@@ -164,6 +164,55 @@ async function findDuplicatePayment(
   return null;
 }
 
+// ─── Payment deletion (kanban 141026163920) ───────────────────────────────────
+
+export interface DeletedPaymentEntry {
+  id: number;
+  customerId: number;
+  amount: number;
+  receiptId: string | null;
+  /** Customer's outstanding AR balance after the deletion + recompute. */
+  newBalance: number;
+}
+
+/**
+ * Delete a customer payment entry (a PAYMENT_RECEIVED ledger row) and recompute
+ * the customer's running balance (kanban 141026163920).
+ *
+ * This is the one sanctioned DELETE on the otherwise append-only ledger: it is
+ * the escape hatch for mis-posted/duplicated payments, it is permission-scoped
+ * at the route (ADMIN/MANAGER/ACCOUNTANT), and every deletion is audit-logged
+ * with who/when/what amount by the audit middleware.
+ */
+export async function deletePaymentEntry(entryId: number): Promise<DeletedPaymentEntry> {
+  return db.transaction(async (tx) => {
+    const [entry] = await tx.select().from(s.ledger)
+      .where(eq(s.ledger.id, entryId))
+      .limit(1);
+    if (!entry) {
+      throw new ApiError(404, 'Không tìm thấy bản ghi thanh toán');
+    }
+    if (entry.txnType !== TxnType.PAYMENT_RECEIVED) {
+      throw new ApiError(422, 'Chỉ được xóa bản ghi thanh toán (PAYMENT_RECEIVED)');
+    }
+
+    // Serialize against concurrent payment intake / deletes for this customer,
+    // then remove the row and rebuild the running balance of the rows behind it.
+    await LedgerService.lockEntity(tx, entry.entityType, entry.entityId);
+    const amount = Number(entry.credit);
+    await tx.delete(s.ledger).where(eq(s.ledger.id, entryId));
+    const newBalance = await LedgerService.recomputeEntityBalances(tx, entry.entityType, entry.entityId);
+
+    return {
+      id: entryId,
+      customerId: entry.entityId,
+      amount,
+      receiptId: entry.receiptId,
+      newBalance,
+    };
+  });
+}
+
 // ─── Driver payout (B1 — feedback202606 GAP 4) ───────────────────────────────
 
 export interface DriverPayoutInput {
