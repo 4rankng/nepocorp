@@ -20,6 +20,7 @@ export default defineConfig({
     include: [
       'src/tests/payment-intake-dedupe.test.ts',
       'src/tests/payment-delete-recompute.test.ts',
+      'src/tests/payment-fifo-skip.test.ts',
     ],
     testTimeout: 30_000,
     hookTimeout: 30_000,

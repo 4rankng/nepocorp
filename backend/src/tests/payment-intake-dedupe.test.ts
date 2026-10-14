@@ -128,7 +128,9 @@ describe('payment intake idempotency (kanban 141026163910)', () => {
       ],
     });
     assert.equal(result.duplicate, false);
-    assert.equal((await paymentRows(customerId)).length, 3);
+    // Server-authoritative FIFO (NITODA incident): the 5M total lands as ONE
+    // row on trip A (oldest, 9M collectible) regardless of the client split.
+    assert.equal((await paymentRows(customerId)).length, 2);
     assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), 9_000_000);
   });
 
