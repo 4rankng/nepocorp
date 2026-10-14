@@ -1305,6 +1305,13 @@
 .dd-detail-table {
   min-width: 1040px;
 }
+/* Delete-payment action cell (kanban 141026163920) — narrow, right-aligned. */
+.dd-detail-table .dd-td-action {
+  width: 44px;
+  padding-right: 8px;
+  text-align: right;
+  white-space: nowrap;
+}
 .dd-fuel-row .dd-fuel-vehicle,
 .dd-expense-row .dd-expense-vehicle {
   color: var(--ink);
@@ -1388,6 +1395,10 @@
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .dd-ledger-mobile-card__head .btn--icon {
+    flex-shrink: 0;
   }
 
   .dd-ledger-mobile-card__body {

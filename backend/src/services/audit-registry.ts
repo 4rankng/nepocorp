@@ -67,6 +67,11 @@ export function resolveAuditEvent(method: string, path: string): AuditEventType 
   if (methodKey === 'POST' && path.includes('/expenses/') && path.endsWith('/reject')) {
     return 'TRIP_EXPENSE_REJECTED' as AuditEventType;
   }
+  // Payment-entry deletion (kanban 141026163920) — its own event so the audit
+  // trail names the amount and lands in the audit-log Financial filter.
+  if (methodKey === 'DELETE' && /^\/api\/payments\/\d+$/.test(path)) {
+    return 'PAYMENT_DELETED' as AuditEventType;
+  }
 
   // 1. Try exact match
   const exact = exactRegistry.get(exactKey(method, path));

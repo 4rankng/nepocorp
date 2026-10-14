@@ -20,12 +20,22 @@ const router = Router();
 
 router.post('/payments/receive', asyncHandler(async (req: Request, res: Response) => {
   const data = createPaymentSchema.parse(req.body);
-  await financialService.recordPayment({
+  const result = await financialService.recordPayment({
     customerId: data.customerId,
     receiptId: data.receiptId,
     payments: data.payments.map((p) => ({ tripId: p.tripId, amount: p.amount })),
   });
   await invalidateReportCaches();
+  if (result.duplicate) {
+    // Idempotent intake (kanban 141026163910): the payment is already on the
+    // books (the first submit went through), so answer 200 with the friendly
+    // duplicate notice instead of creating a second entry.
+    return res.status(200).json({
+      ok: true,
+      duplicate: true,
+      message: 'Bản ghi thanh toán đã tồn tại — không ghi nhận trùng lặp.',
+    });
+  }
   emitNotification({
     type: NotificationType.PAYMENT_RECEIVED,
     title: 'Thanh toán nhận được',
@@ -33,6 +43,35 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
     relatedEntityType: 'payments',
   });
   res.status(201).json({ ok: true });
+}));
+
+// ─── Delete a payment entry (kanban 141026163920) ────────────────────────────
+// Removes a PAYMENT_RECEIVED ledger row and recomputes the customer's running
+// balance. Escape hatch for duplicated/mis-posted payments. Casbin already
+// scopes `financial` delete to ADMIN/MANAGER/ACCOUNTANT; requireRoles makes
+// the endpoint-level gate explicit. The audit middleware logs the DELETE with
+// the amount + receipt id we stash in res.locals.auditEntityKey.
+
+router.delete('/payments/:id', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const entryId = parseInt(req.params.id as string, 10);
+  if (!Number.isFinite(entryId) || entryId <= 0) {
+    return res.status(400).json({ error: 'ID bản ghi thanh toán không hợp lệ' });
+  }
+  const deleted = await financialService.deletePaymentEntry(entryId);
+  await invalidateReportCaches();
+  res.locals.auditEntityId = deleted.id;
+  res.locals.auditEntityKey = `${deleted.amount.toLocaleString('vi-VN')} ₫`
+    + (deleted.receiptId ? `, biên lai ${deleted.receiptId}` : '');
+  res.json({
+    ok: true,
+    deleted: {
+      id: deleted.id,
+      customer_id: deleted.customerId,
+      amount: deleted.amount,
+      receipt_id: deleted.receiptId,
+    },
+    new_balance: deleted.newBalance,
+  });
 }));
 
 // ─── Adjustment ──────────────────────────────────────────────────────────────

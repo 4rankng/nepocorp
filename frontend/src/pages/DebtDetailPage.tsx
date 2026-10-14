@@ -1,13 +1,16 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDate } from '../lib/format';
 import { downloadBlob, openBlobInNewTab } from '../lib/download';
-import { TxnType } from '@tingting/shared';
+import { TxnType, isFinancialRole } from '@tingting/shared';
+import type { LedgerEntry } from '@tingting/shared';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
+import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { ConfirmDialog } from '../components/UI';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
 import { useToast } from '../components/shared/Toast';
 import { usePageAnimations } from '../hooks/animations';
@@ -123,6 +126,24 @@ export default function DebtDetailPage() {
   const [payError, setPayError] = useState('');
   const queryClient = useQueryClient();
   const { toast: showToast } = useToast();
+  const { user } = useAuth();
+
+  // Synchronous in-flight guard (kanban 141026163910). The disabled submit
+  // button alone is NOT enough: the modal's Enter shortcut (useConfirmShortcuts)
+  // fires onConfirm regardless of the button state, and two rapid events can
+  // both observe paySubmitting=false before React re-renders. A ref makes the
+  // guard immediate, so a frozen-looking form can never queue a second POST.
+  const payInFlightRef = useRef(false);
+
+  // Delete-payment flow (kanban 141026163920). Only financial roles get the
+  // action; the backend re-checks permissions on DELETE /payments/:id.
+  const canDeletePayments = isFinancialRole(user?.role);
+  const [deleteTarget, setDeleteTarget] = useState<LedgerEntry | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  // Before the early returns below — hooks must run unconditionally.
+  const requestDeletePayment = useCallback((row: LedgerEntry) => {
+    setDeleteTarget(row);
+  }, []);
 
   // Agent "open/prefill" target: the bot can open this payment modal (and
   // prefill the amount) when the user is on this page — the "do it for you"
@@ -302,7 +323,26 @@ export default function DebtDetailPage() {
     setShowPay(true);
   };
 
+  // Every surface a payment (or its deletion) touches. Both flows funnel
+  // through this so the debt list, AR aging and Dashboard KPIs refresh the
+  // same way (kanban 141026163920 requires the delete path to reuse it).
+  const invalidatePaymentCaches = async () => {
+    // Broad prefix — invalidates every customer-statement query regardless
+    // of period range, so the AR detail page's month/range-scoped statement
+    // refetches alongside any other cached variant.
+    await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatementAll });
+    await queryClient.invalidateQueries({ queryKey: qk.financial.debt });
+    // V1: a payment also changes AR aging + the Dashboard overdue KPI, which
+    // live under separate query keys — without these the DebtListPage hero
+    // cards and the Dashboard attention chip go stale until staleTime (2m).
+    await queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
+    await queryClient.invalidateQueries({ queryKey: qk.dashboard.receivablesSummary });
+    await refetch();
+  };
+
   const submitPayment = async () => {
+    // Double-submit guard — see payInFlightRef above.
+    if (payInFlightRef.current) return;
     setPayError('');
     const amount = parseFloat(payAmount.replace(/[.,\s]/g, ''));
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -327,29 +367,41 @@ export default function DebtDetailPage() {
       payments.push({ tripId: t.tripId, amount: apply });
       remaining -= apply;
     }
+    payInFlightRef.current = true;
     setPaySubmitting(true);
     try {
-      await api.post('/payments/receive', {
+      const res = await api.post<{ ok: boolean; duplicate?: boolean; message?: string }>('/payments/receive', {
         customerId: Number(id),
         receiptId: payReceipt.trim(),
         payments,
       });
-      // Broad prefix — invalidates every customer-statement query regardless
-      // of period range, so the AR detail page's month/range-scoped statement
-      // refetches alongside any other cached variant.
-      await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatementAll });
-      await queryClient.invalidateQueries({ queryKey: qk.financial.debt });
-      // V1: a payment also changes AR aging + the Dashboard overdue KPI, which
-      // live under separate query keys — without these the DebtListPage hero
-      // cards and the Dashboard attention chip go stale until staleTime (2m).
-      await queryClient.invalidateQueries({ queryKey: qk.financial.customerAgingAll });
-      await queryClient.invalidateQueries({ queryKey: qk.dashboard.receivablesSummary });
-      await refetch();
+      await invalidatePaymentCaches();
       setShowPay(false);
+      if (res?.duplicate) {
+        // The backend recognized a re-submission of an already-recorded
+        // payment — nothing new was posted (kanban 141026163910).
+        showToast({ kind: 'info', message: res.message || 'Bản ghi thanh toán đã tồn tại — không ghi nhận trùng lặp.' });
+      }
     } catch (e: unknown) {
       setPayError((e as Error)?.message || 'Lỗi khi ghi nhận thanh toán.');
     } finally {
+      payInFlightRef.current = false;
       setPaySubmitting(false);
+    }
+  };
+
+  const confirmDeletePayment = async () => {
+    if (!deleteTarget || deleteSubmitting) return;
+    setDeleteSubmitting(true);
+    try {
+      await api.delete(`/payments/${deleteTarget.id}`);
+      setDeleteTarget(null);
+      await invalidatePaymentCaches();
+      showToast({ kind: 'success', message: 'Đã xóa bản ghi thanh toán. Số dư công nợ đã được tính lại.' });
+    } catch (e: unknown) {
+      showToast({ kind: 'error', message: (e as Error)?.message || 'Lỗi khi xóa bản ghi thanh toán.' });
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -549,7 +601,11 @@ export default function DebtDetailPage() {
               {isCompactLedger ? (
                 <ul className="dd-ledger-mobile d-list" aria-label="Danh sách giao dịch công nợ phải thu">
                   {filteredRows.map(row => (
-                    <ReceivableLedgerCard key={row.id} row={row} />
+                    <ReceivableLedgerCard
+                      key={row.id}
+                      row={row}
+                      onDelete={canDeletePayments ? requestDeletePayment : undefined}
+                    />
                   ))}
                   {filteredRows.length === 0 && (
                     <li className="dd-ledger-mobile-empty">{ledgerStatusMessage}</li>
@@ -567,15 +623,20 @@ export default function DebtDetailPage() {
                         <th className="dd-r">PHÁT SINH PHẢI THU</th>
                         <th className="dd-r">ĐÃ THU</th>
                         <th className="dd-r">SỐ DƯ</th>
+                        {canDeletePayments && <th aria-label="Thao tác" />}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredRows.map(row => (
-                        <ReceivableLedgerRow key={row.id} row={row} />
+                        <ReceivableLedgerRow
+                          key={row.id}
+                          row={row}
+                          onDelete={canDeletePayments ? requestDeletePayment : undefined}
+                        />
                       ))}
                       {filteredRows.length === 0 && (
                         <tr>
-                          <td colSpan={7} className="dd-table-empty">{ledgerStatusMessage}</td>
+                          <td colSpan={canDeletePayments ? 8 : 7} className="dd-table-empty">{ledgerStatusMessage}</td>
                         </tr>
                       )}
                     </tbody>
@@ -601,6 +662,17 @@ export default function DebtDetailPage() {
         onReceiptChange={setPayReceipt}
         onSubmit={() => { void submitPayment(); }}
         onClose={() => setShowPay(false)}
+      />
+
+      {/* Delete-payment confirmation (kanban 141026163920) */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        variant="danger"
+        message={`Xóa bản ghi thanh toán này? Số dư công nợ sẽ được tính lại. (${money(parseFloat(deleteTarget?.credit || '0'))}${deleteTarget?.receiptId ? ` — ${deleteTarget.receiptId}` : ''})`}
+        confirmLabel={deleteSubmitting ? 'Đang xóa…' : 'Xóa'}
+        cancelLabel="Hủy"
+        onConfirm={() => { void confirmDeletePayment(); }}
+        onCancel={() => setDeleteTarget(null)}
       />
     </div>
   );

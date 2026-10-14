@@ -10,6 +10,7 @@ import { eq, and, inArray, sql, desc, isNull, gte, lte } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
+import type { Tx } from './trip-shared';
 
 // ─── Payment recording ─────────────────────────────────────────────────────────
 
@@ -20,10 +21,36 @@ export interface PaymentInput {
 }
 
 /**
+ * Result of a payment intake. `duplicate: true` means an identical payment was
+ * already recorded and NOTHING was posted — the caller should surface the
+ * friendly "bản ghi đã tồn tại" message instead of an error.
+ */
+export type RecordPaymentResult =
+  | { duplicate: false }
+  | { duplicate: true; existingId: number; receiptId: string | null };
+
+/**
  * Record a customer payment against one or more trips.
  * Resolves trip codes for human-readable ledger notes.
+ *
+ * Idempotent on intake (kanban 141026163910): a second identical submission —
+ * the classic "form froze, user clicked again" — must not create a duplicate
+ * ledger entry. The receipt id IS the client-supplied idempotency key: one
+ * bank receipt = one posting, ever, and a double-submit resends the exact
+ * same form values including that receipt id. A submission is therefore a
+ * duplicate iff this customer already has a PAYMENT_RECEIVED entry with the
+ * same receipt id.
+ *
+ * The amount-matching time-window variant was considered and rejected: a
+ * different receipt number is a different payment document, and a customer
+ * legitimately paying the same amount twice within minutes must not be
+ * rejected as a duplicate.
+ *
+ * The check runs inside the transaction, after the per-customer advisory
+ * lock, so two truly concurrent identical requests serialize and the second
+ * one sees the first one's rows.
  */
-export async function recordPayment(input: PaymentInput) {
+export async function recordPayment(input: PaymentInput): Promise<RecordPaymentResult> {
   return db.transaction(async (tx) => {
     const tripIds = Array.from(new Set(input.payments.map(p => p.tripId)));
     const tripRows = tripIds.length > 0
@@ -34,6 +61,10 @@ export async function recordPayment(input: PaymentInput) {
 
     // Advisory lock — serialize concurrent payments for the same customer
     await LedgerService.lockEntity(tx, 'CUSTOMER', input.customerId);
+
+    // ── Idempotency dedupe (runs under the lock; see kanban 141026163910) ──
+    const duplicate = await findDuplicatePayment(tx, input);
+    if (duplicate) return duplicate;
 
     // Per-trip overpayment guard (Flow 04 §5.3 TC-CN-024). One grouped query
     // gives revenue + paid per trip; `postedThisRequest` carries what this very
@@ -78,6 +109,84 @@ export async function recordPayment(input: PaymentInput) {
       });
       postedThisRequest.set(payment.tripId, (postedThisRequest.get(payment.tripId) ?? 0) + payment.amount);
     }
+    return { duplicate: false } as const;
+  });
+}
+
+/**
+ * Duplicate-payment detector for recordPayment(). Must be called inside the
+ * customer's advisory-locked transaction. Returns the matched entry when the
+ * incoming payment is a duplicate, null when it should be posted.
+ *
+ * Receipt-id idempotency only — the client message-id. One receipt number
+ * must never post twice for the same customer. Amount-based window matching
+ * is deliberately absent: see the recordPayment doc comment.
+ */
+async function findDuplicatePayment(
+  tx: Tx,
+  input: PaymentInput,
+): Promise<Extract<RecordPaymentResult, { duplicate: true }> | null> {
+  const [sameReceipt] = await tx.select({ id: s.ledger.id, receiptId: s.ledger.receiptId })
+    .from(s.ledger)
+    .where(and(
+      eq(s.ledger.entityType, 'CUSTOMER'),
+      eq(s.ledger.entityId, input.customerId),
+      eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+      eq(s.ledger.receiptId, input.receiptId),
+    ))
+    .limit(1);
+  if (sameReceipt) {
+    return { duplicate: true, existingId: sameReceipt.id, receiptId: sameReceipt.receiptId };
+  }
+  return null;
+}
+
+// ─── Payment deletion (kanban 141026163920) ───────────────────────────────────
+
+export interface DeletedPaymentEntry {
+  id: number;
+  customerId: number;
+  amount: number;
+  receiptId: string | null;
+  /** Customer's outstanding AR balance after the deletion + recompute. */
+  newBalance: number;
+}
+
+/**
+ * Delete a customer payment entry (a PAYMENT_RECEIVED ledger row) and recompute
+ * the customer's running balance (kanban 141026163920).
+ *
+ * This is the one sanctioned DELETE on the otherwise append-only ledger: it is
+ * the escape hatch for mis-posted/duplicated payments, it is permission-scoped
+ * at the route (ADMIN/MANAGER/ACCOUNTANT), and every deletion is audit-logged
+ * with who/when/what amount by the audit middleware.
+ */
+export async function deletePaymentEntry(entryId: number): Promise<DeletedPaymentEntry> {
+  return db.transaction(async (tx) => {
+    const [entry] = await tx.select().from(s.ledger)
+      .where(eq(s.ledger.id, entryId))
+      .limit(1);
+    if (!entry) {
+      throw new ApiError(404, 'Không tìm thấy bản ghi thanh toán');
+    }
+    if (entry.txnType !== TxnType.PAYMENT_RECEIVED) {
+      throw new ApiError(422, 'Chỉ được xóa bản ghi thanh toán (PAYMENT_RECEIVED)');
+    }
+
+    // Serialize against concurrent payment intake / deletes for this customer,
+    // then remove the row and rebuild the running balance of the rows behind it.
+    await LedgerService.lockEntity(tx, entry.entityType, entry.entityId);
+    const amount = Number(entry.credit);
+    await tx.delete(s.ledger).where(eq(s.ledger.id, entryId));
+    const newBalance = await LedgerService.recomputeEntityBalances(tx, entry.entityType, entry.entityId);
+
+    return {
+      id: entryId,
+      customerId: entry.entityId,
+      amount,
+      receiptId: entry.receiptId,
+      newBalance,
+    };
   });
 }
 

@@ -44,6 +44,7 @@ vi.mock('../lib/api', async (importOriginal) => {
 vi.mock('../hooks/animations', () => ({ usePageAnimations: () => ({ rootRef: { current: null } }) }));
 vi.mock('../hooks/useAgentOpenable', () => ({ useAgentOpenable: () => undefined }));
 vi.mock('../hooks/useMediaQuery', () => ({ useMediaQuery: () => false }));
+vi.mock('../hooks/useAuth', () => ({ useAuth: () => ({ user: { role: 'MANAGER' } }) }));
 vi.mock('../components/shared/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('../lib/download', () => ({ downloadBlob: vi.fn(), openBlobInNewTab: vi.fn() }));
 vi.mock('../components/billing/BillingDocumentsPanel', () => ({ default: () => null }));

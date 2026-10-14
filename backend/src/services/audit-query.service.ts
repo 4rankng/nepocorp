@@ -20,7 +20,7 @@ export async function queryAuditLogs(params: AuditQueryParams) {
     if (category === 'trip') {
       conditions.push(sql`(${s.auditLogs.payload}->>'event' LIKE 'TRIP_%' OR ${s.auditLogs.payload}->>'event' = 'STATUS_CHANGED')`);
     } else if (category === 'finance') {
-      conditions.push(sql`${s.auditLogs.payload}->>'event' IN ('PAYMENT_RECEIVED', 'ADJUSTMENT_CREATED', 'PROFIT_DISTRIBUTED')`);
+      conditions.push(sql`${s.auditLogs.payload}->>'event' IN ('PAYMENT_RECEIVED', 'PAYMENT_DELETED', 'ADJUSTMENT_CREATED', 'PROFIT_DISTRIBUTED')`);
     } else if (category === 'penalty') {
       conditions.push(sql`${s.auditLogs.payload}->>'event' = 'PENALTY_CREATED'`);
     } else if (category === 'auth') {

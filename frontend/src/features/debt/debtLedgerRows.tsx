@@ -1,5 +1,6 @@
 import { TxnType } from '@tingting/shared';
 import type { LedgerEntry } from '@tingting/shared';
+import { Trash2 } from 'lucide-react';
 import { formatDate } from '../../lib/format';
 import { money, rowTypeLabel } from './debtUtils';
 
@@ -13,7 +14,28 @@ function receivablePill(txnType: TxnType): string {
   return 'dd-txn-pill dd-txn-pill--other';
 }
 
-export function ReceivableLedgerRow({ row }: { row: LedgerEntry }) {
+interface LedgerRowDeleteProps {
+  row: LedgerEntry;
+  /** Present only for roles allowed to delete payment entries; renders the action. */
+  onDelete?: (row: LedgerEntry) => void;
+}
+
+function DeletePaymentButton({ row, onDelete }: LedgerRowDeleteProps) {
+  if (!onDelete || row.txnType !== TxnType.PAYMENT_RECEIVED) return null;
+  return (
+    <button
+      type="button"
+      className="btn btn--ghost btn--icon btn--sm"
+      aria-label="Xóa bản ghi thanh toán"
+      title="Xóa bản ghi thanh toán"
+      onClick={() => onDelete(row)}
+    >
+      <Trash2 size={15} aria-hidden="true" />
+    </button>
+  );
+}
+
+export function ReceivableLedgerRow({ row, onDelete }: { row: LedgerEntry } & LedgerRowDeleteProps) {
   const debit = parseFloat(row.debit) || 0;
   const credit = parseFloat(row.credit) || 0;
   const balance = parseFloat(row.balance) || 0;
@@ -25,6 +47,7 @@ export function ReceivableLedgerRow({ row }: { row: LedgerEntry }) {
   const containers = row.containerNumbers?.filter(Boolean) ?? [];
   const primaryContent = row.routeName || row.serviceFeeLabel || row.note || 'Không có ghi chú';
   const secondaryContent = row.routeName && row.note && row.note !== row.routeName ? row.note : null;
+  const canDelete = onDelete && row.txnType === TxnType.PAYMENT_RECEIVED;
 
   return (
     <tr>
@@ -48,11 +71,16 @@ export function ReceivableLedgerRow({ row }: { row: LedgerEntry }) {
       <td className={`dd-num ${balance > 0 ? 'dd-num--bal' : balance < 0 ? 'dd-num--credit' : ''}`}>
         {balance < 0 ? '-' : ''}{money(Math.abs(balance))}
       </td>
+      {canDelete && (
+        <td className="dd-td-action">
+          <DeletePaymentButton row={row} onDelete={onDelete} />
+        </td>
+      )}
     </tr>
   );
 }
 
-export function ReceivableLedgerCard({ row }: { row: LedgerEntry }) {
+export function ReceivableLedgerCard({ row, onDelete }: { row: LedgerEntry } & LedgerRowDeleteProps) {
   const debit = parseFloat(row.debit) || 0;
   const credit = parseFloat(row.credit) || 0;
   const balance = parseFloat(row.balance) || 0;
@@ -71,6 +99,7 @@ export function ReceivableLedgerCard({ row }: { row: LedgerEntry }) {
       <div className="dd-ledger-mobile-card__head">
         <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
         <span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span>
+        <DeletePaymentButton row={row} onDelete={onDelete} />
       </div>
       <div className="dd-ledger-mobile-card__body">
         <strong>{reference}</strong>
