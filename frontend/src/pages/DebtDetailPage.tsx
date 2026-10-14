@@ -357,15 +357,24 @@ export default function DebtDetailPage() {
       setPayError('Khách hàng không có công nợ để thanh toán.');
       return;
     }
-    // Cap at total outstanding so we don't overpay.
-    const capped = Math.min(amount, totalOutstanding);
-    let remaining = capped;
+    // No silent client-side cap: the server is the authority on what is still
+    // collectible and rejects an over-total with the exact figure
+    // ("Tổng còn có thể thu: X ₫"), which the user needs to see. This split is
+    // only a preview — the server reallocates the total FIFO over its own
+    // per-trip remaining balances, skipping already-paid trips (NITODA fix).
+    let remaining = amount;
     const payments: Array<{ tripId: number; amount: number }> = [];
     for (const t of unpaidTrips) {
       if (remaining <= 0) break;
       const apply = Math.min(t.outstanding, remaining);
       payments.push({ tripId: t.tripId, amount: apply });
       remaining -= apply;
+    }
+    if (remaining > 0) {
+      // The aging preview could not absorb the amount — let the server say
+      // precisely how much is collectible instead of posting a short payment.
+      setPayError(`Số tiền vượt quá tổng công nợ còn lại (${money(totalOutstanding)}).`);
+      return;
     }
     payInFlightRef.current = true;
     setPaySubmitting(true);

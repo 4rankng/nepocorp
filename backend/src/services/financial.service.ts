@@ -21,6 +21,73 @@ export interface PaymentInput {
 }
 
 /**
+ * A trip of this customer that still has collectible balance, with the
+ * epoch-ms of the ledger row that first billed it (used for oldest-first
+ * ordering; the billing row's ledger id breaks same-millisecond ties).
+ */
+interface TripRemainder {
+  tripId: number;
+  remaining: number;
+  tripCode: string;
+  firstRevenueAt: number;
+  firstRevenueId: number;
+}
+
+/**
+ * Remaining collectible balance per trip for a customer, oldest revenue first.
+ *
+ * `remaining` is the ledger's own arithmetic — Σ TRIP_REVENUE debit −
+ * Σ PAYMENT_RECEIVED credit on that trip's txnId — which is the authoritative
+ * collectible figure. Trips with remaining ≤ 0 (fully paid, or overpaid) are
+ * dropped: FIFO allocation must skip them, not fail on them.
+ */
+async function collectTripRemainders(tx: Tx, customerId: number): Promise<TripRemainder[]> {
+  const sums = await tx.select({
+    txnId: s.ledger.txnId,
+    revenue: sql<string>`coalesce(sum(case when ${s.ledger.txnType} = 'TRIP_REVENUE' then ${s.ledger.debit} else 0 end), 0)`,
+    paid: sql<string>`coalesce(sum(case when ${s.ledger.txnType} = 'PAYMENT_RECEIVED' then ${s.ledger.credit} else 0 end), 0)`,
+    firstRevenueAt: sql<string | null>`min(case when ${s.ledger.txnType} = 'TRIP_REVENUE' then ${s.ledger.timestamp} end)`,
+    firstRevenueId: sql<string | null>`min(case when ${s.ledger.txnType} = 'TRIP_REVENUE' then ${s.ledger.id} end)`,
+  })
+    .from(s.ledger)
+    .where(and(
+      eq(s.ledger.entityType, 'CUSTOMER'),
+      eq(s.ledger.entityId, customerId),
+      inArray(s.ledger.txnType, [TxnType.TRIP_REVENUE, TxnType.PAYMENT_RECEIVED]),
+    ))
+    .groupBy(s.ledger.txnId);
+
+  // min() over a timestamp column comes back as a string from postgres.js
+  // (raw column selects are parsed to Date, aggregates are not), so compare
+  // through a coercion that handles both.
+  const tsMs = (v: string | Date): number => (v instanceof Date ? v.getTime() : Date.parse(v));
+
+  const billed = sums
+    .filter((r) => r.txnId != null && r.firstRevenueAt != null)
+    .map((r) => ({
+      tripId: r.txnId as number,
+      remaining: Number(r.revenue) - Number(r.paid),
+      tripCode: '',
+      firstRevenueAt: tsMs(r.firstRevenueAt as string),
+      firstRevenueId: Number(r.firstRevenueId ?? 0),
+    }))
+    .filter((t) => t.remaining > 0);
+  if (billed.length === 0) return [];
+
+  // Trip codes for human-readable ledger notes (no raw ids in UI text).
+  const billedIds = billed.map((t) => t.tripId);
+  const tripRows = await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode }).from(s.trips)
+    .where(sql`${s.trips.id} IN (${sql.join(billedIds.map(id => sql`${id}`), sql`, `)})`);
+  const codeById = new Map(tripRows.map(t => [t.id, t.tripCode || '']));
+
+  return billed
+    .map((t) => ({ ...t, tripCode: codeById.get(t.tripId) ?? '' }))
+    .sort((a, b) =>
+      a.firstRevenueAt - b.firstRevenueAt
+      || a.firstRevenueId - b.firstRevenueId);
+}
+
+/**
  * Result of a payment intake. `duplicate: true` means an identical payment was
  * already recorded and NOTHING was posted — the caller should surface the
  * friendly "bản ghi đã tồn tại" message instead of an error.
@@ -49,16 +116,19 @@ export type RecordPaymentResult =
  * The check runs inside the transaction, after the per-customer advisory
  * lock, so two truly concurrent identical requests serialize and the second
  * one sees the first one's rows.
+ *
+ * FIFO allocation is SERVER-AUTHORITATIVE (NITODA incident): the client's
+ * per-trip split is a preview built from the statement's aging view, which
+ * can disagree with the per-trip ledger sums — the oldest trip may already
+ * be fully paid while the statement still lists it as open, and the old
+ * per-trip guard hard-failed on exactly that ("còn 0 ₫, nhập 18.720.720 ₫").
+ * Only the requested TOTAL is honored here; it is reallocated oldest-first
+ * over the ledger's own remaining balances, SKIPPING trips already fully
+ * paid. The only rejection is a total that exceeds the sum of all remaining
+ * balances, reported as that total — never as a per-trip figure.
  */
 export async function recordPayment(input: PaymentInput): Promise<RecordPaymentResult> {
   return db.transaction(async (tx) => {
-    const tripIds = Array.from(new Set(input.payments.map(p => p.tripId)));
-    const tripRows = tripIds.length > 0
-      ? await tx.select({ id: s.trips.id, tripCode: s.trips.tripCode }).from(s.trips)
-          .where(sql`${s.trips.id} IN (${sql.join(tripIds.map(id => sql`${id}`), sql`, `)})`)
-      : [];
-    const codeById = new Map(tripRows.map(t => [t.id, t.tripCode || '']));
-
     // Advisory lock — serialize concurrent payments for the same customer
     await LedgerService.lockEntity(tx, 'CUSTOMER', input.customerId);
 
@@ -66,48 +136,34 @@ export async function recordPayment(input: PaymentInput): Promise<RecordPaymentR
     const duplicate = await findDuplicatePayment(tx, input);
     if (duplicate) return duplicate;
 
-    // Per-trip overpayment guard (Flow 04 §5.3 TC-CN-024). One grouped query
-    // gives revenue + paid per trip; `postedThisRequest` carries what this very
-    // request already posted so a second payment for the same trip still sees
-    // the first (the sequential guard the per-trip select used to give).
-    const sums = tripIds.length > 0
-      ? await tx.select({
-          txnId: s.ledger.txnId,
-          revenue: sql<string>`coalesce(sum(case when ${s.ledger.txnType} = 'TRIP_REVENUE' then ${s.ledger.debit} else 0 end), 0)`,
-          paid: sql<string>`coalesce(sum(case when ${s.ledger.txnType} = 'PAYMENT_RECEIVED' then ${s.ledger.credit} else 0 end), 0)`,
-        }).from(s.ledger)
-          .where(and(
-            eq(s.ledger.entityType, 'CUSTOMER'),
-            eq(s.ledger.entityId, input.customerId),
-            inArray(s.ledger.txnId, tripIds),
-          ))
-          .groupBy(s.ledger.txnId)
-      : [];
-    const byTrip = new Map(sums.map((r) => [r.txnId, r]));
-    const postedThisRequest = new Map<number, number>();
+    // Oldest-first collectible trips per the ledger itself. Fully-paid trips
+    // are absent from this list — allocation skips them by construction.
+    const collectible = await collectTripRemainders(tx, input.customerId);
 
-    for (const payment of input.payments) {
-      const tripLabel = codeById.get(payment.tripId) || '';
-      const row = byTrip.get(payment.tripId);
-      const remaining = Number(row?.revenue ?? 0)
-        - Number(row?.paid ?? 0)
-        - (postedThisRequest.get(payment.tripId) ?? 0);
-      if (payment.amount > remaining + 1) {  // +1 to absorb rounding
-        throw new ApiError(422,
-          `Thanh toán vượt quá số còn lại của chuyến ${tripLabel || payment.tripId} (còn ${remaining.toLocaleString('vi-VN')} ₫, nhập ${payment.amount.toLocaleString('vi-VN')} ₫)`);
-      }
+    const requested = input.payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalRemaining = collectible.reduce((sum, t) => sum + t.remaining, 0);
+    if (requested > totalRemaining + 1) {  // +1 to absorb rounding
+      throw new ApiError(422,
+        `Thanh toán vượt quá tổng số còn lại của các chuyến chưa thu (Tổng còn có thể thu: ${totalRemaining.toLocaleString('vi-VN')} ₫, nhập ${requested.toLocaleString('vi-VN')} ₫)`);
+    }
 
+    // FIFO: oldest collectible trip first, skip fully-paid ones, absorb the
+    // whole requested amount across as many trips as it takes.
+    let left = requested;
+    for (const trip of collectible) {
+      if (left <= 0) break;
+      const apply = Math.min(trip.remaining, left);
       await LedgerService.postEntry(tx, {
         txnType: TxnType.PAYMENT_RECEIVED,
-        txnId: payment.tripId,
+        txnId: trip.tripId,
         receiptId: input.receiptId,
         entityType: 'CUSTOMER',
         entityId: input.customerId,
         debit: 0,
-        credit: payment.amount,
-        note: tripLabel ? `Thanh toán chuyến ${tripLabel}` : 'Thanh toán chuyến',
+        credit: apply,
+        note: trip.tripCode ? `Thanh toán chuyến ${trip.tripCode}` : 'Thanh toán chuyến',
       });
-      postedThisRequest.set(payment.tripId, (postedThisRequest.get(payment.tripId) ?? 0) + payment.amount);
+      left -= apply;
     }
     return { duplicate: false } as const;
   });

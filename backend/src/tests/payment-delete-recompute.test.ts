@@ -64,7 +64,9 @@ describe('payment entry deletion + balance recompute (kanban 141026163920)', () 
     const suffix = testSuffix();
     const { customerId, tripA, tripB } = await seedCustomerWithDebt(suffix, trackers);
 
-    // Payment 1: 4M on trip A. Payment 2: 5M split 2M(A) + 3M(B).
+    // Payment 1: 4M on trip A. Payment 2: 5M total — the client split says
+    // 2M(A) + 3M(B), but allocation is server-authoritative FIFO (NITODA
+    // incident): A still has 6M collectible, so all 5M lands on A as ONE row.
     await recordPayment({
       customerId,
       receiptId: `PT-DEL1-${suffix}`,
@@ -82,7 +84,7 @@ describe('payment entry deletion + balance recompute (kanban 141026163920)', () 
     assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), 6_000_000);
 
     const rowsBefore = await paymentRows(customerId);
-    assert.equal(rowsBefore.length, 3);
+    assert.equal(rowsBefore.length, 2);
     const firstPaymentRowId = rowsBefore[0].id; // the 4M entry
 
     // Delete the 4M payment (the duplicate the customer complained about).
@@ -92,9 +94,9 @@ describe('payment entry deletion + balance recompute (kanban 141026163920)', () 
     assert.equal(deleted.customerId, customerId);
     assert.equal(deleted.newBalance, 10_000_000, '15M revenue − 5M remaining paid');
 
-    // Row is gone; exactly the two rows of payment 2 remain.
+    // Row is gone; exactly the one row of payment 2 remains.
     const rowsAfter = await paymentRows(customerId);
-    assert.equal(rowsAfter.length, 2);
+    assert.equal(rowsAfter.length, 1);
     assert.ok(!rowsAfter.some((r) => r.id === firstPaymentRowId));
 
     // The FULL ledger for this customer must carry a coherent running balance
