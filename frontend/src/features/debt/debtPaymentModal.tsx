@@ -9,10 +9,13 @@ interface DebtPaymentModalProps {
   unpaidTripCount: number;
   payAmount: string;
   payReceipt: string;
+  /** "Ngày nhận" (YYYY-MM-DD) — defaults to today, back-dating allowed. */
+  payDate: string;
   payError: string;
   paySubmitting: boolean;
   onAmountChange: (value: string) => void;
   onReceiptChange: (value: string) => void;
+  onDateChange: (value: string) => void;
   onSubmit: () => void;
   onClose: () => void;
 }
@@ -24,13 +27,18 @@ export function DebtPaymentModal({
   unpaidTripCount,
   payAmount,
   payReceipt,
+  payDate,
   payError,
   paySubmitting,
   onAmountChange,
   onReceiptChange,
+  onDateChange,
   onSubmit,
   onClose,
 }: DebtPaymentModalProps) {
+  // The picker must not offer future dates — back-dating for retro entries is
+  // fine, post-dating is not (the backend re-validates).
+  const today = new Date().toISOString().slice(0, 10);
   return (
     <Modal
       isOpen={isOpen}
@@ -45,7 +53,7 @@ export function DebtPaymentModal({
           <button
             className="btn btn--primary btn--sm"
             data-tour-id="debt-payment-submit"
-            disabled={paySubmitting || !payAmount.trim() || !payReceipt.trim()}
+            disabled={paySubmitting || !payAmount.trim() || !payReceipt.trim() || !payDate}
             onClick={onSubmit}
             aria-busy={paySubmitting}
           >
@@ -84,6 +92,22 @@ export function DebtPaymentModal({
           />
           <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
             Sẽ phân bổ FIFO vào {unpaidTripCount} chuyến chưa thu, bắt đầu từ chuyến cũ nhất.
+          </p>
+        </div>
+        <div className="field">
+          <label htmlFor="pay-date" style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            Ngày nhận <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input
+            id="pay-date"
+            className="input"
+            type="date"
+            value={payDate}
+            max={today}
+            onChange={e => onDateChange(e.target.value)}
+          />
+          <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
+            Mặc định là hôm nay. Cho phép chọn ngày trước đó để ghi nhận bổ sung; không nhận ngày tương lai.
           </p>
         </div>
         <div className="field">

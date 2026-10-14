@@ -122,6 +122,10 @@ export default function DebtDetailPage() {
   const [showPay, setShowPay] = useState(false);
   const [payAmount, setPayAmount] = useState('');
   const [payReceipt, setPayReceipt] = useState('');
+  // "Ngày nhận" — parity with the supplier-payment form (payables): defaults
+  // to today, back-dating allowed for retro entries, future dates rejected
+  // by the picker's max + the backend.
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState('');
   const queryClient = useQueryClient();
@@ -319,6 +323,9 @@ export default function DebtDetailPage() {
   const openPaymentModal = () => {
     setPayAmount('');
     setPayReceipt('');
+    // Re-default the date on every open — a payment left open overnight must
+    // not silently carry yesterday as "Ngày nhận".
+    setPayDate(new Date().toISOString().slice(0, 10));
     setPayError('');
     setShowPay(true);
   };
@@ -353,6 +360,15 @@ export default function DebtDetailPage() {
       setPayError('Mã biên lai là bắt buộc.');
       return;
     }
+    const today = new Date().toISOString().slice(0, 10);
+    if (!payDate) {
+      setPayError('Ngày nhận là bắt buộc.');
+      return;
+    }
+    if (payDate > today) {
+      setPayError('Ngày nhận không được lớn hơn ngày hôm nay.');
+      return;
+    }
     if (unpaidTrips.length === 0) {
       setPayError('Khách hàng không có công nợ để thanh toán.');
       return;
@@ -383,6 +399,7 @@ export default function DebtDetailPage() {
         customerId: Number(id),
         receiptId: payReceipt.trim(),
         payments,
+        receivedDate: payDate,
       });
       await invalidatePaymentCaches();
       setShowPay(false);
@@ -665,10 +682,12 @@ export default function DebtDetailPage() {
         unpaidTripCount={unpaidTrips.length}
         payAmount={payAmount}
         payReceipt={payReceipt}
+        payDate={payDate}
         payError={payError}
         paySubmitting={paySubmitting}
         onAmountChange={setPayAmount}
         onReceiptChange={setPayReceipt}
+        onDateChange={setPayDate}
         onSubmit={() => { void submitPayment(); }}
         onClose={() => setShowPay(false)}
       />

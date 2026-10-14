@@ -21,6 +21,7 @@ export default defineConfig({
       'src/tests/payment-intake-dedupe.test.ts',
       'src/tests/payment-delete-recompute.test.ts',
       'src/tests/payment-fifo-skip.test.ts',
+      'src/tests/payment-received-date.test.ts',
     ],
     testTimeout: 30_000,
     hookTimeout: 30_000,

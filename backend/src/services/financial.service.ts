@@ -18,6 +18,29 @@ export interface PaymentInput {
   customerId: number;
   receiptId: string;
   payments: Array<{ tripId: number; amount: number }>;
+  /** "Ngày nhận" (YYYY-MM-DD). Defaults to now; may be back-dated, never future. */
+  receivedDate?: string;
+}
+
+/**
+ * Validate a "Ngày nhận" and convert it to the ledger timestamp the entry
+ * carries: midnight Indochina time, the same convention carrier payments use.
+ * The ledger row's timestamp is what the statement ledger rows display and
+ * what FIFO aging buckets age against, so one field covers display + aging.
+ *
+ * Validated here (not only in the route schema) because the service is also
+ * called directly — by tests and any future internal consumers.
+ */
+function receivedDateToTimestamp(receivedDate: string | undefined): Date | undefined {
+  if (receivedDate === undefined) return undefined;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(receivedDate) || Number.isNaN(Date.parse(receivedDate))) {
+    throw new ApiError(422, 'Ngày nhận không hợp lệ (YYYY-MM-DD)');
+  }
+  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  if (receivedDate > today) {
+    throw new ApiError(422, 'Ngày nhận không được lớn hơn ngày hôm nay');
+  }
+  return new Date(`${receivedDate}T00:00:00+07:00`);
 }
 
 /**
@@ -129,6 +152,10 @@ export type RecordPaymentResult =
  */
 export async function recordPayment(input: PaymentInput): Promise<RecordPaymentResult> {
   return db.transaction(async (tx) => {
+    // "Ngày nhận" — validated before any posting so a bad date can never
+    // leave half a payment on the books.
+    const postedAt = receivedDateToTimestamp(input.receivedDate);
+
     // Advisory lock — serialize concurrent payments for the same customer
     await LedgerService.lockEntity(tx, 'CUSTOMER', input.customerId);
 
@@ -162,6 +189,7 @@ export async function recordPayment(input: PaymentInput): Promise<RecordPaymentR
         debit: 0,
         credit: apply,
         note: trip.tripCode ? `Thanh toán chuyến ${trip.tripCode}` : 'Thanh toán chuyến',
+        timestamp: postedAt,
       });
       left -= apply;
     }

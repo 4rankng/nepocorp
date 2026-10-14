@@ -24,6 +24,7 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
     customerId: data.customerId,
     receiptId: data.receiptId,
     payments: data.payments.map((p) => ({ tripId: p.tripId, amount: p.amount })),
+    receivedDate: data.receivedDate,
   });
   await invalidateReportCaches();
   if (result.duplicate) {
