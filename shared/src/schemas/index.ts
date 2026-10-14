@@ -294,6 +294,24 @@ export const bulkUpdateTripFiguresSchema = z.object({
 
 // ─── Payment ─────────────────────────────────────────────────────────────────
 
+/**
+ * Today's date (YYYY-MM-DD) in the Vietnam office timezone (+07:00). Shifting
+ * by the offset before taking the UTC ISO date keeps "today" stable for users
+ * west of midnight Indochina time.
+ */
+function todayVN(): string {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/**
+ * Payment received date ("Ngày nhận"): defaults to today, may be back-dated
+ * for retro entries, never in the future. Parity with the supplier-payment
+ * (payables) date field.
+ */
+const receivedDateField = z.string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày nhận không hợp lệ (YYYY-MM-DD)')
+  .refine((d) => d <= todayVN(), { message: 'Ngày nhận không được lớn hơn ngày hôm nay' });
+
 export const createPaymentSchema = z.object({
   customerId: z.coerce.number().int().positive(),
   receiptId: z.string().min(1),
@@ -301,6 +319,14 @@ export const createPaymentSchema = z.object({
     tripId: z.coerce.number().int().positive(),
     amount: positiveNumeric,
   })).min(1),
+  receivedDate: receivedDateField.optional(),
+});
+
+/** Editable fields of a recorded receivable payment entry. */
+export const updatePaymentSchema = z.object({
+  amount: positiveNumeric,
+  receiptId: z.string().min(1),
+  receivedDate: receivedDateField,
 });
 
 // ─── Penalty ─────────────────────────────────────────────────────────────────
@@ -1127,6 +1153,8 @@ export type CreateTripInput = z.infer<typeof createTripSchema>;
 export type UpdateTripFiguresInput = z.infer<typeof updateTripFiguresSchema>;
 export type BulkUpdateTripFiguresInput = z.infer<typeof bulkUpdateTripFiguresSchema>;
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+
+export type UpdatePaymentInput = z.infer<typeof updatePaymentSchema>;
 export type CreatePenaltyInput = z.infer<typeof createPenaltySchema>;
 export type CreateAdjustmentInput = z.infer<typeof createAdjustmentSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

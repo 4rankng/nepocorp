@@ -70,7 +70,7 @@ export type {
 
 export {
   tripLegSchema, createTripSchema, reassignTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema,
-  createPaymentSchema, createPenaltySchema, createAdjustmentSchema,
+  createPaymentSchema, updatePaymentSchema, createPenaltySchema, createAdjustmentSchema,
   loginSchema, createUserSchema, updateUserSchema, updateProfileSchema, changePasswordSchema,
   customerSchema, truckSchema, trailerSchema, routeSchema,
   cargoTypeSchema, pricingTableSchema, roadAllowanceSchema,
@@ -111,7 +111,7 @@ export {
 } from './calculations/tripFormDefaults';
 
 export type {
-  CreateTripInput, UpdateTripFiguresInput, CreatePaymentInput,
+  CreateTripInput, UpdateTripFiguresInput, CreatePaymentInput, UpdatePaymentInput,
   CreatePenaltyInput, CreateAdjustmentInput, LoginInput,
   CustomerInput, TruckInput, TrailerInput, TirePositionInput, RouteInput,
   CargoTypeInput, PricingTableInput, RoadAllowanceInput,

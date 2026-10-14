@@ -72,6 +72,11 @@ export function resolveAuditEvent(method: string, path: string): AuditEventType 
   if (methodKey === 'DELETE' && /^\/api\/payments\/\d+$/.test(path)) {
     return 'PAYMENT_DELETED' as AuditEventType;
   }
+  // Payment-entry editing (NITODA follow-up) — sibling of the delete override;
+  // corrections must land in the Financial filter with the amounts named.
+  if (methodKey === 'PUT' && /^\/api\/payments\/\d+$/.test(path)) {
+    return 'PAYMENT_UPDATED' as AuditEventType;
+  }
 
   // 1. Try exact match
   const exact = exactRegistry.get(exactKey(method, path));

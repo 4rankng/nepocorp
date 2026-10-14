@@ -29,6 +29,7 @@ import { matchLinkedSupplierStatement } from './linked-supplier-statement';
 import { DebtDetailHeader } from '../features/debt/debtHeader';
 import { DebtAccountStrip, DebtAgingSummary } from '../features/debt/debtSummary';
 import { DebtPaymentModal } from '../features/debt/debtPaymentModal';
+import { DebtPaymentEditModal } from '../features/debt/debtPaymentEditModal';
 import { ReceivableLedgerRow, ReceivableLedgerCard } from '../features/debt/debtLedgerRows';
 import { DualEntityLookupError, LinkedSupplierPayableLedger } from '../features/debt/debtLinkedSupplierLedger';
 
@@ -122,6 +123,10 @@ export default function DebtDetailPage() {
   const [showPay, setShowPay] = useState(false);
   const [payAmount, setPayAmount] = useState('');
   const [payReceipt, setPayReceipt] = useState('');
+  // "Ngày nhận" — parity with the supplier-payment form (payables): defaults
+  // to today, back-dating allowed for retro entries, future dates rejected
+  // by the picker's max + the backend.
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState('');
   const queryClient = useQueryClient();
@@ -143,6 +148,29 @@ export default function DebtDetailPage() {
   // Before the early returns below — hooks must run unconditionally.
   const requestDeletePayment = useCallback((row: LedgerEntry) => {
     setDeleteTarget(row);
+  }, []);
+
+  // Edit-payment flow — the sibling of the delete escape hatch, for "right
+  // payment, wrong figures" entries (amount / Ngày nhận / receipt code).
+  // Same role gate and the same cache-invalidation path as delete; the
+  // backend re-checks permissions on PUT /payments/:id.
+  const canEditPayments = isFinancialRole(user?.role);
+  const [editTarget, setEditTarget] = useState<LedgerEntry | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editReceipt, setEditReceipt] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
+  const requestEditPayment = useCallback((row: LedgerEntry) => {
+    // Prefill from the row: credit is the amount, timestamp is the received
+    // date (stored at midnight Indochina time, so shift +07:00 for the
+    // YYYY-MM-DD the date input wants).
+    setEditAmount(String(parseFloat(row.credit) || 0));
+    setEditReceipt(row.receiptId ?? '');
+    setEditDate(new Date(new Date(row.timestamp).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10));
+    setEditError('');
+    setEditTarget(row);
   }, []);
 
   // Agent "open/prefill" target: the bot can open this payment modal (and
@@ -319,6 +347,9 @@ export default function DebtDetailPage() {
   const openPaymentModal = () => {
     setPayAmount('');
     setPayReceipt('');
+    // Re-default the date on every open — a payment left open overnight must
+    // not silently carry yesterday as "Ngày nhận".
+    setPayDate(new Date().toISOString().slice(0, 10));
     setPayError('');
     setShowPay(true);
   };
@@ -353,6 +384,15 @@ export default function DebtDetailPage() {
       setPayError('Mã biên lai là bắt buộc.');
       return;
     }
+    const today = new Date().toISOString().slice(0, 10);
+    if (!payDate) {
+      setPayError('Ngày nhận là bắt buộc.');
+      return;
+    }
+    if (payDate > today) {
+      setPayError('Ngày nhận không được lớn hơn ngày hôm nay.');
+      return;
+    }
     if (unpaidTrips.length === 0) {
       setPayError('Khách hàng không có công nợ để thanh toán.');
       return;
@@ -383,6 +423,7 @@ export default function DebtDetailPage() {
         customerId: Number(id),
         receiptId: payReceipt.trim(),
         payments,
+        receivedDate: payDate,
       });
       await invalidatePaymentCaches();
       setShowPay(false);
@@ -411,6 +452,56 @@ export default function DebtDetailPage() {
       showToast({ kind: 'error', message: (e as Error)?.message || 'Lỗi khi xóa bản ghi thanh toán.' });
     } finally {
       setDeleteSubmitting(false);
+    }
+  };
+
+  // Validate the edit form, then ask for confirmation (Vietnamese) before
+  // the PUT leaves the browser — editing ledger history is a deliberate act.
+  const submitEditPayment = () => {
+    if (!editTarget || editSubmitting) return;
+    setEditError('');
+    const amount = parseFloat(editAmount.replace(/[.,\s]/g, ''));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setEditError('Số tiền không hợp lệ.');
+      return;
+    }
+    if (!editReceipt.trim()) {
+      setEditError('Mã biên lai là bắt buộc.');
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (!editDate) {
+      setEditError('Ngày nhận là bắt buộc.');
+      return;
+    }
+    if (editDate > today) {
+      setEditError('Ngày nhận không được lớn hơn ngày hôm nay.');
+      return;
+    }
+    setEditConfirmOpen(true);
+  };
+
+  const confirmEditPayment = async () => {
+    if (!editTarget || editSubmitting) return;
+    setEditSubmitting(true);
+    try {
+      const amount = parseFloat(editAmount.replace(/[.,\s]/g, ''));
+      await api.put(`/payments/${editTarget.id}`, {
+        amount,
+        receiptId: editReceipt.trim(),
+        receivedDate: editDate,
+      });
+      setEditConfirmOpen(false);
+      setEditTarget(null);
+      // Same invalidation path as delete: statement, debt list, aging and
+      // Dashboard KPIs all read what this row just changed.
+      await invalidatePaymentCaches();
+      showToast({ kind: 'success', message: 'Đã sửa bản ghi thanh toán. Số dư công nợ đã được tính lại.' });
+    } catch (e: unknown) {
+      setEditConfirmOpen(false);
+      setEditError((e as Error)?.message || 'Lỗi khi sửa bản ghi thanh toán.');
+    } finally {
+      setEditSubmitting(false);
     }
   };
 
@@ -613,6 +704,7 @@ export default function DebtDetailPage() {
                     <ReceivableLedgerCard
                       key={row.id}
                       row={row}
+                      onEdit={canEditPayments ? requestEditPayment : undefined}
                       onDelete={canDeletePayments ? requestDeletePayment : undefined}
                     />
                   ))}
@@ -632,7 +724,7 @@ export default function DebtDetailPage() {
                         <th className="dd-r">PHÁT SINH PHẢI THU</th>
                         <th className="dd-r">ĐÃ THU</th>
                         <th className="dd-r">SỐ DƯ</th>
-                        {canDeletePayments && <th aria-label="Thao tác" />}
+                        {(canEditPayments || canDeletePayments) && <th aria-label="Thao tác" />}
                       </tr>
                     </thead>
                     <tbody>
@@ -640,12 +732,13 @@ export default function DebtDetailPage() {
                         <ReceivableLedgerRow
                           key={row.id}
                           row={row}
+                          onEdit={canEditPayments ? requestEditPayment : undefined}
                           onDelete={canDeletePayments ? requestDeletePayment : undefined}
                         />
                       ))}
                       {filteredRows.length === 0 && (
                         <tr>
-                          <td colSpan={canDeletePayments ? 8 : 7} className="dd-table-empty">{ledgerStatusMessage}</td>
+                          <td colSpan={(canEditPayments || canDeletePayments) ? 8 : 7} className="dd-table-empty">{ledgerStatusMessage}</td>
                         </tr>
                       )}
                     </tbody>
@@ -665,10 +758,12 @@ export default function DebtDetailPage() {
         unpaidTripCount={unpaidTrips.length}
         payAmount={payAmount}
         payReceipt={payReceipt}
+        payDate={payDate}
         payError={payError}
         paySubmitting={paySubmitting}
         onAmountChange={setPayAmount}
         onReceiptChange={setPayReceipt}
+        onDateChange={setPayDate}
         onSubmit={() => { void submitPayment(); }}
         onClose={() => setShowPay(false)}
       />
@@ -682,6 +777,30 @@ export default function DebtDetailPage() {
         cancelLabel="Hủy"
         onConfirm={() => { void confirmDeletePayment(); }}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      {/* Edit-payment form + confirmation (NITODA follow-up) */}
+      <DebtPaymentEditModal
+        isOpen={!!editTarget}
+        customerName={customer.name}
+        amount={editAmount}
+        receiptId={editReceipt}
+        receivedDate={editDate}
+        error={editError}
+        submitting={editSubmitting}
+        onAmountChange={setEditAmount}
+        onReceiptChange={setEditReceipt}
+        onDateChange={setEditDate}
+        onSubmit={submitEditPayment}
+        onClose={() => setEditTarget(null)}
+      />
+      <ConfirmDialog
+        isOpen={editConfirmOpen}
+        message={`Xác nhận sửa bản ghi thanh toán này? Số tiền và ngày nhận sẽ được cập nhật, số dư công nợ tính lại. (${money(parseFloat(editAmount.replace(/[.,\s]/g, '')) || 0)} — ${editDate}${editReceipt.trim() ? ` — ${editReceipt.trim()}` : ''})`}
+        confirmLabel={editSubmitting ? 'Đang lưu…' : 'Xác nhận sửa'}
+        cancelLabel="Hủy"
+        onConfirm={() => { void confirmEditPayment(); }}
+        onCancel={() => setEditConfirmOpen(false)}
       />
     </div>
   );
