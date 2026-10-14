@@ -10,14 +10,15 @@
  * Integration-tier: needs the local dev Postgres (docker, :5440) because the
  * advisory lock and append-only ledger writes are the behavior under test.
  */
-import { after, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { and, eq, inArray } from 'drizzle-orm';
 import { client, db } from '../db';
 import * as s from '../db/schema';
 import { recordPayment } from '../services/financial.service';
 import { LedgerService } from '../services/ledger.service';
-import { paymentRows, seedCustomerWithDebt, testSuffix } from './payment-ledger-test-utils';
+// describe/test/after come from the runner-agnostic shim (vitest when run
+// under `pnpm exec vitest`, node:test under the canonical `pnpm test`).
+import { after, describe, paymentRows, seedCustomerWithDebt, test, testSuffix } from './payment-ledger-test-utils';
 
 const createdCustomerIds: number[] = [];
 const createdTripIds: number[] = [];
@@ -83,7 +84,7 @@ describe('payment intake idempotency (kanban 141026163910)', () => {
     assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), 11_000_000);
   });
 
-  test('same amount + same row count within the window is a duplicate even with a new receipt id', async () => {
+  test('the same amount with a DIFFERENT receipt still posts (receipt id is the only dedupe key)', async () => {
     const suffix = testSuffix();
     const { customerId, tripA } = await seedCustomerWithDebt(suffix, trackers);
 
@@ -94,15 +95,18 @@ describe('payment intake idempotency (kanban 141026163910)', () => {
     });
     assert.equal(first.duplicate, false);
 
-    // User retypes a different receipt number and resubmits the same amount.
+    // A different receipt number is a different payment document — even when
+    // the amount and trip match and it arrives moments later. Amount-window
+    // matching used to swallow this as a duplicate (the false positive the
+    // comprehensive E2E suite caught across back-to-back runs).
     const second = await recordPayment({
       customerId,
       receiptId: `PT-WIN2-${suffix}`,
       payments: [{ tripId: tripA, amount: 2_500_000 }],
     });
-    assert.equal(second.duplicate, true);
-    assert.equal((await paymentRows(customerId)).length, 1);
-    assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), 12_500_000); // 15M − 2.5M
+    assert.equal(second.duplicate, false);
+    assert.equal((await paymentRows(customerId)).length, 2);
+    assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), 10_000_000); // 15M − 2×2.5M
   });
 
   test('a different amount with a fresh receipt still posts (no false positive)', async () => {

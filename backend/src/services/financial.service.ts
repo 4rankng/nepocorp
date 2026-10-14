@@ -6,7 +6,7 @@
  */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, inArray, sql, desc, isNull, gte, lte, count } from 'drizzle-orm';
+import { eq, and, inArray, sql, desc, isNull, gte, lte } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -29,22 +29,22 @@ export type RecordPaymentResult =
   | { duplicate: false }
   | { duplicate: true; existingId: number; receiptId: string | null };
 
-/** Window (minutes) for the same-amount double-submit dedupe fallback. */
-const PAYMENT_DEDUPE_WINDOW_MINUTES = 10;
-
 /**
  * Record a customer payment against one or more trips.
  * Resolves trip codes for human-readable ledger notes.
  *
  * Idempotent on intake (kanban 141026163910): a second identical submission —
  * the classic "form froze, user clicked again" — must not create a duplicate
- * ledger entry. A submission is a duplicate when EITHER:
- *   1. the same customer already has a PAYMENT_RECEIVED entry with the same
- *      receipt id (the receipt is the client-supplied idempotency key: one
- *      bank receipt = one posting, ever), OR
- *   2. this customer was paid the exact same total, split into the same number
- *      of per-trip rows, within the dedupe window (catches a resubmit where
- *      the user retyped a different receipt id).
+ * ledger entry. The receipt id IS the client-supplied idempotency key: one
+ * bank receipt = one posting, ever, and a double-submit resends the exact
+ * same form values including that receipt id. A submission is therefore a
+ * duplicate iff this customer already has a PAYMENT_RECEIVED entry with the
+ * same receipt id.
+ *
+ * The amount-matching time-window variant was considered and rejected: a
+ * different receipt number is a different payment document, and a customer
+ * legitimately paying the same amount twice within minutes must not be
+ * rejected as a duplicate.
  *
  * The check runs inside the transaction, after the per-customer advisory
  * lock, so two truly concurrent identical requests serialize and the second
@@ -117,13 +117,15 @@ export async function recordPayment(input: PaymentInput): Promise<RecordPaymentR
  * Duplicate-payment detector for recordPayment(). Must be called inside the
  * customer's advisory-locked transaction. Returns the matched entry when the
  * incoming payment is a duplicate, null when it should be posted.
+ *
+ * Receipt-id idempotency only — the client message-id. One receipt number
+ * must never post twice for the same customer. Amount-based window matching
+ * is deliberately absent: see the recordPayment doc comment.
  */
 async function findDuplicatePayment(
   tx: Tx,
   input: PaymentInput,
 ): Promise<Extract<RecordPaymentResult, { duplicate: true }> | null> {
-  // (1) Receipt-id idempotency — the client message-id. One receipt number
-  // must never post twice for the same customer, regardless of window.
   const [sameReceipt] = await tx.select({ id: s.ledger.id, receiptId: s.ledger.receiptId })
     .from(s.ledger)
     .where(and(
@@ -135,31 +137,6 @@ async function findDuplicatePayment(
     .limit(1);
   if (sameReceipt) {
     return { duplicate: true, existingId: sameReceipt.id, receiptId: sameReceipt.receiptId };
-  }
-
-  // (2) Short-window fallback — same total amount, same number of per-trip
-  // rows, posted for this customer within the dedupe window. Rows of one
-  // intake share a receipt id, so grouping by receipt reconstructs the
-  // original request's (total, row-count) shape.
-  const totalAmount = input.payments.reduce((sum, p) => sum + p.amount, 0);
-  const recentGroups = await tx.select({
-    id: sql<number>`min(${s.ledger.id})`,
-    receiptId: s.ledger.receiptId,
-    total: sql<string>`sum(${s.ledger.credit})`,
-    n: count(),
-  }).from(s.ledger)
-    .where(and(
-      eq(s.ledger.entityType, 'CUSTOMER'),
-      eq(s.ledger.entityId, input.customerId),
-      eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
-      gte(s.ledger.timestamp, sql`now() - (${PAYMENT_DEDUPE_WINDOW_MINUTES} * interval '1 minute')`),
-    ))
-    .groupBy(s.ledger.receiptId);
-  const windowMatch = recentGroups.find(
-    (g) => Number(g.total) === totalAmount && Number(g.n) === input.payments.length,
-  );
-  if (windowMatch) {
-    return { duplicate: true, existingId: Number(windowMatch.id), receiptId: windowMatch.receiptId };
   }
   return null;
 }

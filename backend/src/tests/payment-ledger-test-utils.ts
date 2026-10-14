@@ -4,11 +4,36 @@
  * helpers to read back the customer's PAYMENT_RECEIVED rows.
  *
  * Not a *.test.ts file, so the node:test glob never picks it up directly.
+ *
+ * Runner-agnostic test API: these suites must register under BOTH runners —
+ * the backend's canonical `pnpm test` (tsx --test / node:test) AND direct
+ * `pnpm exec vitest run <file>` invocations. Vitest does not register
+ * node:test definitions (it reports "No test suite found"), and node:test
+ * cannot execute vitest definitions outside a vitest run, so the binding is
+ * chosen by the VITEST env flag that vitest sets in its workers.
  */
 import { and, asc, eq } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { db } from '../db';
 import * as s from '../db/schema';
+
+type NodeTestApi = typeof import('node:test');
+type RunnerApi = Pick<NodeTestApi, 'describe' | 'test' | 'after'>;
+
+let testApi: RunnerApi;
+if (process.env.VITEST) {
+  // Vitest registers node:test definitions as "no test suite found", and it
+  // has no `after` export (node:test's file-scoped teardown = afterAll).
+  const vitest = (await import('vitest')) as unknown as NodeTestApi & { afterAll: NodeTestApi['after'] };
+  testApi = { describe: vitest.describe, test: vitest.test, after: vitest.afterAll };
+} else {
+  const nodeTest = await import('node:test');
+  testApi = { describe: nodeTest.describe, test: nodeTest.test, after: nodeTest.after };
+}
+
+export const describe = testApi.describe;
+export const test = testApi.test;
+export const after = testApi.after;
 
 export interface SeededDebtCustomer {
   customerId: number;

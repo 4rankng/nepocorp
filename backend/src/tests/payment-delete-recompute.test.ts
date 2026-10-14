@@ -11,7 +11,6 @@
  * advisory lock, the ledger DELETE and the recompute UPDATE are the behavior
  * under test.
  */
-import { after, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
@@ -19,7 +18,9 @@ import { client, db } from '../db';
 import * as s from '../db/schema';
 import { deletePaymentEntry, recordPayment } from '../services/financial.service';
 import { LedgerService } from '../services/ledger.service';
-import { paymentRows, seedCustomerWithDebt, testSuffix } from './payment-ledger-test-utils';
+// describe/test/after come from the runner-agnostic shim (vitest when run
+// under `pnpm exec vitest`, node:test under the canonical `pnpm test`).
+import { after, describe, paymentRows, seedCustomerWithDebt, test, testSuffix } from './payment-ledger-test-utils';
 
 const createdCustomerIds: number[] = [];
 const createdTripIds: number[] = [];
