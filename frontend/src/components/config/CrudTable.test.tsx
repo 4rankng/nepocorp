@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 import { CrudTable } from './CrudTable';
 
 interface TestItem {
@@ -16,6 +17,7 @@ const testState = vi.hoisted(() => ({
   refetch: vi.fn(),
   setEditingId: vi.fn(),
   setShowAddForm: vi.fn(),
+  emptyStateProps: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -57,7 +59,10 @@ vi.mock('../UI', () => ({
 vi.mock('../useConfirm', () => ({ useConfirm: () => ({ confirm: vi.fn(), dialog: null }) }));
 
 vi.mock('../../design-system', () => ({
-  EmptyState: () => <div>Trống</div>,
+  EmptyState: (props: Record<string, unknown>) => {
+    testState.emptyStateProps.push(props);
+    return <div>Trống</div>;
+  },
 }));
 
 function renderForm() {
@@ -69,8 +74,33 @@ describe('CrudTable layout variants', () => {
     testState.setEditingId.mockClear();
     testState.setShowAddForm.mockClear();
     testState.refetch.mockClear();
+    testState.emptyStateProps.length = 0;
     testState.isPending = false;
     testState.isError = false;
+    testState.data = [{ id: 1, name: 'Phí bảo hiểm' }];
+  });
+
+  it('renders the branded empty state with the resolved illustration path', () => {
+    testState.data = [];
+    render(
+      <MemoryRouter>
+        <CrudTable<TestItem>
+          title="Danh mục"
+          description="Mô tả"
+          endpoint="/items"
+          columns={[{ header: 'Tên', render: item => item.name }]}
+          renderForm={renderForm}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(testState.emptyStateProps.length).toBe(1);
+    const props = testState.emptyStateProps[0];
+    expect(props.illustration).toBe('/assets/illustrations/empty-config.svg');
+    expect(props.title).toBe('Chưa có dữ liệu');
+    // The resolver maps the default 'empty-config.svg' slot to the flat ops asset.
+    expect(resolveEmptyIllustration(props.illustration as string))
+      .toBe('/assets/illustrations/empty-flat-ops.svg');
   });
 
   it('uses native buttons for compact items and can place creation in the header', () => {
