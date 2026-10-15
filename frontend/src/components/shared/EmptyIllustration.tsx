@@ -3,7 +3,8 @@ import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 
 interface EmptyIllustrationProps {
   /** Illustration asset name, without path or extension — e.g. "empty-trucks".
-   *  Resolved via resolveEmptyIllustration to one of the four on-brand PNGs. */
+   *  Resolved via resolveEmptyIllustration to one of the four flat-vector
+   *  brand SVGs (palette: --illus-* tokens in styles/tokens.css). */
   name: string;
   /** Pixel width. Pass together with `height` for inline-sized illustrations. */
   width?: number;

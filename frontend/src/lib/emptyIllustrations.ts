@@ -1,15 +1,16 @@
 /**
  * Central source of truth for empty-state illustrations.
  *
- * The app ships four on-brand PNG illustrations (flat emerald logistics art):
- *   - empty-1.png  field delivery (worker + truck + route-map phone) -> "trips"
- *   - empty-2.png  warehouse / material handling (forklift + boxes)    -> "fleet"
- *   - empty-3.png  planner at a desk (route map on screen)             -> "ops"
- *   - empty-4.png  clipboard w/ checklist + charts + shield            -> "finance"
+ * The app ships four flat-vector SVG illustrations (palette mirrors the
+ * --illus-* tokens in styles/tokens.css):
+ *   - empty-flat-trips.svg   delivery truck + route + pin   -> "trips"
+ *   - empty-flat-fleet.svg   truck hauling a container      -> "fleet"
+ *   - empty-flat-ops.svg     dispatch map + route + pin     -> "ops"
+ *   - empty-flat-finance.svg invoice + coin                 -> "finance"
  *
- * Every former empty-*.svg slot maps to one of these four so the whole app
- * shares a consistent, illustrated empty-state language. Callers may pass
- * either a legacy bare name ("empty-trips"), a legacy path
+ * Every former empty-*.svg / empty-*.png slot maps to one of these four so the
+ * whole app shares a consistent, illustrated empty-state language. Callers may
+ * pass either a legacy bare name ("empty-trips"), a legacy path
  * ("/assets/illustrations/empty-trips.svg"), or a category key
  * ("trips" | "fleet" | "ops" | "finance"). Unknown inputs are returned
  * unchanged so any non-empty illustration path keeps working untouched.
@@ -20,10 +21,10 @@ const BASE = '/assets/illustrations';
 export type EmptyCategory = 'trips' | 'fleet' | 'ops' | 'finance';
 
 export const EMPTY_ILLUSTRATIONS: Record<EmptyCategory, string> = {
-  trips: `${BASE}/empty-1.png`,
-  fleet: `${BASE}/empty-2.png`,
-  ops: `${BASE}/empty-3.png`,
-  finance: `${BASE}/empty-4.png`,
+  trips: `${BASE}/empty-flat-trips.svg`,
+  fleet: `${BASE}/empty-flat-fleet.svg`,
+  ops: `${BASE}/empty-flat-ops.svg`,
+  finance: `${BASE}/empty-flat-finance.svg`,
 };
 
 /** Legacy empty-*.svg basenames (no path, no extension) -> category. */
@@ -68,7 +69,7 @@ function toBareName(input: string): string {
 }
 
 /**
- * Resolve any empty-state illustration input to a PNG path.
+ * Resolve any empty-state illustration input to a flat-SVG asset path.
  * Returns the general ("ops") illustration when no input is given, and
  * passes unknown inputs through unchanged (defensive for non-empty art).
  */
