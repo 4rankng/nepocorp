@@ -389,6 +389,19 @@
   --slate-4: #0F172A;  /* slate-900 */
   --slate-5: #F1F5F9;  /* slate-100 */
   --slate-6: #E2E8F0;  /* slate-200 */
+
+  /* --- Empty-state illustration palette (flat illustration language) ---
+   * The four public/assets/illustrations/empty-flat-*.svg assets are drawn in
+   * exactly these flat fills (soft rounded shapes, no gradients, white ground).
+   * SVG referenced through <img> cannot read page CSS vars, so the assets
+   * hardcode these hexes; this block is the code-side source of truth for any
+   * future inline-SVG usage. Reference mapping: periwinkle #8ea2d0 body ->
+   * emerald tints, navy #1f2d4a detail -> ink, orange highlight kept. */
+  --illus-emerald-1: #005A2D;  /* deep emerald — main body fills */
+  --illus-emerald-2: #4A9E7D;  /* mid emerald — secondary fills, ribs */
+  --illus-emerald-3: #DDF3E7;  /* light emerald — ground, soft shapes */
+  --illus-ink: #101513;        /* neutral ink — windows, wheels, line detail */
+  --illus-highlight: #F98A43;  /* signal orange — small highlights only */
 }
 
 /* Dense phone scale (kanban 20260924_1): controls follow MooMoo/Shopee/Grab
