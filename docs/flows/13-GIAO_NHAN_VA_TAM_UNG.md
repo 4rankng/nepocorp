@@ -53,6 +53,10 @@ Cổng thông tin nhân viên giao nhận (Forwarder Portal) dành cho vai trò 
 | `PATCH` | `/api/forwarder/me/expenses/:id` | JWT + forwarder_portal:write | Sửa chi phí của chính mình khi chưa gửi kế toán |
 | `DELETE` | `/api/forwarder/me/expenses/:id` | JWT + forwarder_portal:write | Xóa chi phí (chỉ của mình) |
 | `PUT` | `/api/forwarder/me/trips/:tripId/expense-completion` | JWT + forwarder_portal:write | Xác nhận/mở lại kê khai theo container hoặc chi phí chung |
+| `GET` | `/api/forwarder/me/advance-requests` | JWT + forwarder_portal:read | Danh sách yêu cầu tạm ứng của chính mình |
+| `POST` | `/api/forwarder/me/advance-requests` | JWT + forwarder_portal:write | Tạo yêu cầu tạm ứng |
+| `PUT` | `/api/forwarder/me/advance-requests/:id` | JWT + forwarder_portal:write | Sửa yêu cầu của mình khi chưa duyệt (đã duyệt bị chặn — số tiền đã vào sổ cái) |
+| `DELETE` | `/api/forwarder/me/advance-requests/:id` | JWT + forwarder_portal:write | Xóa yêu cầu của mình chưa gắn vào phiếu hoàn ứng còn hiệu lực; yêu cầu đã duyệt được xóa kèm dòng ledger `FORWARDER_ADVANCE` tương ứng |
 
 #### Admin Forwarder (`/api/forwarder-expenses`)
 
@@ -274,7 +278,7 @@ MANAGER được Duyệt / Từ chối, nhưng không có quyền điều chỉn
 
 `PUT /api/advance-settlements/:id` nhận toàn bộ thành phần phiếu (`advanceRequestIds`, `tripExpenseIds`, `refundAmount`, `reimbursementAmount`, `note`). Hệ thống chỉ chấp nhận tạm ứng đã duyệt và chi phí thuộc phạm vi **Đã kê xong**, cùng giao nhận, chưa nằm trong phiếu khác chưa bị từ chối; đồng thời kiểm tra `tạm ứng + reimbursementAmount = chi phí + refundAmount` trong cùng transaction. `refundAmount` và `reimbursementAmount` là hai hướng thay thế nhau, không được cùng lớn hơn 0; giao diện tự suy ra chiều hiển thị từ chính hai trường này. Chi tiết phiếu trả thêm `eligibleAdvanceRequests` và `eligibleExpenses` để kế toán thay đổi thành phần an toàn.
 
-Trên màn hình **Tạo phiếu thanh toán**, danh sách chọn tạm ứng chỉ hiển thị các khoản đã duyệt nhưng chưa liên kết với phiếu thanh toán nào còn hiệu lực. Khoản đã nằm trong phiếu chờ duyệt hoặc đã duyệt chỉ còn xuất hiện trong lịch sử; khoản thuộc phiếu bị từ chối được phép chọn lại.
+Trên màn hình **Tạo phiếu thanh toán**, danh sách chọn tạm ứng chỉ hiển thị các khoản đã duyệt nhưng chưa liên kết với phiếu thanh toán nào còn hiệu lực. Khoản đã nằm trong phiếu chờ duyệt hoặc đã duyệt chỉ còn xuất hiện trong lịch sử; khoản thuộc phiếu bị từ chối được phép chọn lại. Mỗi dòng trong danh sách chọn có nút **Xóa** để loại bỏ yêu cầu tạm ứng sai (kể cả yêu cầu đã duyệt chưa gắn phiếu) và làm lại tạm ứng mới; xóa yêu cầu đã duyệt đồng thời gỡ dòng ledger `FORWARDER_ADVANCE` tương ứng và tính lại số dư.
 
 ### 3.8 Admin xem chi phí forwarder
 
