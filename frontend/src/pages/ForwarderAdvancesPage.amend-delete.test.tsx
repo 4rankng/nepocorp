@@ -7,9 +7,10 @@ import ForwarderAdvancesPage from './ForwarderAdvancesPage';
 /**
  * Forwarder self-service on an advance request (kanban 101026121000).
  *
- * The buttons are gated on status because the service is: an APPROVED request
- * has already been credited to the ledger at its original amount, so both
- * controls must stay off that row rather than failing on click.
+ * Amend is status-gated because the service is: an APPROVED request's amount is
+ * frozen in the ledger. Delete is gated on settlement linkage instead — an
+ * approved-but-unclaimed request can be removed together with its ledger
+ * credit so a wrong entry can be re-filed.
  */
 
 const mocks = vi.hoisted(() => ({
@@ -51,9 +52,17 @@ const pending = {
 const approved = {
   ...pending,
   id: 12,
+  amount: '15000000',
   status: 'APPROVED',
   approverName: 'Quản lý',
   approvedAt: '2026-09-11T00:00:00.000Z',
+};
+/** Claimed by a live phiếu hoàn ứng — the service refuses to delete it. */
+const claimed = {
+  ...pending,
+  id: 13,
+  amount: '5000000',
+  activeSettlementId: 77,
 };
 
 const success = (data: unknown) => ({ data, isLoading: false, error: null, refetch: vi.fn() });
@@ -86,12 +95,21 @@ it('offers edit and delete on a pending request', () => {
   expect(screen.getByRole('button', { name: 'Xóa yêu cầu tạm ứng 20.000.000 ₫' })).toBeTruthy();
 });
 
-it('hides edit and delete on an approved request', () => {
+it('hides amend on an approved request but keeps delete while it is unclaimed', () => {
   renderPage();
 
-  // Only the pending row is actionable, so exactly one pair of controls exists.
+  // Amend stays off the approved row (ledger-frozen amount); delete stays on.
   expect(screen.getAllByRole('button', { name: /Điều chỉnh yêu cầu tạm ứng/ })).toHaveLength(1);
-  expect(screen.getAllByRole('button', { name: /Xóa yêu cầu tạm ứng/ })).toHaveLength(1);
+  expect(screen.getByRole('button', { name: 'Xóa yêu cầu tạm ứng 15.000.000 ₫' })).toBeTruthy();
+});
+
+it('hides delete on a request claimed by a phiếu hoàn ứng', () => {
+  mocks.requests.mockReturnValue(success({ items: [pending, claimed], counts: { PENDING: 2 } }));
+  renderPage();
+
+  // A claimed row would fail on delete, so the control never appears.
+  expect(screen.queryByRole('button', { name: 'Xóa yêu cầu tạm ứng 5.000.000 ₫' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Điều chỉnh yêu cầu tạm ứng 5.000.000 ₫' })).toBeTruthy();
 });
 
 it('opens the shared form in edit mode, prefilled with the current amount and reason', () => {

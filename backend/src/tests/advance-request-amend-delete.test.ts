@@ -1,22 +1,26 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and, like, notLike } from 'drizzle-orm';
+import { TxnType } from '@tingting/shared';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import {
   updateAdvanceRequest,
   deleteAdvanceRequest,
   getAdvanceRequest,
+  approveAdvanceRequest,
   AdvanceError,
 } from '../services/advance.service';
+import { LedgerService } from '../services/ledger.service';
 
 /**
  * Forwarder self-service amend/delete on an advance request.
  *
- * The guards are the whole point of this suite: an APPROVED request has already
- * been credited to the ledger at its original amount, so it is frozen; and a
- * request consumed by a phiếu hoàn ứng must survive for the outstanding-balance
- * maths even though nothing on it says "approved".
+ * The guards are the whole point of this suite: an APPROVED request is only
+ * deletable together with its FORWARDER_ADVANCE ledger credit — the books must
+ * never keep a credit for an advance that is gone — and a request consumed by
+ * a live phiếu hoàn ứng must survive for the outstanding-balance maths even
+ * though nothing on it says "approved".
  */
 describe('advance request amend / delete', () => {
   let requesterId: number;
@@ -167,17 +171,96 @@ describe('advance request amend / delete', () => {
     assert.notEqual(await getAdvanceRequest(id), null);
   });
 
-  test('refuses to delete an APPROVED request', async () => {
-    const id = await insertRequest('APPROVED');
+  test('deleting an APPROVED request removes its ledger credit and rebuilds the balance', async () => {
+    const id = await insertRequest('PENDING');
+
+    // A trip "chi hộ" row sharing this polymorphic id — the delete must not
+    // touch it. This is the id-space collision the note prefix disambiguates.
+    await db.insert(s.ledger).values({
+      txnType: TxnType.FORWARDER_ADVANCE,
+      txnId: id,
+      entityType: 'FORWARDER',
+      entityId: requesterId,
+      debit: '0',
+      credit: '7000000',
+      balance: '7000000',
+      note: 'Chi hộ DV chuyến TRP-TEST',
+    });
+
+    await approveAdvanceRequest(id, otherUserId);
+
+    const posted = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+      eq(s.ledger.txnId, id),
+      eq(s.ledger.entityType, 'FORWARDER'),
+      notLike(s.ledger.note, 'Chi hộ%'),
+    ));
+    assert.equal(posted.length, 1);
+    assert.equal(Number(posted[0].credit), 20000000);
+
+    const deleted = await deleteAdvanceRequest(id, requesterId);
+    assert.equal(deleted.id, id);
+    assert.equal(await getAdvanceRequest(id), null);
+
+    const requestRows = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+      eq(s.ledger.txnId, id),
+      eq(s.ledger.entityType, 'FORWARDER'),
+      notLike(s.ledger.note, 'Chi hộ%'),
+    ));
+    assert.equal(requestRows.length, 0);
+
+    // The colliding trip row survives…
+    const tripRows = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+      eq(s.ledger.txnId, id),
+      eq(s.ledger.entityType, 'FORWARDER'),
+      like(s.ledger.note, 'Chi hộ%'),
+    ));
+    assert.equal(tripRows.length, 1);
+
+    // …and the running balance was rebuilt around it: credit − debit = 7 000 000.
+    assert.equal(await LedgerService.getBalance('FORWARDER', requesterId), 7000000);
+  });
+
+  test('refuses to delete an APPROVED request consumed by a phiếu hoàn ứng, leaving the ledger intact', async () => {
+    const id = await insertRequest('PENDING');
+    await approveAdvanceRequest(id, otherUserId);
+    await linkToSettlement(id);
 
     await assert.rejects(
       () => deleteAdvanceRequest(id, requesterId),
       (err: unknown) => err instanceof AdvanceError
         && err.status === 400
-        && /đã duyệt/.test(err.message),
+        && /phiếu hoàn ứng/.test(err.message),
     );
 
     assert.notEqual(await getAdvanceRequest(id), null);
+    // A refused delete must not silently reverse the books either.
+    const rows = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+      eq(s.ledger.txnId, id),
+      eq(s.ledger.entityType, 'FORWARDER'),
+      notLike(s.ledger.note, 'Chi hộ%'),
+    ));
+    assert.equal(rows.length, 1);
+  });
+
+  test('deletes a request whose only links belong to a rejected phiếu', async () => {
+    const id = await insertRequest('APPROVED');
+    const settlementId = await linkToSettlement(id);
+    await db.update(s.advanceSettlements)
+      .set({ status: 'REJECTED' })
+      .where(eq(s.advanceSettlements.id, settlementId));
+
+    const deleted = await deleteAdvanceRequest(id, requesterId);
+    assert.equal(deleted.id, id);
+
+    assert.equal(await getAdvanceRequest(id), null);
+    // Vestigial links are cleared with the request — the rejected phiếu is dead.
+    const links = await db.select().from(s.advanceSettlementRequests)
+      .where(eq(s.advanceSettlementRequests.advanceRequestId, id));
+    assert.equal(links.length, 0);
   });
 
   test("refuses to delete another user's request", async () => {

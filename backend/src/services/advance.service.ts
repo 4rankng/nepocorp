@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, desc, inArray, notInArray, ne, sql, count } from 'drizzle-orm';
+import { eq, and, desc, inArray, notInArray, ne, sql, count, isNull, notLike, or } from 'drizzle-orm';
 import { NotificationType, TxnType, round2dp } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { emitNotification } from './notification.service';
@@ -196,7 +196,24 @@ export async function listAdvanceRequests(filters?: {
     .from(s.advanceRequests)
     .where(where)
     .orderBy(desc(s.advanceRequests.createdAt));
-  return enrichWithNames(rows);
+  const enriched = await enrichWithNames(rows);
+  if (enriched.length === 0) return enriched;
+
+  // Which request is currently consumed by a live (non-rejected) phiếu hoàn
+  // ứng. The settlement picker filters these out up front; the list view needs
+  // the flag per row so "Xóa" only appears where deletion is actually possible.
+  const activeLinks = await db.select({
+    advanceRequestId: s.advanceSettlementRequests.advanceRequestId,
+    settlementId: s.advanceSettlementRequests.settlementId,
+  })
+    .from(s.advanceSettlementRequests)
+    .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.advanceSettlementRequests.settlementId))
+    .where(and(
+      inArray(s.advanceSettlementRequests.advanceRequestId, enriched.map(r => r.id)),
+      notInArray(s.advanceSettlements.status, ['REJECTED']),
+    ));
+  const activeSettlementByRequest = new Map(activeLinks.map(l => [l.advanceRequestId, l.settlementId]));
+  return enriched.map(r => ({ ...r, activeSettlementId: activeSettlementByRequest.get(r.id) ?? null }));
 }
 
 export async function getAdvanceRequestCounts(filters?: {
@@ -341,15 +358,25 @@ export async function updateAdvanceRequest(
 }
 
 /**
- * Delete a request the forwarder filed, before or after a rejection.
+ * Delete a request the forwarder filed — pending, rejected, or approved but
+ * not yet consumed by a phiếu hoàn ứng.
  *
- * Two things block deletion:
- *   - APPROVED — the FORWARDER_ADVANCE ledger entry outlives the row it was
- *     credited from; removing the row would orphan the entry.
- *   - Already linked to a phiếu hoàn ứng. `advance_settlement_requests
- *     .advance_request_id` has no ON DELETE CASCADE, so the delete would fail
- *     with a raw FK violation (23503 → 500) and, worse, silently change the
- *     "Tồn tạm ứng" figure the forwarder is settled against.
+ * One thing blocks deletion: already linked to a live (non-rejected) phiếu
+ * hoàn ứng. `advance_settlement_requests.advance_request_id` has no ON DELETE
+ * CASCADE, so the delete would fail with a raw FK violation (23503 → 500) and,
+ * worse, silently change the "Tồn tạm ứng" figure the forwarder is settled
+ * against. Links left over from a REJECTED phiếu are vestigial and are cleared
+ * here — a request only the dead phiếu referenced is still free to settle or
+ * delete, exactly like the eligible-for-settlement picker treats it.
+ *
+ * An APPROVED request carries a FORWARDER_ADVANCE ledger entry posted by
+ * approveAdvanceRequest (or the settlement carry-forward). Removing the row
+ * without it would leave the books crediting an advance that no longer exists,
+ * so the entry is dropped in the same transaction and the entity's running
+ * balances are rebuilt — the same sanctioned ledger delete + recompute as
+ * financial.service's deletePaymentEntry. Trip "chi hộ" rows share both the
+ * FORWARDER_ADVANCE txn type and the polymorphic txn_id id space, so they are
+ * excluded by the note prefix that separates the two families.
  */
 export async function deleteAdvanceRequest(id: number, requesterId: number) {
   return db.transaction(async (tx) => {
@@ -361,16 +388,33 @@ export async function deleteAdvanceRequest(id: number, requesterId: number) {
     if (request.requesterId !== requesterId) {
       throw new AdvanceError(403, 'Không có quyền xóa yêu cầu tạm ứng của người khác');
     }
-    if (request.status === 'APPROVED') {
-      throw new AdvanceError(400, 'Không xóa được yêu cầu đã duyệt — số tiền đã ghi vào sổ cái');
+
+    const [activeLink] = await tx.select({ id: s.advanceSettlementRequests.id })
+      .from(s.advanceSettlementRequests)
+      .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.advanceSettlementRequests.settlementId))
+      .where(and(
+        eq(s.advanceSettlementRequests.advanceRequestId, id),
+        notInArray(s.advanceSettlements.status, ['REJECTED']),
+      ))
+      .limit(1);
+    if (activeLink) {
+      throw new AdvanceError(400, 'Yêu cầu đã được dùng trong phiếu hoàn ứng nên không thể xóa');
     }
 
-    const [linked] = await tx.select({ id: s.advanceSettlementRequests.id })
-      .from(s.advanceSettlementRequests)
-      .where(eq(s.advanceSettlementRequests.advanceRequestId, id))
-      .limit(1);
-    if (linked) {
-      throw new AdvanceError(400, 'Yêu cầu đã được dùng trong phiếu hoàn ứng nên không thể xóa');
+    // Vestigial links to rejected phiếu only hold the FK hostage.
+    await tx.delete(s.advanceSettlementRequests)
+      .where(eq(s.advanceSettlementRequests.advanceRequestId, id));
+
+    if (request.status === 'APPROVED') {
+      await LedgerService.lockEntity(tx, 'FORWARDER', request.requesterId);
+      await tx.delete(s.ledger).where(and(
+        eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+        eq(s.ledger.txnId, request.id),
+        eq(s.ledger.entityType, 'FORWARDER'),
+        eq(s.ledger.entityId, request.requesterId),
+        or(isNull(s.ledger.note), notLike(s.ledger.note, 'Chi hộ%')),
+      ));
+      await LedgerService.recomputeEntityBalances(tx, 'FORWARDER', request.requesterId);
     }
 
     const [deleted] = await tx.delete(s.advanceRequests)

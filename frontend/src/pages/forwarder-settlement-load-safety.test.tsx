@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { ToastProvider } from '../components/shared/Toast';
 import ForwarderSettlementCreatePage from './ForwarderSettlementCreatePage';
 
 const mocks = vi.hoisted(() => ({ requests: vi.fn(), expenses: vi.fn(), retryRequests: vi.fn(), retryExpenses: vi.fn(), create: vi.fn() }));
@@ -8,12 +9,13 @@ vi.mock('../hooks/useForwarderQueries', () => ({
   useForwarderEligibleAdvanceRequests: mocks.requests,
   useUnlinkedExpenses: mocks.expenses,
   useCreateAdvanceSettlement: () => ({ mutateAsync: mocks.create, isPending: false }),
+  useDeleteAdvanceRequest: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 vi.mock('../hooks/useCatalogs', () => ({ useCatalogs: () => ({ data: {} }) }));
 vi.mock('../hooks/animations', () => ({ usePageAnimations: () => ({ rootRef: { current: null } }) }));
 vi.mock('../hooks/useBackShortcut', () => ({ useBackShortcut: vi.fn() }));
 const loaded = (data: unknown, refetch = vi.fn()) => ({ data, refetch, isLoading: false, error: null });
-const mount = () => render(<MemoryRouter><ForwarderSettlementCreatePage /></MemoryRouter>);
+const mount = () => render(<MemoryRouter><ToastProvider><ForwarderSettlementCreatePage /></ToastProvider></MemoryRouter>);
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.requests.mockReturnValue(loaded({ items: [{ id: 7, status: 'APPROVED', amount: '100000', reason: 'Ứng phí cảng', createdAt: '2026-09-22' }] }, mocks.retryRequests));
@@ -38,7 +40,7 @@ it.each(['requests', 'expenses'] as const)('blocks incomplete %s and retries bot
   expect(mocks.retryRequests).toHaveBeenCalledOnce();
   expect(mocks.retryExpenses).toHaveBeenCalledOnce();
   mocks[key].mockReturnValue({ ...mocks[key](), error: null });
-  view.rerender(<MemoryRouter><ForwarderSettlementCreatePage /></MemoryRouter>);
+  view.rerender(<MemoryRouter><ToastProvider><ForwarderSettlementCreatePage /></ToastProvider></MemoryRouter>);
   expect(screen.getByRole('button', { name: 'Gửi phiếu thanh toán' })).toBeTruthy();
 });
 

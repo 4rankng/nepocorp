@@ -29,15 +29,6 @@ const PENDING_VALUE_SUFFIX = ' chờ duyệt';
 
 type StatusFilter = '' | AdvanceRequestStatus;
 
-/**
- * An approved request has already been credited to the ledger at its original
- * amount, so the service refuses both amend and delete on it. Mirror that here
- * so the buttons never appear on a row they would fail on (kanban 101026121000).
- */
-function canModify(status: string): boolean {
-  return status !== 'APPROVED';
-}
-
 export default function ForwarderAdvancesPage() {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('');
   const { month, year } = useMonth();
@@ -365,28 +356,35 @@ export default function ForwarderAdvancesPage() {
                     <span>{formatDate(req.approvedAt)}</span>
                   </div>
                 )}
-                {canModify(req.status) && (
+                {/* Amend is status-gated: an approved amount is frozen in the
+                    ledger (kanban 101026121000). Delete is gated on linkage —
+                    approved-but-unclaimed requests are removable. */}
+                {(req.status !== 'APPROVED' || !req.activeSettlementId) && (
                   <div className="fadv-card-trip__actions">
-                    <button
-                      type="button"
-                      className="fadv-card-trip__action"
-                      title="Điều chỉnh yêu cầu"
-                      aria-label={`Điều chỉnh yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}`}
-                      disabled={deleteAdvanceRequest.isPending}
-                      onClick={() => startEdit(req)}
-                    >
-                      <Pencil size={14} /> Điều chỉnh
-                    </button>
-                    <button
-                      type="button"
-                      className="fadv-card-trip__action fadv-card-trip__action--danger"
-                      title="Xóa yêu cầu"
-                      aria-label={`Xóa yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}`}
-                      disabled={deleteAdvanceRequest.isPending}
-                      onClick={() => void confirmDelete(req)}
-                    >
-                      <Trash2 size={14} /> Xóa
-                    </button>
+                    {req.status !== 'APPROVED' && (
+                      <button
+                        type="button"
+                        className="fadv-card-trip__action"
+                        title="Điều chỉnh yêu cầu"
+                        aria-label={`Điều chỉnh yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}`}
+                        disabled={deleteAdvanceRequest.isPending}
+                        onClick={() => startEdit(req)}
+                      >
+                        <Pencil size={14} /> Điều chỉnh
+                      </button>
+                    )}
+                    {!req.activeSettlementId && (
+                      <button
+                        type="button"
+                        className="fadv-card-trip__action fadv-card-trip__action--danger"
+                        title="Xóa yêu cầu"
+                        aria-label={`Xóa yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}`}
+                        disabled={deleteAdvanceRequest.isPending}
+                        onClick={() => void confirmDelete(req)}
+                      >
+                        <Trash2 size={14} /> Xóa
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

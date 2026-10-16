@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Check, ArrowLeft, Info, Search, Wallet, Receipt, FileText, ChevronRight } from 'lucide-react';
+import { Loader2, Check, ArrowLeft, Info, Search, Wallet, Receipt, FileText, ChevronRight, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { Money } from '../components/shared/Money';
 import { EmptyIllustration } from '../components/shared';
@@ -9,7 +9,8 @@ import { useBackShortcut } from '../hooks/useBackShortcut';
 import { groupExpensesByType } from '../lib/expense-breakdown';
 import { PageHeader } from '../components/UI';
 import { useConfirm } from '../components/useConfirm';
-import { useForwarderEligibleAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses } from '../hooks/useForwarderQueries';
+import { useToast } from '../components/shared/Toast';
+import { useForwarderEligibleAdvanceRequests, useCreateAdvanceSettlement, useUnlinkedExpenses, useDeleteAdvanceRequest } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { ExpenseEntryStatus, type AdvanceRequestWithRefs } from '@tingting/shared';
 import './ForwarderSettlementsPage.css';
@@ -79,6 +80,8 @@ export default function ForwarderSettlementCreatePage() {
   const optionsError = requestsQuery.error || expensesQuery.error;
   const { data: catalogs } = useCatalogs();
   const createSettlement = useCreateAdvanceSettlement();
+  const deleteAdvanceRequest = useDeleteAdvanceRequest();
+  const { toast: showToast } = useToast();
 
   const allRequests = ((requestsData?.items ?? requestsData ?? []) as AdvanceRequestWithRefs[]);
   const approvedRequests = allRequests.filter(r => r.status === 'APPROVED');
@@ -200,6 +203,27 @@ export default function ForwarderSettlementCreatePage() {
     }
   }
 
+  /** Delete an advance request straight from the picker so a wrong entry can be re-filed. */
+  async function confirmDeleteRequest(req: AdvanceRequestWithRefs) {
+    const ok = await confirm(
+      `Xóa yêu cầu tạm ứng ${formatCurrency(Number(req.amount))}? Yêu cầu "${req.reason}" sẽ bị xóa vĩnh viễn.`,
+      { variant: 'danger', confirmLabel: 'Xóa', cancelLabel: 'Huỷ' },
+    );
+    if (!ok) return;
+    deleteAdvanceRequest.mutate(req.id, {
+      onSuccess: () => {
+        setSelectedRequestIds(prev => {
+          if (!prev.has(req.id)) return prev;
+          const next = new Set(prev);
+          next.delete(req.id);
+          return next;
+        });
+        showToast({ kind: 'success', message: 'Đã xóa yêu cầu tạm ứng' });
+      },
+      onError: (err: unknown) => showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xóa yêu cầu' }),
+    });
+  }
+
   const isFormReady = selectedRequestIds.size > 0;
 
   // ── Success state ──
@@ -306,6 +330,21 @@ export default function ForwarderSettlementCreatePage() {
                       </div>
                       <span className="fset-check-item__date">{formatDate(r.createdAt)}</span>
                     </div>
+                    <button
+                      type="button"
+                      className="fset-check-item__delete"
+                      title="Xóa yêu cầu tạm ứng"
+                      aria-label={`Xóa yêu cầu tạm ứng ${formatCurrency(Number(r.amount))}`}
+                      disabled={deleteAdvanceRequest.isPending}
+                      onClick={(e) => {
+                        // The row is a <label> — keep the click from toggling its checkbox.
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void confirmDeleteRequest(r);
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </label>
                 ))}
               </div>

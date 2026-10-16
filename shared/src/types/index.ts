@@ -860,6 +860,8 @@ export interface AdvanceRequest {
 export interface AdvanceRequestWithRefs extends AdvanceRequest {
   requesterName?: string | null;
   approverName?: string | null;
+  /** Non-rejected phiếu hoàn ứng currently consuming this request; deletion is blocked while set. */
+  activeSettlementId?: number | null;
 }
 
 export interface AdvanceSettlement {
