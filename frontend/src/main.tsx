@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import { installChunkErrorHandler } from './lib/chunk-error';
 import { installFatalScreen } from './lib/fatal-screen';
+import { installIosStandaloneViewportFix } from './lib/ios-viewport';
 import 'leaflet/dist/leaflet.css';
 import 'driver.js/dist/driver.css';
 import './index.css';
@@ -24,6 +25,11 @@ const queryClient = new QueryClient({
 // chunk the cached service worker no longer has), purge the SW cache and
 // reload once instead of hanging on a "Đang tải…" spinner or going blank.
 installChunkErrorHandler();
+
+// iOS standalone viewport compensation: flags <html> and publishes
+// --app-height BEFORE first render so the app shell never paints against a
+// short viewport (see lib/ios-viewport.ts). No-op outside standalone.
+installIosStandaloneViewportFix();
 
 // Last resort for anything React cannot catch: an uncaught error that leaves
 // #root empty paints a readable, reloadable panel instead of a blank page

@@ -5,6 +5,13 @@
 html, body, #root {
   height: 100%;
   overflow: hidden;
+  /* Bottom-gap armor (iOS standalone — consult Gemini+DeepSeek 23/10): all
+     three canvas layers share the app background so any band that falls
+     outside the reachable layout (WKWebView standalone viewport bug, rank-1
+     cause) paints as app canvas instead of the system's gray. Paint-only:
+     body already covered the viewport with this exact color, so desktop and
+     in-browser mobile rendering are unchanged. */
+  background-color: var(--bg);
 }
 body {
   margin: 0;
@@ -48,6 +55,24 @@ img { display: block; }
 :focus-visible {
   outline: 2px solid var(--accent-2);
   outline-offset: 2px;
+}
+
+/* Last-resort bottom strip (iOS standalone only — see lib/ios-viewport.ts).
+   The div lives in index.html ahead of React. If the layout viewport still
+   stops above the physical screen edge, this opaque app-canvas-colored band
+   pinned to the bottom keeps whatever is left reading as app background
+   instead of system chrome. Sits BELOW the bottom-nav (--z-sticky: 100) so
+   nav chrome always wins where they overlap; pointer-events none so it can
+   never intercept touches. */
+html.ios-standalone .ios-safe-strip {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background: var(--bg);
+  z-index: calc(var(--z-sticky, 100) - 10);
+  pointer-events: none;
 }
 
 /* Product-wide flat-surface contract.

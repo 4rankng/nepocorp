@@ -35,6 +35,40 @@
   transition: grid-template-columns 240ms var(--ease);
 }
 
+/* iOS standalone shell sizing (Add to Home Screen — see lib/ios-viewport.ts).
+   Scoped to html.ios-standalone (JS flag) so desktop and in-browser mobile
+   keep the base 100vh → 100dvh chain untouched. In standalone WKWebView
+   100dvh resolves SHORT of the physical screen (the safe-area inset is not
+   part of dvh there; visualViewport can additionally report a status-bar
+   inset below screen.height — WebKit bug), so the shell stopped above the
+   real bottom edge and the system canvas peeked through as a gray strip.
+   Progressive chain per rule: vh → dvh → lvh (large viewport = full screen,
+   the stable unit in standalone) → --app-height (JS-measured last resort,
+   falls back to lvh when unset). The row track follows the shell so
+   .app-main cannot stop short of it. */
+html.ios-standalone .app {
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100lvh;
+  min-height: var(--app-height, 100lvh);
+  height: 100vh;
+  height: 100dvh;
+  height: 100lvh;
+  height: var(--app-height, 100lvh);
+  grid-template-rows: 100vh;
+  grid-template-rows: 100dvh;
+  grid-template-rows: 100lvh;
+  grid-template-rows: var(--app-height, 100lvh);
+}
+
+html.ios-standalone .app-main {
+  height: 100vh;
+  height: 100dvh;
+  height: 100lvh;
+  height: var(--app-height, 100lvh);
+}
+
 /* Desktop sidebar toggle (1024px and above) */
 @media (min-width: 1024px) {
   .app.sidebar-closed {
