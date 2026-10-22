@@ -34,6 +34,10 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- iOS standalone bottom-gap last resort (see src/styles/base.css +
+         src/lib/ios-viewport.ts): app-colored strip pinned to the physical
+         bottom edge, standalone-only via html.ios-standalone. -->
+    <div class="ios-safe-strip" aria-hidden="true"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
