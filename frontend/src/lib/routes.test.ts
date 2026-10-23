@@ -11,7 +11,7 @@ import { PAGE_CATALOG, AGENT_ROUTE_KEYS } from '@tingting/shared';
 describe('titleForPath (catalog-sourced, parity with pre-refactor behavior)', () => {
   const cases: Record<string, string> = {
     '/dashboard': 'Tổng quan',
-    '/dispatch': 'Điều vận & Phân xe',
+    '/dispatch': 'Điều vận',
     '/fleet': 'Đội xe',
     '/fleet/5/tires': 'Đội xe',
     '/trips': 'Lệnh vận chuyển',

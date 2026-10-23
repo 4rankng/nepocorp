@@ -69,7 +69,7 @@ export const PAGE_CATALOG = {
     agent: { description: 'Tổng quan — bảng điều khiển chính, KPI tháng.' },
   },
   dispatch: {
-    title: 'Điều vận & Phân xe',
+    title: 'Điều vận',
     path: '/dispatch',
     section: 'operations',
     agent: { description: 'Điều vận & phân xe — danh sách chuyến cần điều động, bản đồ GPS.' },

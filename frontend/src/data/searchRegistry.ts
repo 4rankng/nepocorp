@@ -36,7 +36,7 @@ export function filterItems(items: SearchItem[], query: string): SearchItem[] {
 
 const ADMIN_BASE_ITEMS: SearchItem[] = [
   { id: 'dashboard', type: 'page', label: 'Tổng quan',              path: '/dashboard', iconName: 'overview' },
-  { id: 'dispatch', type: 'page', label: 'Phân xe',                 path: '/dispatch',  iconName: 'dispatch' },
+  { id: 'dispatch', type: 'page', label: 'Điều vận',                 path: '/dispatch',  iconName: 'dispatch' },
   { id: 'fleet',    type: 'page', label: 'Đội xe',                  path: '/fleet',     iconName: 'tractor-head' },
   { id: 'trips',    type: 'page', label: 'Sổ chuyến đi',            path: '/trips',     iconName: 'trip-log' },
   { id: 'penalties',type: 'page', label: 'Kỷ luật',                 path: '/penalties', iconName: 'alert' },
@@ -80,7 +80,7 @@ export const CONFIG_ITEMS: SearchItem[] = [
 const ACTION_ITEMS: SearchItem[] = [
   { id: 'action-new-trip',   type: 'action', label: 'Tạo chuyến mới',           path: '/trips/new',    iconName: 'trip-log' },
   { id: 'action-audit-logs', type: 'action', label: 'Xem nhật ký hoạt động',    path: '/audit-logs',   iconName: 'audit-log' },
-  { id: 'action-dispatch',   type: 'action', label: 'Điều vận & Phân xe',       path: '/dispatch',     iconName: 'dispatch' },
+  { id: 'action-dispatch',   type: 'action', label: 'Điều vận',       path: '/dispatch',     iconName: 'dispatch' },
   { id: 'action-config',     type: 'action', label: 'Cấu hình hệ thống',        path: '/config',       iconName: 'settings' },
 ];
 
