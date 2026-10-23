@@ -4,12 +4,11 @@ import { formatMoney, type StatusCounts } from '../features/trips';
 import type { tripClient } from '../api/tripClient';
 
 type Summary = Awaited<ReturnType<typeof tripClient.getTripsSummary>>;
-interface TripListHeroProps { todayLabel: string; statusCounts: StatusCounts; summary?: Summary; quickEdit: boolean; toggleQuickEdit: () => void; handleExport: () => void; onAdd: () => void; breakdownPct: { chot: number; htth: number; dang: number; moi: number; huy: number }; warnThreshold: number; month: number }
+interface TripListHeroProps { todayLabel: string; statusCounts: StatusCounts; summary?: Summary; quickEdit: boolean; toggleQuickEdit: () => void; handleExport: () => void; onAdd: () => void; warnThreshold: number; month: number }
 
 /* Header + metric strip gọn (audit Gemini 23/10): hero card 340px cũ chiếm
    ~40% viewport đầu; giờ 1 hàng tiêu đề 48px + 1 strip chỉ số ~56px, không
-   bar/legend (trùng tabs trạng thái bên dưới). breakdownPct giữ trong props
-   cho tương thích caller nhưng không còn vẽ. */
+   bar/legend (trùng tabs trạng thái bên dưới). */
 export function TripListHero({ todayLabel, statusCounts, summary, quickEdit, toggleQuickEdit, handleExport, onAdd, warnThreshold, month }: TripListHeroProps) {
  return (
         <section className="trip-hero-compact">
@@ -44,30 +43,30 @@ export function TripListHero({ todayLabel, statusCounts, summary, quickEdit, tog
           <div className="thc-strip">
             <div className="thc-metric">
               <span className="thc-metric-label">Tổng chuyến</span>
-              <span className="thc-metric-value d-mono">{statusCounts.all}</span>
+              <span className="thc-metric-value">{statusCounts.all}</span>
               <span className="thc-metric-hint">{statusCounts[TripStatus.IN_TRANSIT]} đang chạy · {statusCounts[TripStatus.CREATED]} mới tạo</span>
             </div>
             <div className="thc-metric">
               <span className="thc-metric-label">Tổng KM</span>
-              <span className="thc-metric-value d-mono">{(summary?.totalKm ?? 0).toLocaleString('vi-VN')}<i>km</i></span>
+              <span className="thc-metric-value">{(summary?.totalKm ?? 0).toLocaleString('vi-VN')}<i>km</i></span>
             </div>
             <div className="thc-metric">
               <span className="thc-metric-label">Tổng dầu</span>
-              <span className="thc-metric-value d-mono">{(summary?.totalFuel ?? 0).toLocaleString('vi-VN', { maximumFractionDigits: 0 })}<i>L</i></span>
+              <span className="thc-metric-value">{(summary?.totalFuel ?? 0).toLocaleString('vi-VN', { maximumFractionDigits: 0 })}<i>L</i></span>
               <span className={`thc-metric-hint${(summary?.totalKm ?? 0) > 0 && (summary?.avgPer100 ?? 0) > warnThreshold ? ' thc-hint-warn' : ''}`}>
                 {(summary?.totalKm ?? 0) > 0 ? <>TB {(summary?.avgPer100 ?? 0).toFixed(1).replace('.', ',')} L/100km · ngưỡng {warnThreshold.toFixed(1).replace('.', ',')}</> : 'TB không khả dụng'}
               </span>
             </div>
             <div className="thc-metric">
               <span className="thc-metric-label">Tiền đi đường</span>
-              <span className="thc-metric-value d-mono">{formatMoney(summary?.totalRoad ?? 0)}<i>₫</i></span>
+              <span className="thc-metric-value">{formatMoney(summary?.totalRoad ?? 0)}<i>₫</i></span>
               <span className="thc-metric-hint">
                 {(summary?.missingFuel ?? 0) > 0 ? `${summary?.missingFuel} chuyến chưa cập nhật` : 'Đã cập nhật đầy đủ'}
               </span>
             </div>
             <div className="thc-metric">
               <span className="thc-metric-label">Tổng giá trị lệnh</span>
-              <span className="thc-metric-value d-mono">{formatMoney(summary?.totalRevenue ?? 0)}<i>₫</i></span>
+              <span className="thc-metric-value">{formatMoney(summary?.totalRevenue ?? 0)}<i>₫</i></span>
               <span className="thc-metric-hint">Tháng {month} · mọi trạng thái</span>
             </div>
           </div>

@@ -1,8 +1,8 @@
 /* ============================================================================
  * Trip list page (.trip-list-page wireframe)
- * Shares visual language with .dispatch-page — same charcoal hero, same metric
- * strip pattern, same scoped naming — but adds a data table with breakdown bar,
- * filter dropdowns, pagination, and mobile-card fallback.
+ * Hero gọn từ audit 23/10: chỉ còn token block, breadcrumbs và khối nút
+ * hành động (.hero-actions) dùng chung cho header compact (trip-list-hero.tsx).
+ * Metric strip mới (.thc-*) định nghĩa trong table.css.
  * ========================================================================== */
 
 .trip-list-page {
@@ -39,9 +39,7 @@
   --tbl-red-700: #B23030;
 }
 
-/* ── Hero (same pattern as dispatch) ──────────────────────────────────── */
-/* Breadcrumb trail — sits above the hero so users get a "you are here"
-   cue. Muted color so it doesn't compete with the hero metrics below. */
+/* ── Breadcrumbs ────────────────────────────────────────────────────────── */
 .trip-list-page .trip-list-page__crumbs {
   margin: 2px 0 10px;
   color: var(--ink-3);
@@ -53,47 +51,7 @@
   gap: 4px;
 }
 
-.trip-list-page .hero {
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  padding: 22px 24px;
-  margin-bottom: 18px;
-  position: relative;
-  overflow: hidden;
-  container-type: inline-size;
-}
-.trip-list-page .hero::before {
-  content: none;
-}
-.trip-list-page .hero::after {
-  content: none;
-}
-.trip-list-page .hero-top {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 24px; position: relative;
-}
-.trip-list-page .hero-title-block { min-width: 0; }
-.trip-list-page .hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: var(--fs-xs); letter-spacing: 1.2px; font-weight: 700;
-  color: var(--accent-ink);
-  text-transform: uppercase;
-  margin-bottom: 9px;
-}
-.trip-list-page .hero-eyebrow::before {
-  content: ''; width: 6px; height: 6px;
-  background: var(--accent); border-radius: 50%;
-}
-.trip-list-page .hero-h1 {
-  font-family: var(--font-display);
-  font-size: var(--fs-2xl); font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1.25;
-  margin: 0 0 6px;
-}
-.trip-list-page .hero-sub { font-size: var(--fs-sm); color: var(--ink-2); }
+/* ── Action buttons của header compact ─────────────────────────────────── */
 .trip-list-page .hero-actions { display: flex; gap: 10px; flex-shrink: 0; }
 .trip-list-page .hero-actions .btn {
   min-width: 132px;
@@ -102,106 +60,3 @@
 /* Hero action buttons use the Global .btn / .btn--primary / .btn--secondary
    system (components/Button.css). The page-scoped .btn-d* recipes were
    retired during CTA unification. */
-
-/* ── Inline summary — grouped by space and one section divider. ─────── */
-.trip-list-page .metrics {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-  display: grid;
-  grid-template-columns: minmax(260px, 1.35fr) repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  background: transparent;
-  border-radius: 0;
-  overflow: visible;
-  position: relative;
-}
-.trip-list-page .metric {
-  min-width: 0;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 14px 0;
-}
-.trip-list-page .metric.featured {
-  grid-row: auto;
-  grid-column: auto;
-}
-.trip-list-page .metric.featured .metric-label { color: var(--accent-ink); }
-.trip-list-page .metric-label {
-  font-size: var(--fs-xs); letter-spacing: 1px;
-  color: var(--ink-3);
-  font-weight: 600;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-  overflow-wrap: anywhere;
-}
-.trip-list-page .metric-value {
-  max-width: 100%;
-  font-size: clamp(18px, 1.85vw, var(--fs-2xl)); font-weight: 700;
-  line-height: 1.35; letter-spacing: 0;
-  color: var(--ink);
-}
-.trip-list-page .metric-value.d-mono { font-family: var(--font-mono); font-feature-settings: "tnum"; }
-.trip-list-page .metric-unit { font-size: var(--fs-sm); color: var(--ink-3); font-weight: 500; margin-left: 4px; line-height: 1.35; }
-.trip-list-page .metric-delta {
-  margin-top: 8px;
-  font-size: var(--fs-xs); font-weight: 600;
-  display: inline-flex; align-items: center; gap: 4px;
-  line-height: 1.4;
-  word-break: break-word;
-}
-.trip-list-page .delta-up { color: var(--accent-ink); }
-/* Use the foreground --danger token, not the --danger-soft background tint
-   (which rendered negative deltas near-invisible). Mirrors DispatchPage. */
-.trip-list-page .delta-down { color: var(--danger); }
-.trip-list-page .delta-flat { color: var(--ink-3); }
-.trip-list-page .delta-warn { color: var(--warning-text); }
-
-.trip-list-page .breakdown-bar {
-  margin-top: 12px;
-  height: 6px;
-  background: var(--surface-3);
-  border-radius: 99px;
-  display: flex; overflow: hidden;
-}
-.trip-list-page .bb-seg { height: 100%; transition: width 200ms ease; }
-.trip-list-page .bb-moi  { background: #6B7280; }
-.trip-list-page .bb-dang { background: #3B82F6; }
-.trip-list-page .bb-htth { background: #10B981; }
-.trip-list-page .bb-chot { background: #1E293B; }
-.trip-list-page .bb-huy  { background: #EF4444; }
-.trip-list-page .breakdown-legend {
-  margin-top: 8px;
-  display: flex; flex-wrap: wrap; gap: 10px 14px;
-  font-size: var(--fs-xs); color: var(--ink-2);
-  line-height: 1.35;
-}
-.trip-list-page .legend-item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.trip-list-page .legend-dot { width: 7px; height: 7px; border-radius: 2px; }
-
-@container (max-width: 1180px) {
-  .trip-list-page .metrics {
-    grid-template-columns: minmax(280px, 1.15fr) repeat(2, minmax(190px, 1fr));
-  }
-
-  .trip-list-page .metric.featured {
-    grid-row: span 2;
-  }
-}
-
-@container (max-width: 820px) {
-  .trip-list-page .metrics {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .trip-list-page .metric.featured {
-    grid-column: 1 / -1;
-    grid-row: auto;
-  }
-}
-
-/* Legend for the row cues added by kanban 20260921_1 / _5. */
-.trip-list-page .legend-dot--today { background: #10B956; }
-.trip-list-page .legend-dot--missing { background: #DC2626; }
-.trip-list-page .legend-item--hint { cursor: help; }

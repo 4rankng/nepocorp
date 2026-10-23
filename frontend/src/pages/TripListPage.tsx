@@ -171,7 +171,6 @@ export default function TripListPage() {
       [TripStatus.CANCELED]: raw[TripStatus.CANCELED] ?? 0,
     };
   }, [summary]);
-  const breakdownPct = useMemo(() => breakdownPctFromCounts(statusCounts), [statusCounts]);
   const truckOptions = summary?.truckOptions ?? [];
   const customerOptions = summary?.customerOptions ?? [];
 
@@ -436,7 +435,7 @@ export default function TripListPage() {
         ]}
         renderLink={(to, children) => <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>}
       />
-      <TripListHero todayLabel={todayLabel} statusCounts={statusCounts} summary={summary} quickEdit={quickEdit} toggleQuickEdit={toggleQuickEdit} handleExport={handleExport} onAdd={() => navigate('/trips/new')} breakdownPct={breakdownPct} warnThreshold={warnThreshold} month={month} />
+      <TripListHero todayLabel={todayLabel} statusCounts={statusCounts} summary={summary} quickEdit={quickEdit} toggleQuickEdit={toggleQuickEdit} handleExport={handleExport} onAdd={() => navigate('/trips/new')} warnThreshold={warnThreshold} month={month} />
 
       <TripFiltersBar
         statusCounts={statusCounts}

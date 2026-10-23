@@ -1,55 +1,4 @@
 /* ── Table card (desktop) ─────────────────────────────────────────────── */
-/* Subtle hint that rows are clickable. Sits right above the table card,
-   aligned to the right edge so it reads like a tip chip rather than
-   a banner. Same color family as the search-hint chip. */
-.trip-list-page .table-hint {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 10px auto;     /* push to right */
-  padding: 5px 11px;
-  font-size: var(--fs-xs);
-  font-weight: 500;
-  color: var(--ink-3);
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(203, 211, 206, 0.72);
-  border-radius: 999px;
-  max-width: 100%;
-  letter-spacing: 0;
-  user-select: none;
-  width: fit-content;
-}
-.trip-list-page .table-hint svg {
-  color: var(--tbl-green-600);
-  flex: none;
-}
-.trip-list-page .table-hint b {
-  color: var(--ink-2);
-  font-weight: 700;
-  margin-right: 2px;
-}
-.trip-list-page .table-hint > span:first-of-type {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.trip-list-page .table-hint .table-legend {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 12px;
-  min-width: 0;
-}
-.trip-list-page .table-hint .legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-/* Hide on the narrowest viewports where horizontal real-estate is tight */
-@media (max-width: 640px) {
-  .trip-list-page .table-hint { display: none; }
-}
 .trip-list-page .table-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -471,7 +420,14 @@
   text-transform: uppercase;
   color: var(--ink-2);
 }
-.trip-list-page .thc-metric-value { font-size: 17px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.trip-list-page .thc-metric-value {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
 .trip-list-page .thc-metric-value i { font-style: normal; font-size: 11px; color: var(--ink-3); margin-left: 2px; }
 .trip-list-page .thc-metric-hint {
   font-size: 11px;
@@ -927,9 +883,5 @@
 }
 .trip-list-page .cons-dot[data-over="true"] { background: #dc2626; }
 
-/* The "Hôm nay" chip must never be clipped by the narrow code column: let the
-   name line wrap so the chip drops to its own line instead (kanban 20260921_1). */
-.trip-list-page .trip-name {
-  flex-wrap: wrap;
-  row-gap: 2px;
-}
+/* Ô Chuyến · Mã giờ chỉ chứa mã + ngày (khách hàng là cột riêng, audit
+   23/10) — dòng đơn, không cần wrap. */
