@@ -10,8 +10,6 @@ import { FuelTollsRevenueCard } from '../components/trip/FuelTollsRevenueCard';
 import { ImagesNotesCard } from '../components/trip/ImagesNotesCard';
 import { ContainerInstancesCard } from '../components/trip/ContainerInstancesCard';
 import { CardSection } from '../components/trip/CardSection';
-import { TripSummaryCard } from '../components/trip/TripSummaryCard';
-import { TripChecklistPanel } from '../components/trip/TripChecklistPanel';
 import { ActionBar } from '../components/trip/ActionBar';
 import { usePageAnimations } from '../hooks/animations';
 import { useBackShortcut } from '../hooks/useBackShortcut';
@@ -48,26 +46,17 @@ export default function TripCreatePage() {
   return (
     <TripFormProvider form={form}>
       <div ref={rootRef} className="tc-create-wrap">
-        <section className="tc-create-hero">
-          <div className="tc-hero-top">
-            <button className="tc-back-btn" onClick={handleBack} aria-label="Quay lại">
-              <ArrowLeft size={18} />
-            </button>
-            <div className="tc-hero-title-block">
-              <div className="tc-hero-eyebrow">Tạo lệnh mới</div>
-              <h1 className="tc-hero-h1" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <img src="/assets/icons/03-trip-log-so-chuyen-chuyen-xe.png" alt="" style={{ width: 36, height: 36, flexShrink: 0 }} />
-                Tạo lệnh vận chuyển mới
-              </h1>
-              <p className="tc-hero-sub">
-                Điền các trường bắt buộc để tạo lệnh. Chọn tuyến đường để tự động điền trạm thu phí, định mức dầu và lương sản lượng.
-              </p>
-            </div>
-          </div>
-
-          <div className="tc-hero-widgets">
-            <TripSummaryCard />
-            <TripChecklistPanel />
+        <section className="tc-create-hero tc-create-hero--compact">
+          <button className="tc-back-btn" onClick={handleBack} aria-label="Quay lại">
+            <ArrowLeft size={18} />
+          </button>
+          <div className="tc-hero-title-block">
+            {/* 1 hàng duy nhất (audit Gemini 23/10): topbar đã có 'ĐANG XEM',
+                không lặp kicker + icon; ước tính/chỉ tiêu chuyển xuống ActionBar. */}
+            <h1 className="tc-hero-h1">Tạo lệnh vận chuyển mới</h1>
+            <p className="tc-hero-sub">
+              Chọn tuyến đường để tự động điền trạm thu phí, định mức dầu và lương sản lượng.
+            </p>
           </div>
         </section>
 

@@ -108,17 +108,6 @@ export function TripFiltersBar(props: TripFiltersBarProps) {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- utility helper co-located with the filter component
-export function breakdownPctFromCounts(statusCounts: StatusCounts) {
-  const total = statusCounts.all || 0;
-  if (total === 0) return { chot: 0, htth: 0, dang: 0, moi: 0, huy: 0 };
-  return {
-    chot: (statusCounts[TripStatus.LOCKED] / total) * 100,
-    htth: (statusCounts[TripStatus.COMPLETED] / total) * 100,
-    dang: (statusCounts[TripStatus.IN_TRANSIT] / total) * 100,
-    moi: (statusCounts[TripStatus.CREATED] / total) * 100,
-    huy: (statusCounts[TripStatus.CANCELED] / total) * 100,
-  };
-}
 
 // eslint-disable-next-line react-refresh/only-export-components -- utility helper co-located with the filter component
 export function defaultStatusCounts(): StatusCounts {

@@ -29,6 +29,30 @@
   position: relative;
   overflow: hidden;
 }
+/* Header gọn 1 hàng ~64px (audit Gemini 23/10): back + title + sub inline;
+   ước tính & checklist chuyển xuống ActionBar (progress 4px + strip tiền). */
+.tc-create-hero--compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+}
+.tc-create-hero--compact .tc-hero-title-block {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tc-create-hero--compact .tc-hero-h1 { margin: 0; }
+.tc-create-hero--compact .tc-hero-sub {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .tc-create-hero::before {
   content: none;
 }

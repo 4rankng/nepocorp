@@ -128,27 +128,33 @@ export function TripInfoCard(props: TripInfoCardProps) {
           <input id="customerReference" name="customerReference" className="input mono" type="text" placeholder="VD: PO-12345" value={form.customerReference} onChange={(e) => form.setCustomerReference(e.target.value)} maxLength={50} />
         </Field>
         <div className="trip-info-card__group">Phương tiện & lịch</div>
-        {/* Carrier type toggle */}
-        <Field label="Loại xe" required>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              onClick={() => form.setCarrierType('OWN')}
-              className={`btn btn--sm${form.carrierType === 'OWN' ? ' btn--primary' : ' btn--secondary'}`}
-              aria-pressed={form.carrierType === 'OWN'}
-            >
-              Xe nhà
-            </button>
-            <button
-              type="button"
-              onClick={() => form.setCarrierType('EXTERNAL')}
-              className={`btn btn--sm${form.carrierType === 'EXTERNAL' ? ' btn--primary' : ' btn--secondary'}`}
-              aria-pressed={form.carrierType === 'EXTERNAL'}
-            >
-              Xe ngoài
-            </button>
-          </div>
-        </Field>
+        {/* Loại xe + Ngày khởi hành đi cùng hàng (audit Gemini 23/10): không để
+            date input đứng lẻ 1 hàng; xe/tài xế lấp đầy hàng sau. */}
+        <div className="trip-info-card__duo">
+          <Field label="Loại xe" required>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => form.setCarrierType('OWN')}
+                className={`btn btn--sm${form.carrierType === 'OWN' ? ' btn--primary' : ' btn--secondary'}`}
+                aria-pressed={form.carrierType === 'OWN'}
+              >
+                Xe nhà
+              </button>
+              <button
+                type="button"
+                onClick={() => form.setCarrierType('EXTERNAL')}
+                className={`btn btn--sm${form.carrierType === 'EXTERNAL' ? ' btn--primary' : ' btn--secondary'}`}
+                aria-pressed={form.carrierType === 'EXTERNAL'}
+              >
+                Xe ngoài
+              </button>
+            </div>
+          </Field>
+          <Field label="Ngày khởi hành" required controlId="departureDate">
+            <input id="departureDate" name="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
+          </Field>
+        </div>
 
         {form.carrierType === 'OWN' && (
           <>
@@ -196,37 +202,33 @@ export function TripInfoCard(props: TripInfoCardProps) {
           </>
         )}
 
-        <Field label="Ngày khởi hành" required controlId="departureDate" className="trip-info-card__field--full">
-          <input id="departureDate" name="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
-        </Field>
         <div className="trip-info-card__group">Container &amp; thuế</div>
-        {/* Count is a 1–10 number — it never earns half a row; the container
-            type select takes the remaining width (20260925 design pass). */}
-        <div className="trip-info-card__pair">
+        {/* 1 hàng chuẩn 3 field (audit Gemini 23/10): số lượng (hẹp) + loại
+            container (co giãn) + VAT; hint nằm ngay dưới số lượng, không lơ
+            lửng giữa 2 cột. */}
+        <div className="trip-info-card__triple">
           <Field label="Số lượng cont" required controlId="containerCount">
             <input id="containerCount" name="containerCount" className="input mono" type="number" min={1} max={10} value={form.containerCount} onChange={(e) => form.setContainerCount(e.target.value)} required />
+            <span className="tc-field-hint">Số cont/seal nhập sau</span>
           </Field>
           <Field label="Loại container" required controlId="plannedContainerTypeId">
             {sel(plannedContainerTypeId, setPlannedContainerTypeId, props.containerTypes, 'Chọn loại container', 'plannedContainerTypeId', true)}
-            <span className="tc-field-hint">Số cont/seal nhập sau</span>
+          </Field>
+          <Field label="Thuế VAT" controlId="vatRate">
+            <select
+              id="vatRate"
+              name="vatRate"
+              className="input"
+              style={selectStyle}
+              value={form.vatRate}
+              onChange={(e) => form.setVatRate(Number(e.target.value))}
+            >
+              <option value={0.08}>8%</option>
+              <option value={0.10}>10%</option>
+              <option value={0}>Không VAT</option>
+            </select>
           </Field>
         </div>
-
-        {/* VAT rate */}
-        <Field label="Thuế VAT" controlId="vatRate" className="trip-info-card__field--full">
-          <select
-            id="vatRate"
-            name="vatRate"
-            className="input"
-            style={selectStyle}
-            value={form.vatRate}
-            onChange={(e) => form.setVatRate(Number(e.target.value))}
-          >
-            <option value={0.08}>8%</option>
-            <option value={0.10}>10%</option>
-            <option value={0}>Không VAT</option>
-          </select>
-        </Field>
 
         {form.carrierType === 'EXTERNAL' && (
           <>

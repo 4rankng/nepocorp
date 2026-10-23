@@ -29,12 +29,14 @@ export function ImagesNotesCard({ collapsible, defaultCollapsed }: ImagesNotesCa
       collapsible={collapsible}
       defaultCollapsed={defaultCollapsed}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* 2 cột 60/40 cùng hàng (audit Gemini 23/10): ghi chú trái, dropzone
+          phải — tiết kiệm ~120px chiều cao cuộn. */}
+      <div className="tc-notes-media">
         <div className="field">
           <label>Ghi chú chuyến đi</label>
           <textarea
             className="input"
-            style={{ minHeight: 90, resize: 'vertical' }}
+            style={{ minHeight: 140, resize: 'vertical' }}
             rows={4}
             placeholder="Ghi chú chi tiết chuyến đi, các lưu ý đặc biệt, yêu cầu của khách hàng…"
             value={notes}

@@ -14,7 +14,7 @@ import { getCalendarMonthRange } from '../lib/calendar-month';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState, Pagination } from '../design-system';
-import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, getMissingPlanFields, isTripToday } from '../features/trips';
+import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, getMissingPlanFields, isTripToday } from '../features/trips';
 import { TRIP_LIST_EXPORT_HEADERS, buildTripListExportRows } from '../features/trips/tripListExport';
 import { TripQuickEditMobileCard } from '../features/trips/tripQuickEditCard';
 import { columnClass, draftChanged, figuresPayloadFromDraft, invalidQuickField, isEditableInQuickMode, quickDraftFromTrip, QUICK_DRAFT_FIELD_LABELS } from './trip-list-helpers';

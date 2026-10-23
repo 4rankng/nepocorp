@@ -110,3 +110,15 @@
   color: var(--fg-3);
   margin-top: 8px;
 }
+
+/* Ghi chú 60% + dropzone 40% cùng hàng (audit Gemini 23/10). */
+.tc-notes-media {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  align-items: start;
+}
+.tc-notes-media > .field { min-width: 0; margin-bottom: 0; }
+@media (max-width: 900px) {
+  .tc-notes-media { grid-template-columns: 1fr; }
+}

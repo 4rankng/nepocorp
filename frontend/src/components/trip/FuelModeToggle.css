@@ -3,7 +3,9 @@
 .tc-fuel-mode {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* 260px thực dụng (audit Gemini 23/10) — không kéo dãn full-width 1130px. */
+  grid-template-columns: 190px 130px;
+  width: fit-content;
   gap: 8px;
   background: var(--bg-3);
   padding: 4px;

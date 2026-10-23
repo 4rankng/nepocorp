@@ -438,6 +438,26 @@
 }
 .trip-list-page .thc-hint-warn { color: #b45309; font-weight: 600; }
 
+/* Chặn tràn giữa các cột (QA 23/10): mọi track con có min-width:0 + ẩn tràn,
+   trừ ô Chuyến · Mã (giữ copy btn + chip hiển thị đầy đủ). */
+.trip-list-page .table-row > .col-truck,
+.trip-list-page .table-row > .col-route,
+.trip-list-page .table-row > .col-container,
+.trip-list-page .table-row > .col-consumption,
+.trip-list-page .table-row > .col-road,
+.trip-list-page .table-row > .col-revenue,
+.trip-list-page .table-row > .col-driver-salary,
+.trip-list-page .table-row > .col-total-cost,
+.trip-list-page .table-row > .col-gross-profit,
+.trip-list-page .table-row > .col-status {
+  min-width: 0;
+  overflow: hidden;
+}
+/* Tên khách được co để pill Xe ngoài không bị đẩy tràn sang cột Xe. */
+.trip-list-page .trip-col--customer .trip-customer-name {
+  min-width: 0;
+  flex: 0 1 auto;
+}
 /* Cột Khách hàng riêng (view mode) — 1 dòng truncate + pill Xe ngoài inline. */
 .trip-list-page .trip-col--customer {
   display: flex;

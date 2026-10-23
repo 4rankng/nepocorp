@@ -242,13 +242,15 @@ export function buildTripColumns(
     ...(!quickEdit?.enabled ? [{
       id: 'customer',
       header: 'Khách hàng',
-      accessorFn: (row) => row.customer?.name ?? '',
+      accessorFn: (row) => row.customer?.shortName || row.customer?.name || '',
       cell: ({ row }) => {
         const trip = row.original;
+        // Tên rút gọn cho bảng dày đặc (QA 23/10); tooltip giữ tên đầy đủ.
+        const displayName = trip.customer?.shortName || trip.customer?.name || '—';
         const customerName = trip.customer?.name ?? '—';
         return (
           <div className="trip-col trip-col--customer">
-            <span className="trip-customer-name" title={customerName}>{customerName}</span>
+            <span className="trip-customer-name" title={customerName}>{displayName}</span>
             {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
           </div>
         );
@@ -397,11 +399,12 @@ export function buildTripColumns(
           );
         }
         const over = cons.per100 > warnThreshold;
+        // 1 cụm gọn vừa track ~102px (QA 23/10): "147 L / 34,8" — tooltip giải
+        // nghĩa định mức đầy đủ.
         return (
-          <div className="cons-cell cons-cell--compact">
-            <span className="cons-dot" data-over={over} title={over ? `Vượt định mức ${Math.round(((cons.per100 - warnThreshold) / warnThreshold) * 100)}%` : 'Đạt chuẩn'} />
-            <span className="cons-main">{cons.liters.toFixed(0)} L</span>
-            <span className="cons-rate-val">({cons.per100.toFixed(1).replace('.', ',')} L/100km)</span>
+          <div className="cons-cell cons-cell--compact" title={`Tiêu hao ${cons.liters.toFixed(0)} L · định mức ${cons.per100.toFixed(1).replace('.', ',')} L/100km`}>
+            <span className="cons-dot" data-over={over} />
+            <span className="cons-main">{cons.liters.toFixed(0)} L / {cons.per100.toFixed(1).replace('.', ',')}</span>
           </div>
         );
       },

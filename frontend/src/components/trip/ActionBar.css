@@ -26,7 +26,41 @@
   align-items: center;
   gap: 16px;
   z-index: var(--z-sticky);
+  flex-wrap: wrap;
 }
+/* Thanh tiến độ 4px chạy dọc mép trên bar (audit Gemini 23/10). */
+.tc-action-bar__progress {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--surface-2);
+}
+.tc-action-bar__progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 200ms ease;
+}
+/* Ước tính inline: DT | CP ước | LN — thay card 400px đầu trang. */
+.tc-action-bar__money {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+.tc-action-bar__money i {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--fg-3);
+  margin-right: 4px;
+  font-family: var(--font-sans);
+}
+.tc-money--cost { color: var(--danger-text); }
+.tc-money--pos { color: var(--accent-ink, var(--accent)); font-weight: 600; }
+.tc-money--neg { color: var(--danger-text); font-weight: 600; }
+.tc-money--flat { color: var(--fg-3); }
 .tc-action-bar__status {
   flex: 1 1 auto;
   min-width: 0;

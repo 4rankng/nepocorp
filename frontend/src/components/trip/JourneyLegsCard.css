@@ -33,13 +33,14 @@
   gap: 20px;
 }
 .tc-journey-empty__illustration {
-  width: 80px;
-  height: 60px;
-  background: var(--surface);
-  border-radius: var(--r);
+  width: 64px;
+  height: 64px;
+  background: var(--surface-2, var(--surface));
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border-1);
+  color: var(--fg-3);
+  border: none;
   flex-shrink: 0;
 }
 .tc-journey-empty__text {

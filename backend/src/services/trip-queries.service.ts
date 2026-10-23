@@ -16,6 +16,7 @@ import { resolveLegCoords } from './maps.service';
 /** Common field set joined with relation names for trip list/detail. */
 const TRIP_RELATION_FIELDS = {
   customerName: s.customers.name,
+  customerShortName: s.customers.shortName,
   driverName: s.drivers.name,
   truckPlate: s.trucks.licensePlate,
   routeName: s.routes.name,
@@ -47,7 +48,7 @@ const TRIP_RELATION_JOINS = <T extends WithLeftJoin>(query: T): T => (query as W
 function shapeTripRelations(item: Record<string, unknown>, extras?: { legs?: unknown[]; photoUrls?: string[] }) {
   return {
     ...item,
-    customer: item.customerName ? { id: item.customerId, name: item.customerName } : null,
+    customer: item.customerName ? { id: item.customerId, name: item.customerName, shortName: item.customerShortName ?? null } : null,
     driver: item.driverName ? { id: item.driverId, name: item.driverName } : null,
     truck: item.truckPlate ? { id: item.truckId, licensePlate: item.truckPlate } : null,
     route: item.routeName ? { id: item.routeId, name: item.routeName, distanceKm: item.routeDistance, isMountain: item.routeIsMountain, fixedFuelAllowance: item.routeFixedFuelAllowance } : null,

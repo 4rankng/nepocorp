@@ -493,14 +493,21 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 </div>
               </div>
 
-              <div className="ci-evidence-stack">
-                {renderPhotoLane(row, "CONTAINER")}
-
-                {renderSealFields(row, 0)}
-                {renderPhotoLane(row, "SEAL", 0)}
-
-                {renderSealFields(row, 1)}
-                {renderPhotoLane(row, "SEAL", 1)}
+              <div className="ci-evidence-grid">
+                {/* 3 cột ngang (audit Gemini 23/10): ảnh cont | seal 1 | seal 2 —
+                    1 container giảm từ ~500px xuống ~210px, hết zigzag
+                    label-trái/field-phải. */}
+                <div className="ci-evidence-col">
+                  {renderPhotoLane(row, "CONTAINER")}
+                </div>
+                <div className="ci-evidence-col">
+                  {renderSealFields(row, 0)}
+                  {renderPhotoLane(row, "SEAL", 0)}
+                </div>
+                <div className="ci-evidence-col">
+                  {renderSealFields(row, 1)}
+                  {renderPhotoLane(row, "SEAL", 1)}
+                </div>
               </div>
             </div>
           ))}
