@@ -104,15 +104,16 @@
 .trip-list-page .table-row {
   display: grid;
   grid-template-columns: minmax(200px, 1.3fr) 124px minmax(250px, 1.45fr) minmax(92px, 0.6fr) 116px 116px 112px 112px 104px 104px;
-  padding: 14px 16px;
-  gap: 10px;
+  /* Audit UX 23/10: nén mật độ — 8px padding + gap 8 giảm chiều cao row
+     (~185px → ~150px) mà không đổi cấu trúc card. */
+  padding: 8px 14px;
+  gap: 8px;
   align-items: center;
   border-bottom: 1px solid var(--line);
   transition: background 150ms ease;
   cursor: pointer;
   width: 100%;
   min-width: 1460px;
-  min-height: 60px;
   background: var(--surface);
   position: relative;
 }
@@ -789,13 +790,18 @@
   letter-spacing: 0;
 }
 .trip-list-page .trip-missing-flag {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-top: 4px;
-  font-size: var(--fs-xs);
+  font-size: 11px;
   font-weight: 600;
-  color: #B91C1C;
+  /* Thiếu dữ liệu là "đang xử lý", không phải sự cố — amber đất thay cho đỏ,
+     giữ chi tiết đầy đủ trong tooltip (audit UX 23/10). */
+  color: #B45309;
+  background: color-mix(in srgb, #F59E0B 14%, transparent);
+  border-radius: 999px;
+  padding: 1px 8px;
   cursor: help;
   overflow-wrap: anywhere;
 }

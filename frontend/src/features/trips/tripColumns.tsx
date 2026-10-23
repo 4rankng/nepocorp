@@ -186,7 +186,7 @@ export function buildTripColumns(
               {missingFields.length > 0 && (
                 <div className="trip-missing-flag" title={`Còn thiếu: ${missingFields.join(', ')}`}>
                   <TriangleAlert size={11} aria-hidden="true" />
-                  <span>Thiếu: {missingFields.join(', ')}</span>
+                  <span>Thiếu {missingFields.length}</span>
                 </div>
               )}
               {missingIndicators.length > 0 && (
