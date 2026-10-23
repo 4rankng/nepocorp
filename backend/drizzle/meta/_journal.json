@@ -820,6 +820,13 @@
       "when": 1791597289756,
       "tag": "0121_elite_mysterio",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1792684092061,
+      "tag": "0122_complete_grandmaster",
+      "breakpoints": true
     }
   ]
 }

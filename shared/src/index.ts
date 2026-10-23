@@ -18,6 +18,7 @@ export {
   CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
   TRUCK_CAP_ROLE_LABELS,
   FINANCIAL_ROLES, isFinancialRole,
+  LedgerColumnGroup, LEDGER_GROUP_ROLES,
   TIRES, VEHICLE_SCHEDULES,
   APP_VERSION,
 } from './constants';
@@ -51,6 +52,8 @@ export type {
   LiveFleetVehicle, LiveFleetResponse, LiveFleetStatus, LiveFleetDetails, LiveFleetLeg,
   GpsStop,
   FuelReconcileStatus, FuelReconcileResult, FuelReconcileResultRow, FuelReconcileSummary, FuelReconcileResponse,
+  LedgerLeg, LedgerExpense, LedgerAdvance, LedgerSettlement, LedgerContainer,
+  LedgerExpenseRollup, LedgerRow, LedgerQueryResult,
 } from './types';
 
 export { parseThreshold } from './types';
@@ -98,6 +101,8 @@ export {
   agentActionResultSchema,
   faqEntryCreateSchema, faqEntryUpdateSchema, FAQ_ADMIN_PATHS,
   fuelReconcileRequestSchema,
+  ledgerQuerySchema, ledgerPlanContainerSchema, ledgerPlanLegSchema,
+  updateTripPlanSchema, updateLedgerMoneySchema, createLedgerDraftSchema,
 } from './schemas';
 
 export { appSettingsSchema } from './schemas/app-settings';
@@ -136,6 +141,7 @@ export type {
   AckedDirectiveKind, AgentActionResult,
   FaqEntry, FaqEntryCreate, FaqEntryUpdate, FaqEmbeddingStatus, FaqEntryMutationResponse,
   FuelReconcileRowInput, FuelReconcileRequest,
+  LedgerQueryInput, UpdateTripPlanInput, UpdateLedgerMoneyInput, CreateLedgerDraftInput,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

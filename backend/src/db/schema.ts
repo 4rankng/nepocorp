@@ -319,10 +319,13 @@ export const trips = pgTable('trips', {
   customerReference: text('customer_reference'),
   truckId: integer('truck_id').references(() => trucks.id),
   driverId: integer('driver_id').references(() => drivers.id),
-  routeId: integer('route_id').references(() => routes.id).notNull(),
+  // Nullable for /ledger quick-add drafts (customer + date only). Computed
+  // figures stay null until the dispatcher completes the plan.
+  routeId: integer('route_id').references(() => routes.id),
   trailerId: integer('trailer_id').references(() => trailers.id),
   trailerType: trailerTypeEnum('trailer_type'),
-  cargoTypeId: integer('cargo_type_id').references(() => cargoTypes.id).notNull(),
+  // Nullable for /ledger quick-add drafts (same as routeId above).
+  cargoTypeId: integer('cargo_type_id').references(() => cargoTypes.id),
   containerCount: integer('container_count').default(1),
   status: tripStatusEnum('status').default('CREATED'),
   departureDate: date('departure_date').notNull(),

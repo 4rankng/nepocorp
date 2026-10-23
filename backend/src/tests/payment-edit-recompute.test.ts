@@ -210,7 +210,8 @@ describe('payment entry editing + balance recompute', () => {
   test('a future received date is rejected on edit too', async () => {
     const suffix = testSuffix();
     const { customerId, tripA } = await seedCustomerWithDebt(suffix, trackers);
-    const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    // "Tomorrow in Vietnam" regardless of run hour (see payment-received-date.test.ts).
+    const future = new Date(Date.now() + 7 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     await recordPayment({
       customerId,

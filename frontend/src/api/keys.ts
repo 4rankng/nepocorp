@@ -149,6 +149,13 @@ export const qk = {
     tripDetail: (id: number) => ['trip-detail', String(id)] as const,
   },
 
+  /* ── Sổ cái (/ledger consolidated grid) ─────────────────────────────── */
+
+  ledger: {
+    all: ['ledger'],
+    rows: (...args: unknown[]) => ['ledger', ...args] as const,
+  },
+
   /* ── Live fleet (GPS tracking) ──────────────────────────────────────── */
 
   liveFleet: {

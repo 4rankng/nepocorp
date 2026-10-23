@@ -1,0 +1,542 @@
+/* Sổ cái (/ledger) — dense consolidated grid.
+   Visual contract: ONE group-header band with 1px group boundaries, no
+   vertical cell borders, tabular right-aligned money with "—" for unknown,
+   sticky header + frozen first column, quiet edit affordance, ~40px rows. */
+
+.ledger-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+
+.ledger-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ledger-toolbar__field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--fg-2);
+}
+
+.ledger-toolbar__field input,
+.ledger-toolbar__select,
+.ledger-toolbar__search,
+.ledger-quickadd__select,
+.ledger-quickadd__date,
+.ledger-quickadd__notes {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  padding: 6px 9px;
+  font-size: 13px;
+}
+
+.ledger-toolbar__search {
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+/* ── Quick-add row ───────────────────────────────────────────────────────── */
+
+.ledger-quickadd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--surface-2, transparent);
+}
+
+.ledger-quickadd__notes { flex: 1 1 240px; }
+
+.ledger-quickadd__error {
+  color: var(--danger, #c2410c);
+  font-size: 12.5px;
+}
+
+/* ── Grid ────────────────────────────────────────────────────────────────── */
+
+.ledger-scroll {
+  /* Thu chi view hides the dispatch hero, so the grid starts ~275px from the
+     top — size the scroll area so sticky header AND totals footer fit the
+     viewport without page scrolling. */
+  max-height: calc(100vh - 330px);
+  min-height: 340px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.ledger-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  min-width: max-content;
+}
+
+/* Both header bands stick; the column band sits under the group band. */
+.ledger-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  color: var(--fg-2);
+  /* Two-band sticky header must stay ≤ 56px total (band 1 ≈ 24px, band 2 ≈ 30px)
+     so 1366×768 laptops keep vertical viewport for rows. */
+  padding: 4px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ledger-table thead tr:nth-child(2) th { top: 26px; }
+
+/* Frozen column: both band cells stick left. Higher specificity than the
+   generic thead-th rule so left-stick + z-index win. */
+.ledger-table thead th.ledger-th--frozen,
+.ledger-table thead th.ledger-th--identity {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: var(--surface-2);
+  border-right: 1px solid var(--line);
+}
+
+/* Group band: centered labels, boundaries only. */
+.ledger-th--group {
+  text-align: center;
+  color: var(--fg);
+  border-bottom: 1px solid var(--line);
+}
+
+/* The 1px group-boundary separators — header cells AND body cells that end a
+   group. Individual cells get NO vertical borders. */
+.ledger-th--group-end,
+.ledger-td--group-end {
+  border-right: 1px solid var(--line);
+}
+
+.ledger-th--frozen {
+  left: 0;
+  z-index: 4;
+}
+
+.ledger-td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  white-space: nowrap;
+  height: 40px;
+  min-width: 120px;
+}
+
+.ledger-th { min-width: 120px; }
+.ledger-th--num, .ledger-td--num { min-width: 110px; }
+.ledger-th--frozen, .ledger-td--frozen { min-width: 130px; }
+
+.ledger-td--frozen {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+
+.ledger-td--num { text-align: right; }
+.ledger-th--num { text-align: right; }
+
+.ledger-row:hover .ledger-td { background: color-mix(in srgb, var(--accent-soft) 30%, var(--surface)); }
+.ledger-row:hover .ledger-td--frozen { background: color-mix(in srgb, var(--accent-soft) 30%, var(--surface)); }
+
+/* ── Frozen code column ──────────────────────────────────────────────────── */
+
+.ledger-code {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 130px;
+}
+
+.ledger-code__customer {
+  font-size: 11px;
+  color: var(--fg-2);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-code__code {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline transparent;
+  text-underline-offset: 3px;
+}
+
+.ledger-code__code:hover { text-decoration-color: var(--fg-3); }
+
+.ledger-code__warn {
+  display: none;
+}
+
+.ledger-code .pill { align-self: flex-start; }
+
+/* ── Cells ───────────────────────────────────────────────────────────────── */
+
+.ledger-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 22px;
+  color: var(--fg);
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Plate + driver share one line; the name truncates before the plate suffers. */
+.ledger-cell .plate { flex: 0 0 auto; }
+
+.ledger-cell__sub {
+  color: var(--fg-3);
+  font-size: 12px;
+  margin-left: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ledger-cell--locked {
+  cursor: default;
+  color: var(--fg-2);
+}
+
+/* Quiet edit affordance: underline + pencil tone appears on hover/focus. */
+.ledger-cell--editable {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: text;
+  border-bottom: 1px dashed transparent;
+}
+
+.ledger-cell--editable:hover,
+.ledger-cell--editable:focus-visible {
+  border-bottom-color: var(--fg-3);
+  outline: none;
+  background: color-mix(in srgb, var(--accent-soft) 24%, transparent);
+  border-radius: 4px;
+}
+
+/* Keyboard focus gets a visible ring (outline replaced, not just removed). */
+.ledger-cell--editable:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.ledger-cell--editable {
+  touch-action: manipulation;
+}
+
+.ledger-cell--editing { display: inline-flex; }
+
+.ledger-cell__input {
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  padding: 3px 7px;
+  min-width: 92px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-cell--saving .ledger-cell__input {
+  opacity: 0.65;
+}
+
+/* Money sub-detail (trạm BOT count under the toll amount). */
+.ledger-toll {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.15;
+}
+
+.ledger-toll__stations {
+  font-size: 11px;
+  color: var(--fg-3);
+}
+
+.ledger-cell--loss {
+  color: var(--danger, #b91c1c);
+}
+
+.ledger-flag--wait {
+  color: var(--warning, #b45309);
+  font-weight: 600;
+}
+
+/* Phí bán đã chốt (sheet tô xanh phần thu được của khách). */
+.ledger-collected {
+  background: color-mix(in srgb, var(--success, #10b981) 14%, transparent);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* Progressive-entry hint in an empty editable cell (e.g. "+ Cước"). */
+.ledger-cell--hint {
+  color: var(--fg-3);
+  font-style: normal;
+}
+
+.ledger-cell--hint:hover {
+  color: var(--fg-2);
+}
+
+/* Container đối chiếu dot (sheet cell colors: green = xong, amber = thiếu). */
+.ledger-cell__stack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ledger-cont-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ledger-cont-dot--ok { background: var(--success, #10b981); }
+.ledger-cont-dot--pending { background: var(--warning, #f59e0b); }
+
+/* Flattened per-container sub-rows (multi-container trips). */
+.ledger-subrow .ledger-td {
+  height: 32px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
+  color: var(--fg-2);
+  font-size: 12.5px;
+}
+
+/* Visual grouping: the whole sub-row block reads as part of the parent trip
+   (accent edge instead of relying on the ↳ marker alone). */
+.ledger-subrow td:first-child,
+.ledger-subrow td.ledger-td--frozen {
+  border-left: 3px solid var(--accent, var(--brand));
+}
+
+.ledger-row:hover + .ledger-subrow .ledger-td,
+.ledger-subrow:hover .ledger-td {
+  background: color-mix(in srgb, var(--accent-soft) 30%, var(--surface));
+}
+
+.ledger-subrow__mark {
+  color: var(--fg-3);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Sticky totals footer (Σ of the loaded rows). */
+.ledger-tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line-2);
+  font-weight: 600;
+  height: 36px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-tfoot td.ledger-td--frozen {
+  z-index: 3;
+  left: 0;
+}
+
+.ledger-tfoot__label {
+  color: var(--fg-2);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ledger-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Expanded cross-check panel ──────────────────────────────────────────── */
+
+.ledger-expand-row td {
+  background: var(--surface-2, var(--surface));
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.ledger-expand {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 980px;
+}
+
+.ledger-expand__summary {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.ledger-expand__meta { color: var(--fg-2); }
+
+.ledger-expand__containers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px;
+}
+
+.ledger-container-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+
+.ledger-container-card__head {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: var(--fg-2);
+}
+
+.ledger-container-card__number { font-weight: 700; color: var(--fg); }
+.ledger-container-card__type {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 5px;
+}
+
+.ledger-container-card__empty {
+  color: var(--fg-3);
+  font-size: 12.5px;
+  margin: 0;
+}
+
+.ledger-expense-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-expense-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--fg-3);
+  border-bottom: 1px solid var(--line);
+  padding: 3px 6px;
+}
+
+.ledger-expense-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 6px;
+}
+
+.ledger-expense-table tr:last-child td { border-bottom: 0; }
+.ledger-expense-table .num { text-align: right; }
+
+.ledger-expand__legs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ledger-leg-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: var(--fg-2);
+}
+
+.ledger-expand__settlements {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ledger-settlement-line {
+  display: flex;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--fg-2);
+}
+
+.ledger-expand__none { color: var(--fg-3); margin: 0; }
+
+/* ── Skeleton + states ───────────────────────────────────────────────────── */
+
+.ledger-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+.ledger-skeleton__row {
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--surface-2) 25%, color-mix(in srgb, var(--surface-2) 60%, var(--accent-soft)) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: ledger-shimmer 1.1s linear infinite;
+}
+
+@keyframes ledger-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ledger-skeleton__row { animation: none; }
+}

@@ -243,7 +243,8 @@ export function buildCopiedTripLegValues(source: TripLegRow, tripId: number) {
   };
 }
 
-async function generateTripCode(tx: Tx, departureDateValue: string): Promise<string> {
+/** Shared by createTrip and the /ledger quick-add draft. */
+export async function generateTripCode(tx: Tx, departureDateValue: string): Promise<string> {
   const departureDate = new Date(departureDateValue);
   const year = departureDate.getFullYear();
   const month = String(departureDate.getMonth() + 1).padStart(2, '0');
@@ -647,7 +648,11 @@ export async function updateTripFigures(
       }
     }
 
-    let finalRouteId = trip.routeId;
+    // routeId is nullable (ledger quick-add drafts carry no route yet).
+    // Route-derived terms resolve to 0/skip for route-less trips; leg- and
+    // config-derived computation still runs so the sheet-style partial entry
+    // (stations, liters, salary cells) keeps working before the route is set.
+    let finalRouteId: number | null = trip.routeId;
     let fuelFixedAllowanceApplied = Number(trip.fuelFixedAllowanceApplied || 0);
     let roadAllowanceBaseApplied = Number(trip.roadAllowanceBaseApplied || 0);
     let route = null;
@@ -662,7 +667,7 @@ export async function updateTripFigures(
         fuelFixedAllowanceApplied = Number(newRoute.fixedFuelAllowance || 0);
       }
 
-      if (finalTrailerType) {
+      if (finalTrailerType && finalRouteId != null) {
         const [allowance] = await tx.select().from(s.roadAllowances).where(
           and(
             eq(s.roadAllowances.routeId, finalRouteId),
@@ -673,8 +678,10 @@ export async function updateTripFigures(
         roadAllowanceBaseApplied = allowance ? Number(allowance.baseAmount) : 0;
       }
     } else {
-      const [existingRoute] = await tx.select().from(s.routes).where(eq(s.routes.id, trip.routeId)).limit(1);
-      route = existingRoute;
+      const [existingRoute] = trip.routeId != null
+        ? await tx.select().from(s.routes).where(eq(s.routes.id, trip.routeId)).limit(1)
+        : [];
+      route = existingRoute ?? null;
 
       // Route unchanged. Re-read the live `fixed_fuel_allowance` whenever
       // the trip's snapshot is 0 (i.e. the route's allowance was added
@@ -690,7 +697,7 @@ export async function updateTripFigures(
       }
 
       if (data.trailerType !== undefined && data.trailerType !== trip.trailerType) {
-        if (finalTrailerType) {
+        if (finalTrailerType && finalRouteId != null) {
           const [allowance] = await tx.select().from(s.roadAllowances).where(
             and(
               eq(s.roadAllowances.routeId, finalRouteId),
@@ -751,7 +758,7 @@ export async function updateTripFigures(
     }
 
     // If roadAllowanceBase is zero and we have a route+trailerType, try to resolve it.
-    if (roadAllowanceBaseApplied === 0 && trip.trailerType) {
+    if (roadAllowanceBaseApplied === 0 && trip.trailerType && finalRouteId != null) {
       const [liveAllowance] = await tx.select().from(s.roadAllowances).where(
         and(
           eq(s.roadAllowances.routeId, finalRouteId),

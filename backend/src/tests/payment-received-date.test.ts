@@ -113,7 +113,9 @@ describe('payment received date (Ngày nhận)', () => {
   test('a future receivedDate is rejected by the service with nothing posted', async () => {
     const suffix = testSuffix();
     const { customerId, tripA } = await seedCustomerWithDebt(suffix, trackers);
-    const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    // "Tomorrow in Vietnam" regardless of run hour: the service compares
+    // against the VN day, so UTC+24h alone flips to "today" between 00:00–07:00 VN.
+    const future = new Date(Date.now() + 7 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     await assert.rejects(
       recordPayment({

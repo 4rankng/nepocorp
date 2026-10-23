@@ -198,8 +198,13 @@ export async function transitionTripStatus(
       const containerCount = photos.filter(p => p.type === 'CONTAINER').length;
       const sealCount = photos.filter(p => p.type === 'SEAL').length;
 
-      const [cargo] = await tx.select({ requiresPhotos: s.cargoTypes.requiresPhotos })
-        .from(s.cargoTypes).where(eq(s.cargoTypes.id, trip.cargoTypeId)).limit(1);
+      // cargoTypeId is nullable on ledger drafts; a route-less draft cannot
+      // reach LOCK (completion requires full actuals), but the lookup must
+      // not build an eq() against null.
+      const [cargo] = trip.cargoTypeId != null
+        ? await tx.select({ requiresPhotos: s.cargoTypes.requiresPhotos })
+            .from(s.cargoTypes).where(eq(s.cargoTypes.id, trip.cargoTypeId)).limit(1)
+        : [];
       const requiresPhotos = cargo?.requiresPhotos === true; // null/false → baseline only
 
       if (!confirmNoPhoto) {

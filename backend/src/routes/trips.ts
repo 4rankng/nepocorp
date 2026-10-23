@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TripStatus, NotificationType, Role, createTripSchema, reassignTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema } from '@tingting/shared';
+import { TripStatus, NotificationType, Role, LedgerColumnGroup, createTripSchema, reassignTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema, ledgerQuerySchema, updateTripPlanSchema, updateLedgerMoneySchema, createLedgerDraftSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as gpsService from '../services/gps.service';
 import { captureTripGpsTrack, deriveRoutesForStoredTrip } from '../services/gps/capture.service';
@@ -22,6 +22,8 @@ import { throwValidation } from '../lib/validation';
 import { emitNotification } from '../services/notification.service';
 import { getFuelVoucherHtml, getFuelVoucherXlsx } from '../services/fuel-voucher.service';
 import { copyTripCommand, createTripCommand, dispatchTripCommand } from '../services/trip-command.service';
+import { createLedgerDraft, exportLedgerXlsx, getLedgerRows, updateLedgerMoney, updateLedgerPlan } from '../services/trip-ledger.service';
+import { requireGroupRole } from '../middleware/ledgerAuth';
 
 // Audit event registrations — declared once at module load, matched by middleware
 registerAuditEvent('POST', '/api/trips', AuditEvent.TRIP_CREATED);
@@ -37,6 +39,10 @@ registerAuditEvent('POST', '/api/trips/', '/adjustment', AuditEvent.ADJUSTMENT_C
 registerAuditEvent('POST', '/api/trips/', '/approve', AuditEvent.ENTITY_UPDATED);
 registerAuditEvent('POST', '/api/trips/', '/unlock', AuditEvent.TRIP_UNLOCKED);
 registerAuditEvent('PATCH', '/api/trips/', '/departure-date', AuditEvent.TRIP_DEPARTURE_DATE_CHANGED);
+// Sổ cái (ledger) routes
+registerAuditEvent('POST', '/api/trips/ledger/drafts', AuditEvent.TRIP_CREATED);
+registerAuditEvent('PATCH', '/api/trips/', '/plan', AuditEvent.ENTITY_UPDATED);
+registerAuditEvent('PATCH', '/api/trips/', '/money', AuditEvent.ENTITY_UPDATED);
 
 const router = Router();
 
@@ -96,6 +102,67 @@ router.get('/summary', asyncHandler(async (req: Request, res: Response) => {
   const dateFrom = (req.query.dateFrom || req.query.date_from) as string | undefined;
   const dateTo = (req.query.dateTo || req.query.date_to) as string | undefined;
   res.json(await tripService.getTripsSummary(dateFrom, dateTo));
+}));
+
+// ── Sổ cái (/ledger consolidated grid) ──────────────────────────────────────
+// Declared before the /:id routes so '/ledger…' never parses as an id.
+
+function parseLedgerQuery(req: Request) {
+  const parsed = ledgerQuerySchema.safeParse({
+    from: req.query.from,
+    to: req.query.to,
+    customerId: req.query.customerId,
+    status: req.query.status,
+    q: req.query.q,
+    limit: req.query.limit,
+    offset: req.query.offset,
+  });
+  if (!parsed.success) throwValidation(parsed.error);
+  return parsed.data;
+}
+
+// GET /api/trips/ledger — one consolidated row per trip
+router.get('/ledger', asyncHandler(async (req: Request, res: Response) => {
+  res.json(await getLedgerRows(parseLedgerQuery(req)));
+}));
+
+// GET /api/trips/ledger/export — Excel in the master sheet's column order
+router.get('/ledger/export', asyncHandler(async (req: Request, res: Response) => {
+  const query = parseLedgerQuery(req);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=so-chuyen-di-${query.from}_${query.to}.xlsx`);
+  await exportLedgerXlsx(query, res);
+}));
+
+// POST /api/trips/ledger/drafts — quick-add row (customer + date only)
+router.post('/ledger/drafts', requireGroupRole(LedgerColumnGroup.PLAN), asyncHandler(async (req: Request, res: Response) => {
+  const parsed = createLedgerDraftSchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  const trip = await createLedgerDraft(parsed.data, getUser(req));
+  res.locals.auditEntityId = trip.id;
+  res.status(201).json(trip);
+}));
+
+// PATCH /api/trips/ledger/:id/plan — PLAN group (dispatch columns)
+router.patch('/ledger/:id/plan', requireGroupRole(LedgerColumnGroup.PLAN), asyncHandler(async (req: Request, res: Response) => {
+  const tripId = Number(req.params.id);
+  if (!Number.isInteger(tripId) || tripId <= 0) {
+    return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
+  }
+  const parsed = updateTripPlanSchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  res.json(await updateLedgerPlan(tripId, parsed.data, getUser(req)));
+}));
+
+// PATCH /api/trips/ledger/:id/money — MONEY group (accountant columns)
+router.patch('/ledger/:id/money', requireGroupRole(LedgerColumnGroup.MONEY), asyncHandler(async (req: Request, res: Response) => {
+  const tripId = Number(req.params.id);
+  if (!Number.isInteger(tripId) || tripId <= 0) {
+    return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
+  }
+  const parsed = updateLedgerMoneySchema.safeParse(req.body);
+  if (!parsed.success) throwValidation(parsed.error);
+  res.json(await updateLedgerMoney(tripId, parsed.data, getUser(req)));
 }));
 
 // Live fleet — current GPS positions of trucks on an active IN_TRANSIT trip,

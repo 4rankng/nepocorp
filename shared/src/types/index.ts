@@ -1,5 +1,6 @@
 import type {
   TripStatus, FuelMode, LoadingType, Role, TxnType,
+  SettlementMethod,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
   AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus,
   TireStatus, TruckCapRole, VehicleComponent, VehicleScheduleKind, VehicleScheduleStatus,
@@ -1709,4 +1710,140 @@ export interface FuelReconcileResponse extends FuelReconcileResult {
   supplier: { id: number; name: string };
   dateFrom: string | null;
   dateTo: string | null;
+}
+
+// ─── Sổ cái (/ledger consolidated grid) ─────────────────────────────────────
+// One flat row per trip. The grid renders sub-rows per container; trip-level
+// money stays on the first sub-row and container-linked expenses ride their
+// own trip_container_id. All money values are VND strings exactly as stored
+// (PG numeric), so "chưa biết" stays null instead of collapsing to 0.
+
+/** One trip_legs row (plan columns Điểm đi / Điểm đến / Km hàng·vỏ). */
+export interface LedgerLeg {
+  id: number;
+  sequence: number;
+  origin: string | null;
+  destination: string | null;
+  km: number | null;
+  loadingType: LoadingType;
+}
+
+/** One trip_expenses row (sell = green sheet columns, buy = cost side). */
+export interface LedgerExpense {
+  id: number;
+  expenseType: string;
+  buyAmount: string;
+  sellAmount: string;
+  settlementMethod: SettlementMethod;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  invoiceNumber: string | null;
+  invoiceDate: string | null;
+  declarationNumber: string | null;
+  tripContainerId: number | null;
+  forwarderId: number | null;
+}
+
+/** Advance issued under a settlement that contains this trip's expenses. */
+export interface LedgerAdvance {
+  id: number;
+  amount: string;
+  requesterName: string | null;
+}
+
+/** A phiếu hoàn ứng that includes ≥1 expense of this trip. */
+export interface LedgerSettlement {
+  id: number;
+  code: string;
+  status: string;
+  totalExpenseAmount: string;
+  refundAmount: string;
+  reimbursementAmount: string;
+  advances: LedgerAdvance[];
+}
+
+/** One trip_containers row with its per-container cross-check payload. */
+export interface LedgerContainer {
+  id: number;
+  containerTypeId: number | null;
+  containerTypeCode: string | null;
+  containerNumber: string | null;
+  sealNumber: string | null;
+  seals: string[];
+  cargoWeightKg: string | null;
+  /** Distinct non-null declaration numbers on this container's expenses. */
+  declarationNumbers: string[];
+  expenses: LedgerExpense[];
+}
+
+/** Buy/sell rollup of one expense_type across the trip's non-rejected fees. */
+export interface LedgerExpenseRollup {
+  expenseType: string;
+  buyTotal: string;
+  sellTotal: string;
+}
+
+export interface LedgerRow {
+  id: number;
+  tripCode: string | null;
+  status: TripStatus;
+  /** Row schema version for optimistic concurrency on group-scoped PATCHes. */
+  version: number;
+  departureDate: string;
+  completedAt: string | null;
+  notes: string | null;
+  customerId: number;
+  customerName: string | null;
+  /** Số BKG column. */
+  customerReference: string | null;
+  truckPlate: string | null;
+  driverName: string | null;
+  carrierType: 'OWN' | 'EXTERNAL';
+  externalCarrierName: string | null;
+  externalFreightCost: string | null;
+  externalPlateNumber: string | null;
+  containerCount: number | null;
+  /** Distinct container-type codes for the "Số lượng 1x40HC" column. */
+  containerTypeCodes: string[];
+  containers: LedgerContainer[];
+  legs: LedgerLeg[];
+  cargoTypeName: string | null;
+  hasReturnCargo: boolean;
+  // Revenue
+  revenue: string | null;
+  revenueEmptyReturn: string | null;
+  revenueCombine: string | null;
+  /** Rollup per expense_type split buy/sell (non-rejected fees). */
+  expenseRollup: LedgerExpenseRollup[];
+  // Advances / settlements (cross-check)
+  settlements: LedgerSettlement[];
+  /** Σ advance amounts linked via the trip's settlements. */
+  advanceTotal: string;
+  /**
+   * Forwarder outstanding advance balance (Số dư TU) via the shared balance
+   * formula, resolved only when all of the trip's expenses name one and the
+   * same forwarder; null = not determinable from this trip.
+   */
+  outstandingAdvance: string | null;
+  // Costs
+  tollCost: string | null;
+  tollsStations: number | null;
+  fuelLiters: string | null;
+  /** Effective pump price = fuel_actual_unit_price ?? fuel_price_applied. */
+  fuelUnitPrice: string | null;
+  totalFuelCost: string | null;
+  fuelSupplierName: string | null;
+  driverSalary: string | null;
+  /** Hạch toán column (phụ cấp đường); label is a column-config string. */
+  totalRoadAllowance: string | null;
+  externalFreightCostRollup: string | null;
+  // Result (RESULT group — read-only)
+  totalCost: string | null;
+  grossProfit: string | null;
+}
+
+export interface LedgerQueryResult {
+  rows: LedgerRow[];
+  total: number;
+  limit: number;
+  offset: number;
 }

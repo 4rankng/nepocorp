@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  FuelMode, LoadingType, Role,
+  FuelMode, LoadingType, Role, TripStatus,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
   VehicleComponent, VehicleScheduleKind, VehicleScheduleStatus,
   TIRE_STATUSES,
@@ -290,6 +290,120 @@ export const bulkUpdateTripFiguresSchema = z.object({
     figures: z.unknown(),
   })).min(1).max(100),
 });
+
+// ─── Sổ cái (/ledger consolidated grid) ─────────────────────────────────────
+// Spreadsheet-style partial editing is the requirement: every schema below is
+// deliberately all-optional (except the draft's two identity fields) so a cell
+// can be filled at any point in time without forcing completeness.
+
+const ledgerDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD');
+
+export const ledgerQuerySchema = z.object({
+  from: ledgerDate,
+  to: ledgerDate,
+  customerId: z.coerce.number().int().positive().optional(),
+  status: z.nativeEnum(TripStatus).optional(),
+  q: z.string().trim().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+}).refine((data) => data.from <= data.to, {
+  message: 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc',
+  path: ['from'],
+});
+
+/** One trip_containers row as the PLAN group may edit it (all-optional). */
+export const ledgerPlanContainerSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  containerTypeId: z.coerce.number().int().positive().nullable().optional(),
+  containerNumber: z.string().max(50, 'Số container không được quá 50 ký tự').optional(),
+  // '' clears the seal; a value replaces the (single) existing seal.
+  sealNumber: z.string().max(50).optional(),
+  cargoWeightKg: nonNegNumeric.nullable().optional(),
+});
+
+/** Existing legs are patched by id; new legs must be complete. */
+export const ledgerPlanLegSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  sequence: z.coerce.number().int().positive(),
+  origin: z.string().max(255).optional(),
+  destination: z.string().max(255).optional(),
+  km: nonNegNumeric.optional(),
+  loadingType: z.nativeEnum(LoadingType).optional(),
+}).superRefine((leg, ctx) => {
+  if (!leg.id) {
+    const missing: string[] = [];
+    if (!leg.origin) missing.push('điểm đi');
+    if (!leg.destination) missing.push('điểm đến');
+    if (leg.km === undefined) missing.push('số km');
+    if (missing.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Chặng mới cần đầy đủ: ${missing.join(', ')}`,
+        path: ['legs'],
+      });
+    }
+  }
+});
+
+/** PLAN group PATCH — zero required members by design (partial updates). */
+export const updateTripPlanSchema = z.object({
+  expectedVersion: z.number().int().optional(),
+  departureDate: ledgerDate.optional(),
+  notes: z.string().max(2000).optional(),
+  customerId: z.coerce.number().int().positive().optional(),
+  customerReference: z.string().max(255).optional(),
+  legs: z.array(ledgerPlanLegSchema).max(10).optional(),
+  containers: z.array(ledgerPlanContainerSchema).max(10).optional(),
+}).refine((data) => Object.values(data).some((v) => v !== undefined), {
+  message: 'Cần ít nhất một trường để cập nhật',
+});
+
+/** MONEY group PATCH — subset of updateTripFiguresSchema, all-optional. */
+export const updateLedgerMoneySchema = z.object({
+  expectedVersion: z.number().int().optional(),
+  revenue: nonNegNumeric.optional(),
+  revenueEmptyReturn: nonNegNumeric.optional(),
+  revenueCombine: nonNegNumeric.optional(),
+  fuelMode: z.nativeEnum(FuelMode).optional(),
+  fuelLitersOverride: nonNegNumeric.nullable().optional(),
+  fuelActualUnitPrice: fuelUnitPrice,
+  fuelSupplierId: z.coerce.number().int().positive().nullable().optional(),
+  tollsDiscount: nonNegNumeric.optional(),
+  tollsAddition: nonNegNumeric.optional(),
+  tollsStations: z.coerce.number().int().nonnegative().optional(),
+  hasReturnCargo: z.boolean().optional(),
+  roadAllowanceOverride: nonNegNumeric.nullable().optional(),
+  driverSalary: nonNegNumeric.optional(),
+  twoPointDeliveryBonus: nonNegNumeric.optional(),
+  vehicleShiftAllowance: nonNegNumeric.optional(),
+  customerCommission: nonNegNumeric.optional(),
+  tripWageDays: z.number().int().nonnegative().optional(),
+  externalFreightCost: z.number().positive().nullable().optional(),
+}).superRefine((data, ctx) => {
+  if (Object.values(data).every((v) => v === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Cần ít nhất một trường để cập nhật' });
+  }
+  if (data.revenue !== undefined &&
+      (data.revenueEmptyReturn !== undefined || data.revenueCombine !== undefined)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Gửi `revenue` HOẶC splits (revenueEmptyReturn/revenueCombine), không gửi cả hai.',
+      path: ['revenue'],
+    });
+  }
+});
+
+/** Quick-add draft row: customer + date only, everything else stays blank. */
+export const createLedgerDraftSchema = z.object({
+  customerId: z.coerce.number().int().positive({ message: 'Khách hàng là bắt buộc' }),
+  departureDate: ledgerDate,
+  notes: z.string().max(2000).optional(),
+});
+
+export type LedgerQueryInput = z.infer<typeof ledgerQuerySchema>;
+export type UpdateTripPlanInput = z.infer<typeof updateTripPlanSchema>;
+export type UpdateLedgerMoneyInput = z.infer<typeof updateLedgerMoneySchema>;
+export type CreateLedgerDraftInput = z.infer<typeof createLedgerDraftSchema>;
 
 
 // ─── Payment ─────────────────────────────────────────────────────────────────

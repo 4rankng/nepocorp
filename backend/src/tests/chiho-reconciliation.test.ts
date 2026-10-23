@@ -755,7 +755,7 @@ describe('US-005b edited-COMPLETED reconciliation: ledger stays in sync after a 
       fuelMode: FuelMode.FLAT_RATE,
       fuelLitersOverride: 0,
       revenue: 7_500_000,
-      routeId: trip.routeId,
+      routeId: trip.routeId ?? undefined,
       userId: 1,
     });
 
