@@ -35,9 +35,12 @@
 /* Identity fields (container number, weight, notes) fill as many tracks as fit. */
 .ci-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  /* Field ngắn vừa giá trị (feedback QA): mã cont 11 ký tự = 200px, trọng
+     lượng = 140px, ghi chú = 240px — KHÔNG giãn 1fr full hàng. */
+  grid-template-columns: 200px 140px 240px;
   gap: 10px 12px;
   align-items: start;
+  width: fit-content;
 }
 
 @media (max-width: 640px) {
