@@ -10,6 +10,7 @@ import { useCatalogs } from '../hooks/useCatalogs';
 import type { NormalizedTrip } from '../hooks/useTripQueries';
 import { LiveFleetMap } from '../features/dispatch/components/LiveFleetMap';
 import { useDispatchMutations, useReassignMutations } from '../features/dispatch/hooks/useDispatchMutations';
+import { useConfirm } from '../components/useConfirm';
 import { DispatchTripCard } from '../features/dispatch/components/DispatchTripCard';
 import { DispatchFilters } from '../features/dispatch/components/DispatchFilters';
 import { FleetGrid } from '../features/dispatch/components/FleetGrid';
@@ -32,6 +33,30 @@ export default function DispatchPage() {
     [data?.pendingTrips],
   );
   const activeTrips = useMemo<NormalizedTrip[]>(() => data?.activeTrips ?? [], [data]);
+  // Bulk 'Khởi hành' (vòng 7): chọn nhiều đơn chờ → 1 confirm → lần lượt gọi dispatch.
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const toggleSelect = (id: number) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const allSelected = pendingTrips.length > 0 && pendingTrips.every(t => selectedIds.has(t.id));
+  const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(pendingTrips.map(t => t.id)));
+  const runBulkDispatch = async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const ok = await confirmBulk(`Khởi hành ${ids.length} đơn đã chọn?`, { variant: 'warning', confirmLabel: 'Khởi hành' });
+    if (!ok) return;
+    setBulkRunning(true);
+    let done = 0, failed = 0;
+    for (const id of ids) {
+      try { await handleDispatch(id); done += 1; } catch { failed += 1; }
+    }
+    setBulkRunning(false);
+    setSelectedIds(new Set());
+    setToasts(prev => [...prev, { id: Date.now(), kind: failed ? 'error' : 'success', text: failed ? `Khởi hành ${done}/${ids.length} đơn — ${failed} lỗi` : `Đã khởi hành ${done} đơn` }]);
+  };
   const pendingTotal: number = data?.pendingTotal ?? 0;
   const { data: catalogData } = useCatalogs();
   const carrierCustomers = useMemo(() => 
@@ -40,6 +65,7 @@ export default function DispatchPage() {
   const error = queryError ? 'Không thể tải dữ liệu điều vận. Vui lòng tải lại trang.' : null;
 
   const { actionLoading, dispatching, toasts, setToasts, handleDispatch, confirmDialog } = useDispatchMutations(pendingTrips);
+  const { confirm: confirmBulk, dialog: bulkConfirmDialog } = useConfirm();
   const { reassignOpen, reassignState, setReassignState, openReassign, closeReassign, handleReassign } = useReassignMutations();
   const [fleetFilter, setFleetFilter] = useState<FleetFilter>('all');
 
@@ -156,9 +182,18 @@ export default function DispatchPage() {
       </div>
       <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} liveVehicles={live?.vehicles} />
 
-      <div className="section-head"><div className="section-title"><h2>Đơn hàng cần điều vận</h2><span className="count">{pendingTrips.length} đơn</span></div></div>
+      <div className="section-head">
+        <div className="section-title"><h2>Đơn hàng cần điều vận</h2><span className="count">{pendingTrips.length} đơn</span></div>
+        {selectedIds.size > 1 && (
+          <div className="bulk-dispatch-bar">
+            <span>Đã chọn {selectedIds.size}</span>
+            <button type="button" className="btn btn--primary btn--sm" disabled={bulkRunning} onClick={runBulkDispatch}>{bulkRunning ? 'Đang khởi hành…' : `Khởi hành ${selectedIds.size} đơn`}</button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelectedIds(new Set())}>Bỏ chọn</button>
+          </div>
+        )}
+      </div>
       <div className="orders-card orders-card--capped">
-        {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Lái xe</div><div className="right">Thao tác</div></div>}
+        {pendingTrips.length > 0 && <div className="orders-head"><div><input type="checkbox" className="order-select" checked={allSelected} onChange={toggleAll} aria-label="Chọn tất cả đơn chờ" /></div><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Lái xe</div><div className="right">Thao tác</div></div>}
         {pendingTrips.length === 0 ? (
           <EmptyState
             illustration="/assets/illustrations/empty-dispatch.svg"
@@ -167,11 +202,12 @@ export default function DispatchPage() {
             action={<button className="btn btn--primary" onClick={() => navigate('/trips/new')}><Plus size={15} /> Tạo chuyến mới</button>}
           />
         ) : pendingTrips.map((trip) => (
-          <DispatchTripCard key={trip.id} trip={trip} isEditing={reassignOpen === trip.id} reassignState={reassignState} setReassignState={setReassignState} trucks={trucks} drivers={drivers} carrierCustomers={carrierCustomers} onDispatch={() => handleDispatch(trip.id)} onOpenReassign={() => openReassign(trip)} onCloseReassign={closeReassign} onReassign={() => handleReassign(trip.id)} dispatching={dispatching} actionLoadingId={actionLoading} />
+          <DispatchTripCard key={trip.id} trip={trip} selected={selectedIds.has(trip.id)} onToggleSelect={() => toggleSelect(trip.id)} isEditing={reassignOpen === trip.id} reassignState={reassignState} setReassignState={setReassignState} trucks={trucks} drivers={drivers} carrierCustomers={carrierCustomers} onDispatch={() => handleDispatch(trip.id)} onOpenReassign={() => openReassign(trip)} onCloseReassign={closeReassign} onReassign={() => handleReassign(trip.id)} dispatching={dispatching} actionLoadingId={actionLoading} />
         ))}
         {pendingTrips.length > 0 && <div className="orders-foot"><span>{pendingTotal} đơn hàng</span><Link to='/trips'>Lịch sử điều vận →</Link></div>}
       </div>
       {confirmDialog}
+      {bulkConfirmDialog}
     </div>
   );
 }

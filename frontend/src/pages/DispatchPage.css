@@ -385,7 +385,7 @@
 .dispatch-page .orders-head {
   display: grid;
   /* date / route / customer / vehicle&driver / action */
-  grid-template-columns: 80px 2fr 1.8fr 1fr 136px;
+  grid-template-columns: 28px 80px 2fr 1.8fr 1fr 136px;
   padding: 7px 12px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
@@ -402,7 +402,7 @@
   position: relative;
   display: grid;
   /* Keep in sync with .orders-head. */
-  grid-template-columns: 80px 2fr 1.8fr 1fr 136px;
+  grid-template-columns: 28px 80px 2fr 1.8fr 1fr 136px;
   padding: 7px 12px;
   gap: 10px;
   align-items: center;
@@ -639,7 +639,7 @@ font-weight: 600;
 @media (max-width: 1100px) {
   .dispatch-page .orders-head,
   .dispatch-page .order-row {
-    grid-template-columns: 80px 1fr 1fr 138px;
+    grid-template-columns: 28px 80px 1fr 1fr 138px;
   }
   .dispatch-page .orders-head .col-assign,
   .dispatch-page .order-row .o-assign { display: none; }
@@ -911,4 +911,22 @@ font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ── Vòng 7: bulk 'Khởi hành' ──────────────────────────────────────────── */
+.dispatch-page .order-select {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.dispatch-page .bulk-dispatch-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: var(--fs-body);
+  font-weight: 600;
 }

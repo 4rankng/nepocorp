@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useTripOptions } from '../hooks/useTripOptions';
@@ -29,6 +29,24 @@ export default function TripCreatePage() {
   });
 
   const { confirm, dialog } = useConfirm();
+  // Vòng 7: autofocus field đầu tiên + Enter submit (trừ select/search để
+  // không phá dropdown). Điều phối nhập lệnh bằng bàn phím là chính.
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!options.loading) {
+      wrapRef.current?.querySelector<HTMLElement>('#customerId, input, select')?.focus();
+    }
+  }, [options.loading]);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    const t = e.target as HTMLElement;
+    if (t.tagName === 'TEXTAREA' || t.tagName === 'BUTTON') return;
+    if (t.tagName === 'SELECT' || t.closest('[role="listbox"]')) return;
+    if (!document.getElementById('trip-new-submit')?.hasAttribute('disabled')) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
   const guard = useDirtyGuard([form], !options.loading);
   const handleBack = () => navigate('/trips');
   useBackShortcut(handleBack, {
@@ -45,7 +63,7 @@ export default function TripCreatePage() {
 
   return (
     <TripFormProvider form={form}>
-      <div ref={rootRef} className="tc-create-wrap">
+      <div ref={(el) => { rootRef.current = el; wrapRef.current = el; }} className="tc-create-wrap" onKeyDown={onKeyDown}>
         <section className="tc-create-hero tc-create-hero--compact">
           <button className="tc-back-btn" onClick={handleBack} aria-label="Quay lại">
             <ArrowLeft size={18} />

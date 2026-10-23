@@ -10,6 +10,9 @@ import type { ReassignState, Truck, Driver } from '../utils';
 
 interface DispatchTripCardProps {
   trip: NormalizedTrip;
+  /** Bulk 'Khởi hành' (vòng 7): checkbox chọn nhiều đơn. */
+  selected?: boolean;
+  onToggleSelect?: () => void;
   isEditing: boolean;
   reassignState: ReassignState;
   setReassignState: React.Dispatch<React.SetStateAction<ReassignState>>;
@@ -26,6 +29,8 @@ interface DispatchTripCardProps {
 
 export function DispatchTripCard({
   trip,
+  selected,
+  onToggleSelect,
   isEditing,
   reassignState,
   setReassignState,
@@ -51,6 +56,16 @@ export function DispatchTripCard({
       className={`order-row${today ? ' is-today' : ''}`}
       data-tour-id="dispatch-ready-list"
     >
+      {onToggleSelect && (
+        <input
+          type="checkbox"
+          className="order-select"
+          checked={!!selected}
+          onChange={onToggleSelect}
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`Chọn ${trip.tripCode ?? `#${trip.id}`}`}
+        />
+      )}
       <StatusStrip color={TRIP_STATUS_COLORS[trip.status as TripStatus]} />
       <div className={`o-date${over > 0 ? ' overdue' : today ? ' today' : urgent ? ' urgent' : ''}`}>
         {over > 0 && <span className="today-badge today-badge--overdue">Quá hạn {Math.abs(over)}N</span>}
