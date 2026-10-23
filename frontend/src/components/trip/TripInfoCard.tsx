@@ -128,33 +128,32 @@ export function TripInfoCard(props: TripInfoCardProps) {
           <input id="customerReference" name="customerReference" className="input mono" type="text" placeholder="VD: PO-12345" value={form.customerReference} onChange={(e) => form.setCustomerReference(e.target.value)} maxLength={50} />
         </Field>
         <div className="trip-info-card__group">Phương tiện & lịch</div>
-        {/* Loại xe + Ngày khởi hành đi cùng hàng (audit Gemini 23/10): không để
-            date input đứng lẻ 1 hàng; xe/tài xế lấp đầy hàng sau. */}
-        <div className="trip-info-card__duo">
-          <Field label="Loại xe" required>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => form.setCarrierType('OWN')}
-                className={`btn btn--sm${form.carrierType === 'OWN' ? ' btn--primary' : ' btn--secondary'}`}
-                aria-pressed={form.carrierType === 'OWN'}
-              >
-                Xe nhà
-              </button>
-              <button
-                type="button"
-                onClick={() => form.setCarrierType('EXTERNAL')}
-                className={`btn btn--sm${form.carrierType === 'EXTERNAL' ? ' btn--primary' : ' btn--secondary'}`}
-                aria-pressed={form.carrierType === 'EXTERNAL'}
-              >
-                Xe ngoài
-              </button>
-            </div>
-          </Field>
-          <Field label="Ngày khởi hành" required controlId="departureDate">
-            <input id="departureDate" name="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
-          </Field>
-        </div>
+        {/* Tuần tự 5 field (audit 23/10): auto-fill 5 track đặt đủ trên 1 hàng
+            ở card ≥1000px; KHÔNG bọc wrapper vì grid con dùng subgrid chia
+            band label/control — wrapper làm lệch band của field kế tiếp. */}
+        <Field label="Loại xe" required>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => form.setCarrierType('OWN')}
+              className={`btn btn--sm${form.carrierType === 'OWN' ? ' btn--primary' : ' btn--secondary'}`}
+              aria-pressed={form.carrierType === 'OWN'}
+            >
+              Xe nhà
+            </button>
+            <button
+              type="button"
+              onClick={() => form.setCarrierType('EXTERNAL')}
+              className={`btn btn--sm${form.carrierType === 'EXTERNAL' ? ' btn--primary' : ' btn--secondary'}`}
+              aria-pressed={form.carrierType === 'EXTERNAL'}
+            >
+              Xe ngoài
+            </button>
+          </div>
+        </Field>
+        <Field label="Ngày khởi hành" required controlId="departureDate">
+          <input id="departureDate" name="departureDate" className="input mono" type="date" value={form.departureDate} onChange={(e) => form.setDepartureDate(e.target.value)} required />
+        </Field>
 
         {form.carrierType === 'OWN' && (
           <>

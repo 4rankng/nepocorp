@@ -30,14 +30,6 @@
   gap: 16px;
 }
 
-/* Hàng 2 field đều nhau (Loại xe + Ngày khởi hành) — audit Gemini 23/10. */
-.trip-info-card__duo {
-  grid-column: span 2;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-}
-
 /* Hàng Container & thuế: hẹp + co giãn + hẹp (audit Gemini 23/10). */
 .trip-info-card__triple {
   grid-column: 1 / -1;
@@ -45,8 +37,7 @@
   grid-template-columns: minmax(110px, 140px) minmax(0, 1fr) minmax(120px, 160px);
   gap: 16px;
 }
-.trip-info-card__triple > .field,
-.trip-info-card__duo > .field {
+.trip-info-card__triple > .field {
   margin-bottom: 0;
   min-width: 0;
 }
@@ -101,7 +92,6 @@
     grid-column: 1 / -1;
     gap: 10px;
   }
-  .trip-info-card__duo,
   .trip-info-card__triple {
     grid-column: 1 / -1;
     grid-template-columns: 1fr;
