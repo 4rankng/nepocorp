@@ -25,7 +25,12 @@ export default function DispatchPage() {
   const { rootRef } = usePageAnimations({ ready: !loading });
   const drivers = useMemo(() => (data?.drivers ?? []) as Driver[], [data]);
   const trucks: Truck[] = useMemo(() => (data?.trucks ?? []).map((t) => ({ id: t.id, licensePlate: t.licensePlate ?? '', status: t.status ?? '' })), [data]);
-  const pendingTrips: NormalizedTrip[] = data?.pendingTrips ?? [];
+  // Đơn chờ sort cũ nhất trước (audit DeepSeek vòng 5): đơn quá hạn/sắp hạn
+  // lên đầu nên điều phối xử lý đúng thứ tự khẩn cấp.
+  const pendingTrips: NormalizedTrip[] = useMemo(
+    () => [...(data?.pendingTrips ?? [])].sort((a, b) => a.departureDate.localeCompare(b.departureDate)),
+    [data?.pendingTrips],
+  );
   const activeTrips = useMemo<NormalizedTrip[]>(() => data?.activeTrips ?? [], [data]);
   const pendingTotal: number = data?.pendingTotal ?? 0;
   const { data: catalogData } = useCatalogs();

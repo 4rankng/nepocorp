@@ -1,7 +1,7 @@
 import { Play, RefreshCw, Building2, ArrowRight } from 'lucide-react';
 import { formatDayMonth } from '../../../lib/date';
 import { splitRoute } from '../../../lib/route';
-import { isToday, isUrgent } from '../utils';
+import { isToday, isUrgent, overdueDays } from '../utils';
 import { ReassignDialog } from './ReassignDialog';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { TRIP_STATUS_COLORS, type TripStatus } from '@tingting/shared';
@@ -42,6 +42,9 @@ export function DispatchTripCard({
   const route = splitRoute(trip.routeName);
   const today = isToday(trip.departureDate);
   const urgent = !today && isUrgent(trip.departureDate);
+  // Lệnh chờ mà ngày khởi hành đã qua = quá hạn — cảnh báo đỏ + số ngày
+  // (audit DeepSeek vòng 5: điều phối phải thấy đơn sắp/trễ ngay).
+  const over = overdueDays(trip.departureDate);
 
   return (
     <div
@@ -49,7 +52,8 @@ export function DispatchTripCard({
       data-tour-id="dispatch-ready-list"
     >
       <StatusStrip color={TRIP_STATUS_COLORS[trip.status as TripStatus]} />
-      <div className={`o-date${today ? ' today' : urgent ? ' urgent' : ''}`}>
+      <div className={`o-date${over > 0 ? ' overdue' : today ? ' today' : urgent ? ' urgent' : ''}`}>
+        {over > 0 && <span className="today-badge today-badge--overdue">Quá hạn {Math.abs(over)}N</span>}
         {today && <span className="today-badge">Hôm nay</span>}
         <span className="day">{formatDayMonth(trip.departureDate)}</span>
         <span className="lbl">Khởi hành</span>

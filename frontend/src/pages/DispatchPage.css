@@ -874,3 +874,10 @@ font-weight: 600;
 .dispatch-page .hero--dispatch-compact .metric-value-unit { font-size: var(--fs-xs); }
 .dispatch-page .hero--dispatch-compact .metric-delta { display: none; }
 .dispatch-page .hero--dispatch-compact .utilization-bar { width: 90px; height: 5px; }
+
+/* Đơn chờ quá hạn (vòng 5): badge đỏ + ngày đỏ đậm. */
+.dispatch-page .o-date.overdue .day { color: var(--d-red, #B91C1C); font-weight: 700; }
+.dispatch-page .o-date .today-badge--overdue {
+  background: var(--d-red-bg, #FEE2E2);
+  color: var(--d-red, #B91C1C);
+}

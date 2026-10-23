@@ -63,6 +63,17 @@ export function isToday(iso: string, now: Date = new Date()): boolean {
   return !Number.isNaN(parsed.getTime()) && businessDateKey(parsed) === businessDateKey(now);
 }
 
+/** Số ngày QUÁ HẠN của lệnh chưa phân xe (departureDate đã qua, tính theo
+ *  ngày business). 0 = chưa quá hạn. Đơn quá hạn hiển thị trước (vòng 5). */
+export function overdueDays(iso: string, now: Date = new Date()): number {
+  const businessDate = /^(\d{4}-\d{2}-\d{2})(?:$|T)/.exec(iso)?.[1];
+  const target = businessDate ?? businessDateKey(new Date(iso));
+  if (!target) return 0;
+  const today = businessDateKey(now);
+  if (target >= today) return 0;
+  return Math.round((new Date(today).getTime() - new Date(target).getTime()) / 86400000);
+}
+
 export function isUrgent(iso: string, now: Date = new Date()): boolean {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return false;
