@@ -160,10 +160,12 @@ export function buildTripColumns(
                 <span className="trip-meta-sep">·</span>
                 <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
               </div>
-              <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: quickEdit?.enabled ? 'nowrap' : 'wrap' }}>
-                <span>{customerName}</span>
-                {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
-              </div>
+              {quickEdit?.enabled && (
+                <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
+                  <span>{customerName}</span>
+                  {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
+                </div>
+              )}
               {/* Quick-edit drops the standalone Tuyến / Container tracks so the
                   figures grid fits a 1440 laptop; the same data rides here as one
                   compact line (kanban 20260922_28). */}
@@ -180,13 +182,31 @@ export function buildTripColumns(
                   )}
                 </div>
               )}
-              {missingFields.length > 0 && (
+              {/* View mode: cảnh báo gom 1 dòng — chip "Thiếu N" + icon nhỏ
+                  (audit 23/10), giữ row height thấp. Quick-edit giữ nguyên
+                  dạng cũ vì đã có hàng meta riêng. */}
+              {(missingFields.length > 0 || missingIndicators.length > 0) && !quickEdit?.enabled && (
+                <div className="trip-missing-line">
+                  {missingFields.length > 0 && (
+                    <span className="trip-missing-flag" title={`Còn thiếu: ${missingFields.join(', ')}`}>
+                      <TriangleAlert size={11} aria-hidden="true" />
+                      <span>Thiếu {missingFields.length}</span>
+                    </span>
+                  )}
+                  {missingIndicators.map((m, i) => (
+                    <span key={i} className="missing-tag" title={m.label} aria-label={m.label}>
+                      <m.icon size={10} />
+                    </span>
+                  ))}
+                </div>
+              )}
+              {quickEdit?.enabled && missingFields.length > 0 && (
                 <div className="trip-missing-flag" title={`Còn thiếu: ${missingFields.join(', ')}`}>
                   <TriangleAlert size={11} aria-hidden="true" />
                   <span>Thiếu {missingFields.length}</span>
                 </div>
               )}
-              {missingIndicators.length > 0 && (
+              {quickEdit?.enabled && missingIndicators.length > 0 && (
                 <div className="trip-missing-row">
                   {missingIndicators.map((m, i) => (
                     <span key={i} className="missing-tag" title={m.label} aria-label={m.label}>
@@ -217,6 +237,23 @@ export function buildTripColumns(
         );
       },
     },
+    // View mode: Khách hàng là cột riêng (audit 23/10) — quick-edit không có
+    // (tên khách vẫn nằm trong ô Chuyến · Mã của lưới figures).
+    ...(!quickEdit?.enabled ? [{
+      id: 'customer',
+      header: 'Khách hàng',
+      accessorFn: (row) => row.customer?.name ?? '',
+      cell: ({ row }) => {
+        const trip = row.original;
+        const customerName = trip.customer?.name ?? '—';
+        return (
+          <div className="trip-col trip-col--customer">
+            <span className="trip-customer-name" title={customerName}>{customerName}</span>
+            {trip.carrierType === 'EXTERNAL' && <XeNgoaiBadge />}
+          </div>
+        );
+      },
+    } satisfies ColumnDef<TripDetail>] : []),
     {
       id: 'truck',
       header: 'Xe',
@@ -369,7 +406,10 @@ export function buildTripColumns(
         );
       },
     },
-    {
+    // road + totalCost chỉ còn ở lưới quick-edit (audit 23/10): view grid 9
+    // track vừa khít 1130px không scroll ngang; số liệu vẫn đầy đủ ở Bảng kế
+    // hoạch và quick-edit.
+    ...(quickEdit?.enabled ? [{
       id: 'road',
       header: 'Tổng tiền đi đường lái xe nhận',
       accessorFn: (row) => Number(row.totalRoadAllowance ?? 0),
@@ -391,7 +431,7 @@ export function buildTripColumns(
         }
         return moneyCell(road);
       },
-    },
+    } satisfies ColumnDef<TripDetail>] : []),
     {
       id: 'revenue',
       // Reader sees the ex-VAT revenue the "LN gộp" column is computed on,
@@ -451,7 +491,7 @@ export function buildTripColumns(
         );
       },
     } satisfies ColumnDef<TripDetail>] : []),
-    {
+    ...(quickEdit?.enabled ? [{
       id: 'totalCost',
       header: 'Tổng chi phí',
       accessorFn: (row) => getTripDisplayTotalCost(row),
@@ -481,7 +521,7 @@ export function buildTripColumns(
           </div>
         );
       },
-    },
+    } satisfies ColumnDef<TripDetail>] : []),
     {
       id: 'grossProfit',
       header: 'LN gộp',

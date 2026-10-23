@@ -77,13 +77,16 @@
 /* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | doanh thu | tổng CP | LN gộp | status */
 .trip-list-page .table-head {
   display: grid;
-  grid-template-columns: minmax(200px, 1.3fr) 124px minmax(250px, 1.45fr) minmax(92px, 0.6fr) 116px 116px 112px 112px 104px 104px;
+  /* View grid 9 track vừa khít ~1130px, không scroll ngang (audit 23/10):
+     chuyến·mã · khách · xe · tuyến · container · tiêu hao · doanh thu · LN gộp
+     · trạng thái. road/totalCost chuyển sang lưới quick-edit. */
+  grid-template-columns: minmax(136px, 1fr) minmax(148px, 1.1fr) 102px minmax(164px, 1.2fr) 94px 102px 104px 104px 94px;
   padding: 14px 16px;
   gap: 10px;
   background: var(--surface-2);
   border-bottom: 2px solid var(--line-2);
   width: 100%;
-  min-width: 1460px;
+  min-width: min-content;
   align-items: center;
   position: sticky;
   top: 0;
@@ -103,9 +106,10 @@
 
 .trip-list-page .table-row {
   display: grid;
-  grid-template-columns: minmax(200px, 1.3fr) 124px minmax(250px, 1.45fr) minmax(92px, 0.6fr) 116px 116px 112px 112px 104px 104px;
-  /* Audit UX 23/10: nén mật độ — 8px padding + gap 8 giảm chiều cao row
-     (~185px → ~150px) mà không đổi cấu trúc card. */
+  /* Cùng 9 track với .table-head (audit 23/10). */
+  grid-template-columns: minmax(136px, 1fr) minmax(148px, 1.1fr) 102px minmax(164px, 1.2fr) 94px 102px 104px 104px 94px;
+  /* Audit UX 23/10: nén mặt đồ - 8px padding + gap 8 giảm chiều cao row
+   (~185px -> ~150px) mà không đổi cấu trúc card. */
   padding: 8px 14px;
   gap: 8px;
   align-items: center;
@@ -113,7 +117,7 @@
   transition: background 150ms ease;
   cursor: pointer;
   width: 100%;
-  min-width: 1460px;
+  min-width: min-content;
   background: var(--surface);
   position: relative;
 }
@@ -410,6 +414,97 @@
   font-weight: 500;
 }
 .trip-list-page .plate--empty::before { content: none; }
+
+/* ============================================================================
+ * Hero gọn (audit Gemini 23/10): 1 hàng tiêu đề + actions (40px) + 1 strip
+ * chỉ số (~56px) thay hero card 340px. Không bar/legend — trùng tabs trạng
+ * thái bên dưới.
+ * ========================================================================== */
+.trip-list-page .trip-hero-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.trip-list-page .thc-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  flex-wrap: wrap;
+}
+.trip-list-page .thc-title {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+.trip-list-page .thc-period { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-2); }
+.trip-list-page .thc-sub {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+}
+.trip-list-page .thc-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 14px;
+}
+.trip-list-page .thc-metric { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.trip-list-page .thc-metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.trip-list-page .thc-metric-value { font-size: 17px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.trip-list-page .thc-metric-value i { font-style: normal; font-size: 11px; color: var(--ink-3); margin-left: 2px; }
+.trip-list-page .thc-metric-hint {
+  font-size: 11px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trip-list-page .thc-hint-warn { color: #b45309; font-weight: 600; }
+
+/* Cột Khách hàng riêng (view mode) — 1 dòng truncate + pill Xe ngoài inline. */
+.trip-list-page .trip-col--customer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.trip-list-page .trip-col--customer .trip-customer-name {
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Cảnh báo gom 1 dòng trong ô Chuyến · Mã. */
+.trip-list-page .trip-missing-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
 .trip-list-page .plate.idle {
   color: var(--ink-3);
   background: var(--surface-3);
