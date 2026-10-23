@@ -909,6 +909,7 @@ font-weight: 600;
   align-items: baseline;
   gap: 7px;
   padding: 0;
+  border-top: 0;
   min-width: 0;
 }
 .dispatch-page .hero--dispatch-compact .metric-label {
