@@ -585,11 +585,15 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
         meta: { group: 'plan' },
         cell: ({ row }) => {
           const r = row.original;
-          const plate = r.carrierType === 'EXTERNAL' ? (r.externalPlateNumber ?? '—') : textOrDash(r.truckPlate);
+          const plate = r.carrierType === 'EXTERNAL' ? (r.externalPlateNumber ?? null) : (r.truckPlate ?? null);
+          const driver = r.driverName?.trim() || null;
+          if (!plate && !driver) {
+            return <span className="ledger-cell ledger-cell--locked">—</span>;
+          }
           return (
             <span className="ledger-cell">
-              <span className="plate">{plate}</span>
-              <span className="ledger-cell__sub">{textOrDash(r.driverName)}</span>
+              {plate && <span className="plate">{plate}</span>}
+              {driver && <span className="ledger-cell__sub">{driver}</span>}
             </span>
           );
         },

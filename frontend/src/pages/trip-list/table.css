@@ -807,6 +807,22 @@
 }
 .trip-list-page .trip-missing-flag svg { flex: none; }
 
+/* Tiêu hao gọn 1 cụm: dot xanh/đỏ + lít + định mức trong ngoặc (audit 23/10). */
+.trip-list-page .cons-cell--compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.trip-list-page .cons-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--ok, #10b981);
+}
+.trip-list-page .cons-dot[data-over="true"] { background: #dc2626; }
+
 /* The "Hôm nay" chip must never be clipped by the narrow code column: let the
    name line wrap so the chip drops to its own line instead (kanban 20260921_1). */
 .trip-list-page .trip-name {

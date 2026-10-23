@@ -9,7 +9,7 @@ import {
 import { splitRoute } from '../../lib/route';
 import { formatDayMonth } from '../../lib/date';
 import {
-  buildTripCode, calcConsumption, formatMoney, getMissingIndicators, getDataCompleteness, getMissingPlanFields, isTripToday,
+  buildTripCode, calcConsumption, formatMoney, getMissingIndicators, getDataCompleteness, getMissingPlanFields,
   STATUS_PILL_CLASS, type TripListContainer, type TripListRow,
   getAncillaryTripCostBreakdown, getTripDistance, getTripDisplayGrossProfit,
   getTripDisplayMarginPct, getTripDisplayRevenue, getTripDisplayTotalCost, getTripRevenueBasis,
@@ -159,9 +159,6 @@ export function buildTripColumns(
                 <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
                 <span className="trip-meta-sep">·</span>
                 <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
-                {isTripToday(trip.departureDate) && (
-                  <span className="trip-today-chip" title="Kế hoạch của ngày hôm nay">Hôm nay</span>
-                )}
               </div>
               <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: quickEdit?.enabled ? 'nowrap' : 'wrap' }}>
                 <span>{customerName}</span>
@@ -358,25 +355,12 @@ export function buildTripColumns(
             </div>
           );
         }
+        const over = cons.per100 > warnThreshold;
         return (
-          <div className="cons-cell" style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <div className="cons-main">{cons.liters.toFixed(0)} L</div>
-            <div className="cons-rate-val">
-              {cons.per100.toFixed(1).replace('.', ',')} L/100km
-            </div>
-            {cons.per100 > warnThreshold ? (
-              <div style={{ display: 'flex' }}>
-                <span className="cons-rate warn" style={{ marginTop: 0 }}>
-                  vượt {Math.round(((cons.per100 - warnThreshold) / warnThreshold) * 100)}%
-                </span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex' }}>
-                <span className="cons-rate ok" style={{ marginTop: 0 }}>
-                  đạt chuẩn
-                </span>
-              </div>
-            )}
+          <div className="cons-cell cons-cell--compact">
+            <span className="cons-dot" data-over={over} title={over ? `Vượt định mức ${Math.round(((cons.per100 - warnThreshold) / warnThreshold) * 100)}%` : 'Đạt chuẩn'} />
+            <span className="cons-main">{cons.liters.toFixed(0)} L</span>
+            <span className="cons-rate-val">({cons.per100.toFixed(1).replace('.', ',')} L/100km)</span>
           </div>
         );
       },
