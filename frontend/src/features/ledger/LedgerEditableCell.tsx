@@ -2,6 +2,17 @@ import React, { useEffect, useRef } from 'react';
 import type { LedgerCellContext, LedgerCellPatch } from './ledgerColumns';
 import type { LedgerRow } from '@tingting/shared';
 
+/** Colored dot for the container reconciliation state (sheet cell colors).
+ *  Carries a glyph, not color alone — WCAG color-independence. */
+export function ContainerStatusDot({ status }: { status: 'none' | 'ok' | 'pending' }) {
+  if (status === 'none') return null;
+  return (
+    <span className={`ledger-cont-dot ledger-cont-dot--${status}`} aria-label={status === 'ok' ? 'Đã đối chiếu' : 'Chưa đối chiếu xong'} title={status === 'ok' ? 'Đã đối chiếu xong' : 'Thiếu chứng từ / chưa duyệt'}>
+      {status === 'ok' ? '✓' : '!'}
+    </span>
+  );
+}
+
 interface LedgerCellInputProps {
   draft: string;
   type: 'text' | 'number' | 'date' | 'select';

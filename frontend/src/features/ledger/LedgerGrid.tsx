@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { Download, FilePlus2, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { api } from '../../lib/api';
 import { downloadBlob } from '../../lib/download';
 import { ledgerClient } from '../../api/ledgerClient';
@@ -12,8 +13,10 @@ import { ANCILLARY_EXPENSE_TYPES, LoadingType, TripStatus, type LedgerRow } from
 import { Btn } from '../../components/UI';
 import { Alert } from '../../components/shared';
 import { EmptyState, Pagination } from '../../design-system';
-import { buildLedgerColumns, containerReconStatus, ContainerStatusDot, type LedgerCellContext, type LedgerCellPatch } from './ledgerColumns';
+import { buildLedgerColumns, containerReconStatus, type LedgerCellContext, type LedgerCellPatch } from './ledgerColumns';
+import { ContainerStatusDot } from './LedgerEditableCell';
 import { LedgerExpandPanel } from './LedgerExpandPanel';
+import { LedgerMobileList } from './LedgerMobileList';
 import { canEditLedgerMoney, canEditLedgerPlan } from './ledgerPermissions';
 import { formatCurrency, formatNumber } from '../../lib/format';
 import './ledger.css';
@@ -217,6 +220,7 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
 
   const totalItems = query.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   return (
     <div className="ledger-page">
@@ -270,7 +274,26 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
         </div>
       )}
 
-      <div className="table-wrap">
+      {isMobile ? (
+        <>
+          {query.isLoading ? (
+            <div className="ledger-skeleton" aria-label="Đang tải…">
+              {Array.from({ length: 6 }, (_, i) => <div key={i} className="ledger-skeleton__row" />)}
+            </div>
+          ) : query.isError ? (
+            <Alert variant="error">Không tải được dữ liệu. Vui lòng thử lại.</Alert>
+          ) : rows.length === 0 ? (
+            <EmptyState
+              illustration="empty-trips"
+              title="Không có lệnh nào trong khoảng thời gian này"
+              description={canPlan ? 'Đổi tháng ở thanh trên, hoặc bấm “Thêm dòng” để tạo lệnh mới.' : 'Đổi tháng ở thanh trên để xem khoảng khác.'}
+            />
+          ) : (
+            <LedgerMobileList rows={rows} ctx={cellCtx} canPlan={canPlan} canMoney={canMoney} />
+          )}
+        </>
+      ) : (
+        <div className="table-wrap">
         <div className="table-scroll ledger-scroll">
           {query.isLoading ? (
             <div className="ledger-skeleton" aria-label="Đang tải…">
@@ -384,8 +407,9 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
           )}
         </div>
       </div>
+      )}
 
-      {totalItems > PAGE_SIZE && (
+      {totalItems > PAGE_SIZE && !isMobile && (
         <Pagination
           page={page + 1}
           totalPages={totalPages}
@@ -455,13 +479,12 @@ function footerTotalFor(columnId: string, rows: LedgerRow[]): ReactNode | null {
     Number(row.expenseRollup.find(e => e.expenseType === expenseType)?.sellTotal || 0);
   const km = (row: LedgerRow, loadingType: LoadingType, sequence: number): number =>
     row.legs.find(l => l.sequence === sequence && l.loadingType === loadingType)?.km ?? 0;
-  const named = new Set<string>([ANCILLARY_EXPENSE_TYPES[0], ANCILLARY_EXPENSE_TYPES[1]]);
 
   switch (columnId) {
     case 'revenue': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'revenue'), 0))}</>;
-    case 'sell-LIFTING': return <>{formatCurrency(rows.reduce((a, r) => a + rollup(r, ANCILLARY_EXPENSE_TYPES[0]), 0))}</>;
-    case 'sell-LOWERING': return <>{formatCurrency(rows.reduce((a, r) => a + rollup(r, ANCILLARY_EXPENSE_TYPES[1]), 0))}</>;
-    case 'sell-other': return <>{formatCurrency(rows.reduce((a, r) => a + r.expenseRollup.filter(e => !named.has(e.expenseType)).reduce((s, e) => s + Number(e.sellTotal || 0), 0), 0))}</>;
+    case 'fee-nang-ha': return <>{formatCurrency(rows.reduce((a, r) => a + rollup(r, ANCILLARY_EXPENSE_TYPES[0]) + rollup(r, ANCILLARY_EXPENSE_TYPES[1]), 0))}</>;
+    case 'fee-nop-ho': return <>{formatCurrency(rows.reduce((a, r) => a + rollup(r, ANCILLARY_EXPENSE_TYPES[3]) + rollup(r, ANCILLARY_EXPENSE_TYPES[4]) + rollup(r, ANCILLARY_EXPENSE_TYPES[5]) + rollup(r, ANCILLARY_EXPENSE_TYPES[6]), 0))}</>;
+    case 'fee-khac': return <>{formatCurrency(rows.reduce((a, r) => a + rollup(r, ANCILLARY_EXPENSE_TYPES[2]) + rollup(r, ANCILLARY_EXPENSE_TYPES[7]), 0))}</>;
     case 'advanceTotal': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'advanceTotal'), 0))}</>;
     case 'tollCost': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'tollCost'), 0))}</>;
     case 'km-HANG-1': return <>{formatNumber(rows.reduce((a, r) => a + km(r, LoadingType.HANG, 1), 0))}</>;

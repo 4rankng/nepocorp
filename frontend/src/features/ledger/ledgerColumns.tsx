@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
-import { LedgerCell } from './LedgerEditableCell';
+import { ContainerStatusDot, LedgerCell } from './LedgerEditableCell';
 import {
   ANCILLARY_EXPENSE_TYPES,
   LoadingType,
@@ -56,15 +56,17 @@ function numOrDash(value: string | number | null | undefined): string {
 }
 
 /** Sell-side rollup for one ancillary expense type; null = no fees recorded. */
-function sellTotal(row: LedgerRow, expenseType: string): string | null {
-  const entry = row.expenseRollup.find(r => r.expenseType === expenseType);
-  if (!entry || Number(entry.sellTotal) === 0) return null;
-  return entry.sellTotal;
+function groupSellTotal(row: LedgerRow, types: string[]): string | null {
+  const total = row.expenseRollup
+    .filter(e => types.includes(e.expenseType))
+    .reduce((sum, e) => sum + Number(e.sellTotal || 0), 0);
+  return total !== 0 ? String(total) : null;
 }
 
-function singleExpenseId(row: LedgerRow, expenseType: string): number | null {
-  const rows = row.containers.flatMap(c => c.expenses).filter(e => e.expenseType === expenseType);
-  return rows.length === 1 ? rows[0].id : null;
+function groupExpenseIds(row: LedgerRow, types: string[]): number[] {
+  return row.containers.flatMap(c => c.expenses)
+    .filter(e => types.includes(e.expenseType))
+    .map(e => e.id);
 }
 
 function legByLoading(row: LedgerRow, loadingType: LoadingType, sequence: number) {
@@ -87,17 +89,6 @@ export function containerReconStatus(c: LedgerRow['containers'][number]): 'none'
   const allApproved = c.expenses.every(e => e.approvalStatus === 'APPROVED');
   const docsComplete = c.expenses.every(e => e.expenseType !== 'CUSTOMS' || (e.declarationNumber ?? '') !== '');
   return allApproved && docsComplete ? 'ok' : 'pending';
-}
-
-/** Colored dot for the container reconciliation state (sheet cell colors).
- *  Carries a glyph, not color alone — WCAG color-independence. */
-export function ContainerStatusDot({ status }: { status: 'none' | 'ok' | 'pending' }) {
-  if (status === 'none') return null;
-  return (
-    <span className={`ledger-cont-dot ledger-cont-dot--${status}`} aria-label={status === 'ok' ? 'Đã đối chiếu' : 'Chưa đối chiếu xong'} title={status === 'ok' ? 'Đã đối chiếu xong' : 'Thiếu chứng từ / chưa duyệt'}>
-      {status === 'ok' ? '✓' : '!'}
-    </span>
-  );
 }
 
 const STATUS_PILL_VARIANT: Record<TripStatus, 'success' | 'warn' | 'danger' | 'info' | 'neutral'> = {
@@ -423,6 +414,30 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
     ],
   };
 
+  // Ba cột phí của sheet (nepoUI xlsx cột G/H/I): nâng hạ / nộp hộ / khác —
+  // gom từ 8 loại phí ancillary; giá trị = Σ bán thu của nhóm.
+  const FEE_COLUMN_GROUPS: Array<{ id: string; header: string; hint: string; types: string[] }> = [
+    {
+      id: 'fee-nang-ha',
+      header: 'Phí nâng hạ',
+      hint: '+ Phí nâng hạ',
+      types: [ANCILLARY_EXPENSE_TYPES[0], ANCILLARY_EXPENSE_TYPES[1]],
+    },
+    {
+      id: 'fee-nop-ho',
+      header: 'Phí nộp hộ',
+      hint: '+ Phí nộp hộ',
+      types: [ANCILLARY_EXPENSE_TYPES[3], ANCILLARY_EXPENSE_TYPES[4], ANCILLARY_EXPENSE_TYPES[5], ANCILLARY_EXPENSE_TYPES[6]],
+    },
+    {
+      id: 'fee-khac',
+      header: 'Phí khác',
+      hint: '+ Phí khác',
+      types: [ANCILLARY_EXPENSE_TYPES[2], ANCILLARY_EXPENSE_TYPES[7]],
+    },
+  ];
+  // groupSellTotal / groupExpenseIds: module-level helpers (dưới đây).
+
   const revenueGroup: LedgerGroup = {
     id: 'g-revenue',
     header: 'Doanh thu',
@@ -445,26 +460,28 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
           />
         ),
       },
-      ...[ANCILLARY_EXPENSE_TYPES[0], ANCILLARY_EXPENSE_TYPES[1]].map((type, i): LedgerLeaf => ({
-        id: `sell-${type}`,
-        header: i === 0 ? 'Phí nâng hạ' : 'Phí xếp hạ',
-        meta: { group: 'revenue', align: 'num' },
+      ...FEE_COLUMN_GROUPS.map((group, gi): LedgerLeaf => ({
+        id: group.id,
+        header: group.header,
+        meta: { group: 'revenue', align: 'num', groupEnd: gi === FEE_COLUMN_GROUPS.length - 1 },
         cell: ({ row }) => {
           const r = row.original;
-          const eid = singleExpenseId(r, type);
+          const eids = groupExpenseIds(r, group.types);
+          const eid = eids.length === 1 ? eids[0] : null;
+          const total = groupSellTotal(r, group.types);
           return (
             <LedgerCell
               row={r}
-              colId={`sell-${type}`}
+              colId={group.id}
               ctx={ctx}
               editable={canMoney && eid != null}
               editType="number"
-              rawValue={sellTotal(r, type) ?? ''}
-              display={sellTotal(r, type)
-                ? <span className="ledger-collected">{money(sellTotal(r, type))}</span>
+              rawValue={total ?? ''}
+              display={total
+                ? <span className="ledger-collected">{money(total)}</span>
                 : '—'}
-              hint={i === 0 ? '+ Phí nâng hạ' : '+ Phí xếp hạ'}
-              lockedTitle={eid != null ? undefined : 'Nhiều dòng phí cùng loại — sửa trong bảng mở rộng'}
+              hint={group.hint}
+              lockedTitle={eid != null ? undefined : 'Nhiều dòng phí trong nhóm — xem bảng mở rộng'}
               buildPatch={(_r2, draft) => eid != null
                 ? { kind: 'expense', expenseId: eid, body: { sellAmount: draft === '' ? 0 : Number(draft) } }
                 : null}
@@ -473,20 +490,17 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
         },
       })),
       {
-        id: 'sell-other',
-        header: 'Phí khác',
-        meta: { group: 'revenue', align: 'num', groupEnd: true },
-        cell: ({ row }) => {
-          const r = row.original;
-          const named = new Set<string>([ANCILLARY_EXPENSE_TYPES[0], ANCILLARY_EXPENSE_TYPES[1]]);
-          const otherTypes = r.expenseRollup.filter(e => !named.has(e.expenseType) && Number(e.sellTotal) !== 0);
-          const total = otherTypes.reduce((sum, e) => sum + Number(e.sellTotal || 0), 0);
-          return (
-            <span className="ledger-cell" title={otherTypes.map(e => `${e.expenseType}: ${e.sellTotal}`).join('\n')}>
-              {total !== 0 ? money(String(total)) : '—'}
-            </span>
-          );
-        },
+        id: 'returnCargo',
+        header: 'Chọn vỏ',
+        meta: { group: 'revenue', groupEnd: true },
+        cell: ({ row }) => (
+          <span
+            className={`ledger-cell${row.original.hasReturnCargo ? ' ledger-flag--wait' : ''}`}
+            title={row.original.hasReturnCargo ? 'Đang chở hàng/vỏ về' : undefined}
+          >
+            {row.original.hasReturnCargo ? 'Chờ vỏ' : '—'}
+          </span>
+        ),
       },
     ],
   };
@@ -495,19 +509,6 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
     id: 'g-cash',
     header: 'Tạm ứng / Hoàn ứng',
     columns: [
-      {
-        id: 'returnCargo',
-        header: 'Chờ về/vỏ',
-        meta: { group: 'cash', align: 'num' },
-        cell: ({ row }) => (
-          <span
-            className={`ledger-cell${row.original.hasReturnCargo ? ' ledger-flag--wait' : ''}`}
-            title={row.original.hasReturnCargo ? 'Đang chở hàng/vỏ về' : undefined}
-          >
-            {row.original.hasReturnCargo ? 'Chờ về' : '—'}
-          </span>
-        ),
-      },
       {
         id: 'advanceTotal',
         header: 'Tạm ứng',
@@ -625,21 +626,18 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
       {
         id: 'roadAllowance',
         header: 'Hạch toán',
-        meta: { group: 'cost', align: 'num' },
-        cell: ({ row }) => (
-          <LedgerCell
-            row={row.original}
-            colId="roadAllowance"
-            ctx={ctx}
-            editable={canMoney}
-            editType="number"
-            rawValue={row.original.totalRoadAllowance ?? ''}
-            display={money(row.original.totalRoadAllowance)}
-            hint="+ Hạch toán"
-            title="Phụ cấp đường (cột Hạch toán trên sổ giấy)"
-            buildPatch={(_r, draft) => ({ kind: 'money', body: { roadAllowanceOverride: draft === '' ? null : Number(draft) } })}
-          />
-        ),
+        meta: { group: 'cost' },
+        cell: ({ row }) => {
+          // Sheet cột AB "Hạch toán" = KỲ hạch toán (tháng của ngày KH),
+          // không phải số tiền — hiển thị suy ra từ departureDate.
+          const d = row.original.departureDate;
+          const period = /^\d{4}-\d{2}/.test(d) ? `Tháng ${d.slice(5, 7)}/${d.slice(0, 4)}` : '—';
+          return (
+            <span className="ledger-cell" title="Kỳ hạch toán (theo tháng kế hoạch)">
+              {period}
+            </span>
+          );
+        },
       },
       {
         id: 'tollCost',
