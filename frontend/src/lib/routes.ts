@@ -125,6 +125,7 @@ type TitleRule = {
 // since no single catalog entry owns it.
 const titleRules: TitleRule[] = [
   { test: p => p === routes.dashboard, title: PAGE_CATALOG.dashboard.title },
+  { test: p => p === routes.bangKeHoach, title: PAGE_CATALOG.bangKeHoach.title },
   { test: p => p.startsWith(routes.dispatch), title: PAGE_CATALOG.dispatch.title },
   { test: p => p.startsWith(routes.fleet), title: PAGE_CATALOG.fleet.title },
   { test: p => /^\/trips\/(\d+)(?:\/edit)?$/.test(p), title: p => p.endsWith('/edit') ? PAGE_CATALOG.tripEdit.title : PAGE_CATALOG.tripDetail.title },
