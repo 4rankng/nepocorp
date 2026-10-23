@@ -728,6 +728,7 @@ export const changePasswordSchema = z.object({
 
 export const customerSchema = z.object({
   name: z.string().min(1),
+  shortName: z.string().max(120).optional().nullable(),
   taxCode: z.string().optional(),
   contactPerson: z.string().optional(),
   phone: z.string().optional(),

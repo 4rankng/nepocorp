@@ -27,6 +27,7 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
   saving: boolean; item?: Customer; onsave: (d: Record<string, unknown>) => void; oncancel: () => void;
 }) {
   const [name, setName] = useState(item?.name || '');
+  const [shortName, setShortName] = useState(item?.shortName || '');
   const [taxCode, setTaxCode] = useState(item?.taxCode || '');
   const [contactPerson, setContactPerson] = useState(item?.contactPerson || '');
   const [phone, setPhone] = useState(item?.phone || '');
@@ -44,7 +45,10 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Field label="Tên khách hàng *">
-          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên…" required />
+          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Tên đầy đủ (hợp đồng, hóa đơn)…" required />
+        </Field>
+        <Field label="Tên viết tắt">
+          <input className="input" value={shortName} onChange={e => setShortName(e.target.value)} placeholder="VD: CTCP NITODA, Cty Vietsun…" />
         </Field>
         <Field label="Mã số thuế">
           <input className="input" value={taxCode} onChange={e => setTaxCode(e.target.value)} placeholder="Nhập MST…" />
@@ -95,6 +99,7 @@ function CustomerForm({ saving, item, onsave, oncancel }: {
           if (!name.trim()) return;
           onsave({
             name: name.trim(),
+            shortName: shortName.trim() || null,
             taxCode: taxCode.trim() || null,
             contactPerson: contactPerson.trim() || null,
             phone: phone.trim() || null,

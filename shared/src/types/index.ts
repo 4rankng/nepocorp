@@ -39,7 +39,10 @@ export interface Driver {
 
 export interface Customer {
   id: number;
+  /** Legal/accounting name used on documents. */
   name: string;
+  /** Operational label for dense grids (Sổ cái, Bảng kế hoạch). */
+  shortName: string | null;
   taxCode: string | null;
   contactPerson: string | null;
   phone: string | null;
@@ -1793,6 +1796,8 @@ export interface LedgerRow {
   notes: string | null;
   customerId: number;
   customerName: string | null;
+  /** Tên rút gọn (operational label) cho bảng dense — fallback về name. */
+  customerShortName: string | null;
   /** Số BKG column. */
   customerReference: string | null;
   truckPlate: string | null;

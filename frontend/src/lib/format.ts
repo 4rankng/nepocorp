@@ -5,6 +5,26 @@ export function formatNumber(n: number | string | null): string {
   return num.toLocaleString('vi-VN');
 }
 
+/** Quy ước viết tắt pháp nhân Việt Nam cho bảng dense: CTCP, Cty TNHH,
+ *  Cty CP, TM DV… Dùng khi khách hàng chưa có shortName riêng. */
+export function shortCompanyName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const rules: Array<[RegExp, string]> = [
+    [/CÔNG TY CỔ PHẦN/gi, 'CTCP'],
+    [/CÔNG TY TNHH MTV/gi, 'Cty TNHH MTV'],
+    [/CÔNG TY TNHH/gi, 'Cty TNHH'],
+    [/TỔNG CÔNG TY/gi, 'Tổng Cty'],
+    [/CÔNG TY TRÁCH NHIỆM HỮU HẠN/gi, 'Cty TNHH'],
+    [/TRÁCH NHIỆM HỮU HẠN/gi, 'TNHH'],
+    [/THƯƠNG MẠI DỊCH VỤ/gi, 'TMDV'],
+    [/CÔNG TY/gi, 'Cty'],
+    [/CHI NHÁNH/gi, 'CN'],
+  ];
+  let out = name;
+  for (const [pattern, replacement] of rules) out = out.replace(pattern, replacement);
+  return out === name ? name : out.replace(/\s{2,}/g, ' ').trim();
+}
+
 export function formatCompact(n: number | string | null): string {
   if (n == null) return '—';
   const num = typeof n === 'string' ? parseFloat(n) : n;

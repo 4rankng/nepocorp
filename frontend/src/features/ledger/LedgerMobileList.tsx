@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { TRIP_STATUS_LABELS, TripStatus, type LedgerRow } from '@tingting/shared';
-import { formatCurrency, formatDatePadded } from '../../lib/format';
+import { formatCurrency, formatDatePadded, shortCompanyName } from '../../lib/format';
 import { StatusPill } from '../../components/UI';
 import { ContainerStatusDot, LedgerCell } from './LedgerEditableCell';
 import type { LedgerCellContext, LedgerCellPatch } from './ledgerColumns';
@@ -218,7 +218,7 @@ export function LedgerMobileList({ rows, ctx, canPlan, canMoney }: {
                 {TRIP_STATUS_LABELS[row.status] ?? row.status}
               </StatusPill>
             </div>
-            <div className="ledger-m-card__customer">{orDash(row.customerName)} · {formatDatePadded(row.departureDate)}</div>
+            <div className="ledger-m-card__customer">{orDash(row.customerShortName || shortCompanyName(row.customerName))} · {formatDatePadded(row.departureDate)}</div>
             <div className="ledger-m-card__cont">
               {(row.containers.length ? row.containers : []).slice(0, 2).map(c => (
                 <span key={c.id} className="ledger-m-card__cont-item">

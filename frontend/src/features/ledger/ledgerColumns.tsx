@@ -8,7 +8,7 @@ import {
   TripStatus,
   type LedgerRow,
 } from '@tingting/shared';
-import { formatCurrency, formatDatePadded, formatNumber } from '../../lib/format';
+import { formatCurrency, formatDatePadded, formatNumber, shortCompanyName } from '../../lib/format';
 import { StatusPill } from '../../components/UI';
 
 // ─── Cell patch descriptors ──────────────────────────────────────────────────
@@ -133,7 +133,7 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
           const r = row.original;
           // Tên khách rút gọn nằm trong cột frozen: khi kế toán cuộn ngang tới
           // cột thứ 40 vẫn biết dòng này của khách hàng nào (sheet cột D).
-          const customer = (r.customerName ?? `KH #${r.customerId}`).replace(/\b(CÔNG TY|CHI NHÁNH|TNHH|MTV|CỔ PHẦN)\b\s*/gi, '').trim() || r.customerName;
+          const customer = r.customerShortName || shortCompanyName(r.customerName) || `KH #${r.customerId}`;
           return (
             <div className="ledger-code">
               <button
@@ -156,22 +156,13 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
         id: 'ledger-status',
         header: 'Trạng thái',
         meta: { group: 'plan', groupEnd: true },
-        cell: ({ row }) => {
-          const r = row.original;
-          const missing: string[] = [];
-          if (r.containerTypeCodes.length === 0) missing.push('loại container');
-          if (!r.driverName && r.carrierType === 'OWN') missing.push('lái xe');
-          return (
-            <div className="ledger-status">
-              <StatusPill variant={STATUS_PILL_VARIANT[r.status] ?? 'neutral'}>
-                {TRIP_STATUS_LABELS[r.status] ?? r.status}
-              </StatusPill>
-              {missing.length > 0 && (
-                <span className="ledger-status__warn" title={`Còn thiếu: ${missing.join(', ')}`} aria-label="Còn thiếu dữ liệu">!</span>
-              )}
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <div className="ledger-status">
+            <StatusPill variant={STATUS_PILL_VARIANT[row.original.status] ?? 'neutral'}>
+              {TRIP_STATUS_LABELS[row.original.status] ?? row.original.status}
+            </StatusPill>
+          </div>
+        ),
       },
     ],
   };
@@ -230,7 +221,7 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
               editType="select"
               options={ctx.customerOptions}
               rawValue={String(r.customerId)}
-              display={textOrDash(r.customerName)}
+              display={textOrDash(r.customerShortName || shortCompanyName(r.customerName))}
               hint="+ Khách hàng"
               title="Đổi khách hàng — hệ thống chặn nếu chuyến đã có thanh toán"
               buildPatch={(_rr, draft) => draft

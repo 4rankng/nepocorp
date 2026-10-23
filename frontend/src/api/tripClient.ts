@@ -23,7 +23,7 @@ import type {
  * at the consumers, so this superset type is safe for both.
  */
 export interface CatalogData {
-  customers: Array<{ id: number; name: string; contactPerson: string | null; phone: string | null; isCarrier: boolean; linkedSupplierId: number | null }>;
+  customers: Array<{ id: number; name: string; shortName: string | null; contactPerson: string | null; phone: string | null; isCarrier: boolean; linkedSupplierId: number | null }>;
   trucks: Array<{ id: number; licensePlate: string; trailerPlateNumber: string | null; trailerType: '20FT' | '40FT' | null; currentTrailerId: number | null }>;
   drivers: Array<{ id: number; name: string; assignedTruckId: number | null; baseSalary: string | null }>;
   routes: Array<{ id: number; name: string; distanceKm: number | null; isMountain: boolean; fixedFuelAllowance: string | null; tollsStations: number | null; driverSalary: string | null; defaultLegs: Array<{ origin: string; destination: string; km: number; loadingType: string }> | null }>;

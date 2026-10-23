@@ -202,7 +202,10 @@ export const tirePositions = pgTable('tire_positions', {
 
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),
+  // `name` is the legal/accounting name for documents; `shortName` is the
+  // operational label used in dense grids (same convention as suppliers).
   name: varchar('name', { length: 255 }).notNull(),
+  shortName: varchar('short_name', { length: 120 }),
   taxCode: varchar('tax_code', { length: 20 }),
   contactPerson: varchar('contact_person', { length: 255 }),
   phone: varchar('phone', { length: 20 }),
