@@ -80,3 +80,4 @@ package-lock.json
 # repowise local index (machine-local artifact)
 .repowise/
 .codewhale/
+*.db
