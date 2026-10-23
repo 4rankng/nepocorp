@@ -45,7 +45,7 @@ export function ActionBar({ loading, onCancel, onSubmit }: ActionBarProps) {
         {/* Ước tính inline (audit Gemini 23/10): thay card 400px đầu trang. */}
         <div className="tc-action-bar__money mono">
           <span className="tc-money"><i>DT</i> {fmt(revenue)} ₫</span>
-          <span className="tc-money tc-money--cost"><i>CP ước</i> −{fmt(estCost)} ₫</span>
+          <span className={`tc-money${estCost > 0 ? ' tc-money--cost' : ''}`}><i>CP ước</i> {estCost > 0 ? `−${fmt(estCost)} ₫` : '—'}</span>
           <span className={`tc-money tc-money--${profit < 0 ? 'neg' : profit > 0 ? 'pos' : 'flat'}`}><i>LN</i> {profit < 0 ? '−' : profit > 0 ? '+' : ''}{fmt(profit)} ₫</span>
         </div>
         <div className="tc-action-bar__actions">

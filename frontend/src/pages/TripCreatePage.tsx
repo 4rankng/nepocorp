@@ -90,7 +90,8 @@ export default function TripCreatePage() {
               subtitle="Cập nhật số cont, seal và ảnh chụp khi có dữ liệu thực tế"
               badge="optional"
               collapsible
-              defaultCollapsed
+              /* Mở sẵn (audit Gemini 23/10): số cont là dữ liệu cốt lõi của
+                  lệnh container; các section tuỳ chọn khác vẫn đóng. */
             >
               <ContainerInstancesCard expectedCount={expectedContainerCount} />
             </CardSection>
