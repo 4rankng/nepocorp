@@ -71,7 +71,6 @@ export function DispatchTripCard({
         {over > 0 && <span className="today-badge today-badge--overdue">Quá hạn {Math.abs(over)}N</span>}
         {today && <span className="today-badge">Hôm nay</span>}
         <span className="day">{formatDayMonth(trip.departureDate)}</span>
-        <span className="lbl">Khởi hành</span>
       </div>
 
       <div className="o-route">
@@ -118,7 +117,7 @@ export function DispatchTripCard({
             </span>
             <div className="ai">
               <div className="dn">
-                {trip.driverName || <span style={{ color: 'var(--fg-3)', fontWeight: 400 }}>Chưa phân lái xe</span>}
+                {trip.driverName || <span style={{ color: 'var(--fg-3)', fontWeight: 400 }}>Chưa phân xe</span>}
               </div>
             </div>
           </div>

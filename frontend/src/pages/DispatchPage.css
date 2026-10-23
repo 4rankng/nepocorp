@@ -423,8 +423,9 @@
 
 .dispatch-page .orders-head {
   display: grid;
-  /* date / route / customer / vehicle&driver / action */
-  grid-template-columns: 28px 80px 2fr 1.8fr 1fr 136px;
+  /* date / route / customer / vehicle&driver / action — audit Gemini vòng 9:
+     ngày 1 dòng 140px, route:khách:xe ≈ 1.16:1:0.97 theo px 430/380/370. */
+  grid-template-columns: 36px 140px minmax(0, 1.16fr) minmax(0, 1fr) minmax(0, 0.97fr) 164px;
   padding: 7px 12px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
@@ -441,9 +442,9 @@
   position: relative;
   display: grid;
   /* Keep in sync with .orders-head. */
-  grid-template-columns: 28px 80px 2fr 1.8fr 1fr 136px;
-  padding: 7px 12px;
-  gap: 10px;
+  grid-template-columns: 36px 140px minmax(0, 1.16fr) minmax(0, 1fr) minmax(0, 0.97fr) 164px;
+  padding: 8px 12px;
+  gap: 12px;
   align-items: center;
   border-bottom: 1px solid var(--line);
   transition: background 120ms ease;
@@ -456,12 +457,15 @@
 }
 .dispatch-page .order-row.is-today:hover { background: var(--d-green-50); }
 
-.dispatch-page .o-date { display: flex; flex-direction: column; gap: 2px; }
+.dispatch-page .o-date {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
 .dispatch-page .o-date .today-badge {
-  align-self: flex-start;
-  margin-bottom: 2px;
-  padding: 3px 7px;
-  border-radius: 999px;
+  padding: 1px 6px;
+  border-radius: 4px;
   background: var(--d-green-700);
   color: var(--fg-on-brand);
   font-size: var(--fs-xs);
@@ -474,32 +478,30 @@
   font-family: var(--font-mono);
   font-size: var(--fs-sm); font-weight: 700;
 }
-.dispatch-page .o-date .lbl {
-  font-size: var(--fs-xs); letter-spacing: 1px;
-  color: var(--ink-3);
-  font-weight: 600; text-transform: uppercase;
-}
 .dispatch-page .o-date.urgent .day { color: var(--d-amber); }
-.dispatch-page .o-date.urgent .lbl { color: var(--d-amber); }
-.dispatch-page .o-date.today .day,
-.dispatch-page .o-date.today .lbl { color: var(--d-green-800); }
+.dispatch-page .o-date.today .day { color: var(--d-green-800); }
 
 .dispatch-page .o-route {
   display: flex; align-items: center; gap: 8px;
   font-weight: 600; font-size: var(--fs-sm);
-  flex-wrap: wrap;
+  min-width: 0;
+  white-space: nowrap;
 }
 .dispatch-page .o-route .from,
 .dispatch-page .o-route .to {
   font-size: var(--fs-sm); font-weight: 600;
   color: var(--ink);
-  white-space: normal;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.dispatch-page .o-route .from { flex-shrink: 1; min-width: 0; }
+.dispatch-page .o-route .to { flex-shrink: 0; max-width: 100%; }
 .dispatch-page .o-route .arr { color: var(--ink-3); opacity: 0.6; flex-shrink: 0; display: inline-flex; }
 .dispatch-page .o-route .single {
   font-size: var(--fs-sm); font-weight: 600;
-  color: var(--ink); padding: 3px 0;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dispatch-page .o-customer { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -512,32 +514,35 @@
   color: var(--ink-2);
   flex-shrink: 0;
 }
-.dispatch-page .o-customer .info { min-width: 0; }
+.dispatch-page .o-customer .info {
+  display: flex; align-items: baseline; gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
 .dispatch-page .o-customer .name {
   font-weight: 600; font-size: var(--fs-xs);
   color: var(--ink);
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.35;
 }
 .dispatch-page .o-customer .meta {
   font-size: var(--fs-xs); color: var(--ink-3);
+  flex-shrink: 0;
 }
 
 .dispatch-page .o-assign {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
-/* Stacked layout: plate chip on top, driver name on a second row.
-   Was: single-row green pill with [plate-chip][driver-name] horizontal — the
-   driver name had ~70px to live in and was clipping to one letter ("N", "T").
-   Lost the heavy green border too; it read as an input focus state. */
+/* Single line: [plate-chip] driver-name (audit Gemini vòng 9 — cột ~370px đủ
+   chỗ; driver ellipsis thay vì clip như lần single-row cũ ở cột 1fr hẹp). */
 .dispatch-page .assign-card {
-  display: flex; flex-direction: column;
-  align-items: flex-start; gap: 4px;
+  display: flex;
+  align-items: center; gap: 8px;
   min-width: 0; flex: 1;
   /* No background or border — the cell is the container. */
 }
@@ -552,11 +557,18 @@
   letter-spacing: 0.04em;
   max-width: 100%;
 }
-.dispatch-page .assign-card .ai { font-size: var(--fs-xs); line-height: 1.35; min-width: 0; max-width: 100%; }
+.dispatch-page .assign-card .ai {
+  font-size: var(--fs-xs); line-height: 1.35;
+  min-width: 0; max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .dispatch-page .assign-card .dn {
   font-weight: 600;
   color: var(--ink);
-  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .dispatch-page .assign-card .lb {
   font-size: var(--fs-xs); letter-spacing: 0.8px;
@@ -678,7 +690,7 @@ font-weight: 600;
 @media (max-width: 1100px) {
   .dispatch-page .orders-head,
   .dispatch-page .order-row {
-    grid-template-columns: 28px 80px 1fr 1fr 138px;
+    grid-template-columns: 36px 90px 1fr 1fr 138px;
   }
   .dispatch-page .orders-head .col-assign,
   .dispatch-page .order-row .o-assign { display: none; }
@@ -882,14 +894,15 @@ font-weight: 600;
   max-height: 560px;
   overflow-y: auto;
 }
-/* Metrics thu 1 line: 'label value' inline, bỏ delta phụ. */
+/* Metrics thu 1 line: 'label value' inline, bỏ delta phụ. Hàng ngang + viền
+   card bỏ (user 24/10): hero phẳng, không còn kẻ ngang giữa 2 hàng. */
+.dispatch-page .hero--dispatch-compact { border: none; }
 .dispatch-page .hero--dispatch-compact .metrics {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 22px;
   margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
+  padding-top: 0;
 }
 .dispatch-page .hero--dispatch-compact .metric {
   display: inline-flex;
