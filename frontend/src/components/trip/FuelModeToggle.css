@@ -3,8 +3,9 @@
 .tc-fuel-mode {
   position: relative;
   display: grid;
-  /* 260px thực dụng (audit Gemini 23/10) — không kéo dãn full-width 1130px. */
-  grid-template-columns: 190px 130px;
+  /* Track theo nội dung (QA vòng 8): label ngắn 'Tự động'/'Thủ công', giải
+     thích dài để vào tooltip — không còn wrap 2 dòng. */
+  grid-template-columns: auto auto;
   width: fit-content;
   gap: 8px;
   background: var(--bg-3);
