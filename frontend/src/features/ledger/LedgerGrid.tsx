@@ -13,13 +13,51 @@ import { ANCILLARY_EXPENSE_TYPES, LoadingType, TripStatus, type LedgerRow } from
 import { Btn } from '../../components/UI';
 import { Alert } from '../../components/shared';
 import { EmptyState, Pagination } from '../../design-system';
-import { buildLedgerColumns, containerReconStatus, type LedgerCellContext, type LedgerCellPatch } from './ledgerColumns';
+import { buildLedgerColumns, containerReconStatus, type LedgerCellContext, type LedgerCellPatch, type LedgerGroup, type LedgerLeaf } from './ledgerColumns';
 import { ContainerStatusDot } from './LedgerEditableCell';
 import { LedgerExpandPanel } from './LedgerExpandPanel';
 import { LedgerMobileList } from './LedgerMobileList';
 import { canEditLedgerMoney, canEditLedgerPlan } from './ledgerPermissions';
 import { formatCurrency, formatNumber } from '../../lib/format';
 import './ledger.css';
+
+type GridBand = 'plan' | 'revenue' | 'cash' | 'route' | 'docs' | 'carrier' | 'cost' | 'result';
+const GROUP_BAND: Record<string, GridBand> = {
+  'g-identity': 'plan',
+  'g-plan': 'plan',
+  'g-revenue': 'revenue',
+  'g-cash': 'cash',
+  'g-route': 'route',
+  'g-docs': 'docs',
+  'g-carrier': 'carrier',
+  'g-cost': 'cost',
+  'g-result': 'result',
+};
+const VIEW_PRESETS: Array<{ id: string; label: string; bands: GridBand[] }> = [
+  { id: 'full', label: 'Sổ cái', bands: ['plan', 'revenue', 'cash', 'route', 'docs', 'carrier', 'cost', 'result'] },
+  { id: 'ops', label: 'Điều vận', bands: ['plan', 'route', 'docs', 'carrier'] },
+  { id: 'recon', label: 'Đối chiếu', bands: ['plan', 'revenue', 'cash', 'route', 'docs'] },
+  { id: 'fuel', label: 'Dầu & Lương', bands: ['plan', 'route', 'cost', 'result'] },
+];
+type QuickFilter = 'all' | 'no-cont' | 'no-revenue' | 'loss' | 'unreconciled';
+const missingCont = (r: LedgerRow): boolean =>
+  r.containers.length === 0 || r.containers.every(c => !c.containerNumber);
+const unreconciled = (r: LedgerRow): boolean =>
+  r.containers.some(c => containerReconStatus(c) === 'pending');
+const QUICK_FILTER_PRED: Record<QuickFilter, (r: LedgerRow) => boolean> = {
+  all: () => true,
+  'no-cont': missingCont,
+  'no-revenue': (r) => r.revenue == null || Number(r.revenue) === 0,
+  loss: (r) => Number(r.grossProfit ?? 0) < 0,
+  unreconciled,
+};
+const QUICK_FILTER_LABELS: Record<QuickFilter, string> = {
+  all: 'Tất cả',
+  'no-cont': 'Chưa có Cont',
+  'no-revenue': 'Chưa nhập Cước',
+  loss: 'LN âm',
+  unreconciled: 'Chưa đối chiếu',
+};
 
 const PAGE_SIZE = 100;
 
@@ -30,12 +68,15 @@ const PAGE_SIZE = 100;
  * Filters come from the page (month chip / customer / status / search); this
  * component owns the grid, the quick-add row, and the Excel export.
  */
-export function LedgerGrid({ from, to, customerId, status, search }: {
+export function LedgerGrid({ from, to, customerId, status, search, onCustomerChange, onStatusChange, onSearchChange }: {
   from: string;
   to: string;
   customerId?: number;
   status?: string;
   search?: string;
+  onCustomerChange?: (customerId: number | undefined) => void;
+  onStatusChange?: (status: string | undefined) => void;
+  onSearchChange?: (search: string) => void;
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -60,7 +101,19 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
     queryFn: () => ledgerClient.getRows({ from, to, customerId, status: (status || undefined) as TripStatus | undefined, q: search || undefined, limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
     enabled: !!from && !!to && from <= to,
   });
-  const rows: LedgerRow[] = query.data?.rows ?? [];
+  const rows: LedgerRow[] = useMemo(() => query.data?.rows ?? [], [query.data]);
+
+  // ── Bộ cột theo góc nhìn (Saved Views) + chip lọc nhanh ────────────────────
+  const [bandView, setBandView] = useState('full');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
+  const quickCounts: Record<QuickFilter, number> = {
+    all: rows.length,
+    'no-cont': rows.filter(missingCont).length,
+    'no-revenue': rows.filter(r => r.revenue == null || Number(r.revenue) === 0).length,
+    loss: rows.filter(r => Number(r.grossProfit ?? 0) < 0).length,
+    unreconciled: rows.filter(unreconciled).length,
+  };
+  const displayRows = useMemo(() => rows.filter(QUICK_FILTER_PRED[quickFilter]), [rows, quickFilter]);
 
   // Reset pagination when the filters change so a narrower result set can't
   // strand the user past the last page.
@@ -167,9 +220,23 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => buildLedgerColumns(cellCtx), []);
 
+  // Bộ cột theo góc nhìn đang chọn — nhóm identity luôn hiển thị (frozen).
+  const activeBands = VIEW_PRESETS.find(v => v.id === bandView)?.bands ?? VIEW_PRESETS[0].bands;
+  const visibleColumns = useMemo(
+    () => (columns as Array<LedgerGroup | LedgerLeaf>).filter((g) => {
+      if (g.id === 'g-identity') return true;
+      const band = GROUP_BAND[String(g.id)];
+      return band != null && activeBands.includes(band);
+    }) as ColumnDef<LedgerRow, unknown>[],
+    // columns + activeBands thay đổi cùng lúc khi người dùng đổi góc nhìn;
+    // đổi view remount cell editor nhưng đó là hành động chủ động, chấp nhận được.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [columns, bandView],
+  );
+
   const table = useReactTable({
-    data: rows,
-    columns: columns as ColumnDef<LedgerRow, unknown>[],
+    data: displayRows,
+    columns: visibleColumns,
     getCoreRowModel: getCoreRowModel(),
   });
 
@@ -224,15 +291,76 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
 
   return (
     <div className="ledger-page">
-      <div className="ledger-actions">
-        {canPlan && (
-          <Btn variant="primary" size="sm" icon={<FilePlus2 size={15} />} onClick={() => { setQuickAddOpen((v) => !v); setQuickAddError(null); }}>
-            Thêm dòng
+      <div className="ledger-toolbar" role="toolbar" aria-label="Bộ lọc sổ chuyến đi">
+        <input
+          type="search"
+          aria-label="Tìm kiếm"
+          placeholder="Tìm mã chuyến, KH, biển số, số cont…"
+          className="ledger-toolbar__search"
+          value={search ?? ''}
+          onChange={(e) => onSearchChange?.(e.target.value)}
+        />
+        <select
+          aria-label="Khách hàng"
+          className="ledger-toolbar__select"
+          value={customerId ?? ''}
+          onChange={(e) => onCustomerChange?.(e.target.value ? Number(e.target.value) : undefined)}
+        >
+          <option value="">Tất cả khách hàng</option>
+          {(catalogs?.customers ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <select
+          aria-label="Trạng thái"
+          className="ledger-toolbar__select"
+          value={status ?? ''}
+          onChange={(e) => onStatusChange?.(e.target.value || undefined)}
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value={TripStatus.CREATED}>Mới tạo</option>
+          <option value={TripStatus.IN_TRANSIT}>Đang chạy</option>
+          <option value={TripStatus.COMPLETED}>Hoàn thành</option>
+          <option value={TripStatus.LOCKED}>Đã chốt</option>
+        </select>
+        <div className="ledger-toolbar__spacer" />
+        <div className="ledger-toolbar__actions">
+          {canPlan && (
+            <Btn variant="primary" size="sm" icon={<FilePlus2 size={15} />} onClick={() => { setQuickAddOpen((v) => !v); setQuickAddError(null); }}>
+              Thêm dòng
+            </Btn>
+          )}
+          <Btn size="sm" icon={exporting ? <Loader2 size={15} className="spin" /> : <Download size={15} />} onClick={exportExcel} disabled={exporting}>
+            Xuất Excel
           </Btn>
-        )}
-        <Btn size="sm" icon={exporting ? <Loader2 size={15} className="spin" /> : <Download size={15} />} onClick={exportExcel} disabled={exporting}>
-          Xuất Excel
-        </Btn>
+        </div>
+      </div>
+
+      <div className="ledger-views" role="tablist" aria-label="Bộ cột và lọc nhanh">
+        <div className="ledger-views__presets">
+          {VIEW_PRESETS.map(v => (
+            <button
+              key={v.id}
+              type="button"
+              className={bandView === v.id ? 'is-active' : ''}
+              aria-pressed={bandView === v.id}
+              onClick={() => setBandView(v.id)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <div className="ledger-views__filters">
+          {(Object.keys(quickCounts) as QuickFilter[]).map(f => (
+            <button
+              key={f}
+              type="button"
+              className={`ledger-chip${quickFilter === f ? ' is-active' : ''}${quickCounts[f] === 0 && f !== 'all' ? ' is-empty' : ''}`}
+              onClick={() => setQuickFilter(f)}
+            >
+              {QUICK_FILTER_LABELS[f]}
+              <span className="ledger-chip__count">{quickCounts[f]}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div aria-live="polite">
@@ -282,14 +410,14 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
             </div>
           ) : query.isError ? (
             <Alert variant="error">Không tải được dữ liệu. Vui lòng thử lại.</Alert>
-          ) : rows.length === 0 ? (
+          ) : displayRows.length === 0 ? (
             <EmptyState
               illustration="empty-trips"
               title="Không có lệnh nào trong khoảng thời gian này"
               description={canPlan ? 'Đổi tháng ở thanh trên, hoặc bấm “Thêm dòng” để tạo lệnh mới.' : 'Đổi tháng ở thanh trên để xem khoảng khác.'}
             />
           ) : (
-            <LedgerMobileList rows={rows} ctx={cellCtx} canPlan={canPlan} canMoney={canMoney} />
+            <LedgerMobileList rows={displayRows} ctx={cellCtx} canPlan={canPlan} canMoney={canMoney} />
           )}
         </>
       ) : (
@@ -301,7 +429,7 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
             </div>
           ) : query.isError ? (
             <Alert variant="error">Không tải được dữ liệu. Vui lòng thử lại.</Alert>
-          ) : rows.length === 0 ? (
+          ) : displayRows.length === 0 ? (
             <EmptyState
               illustration="empty-trips"
               title="Không có lệnh nào trong khoảng thời gian này"
@@ -389,7 +517,7 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
                   );
                 })}
               </tbody>
-              {rows.length > 0 && (
+              {displayRows.length > 0 && (
                 <tfoot className="ledger-tfoot">
                   <tr>
                     {table.getRowModel().rows[0]?.getVisibleCells().map((cell) => (
@@ -397,7 +525,7 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
                         key={cell.column.id}
                         className={`ledger-td${(cell.column.columnDef.meta as { align?: 'num' } | undefined)?.align === 'num' ? ' ledger-td--num' : ''}${cell.column.id === 'ledger-code' ? ' ledger-td--frozen' : ''}`}
                       >
-                        {footerTotalFor(cell.column.id, rows)}
+                        {footerTotalFor(cell.column.id, displayRows)}
                       </td>
                     ))}
                   </tr>

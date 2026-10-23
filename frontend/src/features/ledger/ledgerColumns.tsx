@@ -108,10 +108,10 @@ interface LeafMeta {
   groupEnd?: boolean;
 }
 
-type LedgerLeaf = ColumnDef<LedgerRow, unknown> & { meta?: LeafMeta };
+export type LedgerLeaf = ColumnDef<LedgerRow, unknown> & { meta?: LeafMeta };
 /** tanstack v8 column group = a def carrying nested `columns`. Omit keeps the
  *  nested list canonical so contextual typing reaches each leaf's cell. */
-type LedgerGroup = Omit<ColumnDef<LedgerRow, unknown>, 'columns'> & { columns: LedgerLeaf[]; meta?: LeafMeta };
+export type LedgerGroup = Omit<ColumnDef<LedgerRow, unknown>, 'columns'> & { columns: LedgerLeaf[]; meta?: LeafMeta };
 
 export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | LedgerGroup> {
   const plan = ctx.canPlan;
@@ -749,13 +749,30 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
       {
         id: 'grossProfit',
         header: '(Lợi nhuận)',
-        meta: { group: 'result', align: 'num', groupEnd: true },
+        meta: { group: 'result', align: 'num' },
         cell: ({ row }) => {
           const r = row.original;
           if (r.grossProfit == null) return <span className="ledger-cell">—</span>;
           const n = Number(r.grossProfit);
           return (
             <span className={`ledger-cell${n < 0 ? ' ledger-cell--loss' : ''}`}>{money(r.grossProfit)}</span>
+          );
+        },
+      },
+      {
+        id: 'marginPct',
+        header: 'Biên LN',
+        meta: { group: 'result', align: 'num', groupEnd: true },
+        cell: ({ row }) => {
+          const r = row.original;
+          const rev = Number(r.revenue ?? 0);
+          const gp = Number(r.grossProfit ?? 0);
+          if (!rev || r.grossProfit == null) return <span className="ledger-cell">—</span>;
+          const pct = Math.round((gp / rev) * 1000) / 10;
+          return (
+            <span className={`ledger-cell${pct < 0 ? ' ledger-cell--loss' : ''}`}>
+              {pct.toLocaleString('vi-VN')}%
+            </span>
           );
         },
       },

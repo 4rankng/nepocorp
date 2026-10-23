@@ -442,19 +442,21 @@ export default function TripListPage() {
         <TripListHero todayLabel={todayLabel} statusCounts={statusCounts} summary={summary} quickEdit={quickEdit} toggleQuickEdit={toggleQuickEdit} handleExport={handleExport} onAdd={() => navigate('/trips/new')} breakdownPct={breakdownPct} warnThreshold={warnThreshold} month={month} />
       )}
 
-      <TripFiltersBar
-        statusCounts={statusCounts}
-        statusFilter={statusFilter}
-        onStatusFilter={setStatusFilter}
-        searchQuery={searchInput}
-        onSearch={setSearchInput}
-        truckOptions={truckOptions}
-        truckFilter={truckFilter}
-        onTruckFilter={setTruckFilter}
-        customerOptions={customerOptions}
-        customerFilter={customerFilter}
-        onCustomerFilter={setCustomerFilter}
-      />
+      {tableView !== 'thu-chi' && (
+        <TripFiltersBar
+          statusCounts={statusCounts}
+          statusFilter={statusFilter}
+          onStatusFilter={setStatusFilter}
+          searchQuery={searchInput}
+          onSearch={setSearchInput}
+          truckOptions={truckOptions}
+          truckFilter={truckFilter}
+          onTruckFilter={setTruckFilter}
+          customerOptions={customerOptions}
+          customerFilter={customerFilter}
+          onCustomerFilter={setCustomerFilter}
+        />
+      )}
 
       <div className="trip-view-toggle" role="tablist" aria-label="Chế độ xem bảng">
         <button

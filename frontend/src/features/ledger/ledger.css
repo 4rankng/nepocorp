@@ -42,8 +42,22 @@
 }
 
 .ledger-toolbar__search {
-  flex: 1 1 220px;
-  max-width: 320px;
+  flex: 0 1 260px;
+  width: 260px;
+}
+
+.ledger-toolbar__select {
+  max-width: 190px;
+}
+
+.ledger-toolbar__spacer {
+  flex: 1 1 auto;
+}
+
+.ledger-toolbar__actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
 }
 
 /* ── Quick-add row ───────────────────────────────────────────────────────── */
@@ -70,10 +84,10 @@
 
 .ledger-scroll {
   /* Thu chi view hides the dispatch hero, so the grid starts ~275px from the
-     top — size the scroll area so sticky header AND totals footer fit the
-     viewport without page scrolling. */
+     top — cap the scroll area at the viewport so the sticky header + totals
+     footer stay reachable; the container itself sizes to its content (no
+     reserved blank space when the month has few rows). */
   max-height: calc(100vh - 330px);
-  min-height: 340px;
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -623,6 +637,86 @@
 
 .ledger-m-totalbar b {
   font-weight: 700;
+}
+
+/* ── Saved views (bộ cột) + chip lọc nhanh ───────────────────────────────── */
+
+.ledger-views {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ledger-views__presets {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.ledger-views__presets button {
+  border: 0;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg-2);
+  cursor: pointer;
+}
+
+.ledger-views__presets button.is-active {
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+}
+
+.ledger-views__filters {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ledger-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--fg-2);
+  cursor: pointer;
+}
+
+.ledger-chip:hover { border-color: var(--fg-3); }
+
+.ledger-chip.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.ledger-chip.is-empty { opacity: 0.55; }
+
+.ledger-chip__count {
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 11px;
+  color: var(--fg-2);
+}
+
+.ledger-chip.is-active .ledger-chip__count {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  color: var(--fg);
 }
 
 /* Sticky totals footer (Σ of the loaded rows). */
