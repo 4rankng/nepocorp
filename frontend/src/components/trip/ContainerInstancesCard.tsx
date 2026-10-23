@@ -436,6 +436,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
               </div>
 
               <div className="ci-body">
+              <div className="ci-fields-col">
               <div className="ci-grid">
                 <div className="ci-field">
                   <label className="ci-label" htmlFor={`containerNumber-${row._key}`}>
@@ -485,6 +486,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
               <div className="ci-seal-stack">
                 {renderSealFields(row, 0)}
                 {renderSealFields(row, 1)}
+              </div>
               </div>
 
               <div className="ci-photo-rail">

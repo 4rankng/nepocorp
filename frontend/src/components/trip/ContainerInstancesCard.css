@@ -85,26 +85,39 @@ select.input.ci-input-sm {
   padding-right: 32px;
 }
 
-/* Evidence flow: each photo slot is one row beside its own label/capture button. */
-.ci-evidence-stack {
+/* ── Cont body: 2 cột — trái dữ liệu, phải rail ảnh (mockup demo2) ─────── */
+.ci-body {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 16px 20px;
+  align-items: start;
 }
 
-./* Seal stack dọc: [Seal N] [số | ghi chú | (x)] trên 1 hàng inline. */
+/* Hàng 1: số container co giãn + trọng lượng 130px; ghi chú full hàng 2. */
+.ci-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px;
+  gap: 10px 12px;
+  align-items: start;
+}
+.ci-grid > .ci-field:nth-child(3) { grid-column: 1 / -1; }
+
+/* Seal stack dọc: label đậm trái + [số | ghi chú | (x)] trên một hàng. */
 .ci-seal-stack {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 .ci-seal-inline {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1.3fr) 28px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+.ci-seal-inline__inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) 28px;
   gap: 8px;
   align-items: center;
 }
@@ -114,13 +127,14 @@ select.input.ci-input-sm {
   color: var(--ink);
 }
 
-/* Rail ảnh phải: divider dọc + 3 tile vuông 96px, label dưới tile. */
+/* Rail ảnh phải: divider dọc + tiêu đề + 3 tile vuông 96px, label dưới. */
 .ci-photo-rail {
   display: flex;
   flex-direction: column;
   gap: 10px;
   border-left: 1px solid var(--line);
   padding-left: 20px;
+  align-self: stretch;
 }
 .ci-photo-rail__title {
   font-size: 13px;
@@ -133,252 +147,7 @@ select.input.ci-input-sm {
   flex-wrap: wrap;
 }
 
-/* Body 2 cột: fields trái | rail ảnh phải. */
-.ci-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  gap: 16px 20px;
-  align-items: start;
-}
-@media (max-width: 900px) {
-  .ci-body { grid-template-columns: 1fr; }
-  .ci-photo-rail { border-left: none; padding-left: 0; }
-}
-.ci-evidence-col .ci-seal-section {
-  grid-template-columns: 1fr;
-  gap: 4px;
-}
-@media (max-width: 900px) {
-  .ci-evidence-grid { grid-template-columns: 1fr; }
-}
-
-.ci-photo-lane {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
-  gap: 6px 12px;
-  align-items: center;
-}
-
-.ci-photo-lane__head {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.ci-photo-lane__title {
-  color: var(--fg-1);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.ci-photo-lane__capture {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 34px;
-  padding: 5px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--fg-2);
-  font: inherit;
-  font-size: var(--fs-xs);
-  line-height: 1.35;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.ci-photo-lane__capture:hover {
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  background: var(--accent-soft);
-}
-
-.ci-photo-lane__drop {
-  min-width: 0;
-  min-height: 0;
-  border: 1px dashed var(--line-2);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.54);
-  color: var(--fg-3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  overflow-x: auto;
-}
-
-.ci-photo-lane__drop:hover {
-  border-color: rgba(0, 177, 79, 0.34);
-  background: rgba(0, 177, 79, 0.05);
-}
-
-.ci-seal-section {
-  display: grid;
-  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
-  gap: 6px 12px;
-  align-items: center;
-  padding: 0;
-}
-
-.ci-seal-section__label {
-  margin-bottom: 0;
-}
-
-.ci-seal-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
-  align-items: stretch;
-  min-width: 0;
-  padding: 0;
-}
-
-.ci-seal-row__clear {
-  min-width: 40px;
-}
-
-/* Empty-photos placeholder — a full-width affordance inside the compact tile. */
-.ci-photo-empty {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  width: 100%;
-  min-height: 40px;
-  color: var(--fg-3);
-  background: transparent;
-  border: 0;
-  padding: 0;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.ci-photo-empty:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
-
-.ci-photo-slot {
-  position: relative;
-  display: block;
-  flex: none;
-  width: 88px;
-  height: 62px;
-}
-
-.ci-photo-slot__view {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  display: block;
-}
-
-.ci-photo-slot__view:disabled {
-  cursor: wait;
-}
-
-.ci-photo-slot__view img {
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid var(--line);
-  display: block;
-}
-
-.ci-photo-slot__remove {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 24px;
-  height: 24px;
-  border: 1px solid rgba(220, 38, 38, 0.42);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.94);
-  color: var(--danger);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  cursor: pointer;
-}
-
-.ci-photo-slot__remove:hover {
-  background: #fff;
-  border-color: rgba(220, 38, 38, 0.52);
-}
-
-.ci-photo-slot__remove:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
-
-.ci-photo-slot__pending {
-  position: absolute;
-  left: 3px;
-  bottom: 3px;
-  background: var(--warning);
-  color: #fff;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 999px;
-  line-height: 1.2;
-}
-
-/* Phones: the paired rows stack, and every tap target returns to 44px. */
-@container (max-width: 600px) {
-  .ci-photo-lane,
-  .ci-seal-section {
-    grid-template-columns: 1fr;
-  }
-
-  .ci-photo-lane__head {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .ci-photo-lane__capture,
-  .ci-container-head__remove {
-    min-height: 44px;
-  }
-
-  .ci-photo-slot {
-    width: 104px;
-    height: 74px;
-  }
-
-  .ci-photo-slot__remove {
-    width: 32px;
-    height: 32px;
-  }
-}
-
-@container (max-width: 400px) {
-  .ci-seal-row {
-    grid-template-columns: 1fr;
-  }
-
-  .ci-photo-slot {
-    width: 100%;
-    height: 96px;
-  }
-}
-
-/* ── Vòng 8: photo tile 88px click-to-capture ────────────────────────────
-   Toàn tile là nút: bấm mở ContainerScanner (camera + thư viện). Label dưới
-   tile; khi có ảnh: nút chụp lại + xoá là overlay nhỏ góc tile. */
+/* Photo tile: toàn tile là nút — bấm mở ContainerScanner (camera/thư viện). */
 .ci-photo-item {
   display: flex;
   flex-direction: column;
@@ -389,12 +158,6 @@ select.input.ci-input-sm {
   position: relative;
   width: 96px;
   height: 96px;
-}
-.ci-photo-item__label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--fg-2);
-  text-align: center;
 }
 .ci-photo-tile__btn {
   width: 100%;
@@ -422,7 +185,7 @@ select.input.ci-input-sm {
 }
 .ci-photo-tile.has-photo .ci-photo-tile__btn {
   border-style: solid;
-  border-color: var(--line);
+  border-color: var(--accent);
   padding: 0;
 }
 .ci-photo-tile.has-photo img {
@@ -447,5 +210,19 @@ select.input.ci-input-sm {
 }
 .ci-photo-tile:hover .ci-photo-tile__act,
 .ci-photo-tile__act:focus-visible { opacity: 1; }
-.ci-photo-tile__act--retake { left: 4px; bottom: 4px; }
-.ci-photo-tile__act--remove { right: 4px; bottom: 4px; background: rgba(185, 28, 28, 0.82); }
+.ci-photo-tile__act--retake { left: 4px; top: 4px; }
+.ci-photo-tile__act--remove { right: 4px; top: 4px; background: rgba(185, 28, 28, 0.82); }
+.ci-photo-item__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-2);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .ci-body { grid-template-columns: 1fr; }
+  .ci-photo-rail { border-left: none; padding-left: 0; }
+  .ci-grid { grid-template-columns: 1fr; }
+  .ci-seal-inline { grid-template-columns: 48px 1fr; }
+  .ci-seal-inline__inputs { grid-template-columns: 1fr; }
+}
