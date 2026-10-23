@@ -137,6 +137,13 @@ export function LiveFleetMap({ vehicles, height = '380px' }: LiveFleetMapProps) 
       }}
     >
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {/* Legend overlay góc dưới phải (audit Gemini vòng 11) — giải nghĩa màu
+         dot trực tiếp trên bản đồ, không nằm ở section-head nữa. */}
+      <div className="fleet-map-legend" aria-hidden="true">
+        <span><i style={{ background: LIVE_STATUS_COLOR.moving }} />Đang chạy</span>
+        <span><i style={{ background: LIVE_STATUS_COLOR.stopped }} />Dừng</span>
+        <span><i style={{ background: LIVE_STATUS_COLOR.offline }} />Mất tín hiệu</span>
+      </div>
     </div>
   );
 }

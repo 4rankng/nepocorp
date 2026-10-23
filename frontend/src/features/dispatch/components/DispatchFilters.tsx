@@ -21,7 +21,7 @@ const FILTER_TABS: { key: FleetFilter; label: string }[] = [
   { key: 'running', label: 'Đang chạy' },
   { key: 'ready', label: 'Sẵn sàng' },
   { key: 'waiting', label: 'Chờ tài xế' },
-  { key: 'noassign', label: 'Chưa giao lái xe' },
+  { key: 'noassign', label: 'Chưa giao' },
   { key: 'maint', label: 'Bảo dưỡng' },
 ];
 

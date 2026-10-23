@@ -3,7 +3,7 @@
  *
  * The app ships four flat-vector SVG illustrations (palette mirrors the
  * --illus-* tokens in styles/tokens.css):
- *   - empty-flat-trips.svg   delivery truck + route + pin   -> "trips"
+ *   - container-truck.webp    semi truck hauling a container  -> "trips"
  *   - empty-flat-fleet.svg   truck hauling a container      -> "fleet"
  *   - empty-flat-ops.svg     dispatch map + route + pin     -> "ops"
  *   - empty-flat-finance.svg invoice + coin                 -> "finance"
@@ -21,7 +21,9 @@ const BASE = '/assets/illustrations';
 export type EmptyCategory = 'trips' | 'fleet' | 'ops' | 'finance';
 
 export const EMPTY_ILLUSTRATIONS: Record<EmptyCategory, string> = {
-  trips: `${BASE}/empty-flat-trips.svg`,
+  // Generated container-truck art (Nano Banana/MiniMax, keyed webp) — user
+  // request 24/10: thay xe nhỏ bằng xe đầu kéo container.
+  trips: `${BASE}/container-truck.webp`,
   fleet: `${BASE}/empty-flat-fleet.svg`,
   ops: `${BASE}/empty-flat-ops.svg`,
   finance: `${BASE}/empty-flat-finance.svg`,

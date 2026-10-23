@@ -748,6 +748,19 @@ button.ledger-code__customer:hover { color: var(--accent-ink, var(--brand, #00B1
   background: var(--surface-2);
 }
 
+/* Trạng thái bản mỏng (audit Gemini vòng 11): dot 6px + chữ 11px, bỏ nền pill —
+   giữ chữ đọc trực tiếp (không tooltip), cột bớt "viên" dày giữa bảng tiền. */
+.ledger-table .ledger-status .pill {
+  background: transparent;
+  border: none;
+  padding: 0;
+  gap: 5px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ledger-table .ledger-status .pill .dot { width: 6px; height: 6px; }
+
 /* Sticky totals footer (Σ of the loaded rows). */
 .ledger-tfoot td {
   position: sticky;

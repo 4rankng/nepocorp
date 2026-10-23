@@ -163,19 +163,21 @@ export default function DispatchPage() {
         <section className="dispatch-live-col dispatch-live-col--fleet">
           <div className="section-head">
             <div className="section-title"><h2>Trạng thái đội xe</h2><span className="count">{fleetCounts.all} xe</span></div>
-            <DispatchFilters fleetFilter={fleetFilter} fleetCounts={fleetCounts} onFilterChange={setFleetFilter} />
           </div>
-          <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} liveVehicles={live?.vehicles} />
+          {/* Filter tabs nằm TRONG card (vòng 10): head 1 dòng ở cả 2 cột → bảng
+              đội xe và map thẳng hàng đỉnh. Trước đây tabs ở section-head làm
+              cột trái cao hơn 1 hàng, đỉnh bảng lệch so với đỉnh map. */}
+          <div className="fleet-panel">
+            <DispatchFilters fleetFilter={fleetFilter} fleetCounts={fleetCounts} onFilterChange={setFleetFilter} />
+            <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} liveVehicles={live?.vehicles} />
+          </div>
         </section>
         <section className="dispatch-live-col dispatch-live-col--map">
           <div className="section-head">
             <div className="section-title"><h2>Vị trí thời gian thực</h2><span className="count">{live?.vehicles.length ?? 0} xe</span></div>
-            <div style={{ display: 'flex', gap: 14, fontSize: 'var(--fs-body)', color: 'var(--text-2, #6B7280)', flexWrap: 'wrap' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#00B14F', borderRadius: '50%', display: 'inline-block' }} />Đang chạy</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#F59E0B', borderRadius: '50%', display: 'inline-block' }} />Dừng</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#94A3B8', borderRadius: '50%', display: 'inline-block' }} />Mất tín hiệu</span>
-              <span style={{ color: 'var(--text-3, #9CA3AF)' }}>· Cập nhật mỗi 10 giây</span>
-            </div>
+            {/* Legend chuyển vào trong map (overlay góc dưới phải); head chỉ còn
+                chấm live nhấp nháy + chu kỳ polling (audit Gemini vòng 11). */}
+            <span className="map-live" title="Cập nhật mỗi 10 giây"><i />10s</span>
           </div>
           {live?.error ? (
             <div style={{ padding: '14px 16px', background: 'color-mix(in srgb, var(--warning) 12%, transparent)', color: '#B45309', borderRadius: 10, border: '1px solid color-mix(in srgb, var(--warning) 35%, transparent)', fontSize: 'var(--fs-body)' }}>

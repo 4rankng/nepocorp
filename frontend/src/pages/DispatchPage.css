@@ -361,11 +361,47 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
   margin-bottom: 20px;
 }
+.dispatch-page .dispatch-live-col { display: flex; flex-direction: column; }
 .dispatch-page .dispatch-live-row .fleet-table,
 .dispatch-page .dispatch-live-row .fleet-empty { margin-bottom: 0; }
+/* Card đội xe gộp filter tabs + bảng (vòng 10): tabs thành toolbar trong card,
+   head 2 cột cùng 1 dòng → đỉnh card đội xe thẳng đỉnh map. */
+.dispatch-page .dispatch-live-row .fleet-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  /* Đủ 480px ngang map (audit Gemini vòng 11): ít xe thì panel vẫn cao bằng,
+     nhiều xe thì bảng cuộn nội bộ thay vì đẩy layout lệch đáy. */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  max-height: 480px;
+}
+.dispatch-page .dispatch-live-row .fleet-panel .fleet-table {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.dispatch-page .dispatch-live-row .fleet-panel > .list-filter-bar {
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 6px 12px;
+  background: var(--surface);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.dispatch-page .dispatch-live-row .fleet-panel > .list-filter-bar::-webkit-scrollbar { display: none; }
+.dispatch-page .dispatch-live-row .fleet-panel .fleet-table,
+.dispatch-page .dispatch-live-row .fleet-panel .fleet-empty {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
 /* Chip biển số không bao giờ co/wrap trong cột 120px — badge đăng kiểm rơi
    xuống dòng addr thay vì nén chip (font mono 87px + badge tràn cell 96px). */
 .dispatch-page .dispatch-live-row .fleet-plate-line { flex-wrap: wrap; }
@@ -389,6 +425,41 @@
 .dispatch-page .fleet-route-sub {
   font-size: var(--fs-xs); color: var(--ink-3); line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Map legend overlay + live dot (audit Gemini vòng 11) ─────────────── */
+.fleet-map-legend {
+  position: absolute;
+  right: 10px; bottom: 10px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border-2, #E5E7EB);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10);
+  font-size: 11px;
+  color: var(--ink-2, #4B5563);
+  pointer-events: none;
+}
+.fleet-map-legend span { display: inline-flex; align-items: center; gap: 5px; line-height: 1.3; white-space: nowrap; }
+.fleet-map-legend i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.dispatch-page .map-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: help;
+}
+.dispatch-page .map-live i {
+  width: 8px; height: 8px;
+  background: var(--accent, #00B14F);
+  border-radius: 50%;
+  animation: d-pulse 2s ease-in-out infinite;
 }
 
 /* ── Orders queue (table-like) ────────────────────────────────────────── */
