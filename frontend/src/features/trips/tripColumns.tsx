@@ -406,10 +406,9 @@ export function buildTripColumns(
         );
       },
     },
-    // road + totalCost chỉ còn ở lưới quick-edit (audit 23/10): view grid 9
-    // track vừa khít 1130px không scroll ngang; số liệu vẫn đầy đủ ở Bảng kế
-    // hoạch và quick-edit.
-    ...(quickEdit?.enabled ? [{
+    // road + totalCost bị ẨN ở view grid qua columnVisibility (9 track vừa khít
+    // 1130px, audit 23/10); defs giữ nguyên để lưới quick-edit (figures) dùng.
+    {
       id: 'road',
       header: 'Tổng tiền đi đường lái xe nhận',
       accessorFn: (row) => Number(row.totalRoadAllowance ?? 0),
@@ -431,7 +430,7 @@ export function buildTripColumns(
         }
         return moneyCell(road);
       },
-    } satisfies ColumnDef<TripDetail>] : []),
+    },
     {
       id: 'revenue',
       // Reader sees the ex-VAT revenue the "LN gộp" column is computed on,
@@ -491,7 +490,7 @@ export function buildTripColumns(
         );
       },
     } satisfies ColumnDef<TripDetail>] : []),
-    ...(quickEdit?.enabled ? [{
+    {
       id: 'totalCost',
       header: 'Tổng chi phí',
       accessorFn: (row) => getTripDisplayTotalCost(row),
@@ -521,7 +520,7 @@ export function buildTripColumns(
           </div>
         );
       },
-    } satisfies ColumnDef<TripDetail>] : []),
+    },
     {
       id: 'grossProfit',
       header: 'LN gộp',
