@@ -472,17 +472,33 @@ function FooterTotal({ columnId, rows }: { columnId: string; rows: LedgerRow[] }
   }
   const isCount = !!TOTAL_COUNT_BY_COLUMN[columnId];
   if (!isCount && !TOTAL_MONEY_BY_COLUMN[columnId]) return null;
+  // Sell-fee columns sum their expenseRollup entries (LedgerRow carries no
+  // flat field per fee type — the naive field lookup silently summed 0).
+  const rollupSum = (expenseType: string) => rows.reduce(
+    (acc, row) => acc + Number(row.expenseRollup.find(e => e.expenseType === expenseType)?.sellTotal || 0),
+    0,
+  );
   let sum = 0;
   for (const row of rows) {
-    if (columnId === 'sell-other') {
-      const named = new Set<string>([ANCILLARY_EXPENSE_TYPES[0], ANCILLARY_EXPENSE_TYPES[1]]);
-      sum += row.expenseRollup
-        .filter(e => !named.has(e.expenseType))
-        .reduce((acc, e) => acc + Number(e.sellTotal || 0), 0);
-      continue;
+    switch (columnId) {
+      case 'sell-LIFTING':
+        sum += rollupSum(ANCILLARY_EXPENSE_TYPES[0]);
+        continue;
+      case 'sell-LOWERING':
+        sum += rollupSum(ANCILLARY_EXPENSE_TYPES[1]);
+        continue;
+      case 'sell-other': {
+        const named = new Set<string>([ANCILLARY_EXPENSE_TYPES[0], ANCILLARY_EXPENSE_TYPES[1]]);
+        sum += row.expenseRollup
+          .filter(e => !named.has(e.expenseType))
+          .reduce((acc, e) => acc + Number(e.sellTotal || 0), 0);
+        continue;
+      }
+      default: {
+        const value = (row as unknown as Record<string, string | null>)[columnId];
+        sum += Number(value ?? 0) || 0;
+      }
     }
-    const value = (row as unknown as Record<string, string | null>)[columnId];
-    sum += Number(value ?? 0) || 0;
   }
   return <>{isCount ? formatNumber(Math.round(sum)) : formatCurrency(Math.round(sum))}</>;
 }
