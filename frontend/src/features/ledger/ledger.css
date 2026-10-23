@@ -719,6 +719,25 @@
   color: var(--fg);
 }
 
+/* Cột Trạng thái: sticky thứ hai (sau cột Lệnh), đổ bóng tách biệt để text
+   40 cột bên phải không "chui" vào khi cuộn ngang. */
+.ledger-td--statuscol,
+.ledger-th--statuscol {
+  position: sticky;
+  left: 150px;
+  z-index: 2;
+  background: var(--surface);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+  border-right: 1px solid var(--line);
+  width: 92px;
+  min-width: 92px;
+}
+
+.ledger-table thead th.ledger-th--statuscol {
+  z-index: 4;
+  background: var(--surface-2);
+}
+
 /* Sticky totals footer (Σ of the loaded rows). */
 .ledger-tfoot td {
   position: sticky;

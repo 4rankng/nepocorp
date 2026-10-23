@@ -61,7 +61,7 @@ const QUICK_FILTER_LABELS: Record<QuickFilter, string> = {
   unreconciled: 'Chưa đối chiếu',
 };
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 200;
 
 /**
  * Bảng kế hoạch (/bang-ke-hoach) — bảng tổng hợp một lệnh một dòng, sửa trực
@@ -457,7 +457,7 @@ export function LedgerGrid() {
                         <th
                           key={header.id}
                           colSpan={header.colSpan}
-                          className={`ledger-th${meta.align === 'num' ? ' ledger-th--num' : ''}${meta.groupEnd ? ' ledger-th--group-end' : ''}${header.column.id === 'ledger-code' ? ' ledger-th--frozen' : ''}`}
+                          className={`ledger-th${meta.align === 'num' ? ' ledger-th--num' : ''}${meta.groupEnd ? ' ledger-th--group-end' : ''}${header.column.id === 'ledger-code' ? ' ledger-th--frozen' : ''}${header.column.id === 'ledger-status' ? ' ledger-th--statuscol' : ''}`}
                         >
                           {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                         </th>
@@ -482,7 +482,7 @@ export function LedgerGrid() {
                           return (
                             <td
                               key={cell.id}
-                              className={`ledger-td${meta.align === 'num' ? ' ledger-td--num' : ''}${meta.groupEnd ? ' ledger-td--group-end' : ''}${cell.column.id === 'ledger-code' ? ' ledger-td--frozen' : ''}`}
+                              className={`ledger-td${meta.align === 'num' ? ' ledger-td--num' : ''}${meta.groupEnd ? ' ledger-td--group-end' : ''}${cell.column.id === 'ledger-code' ? ' ledger-td--frozen' : ''}${cell.column.id === 'ledger-status' ? ' ledger-td--statuscol' : ''}`}
                             >
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
