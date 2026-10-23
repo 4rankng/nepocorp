@@ -15,6 +15,21 @@ interface FleetGridProps {
   liveVehicles?: LiveFleetVehicle[];
 }
 
+/** Tuyến 2 dòng (audit vòng 8): chặng chính đậm, chi tiết điểm giao nhỏ xám —
+ *  đọc nhanh hơn chuỗi dài một dòng trong cột ~240px. routeName dạng
+ *  "Hải Phòng - HTX chè Nà Tản, Tân Lập Mộc Châu" — tách ở " - " đầu tiên;
+ *  title giữ chuỗi đầy đủ để hover. */
+function RouteCell({ name }: { name: string }) {
+  const cut = name.indexOf(' - ');
+  if (cut <= 0) return <span className="fleet-route" title={name}>{name}</span>;
+  return (
+    <span className="fleet-route-2" title={name}>
+      <span className="fleet-route-main">{name.slice(0, cut)}</span>
+      <span className="fleet-route-sub">{name.slice(cut + 3)}</span>
+    </span>
+  );
+}
+
 function inspectionBadge(iso: string | null | undefined): { cls: string; title: string } | null {
   if (!iso) return null;
   const days = Math.round((new Date(iso).getTime() - Date.now()) / 86400000);
@@ -130,7 +145,7 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick, liveVehic
             {/* Tuyến đường */}
             <div className="fleet-cell fleet-col-route">
               {isRunning ? (
-                <span className="fleet-route">{activeTrip.routeName}</span>
+                <RouteCell name={activeTrip.routeName} />
               ) : (
                 <span className="fleet-dash">—</span>
               )}

@@ -352,6 +352,45 @@
   font-size: var(--fs-sm);
 }
 
+/* ── Side-by-side: đội xe trái + bản đồ phải (audit vòng 8) ─────────────
+ * Golden area 1568x1190: bảng ~640px + gap 16 + map ~864px thay vì map
+ * full-width 1520x520 đẩy bảng đội xe xuống dưới fold. Chiều cao theo bảng
+ * tự nhiên (10 dòng ~460px, map 480px). Dưới 1280px sập dọc và trả nguyên
+ * tỉ lệ cột gốc cho các breakpoint 1100/1023. */
+.dispatch-page .dispatch-live-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+.dispatch-page .dispatch-live-row .fleet-table,
+.dispatch-page .dispatch-live-row .fleet-empty { margin-bottom: 0; }
+/* Chip biển số không bao giờ co/wrap trong cột 120px — badge đăng kiểm rơi
+   xuống dòng addr thay vì nén chip (font mono 87px + badge tràn cell 96px). */
+.dispatch-page .dispatch-live-row .fleet-plate-line { flex-wrap: wrap; }
+.dispatch-page .dispatch-live-row .fleet-plate-line .plate { white-space: nowrap; flex-shrink: 0; }
+@media (min-width: 1281px) {
+  .dispatch-page .dispatch-live-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  }
+  /* Bảng co còn ~640px: biển số/lái xe hẹp lại, tuyến + khách giữ ưu tiên
+     (audit: KHÔNG ẩn cột khách hàng — dispatcher scan để gọi điện/ghép chuyến). */
+  .dispatch-page .dispatch-live-row .fleet-head,
+  .dispatch-page .dispatch-live-row .fleet-row {
+    grid-template-columns: 120px 110px minmax(0, 2.2fr) minmax(0, 1.4fr);
+    gap: 10px;
+  }
+}
+/* Tuyến 2 dòng (FleetGrid RouteCell): chặng chính đậm + chi tiết điểm giao
+   nhỏ xám; title giữ chuỗi đầy đủ để hover xem nguyên văn. */
+.dispatch-page .fleet-route-2 { display: flex; flex-direction: column; min-width: 0; }
+.dispatch-page .fleet-route-main { font-size: var(--fs-sm); font-weight: 600; color: var(--ink); line-height: 1.3; }
+.dispatch-page .fleet-route-sub {
+  font-size: var(--fs-xs); color: var(--ink-3); line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
 /* ── Orders queue (table-like) ────────────────────────────────────────── */
 .dispatch-page .orders-card {
   background: var(--surface);

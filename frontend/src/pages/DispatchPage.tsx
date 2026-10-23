@@ -155,32 +155,41 @@ export default function DispatchPage() {
         </div>
       </section>
 
-      <div className="section-head">
-        <div className="section-title"><h2>Vị trí thời gian thực</h2><span className="count">{live?.vehicles.length ?? 0} xe</span></div>
-        <div style={{ display: 'flex', gap: 14, fontSize: 'var(--fs-body)', color: 'var(--text-2, #6B7280)', flexWrap: 'wrap' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#00B14F', borderRadius: '50%', display: 'inline-block' }} />Đang chạy</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#F59E0B', borderRadius: '50%', display: 'inline-block' }} />Dừng</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#94A3B8', borderRadius: '50%', display: 'inline-block' }} />Mất tín hiệu</span>
-          <span style={{ color: 'var(--text-3, #9CA3AF)' }}>· Cập nhật mỗi 10 giây</span>
-        </div>
+      {/* Side-by-side (Gemini audit vòng 8): đội xe trái là dữ liệu điều phối
+          chính, map phải bổ trợ ngữ cảnh. Bảng ~640px + map ~864px cùng khối —
+          cả hai nằm gọn golden area 1568x1190 thay vì map full-width 1520x520
+          đẩy bảng đội xe xuống dưới fold. Sắp dọc dưới 1280px. */}
+      <div className="dispatch-live-row">
+        <section className="dispatch-live-col dispatch-live-col--fleet">
+          <div className="section-head">
+            <div className="section-title"><h2>Trạng thái đội xe</h2><span className="count">{fleetCounts.all} xe</span></div>
+            <DispatchFilters fleetFilter={fleetFilter} fleetCounts={fleetCounts} onFilterChange={setFleetFilter} />
+          </div>
+          <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} liveVehicles={live?.vehicles} />
+        </section>
+        <section className="dispatch-live-col dispatch-live-col--map">
+          <div className="section-head">
+            <div className="section-title"><h2>Vị trí thời gian thực</h2><span className="count">{live?.vehicles.length ?? 0} xe</span></div>
+            <div style={{ display: 'flex', gap: 14, fontSize: 'var(--fs-body)', color: 'var(--text-2, #6B7280)', flexWrap: 'wrap' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#00B14F', borderRadius: '50%', display: 'inline-block' }} />Đang chạy</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#F59E0B', borderRadius: '50%', display: 'inline-block' }} />Dừng</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><i style={{ width: 9, height: 9, background: '#94A3B8', borderRadius: '50%', display: 'inline-block' }} />Mất tín hiệu</span>
+              <span style={{ color: 'var(--text-3, #9CA3AF)' }}>· Cập nhật mỗi 10 giây</span>
+            </div>
+          </div>
+          {live?.error ? (
+            <div style={{ padding: '14px 16px', background: 'color-mix(in srgb, var(--warning) 12%, transparent)', color: '#B45309', borderRadius: 10, border: '1px solid color-mix(in srgb, var(--warning) 35%, transparent)', fontSize: 'var(--fs-body)' }}>
+              Dữ liệu GPS tạm thời không khả dụng. {live.error === 'GPS provider not configured' ? 'Chưa cấu hình nhà cung cấp GPS.' : 'Vui lòng thử lại sau.'}
+            </div>
+          ) : live && live.vehicles.length > 0 ? (
+            <LiveFleetMap vehicles={live.vehicles} height="480px" />
+          ) : (
+            <div style={{ padding: '14px 16px', background: 'var(--surface-2, #F5F7F6)', color: 'var(--text-2, #6B7280)', borderRadius: 10, fontSize: 'var(--fs-body)' }}>
+              Chưa có xe nào đang chạy để theo dõi.
+            </div>
+          )}
+        </section>
       </div>
-      {live?.error ? (
-        <div style={{ padding: '14px 16px', background: 'color-mix(in srgb, var(--warning) 12%, transparent)', color: '#B45309', borderRadius: 10, border: '1px solid color-mix(in srgb, var(--warning) 35%, transparent)', fontSize: 'var(--fs-body)', marginBottom: 20 }}>
-          Dữ liệu GPS tạm thời không khả dụng. {live.error === 'GPS provider not configured' ? 'Chưa cấu hình nhà cung cấp GPS.' : 'Vui lòng thử lại sau.'}
-        </div>
-      ) : live && live.vehicles.length > 0 ? (
-        <LiveFleetMap vehicles={live.vehicles} height="520px" />
-      ) : (
-        <div style={{ padding: '14px 16px', background: 'var(--surface-2, #F5F7F6)', color: 'var(--text-2, #6B7280)', borderRadius: 10, fontSize: 'var(--fs-body)', marginBottom: 20 }}>
-          Chưa có xe nào đang chạy để theo dõi.
-        </div>
-      )}
-
-      <div className="section-head">
-        <div className="section-title"><h2>Trạng thái đội xe</h2><span className="count">{fleetCounts.all} xe</span></div>
-        <DispatchFilters fleetFilter={fleetFilter} fleetCounts={fleetCounts} onFilterChange={setFleetFilter} />
-      </div>
-      <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} liveVehicles={live?.vehicles} />
 
       <div className="section-head">
         <div className="section-title"><h2>Đơn hàng cần điều vận</h2><span className="count">{pendingTrips.length} đơn</span></div>
