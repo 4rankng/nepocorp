@@ -98,10 +98,7 @@ export function TripListHero({ todayLabel, statusCounts, summary, quickEdit, tog
             </div>
             <div className="metric">
               <div className="metric-label">
-                Tổng giá trị lệnh{' '}
-                <span style={{ fontWeight: 500, fontSize: 'var(--fs-xs)', lineHeight: 1.35, opacity: 0.75 }}>
-                  (gồm VAT · tất cả trạng thái)
-                </span>
+                Tổng giá trị lệnh
               </div>
               <div className="metric-value d-mono">
                 {formatMoney(summary?.totalRevenue ?? 0)}
