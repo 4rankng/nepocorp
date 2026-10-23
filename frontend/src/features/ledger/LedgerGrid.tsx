@@ -103,6 +103,14 @@ export function LedgerGrid() {
 
   // ── Bộ cột theo góc nhìn (Saved Views) + chip lọc nhanh ────────────────────
   const [bandView, setBandView] = useState('full');
+  // Band Chi phí thu gọn (audit Gemini 23/10): ẩn 4 cột chi tiết phụ (hạch
+  // toán, lít, đơn giá, NCC dầu), giữ vé đường + thành tiền dầu + lương —
+  // tiết kiệm ~400px scroll ngang. Mặc định GỌN, localStorage ghi nhớ.
+  const [costDetail, setCostDetail] = useState(() => localStorage.getItem('ledger-cost-detail') === '1');
+  const toggleCostDetail = () => setCostDetail((v) => {
+    localStorage.setItem('ledger-cost-detail', v ? '0' : '1');
+    return !v;
+  });
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const quickCounts: Record<QuickFilter, number> = {
     all: rows.length,
@@ -225,11 +233,17 @@ export function LedgerGrid() {
       if (g.id === 'g-identity') return true;
       const band = GROUP_BAND[String(g.id)];
       return band != null && activeBands.includes(band);
+    }).map((g) => {
+      if (g.id === 'g-cost' && !costDetail) {
+        const hide = new Set(['roadAllowance', 'fuelLiters', 'fuelUnitPrice', 'fuelSupplier']);
+        return { ...g, columns: (g as LedgerGroup).columns.filter((c: LedgerLeaf) => !hide.has(String(c.id))) };
+      }
+      return g;
     }) as ColumnDef<LedgerRow, unknown>[],
     // columns + activeBands thay đổi cùng lúc khi người dùng đổi góc nhìn;
     // đổi view remount cell editor nhưng đó là hành động chủ động, chấp nhận được.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [columns, bandView],
+    [columns, bandView, costDetail],
   );
 
   const table = useReactTable({
@@ -345,6 +359,15 @@ export function LedgerGrid() {
               {v.label}
             </button>
           ))}
+          <button
+            type="button"
+            className={`ledger-views__cost-toggle${costDetail ? ' is-active' : ''}`}
+            aria-pressed={costDetail}
+            title={costDetail ? 'Ẩn cột chi tiết chi phí (hạch toán, lít, đơn giá, NCC dầu)' : 'Hiện đủ cột chi tiết chi phí'}
+            onClick={toggleCostDetail}
+          >
+            {costDetail ? 'Chi phí: Đủ' : 'Chi phí: Gọn'}
+          </button>
         </div>
         <div className="ledger-views__filters">
           {(Object.keys(quickCounts) as QuickFilter[]).map(f => (

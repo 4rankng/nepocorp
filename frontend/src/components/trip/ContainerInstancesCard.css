@@ -92,6 +92,24 @@ select.input.ci-input-sm {
   border-top: 1px solid var(--line);
 }
 
+/* Band input seal ngang trên: [Seal N | số | ghi chú (x)] x2 (vòng 4). */
+.ci-seal-band {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+.ci-seal-band .ci-seal-section {
+  display: grid;
+  grid-template-columns: auto minmax(140px, 1fr) minmax(140px, 1.2fr) 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+}
+.ci-seal-band .ci-seal-row {
+  display: contents;
+}
+
 /* 3 cột ngang: ảnh cont | seal 1 | seal 2 (audit Gemini 23/10). */
 .ci-evidence-grid {
   display: grid;
@@ -105,17 +123,19 @@ select.input.ci-input-sm {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
-/* Trong cột hẹp: photo lane chuyển label-trên/ảnh-dưới, drop cao 110px. */
+/* Cột đồng nhất: head + drop 120px — 3 cột giống hệt nhau. */
 .ci-evidence-col .ci-photo-lane {
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   padding: 0;
   overflow-x: visible;
 }
 .ci-evidence-col .ci-photo-lane__drop {
-  min-height: 110px;
+  height: 120px;
+  min-height: 120px;
 }
 .ci-evidence-col .ci-seal-section {
   grid-template-columns: 1fr;
@@ -135,9 +155,10 @@ select.input.ci-input-sm {
 
 .ci-photo-lane__head {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .ci-photo-lane__title {
@@ -203,9 +224,9 @@ select.input.ci-input-sm {
 
 .ci-seal-row {
   display: grid;
-  grid-template-columns: minmax(110px, 1fr) minmax(110px, 1.4fr) auto;
-  gap: 8px;
-  align-items: center;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  align-items: stretch;
   min-width: 0;
   padding: 0;
 }

@@ -399,10 +399,10 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     const hasSealValue = !!(seal?.sealNumber.trim() || seal?.notes.trim());
     return (
       <div className="ci-seal-section">
-        <span className="ci-label ci-seal-section__label">Số seal {index + 1}</span>
+        <span className="ci-label ci-seal-section__label">Seal {index + 1}</span>
         <div className="ci-seal-row">
           <input className="input ci-input-sm" placeholder={`Số seal ${index + 1}`} value={seal?.sealNumber ?? ""} onChange={(e) => updateSeal(row._key, index, "sealNumber", e.target.value.toUpperCase())} />
-          <input className="input ci-input-sm" placeholder="Ghi chú seal (tuỳ chọn)" value={seal?.notes ?? ""} onChange={(e) => updateSeal(row._key, index, "notes", e.target.value)} />
+          <input className="input ci-input-sm" placeholder="Ghi chú (tuỳ chọn)" value={seal?.notes ?? ""} onChange={(e) => updateSeal(row._key, index, "notes", e.target.value)} />
           <button type="button" className="btn btn--ghost btn--icon btn--sm ci-seal-row__clear" style={{ visibility: hasSealValue ? "visible" : "hidden" }} onClick={() => clearSeal(row._key, index)} aria-label={`Xoá seal ${index + 1}`} title={`Xoá seal ${index + 1}`}>
             <X size={13} />
           </button>
@@ -493,19 +493,21 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 </div>
               </div>
 
+              {/* Inputs seal thành 1 band ngang trên (audit vòng 4): 3 dropzone
+                  dưới chỉ còn head + ảnh — đều nhau tuyệt đối, hết cột trống. */}
+              <div className="ci-seal-band">
+                {renderSealFields(row, 0)}
+                {renderSealFields(row, 1)}
+              </div>
+
               <div className="ci-evidence-grid">
-                {/* 3 cột ngang (audit Gemini 23/10): ảnh cont | seal 1 | seal 2 —
-                    1 container giảm từ ~500px xuống ~210px, hết zigzag
-                    label-trái/field-phải. */}
                 <div className="ci-evidence-col">
                   {renderPhotoLane(row, "CONTAINER")}
                 </div>
                 <div className="ci-evidence-col">
-                  {renderSealFields(row, 0)}
                   {renderPhotoLane(row, "SEAL", 0)}
                 </div>
                 <div className="ci-evidence-col">
-                  {renderSealFields(row, 1)}
                   {renderPhotoLane(row, "SEAL", 1)}
                 </div>
               </div>

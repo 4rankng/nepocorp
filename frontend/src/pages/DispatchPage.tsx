@@ -107,16 +107,10 @@ export default function DispatchPage() {
         </Alert>
       )}
 
-      <section className="hero">
-        <div className="hero-top fade-up-2">
-          <div className="hero-title-block">
-            <div className="hero-eyebrow">Phiên điều vận đang mở</div>
-            <h1 className="hero-h1" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img src="/assets/icons/02-dispatch-dieu-phoi.png" alt="" style={{ width: 32, height: 32, flexShrink: 0 }} />
-              Điều vận hôm nay
-            </h1>
-            <div className="hero-sub">{formatFullDate(new Date())} · {pendingTotal} đơn hàng chờ phân xe</div>
-          </div>
+      <section className="hero hero--dispatch-compact">
+        <div className="hero-row">
+          <h1 className="hero-h1">Điều vận hôm nay</h1>
+          <span className="hero-sub">{formatFullDate(new Date())} · {pendingTotal} đơn chờ phân xe</span>
           <div className="hero-actions">
             <button className="btn btn--primary" type="button" onClick={() => navigate('/trips/new')}><Plus size={15} /> Tạo chuyến mới</button>
           </div>
@@ -144,7 +138,7 @@ export default function DispatchPage() {
           Dữ liệu GPS tạm thời không khả dụng. {live.error === 'GPS provider not configured' ? 'Chưa cấu hình nhà cung cấp GPS.' : 'Vui lòng thử lại sau.'}
         </div>
       ) : live && live.vehicles.length > 0 ? (
-        <LiveFleetMap vehicles={live.vehicles} />
+        <LiveFleetMap vehicles={live.vehicles} height="520px" />
       ) : (
         <div style={{ padding: '14px 16px', background: 'var(--surface-2, #F5F7F6)', color: 'var(--text-2, #6B7280)', borderRadius: 10, fontSize: 'var(--fs-body)', marginBottom: 20 }}>
           Chưa có xe nào đang chạy để theo dõi.
@@ -158,7 +152,7 @@ export default function DispatchPage() {
       <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} />
 
       <div className="section-head"><div className="section-title"><h2>Đơn hàng cần điều vận</h2><span className="count">{pendingTrips.length} đơn</span></div></div>
-      <div className="orders-card">
+      <div className="orders-card orders-card--capped">
         {pendingTrips.length > 0 && <div className="orders-head"><div>Ngày</div><div>Tuyến</div><div>Khách hàng</div><div className="col-assign">Xe & Lái xe</div><div className="right">Thao tác</div></div>}
         {pendingTrips.length === 0 ? (
           <EmptyState

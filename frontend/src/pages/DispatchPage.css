@@ -817,3 +817,60 @@ font-weight: 600;
   .dispatch-page .metrics { grid-template-columns: 1fr 1fr; }
   .dispatch-page .metric.featured { grid-column: 1 / -1; grid-row: auto; }
 } /* end 420px */
+
+/* ── Hero compact + orders cap (audit Gemini 23/10, vòng 4) ────────────── */
+/* 1 hàng tiêu đề ~56px thay khối eyebrow+h1+sub 206px. */
+.dispatch-page .hero--dispatch-compact .hero-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 40px;
+}
+.dispatch-page .hero--dispatch-compact .hero-h1 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  white-space: nowrap;
+}
+.dispatch-page .hero--dispatch-compact .hero-sub {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Đơn chờ phân xe: khung tối đa 560px, cuộn nội bộ — hết chiếm 47% trang. */
+.dispatch-page .orders-card--capped {
+  max-height: 560px;
+  overflow-y: auto;
+}
+/* Metrics thu 1 line: 'label value' inline, bỏ delta phụ. */
+.dispatch-page .hero--dispatch-compact .metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.dispatch-page .hero--dispatch-compact .metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 0;
+  min-width: 0;
+}
+.dispatch-page .hero--dispatch-compact .metric-label {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+}
+.dispatch-page .hero--dispatch-compact .metric-value {
+  font-size: var(--fs-md);
+  line-height: 1.4;
+}
+.dispatch-page .hero--dispatch-compact .metric-value .metric-unit,
+.dispatch-page .hero--dispatch-compact .metric-value-unit { font-size: var(--fs-xs); }
+.dispatch-page .hero--dispatch-compact .metric-delta { display: none; }
+.dispatch-page .hero--dispatch-compact .utilization-bar { width: 90px; height: 5px; }
