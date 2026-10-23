@@ -108,6 +108,10 @@ export default defineConfig([
       // Static assets copied verbatim by Vite (incl. the service worker, which
       // uses browser globals like self/caches and isn't app source to lint).
       'public/**',
+      // Untitled UI PRO vendor components (installed via `untitledui add`) —
+      // upstream code, not app source; don't lint or fast-refresh-check it.
+      'src/components/application/**',
+      'src/components/base/**',
       '*.config.js',
       '*.config.mjs',
       // Config .ts files aren't in tsconfig include → projectService can't resolve them

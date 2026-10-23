@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Plus, Trash2, Camera, ImageOff, X } from "lucide-react";
+import { Loader2, Plus, Trash2, Camera, X } from "lucide-react";
 import { api } from "../../lib/api";
 import { photoSrc } from "../../lib/api/photo";
 import { useToast } from "../shared/Toast";
@@ -177,67 +177,53 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
       ? row.photoKeys.seal[sealIndex]
       : row.photoKeys.cont[row.photoKeys.cont.length - 1];
     const urls = slotUrl ? [slotUrl] : [];
-    const busy = (uploading[row._key]?.[field] ?? false) || (deletingPhotos[row._key]?.[field] ?? false);
     const isCont = pType === "CONTAINER";
+    const busy = (uploading[row._key]?.[field] ?? false) || (deletingPhotos[row._key]?.[field] ?? false);
+    const openScanner = () => setScanner({ rowKey: row._key, type: pType, sealIndex });
+    const removeLabel = isCont ? "Xoá ảnh container" : "Xoá ảnh seal";
+    // Theo mockup QA (vòng 8): label TRÊN tile (khớp nhịp input), tile vuông
+    // lớn, trong tile có icon camera + chữ "Chụp" — toàn tile là nút mở
+    // ContainerScanner (camera/thư viện). Có ảnh: ảnh phủ tile + overlay
+    // chụp lại / xoá khi hover.
     return (
-      <div className="ci-photo-lane">
-        <div className="ci-photo-lane__head">
-          <span className="ci-photo-lane__title">{title}</span>
-          <button type="button" className="ci-photo-lane__capture" disabled={busy} onClick={() => setScanner({ rowKey: row._key, type: pType, sealIndex })} aria-label={isCont ? "Chụp ảnh container" : "Chụp ảnh seal"} title={isCont ? "Chụp ảnh container" : "Chụp ảnh seal"}>
-            {busy ? <Loader2 size={13} className="spin" /> : <Camera size={13} />}
-            <span>{urls.length > 0 ? "Đổi ảnh" : isCont ? "Chụp cont" : `Chụp seal ${(sealIndex ?? 0) + 1}`}</span>
-          </button>
-        </div>
-        <div className="ci-photo-lane__drop" aria-busy={busy}>
+      <div className="ci-photo-item">
+        <span className="ci-photo-item__label">{title}</span>
+        <div className={`ci-photo-tile${urls.length > 0 ? ' has-photo' : ''}`} aria-busy={busy}>
           {urls.length === 0 ? (
-            <button type="button" className="ci-photo-empty" disabled={busy} onClick={() => setScanner({ rowKey: row._key, type: pType, sealIndex })} aria-label={isCont ? "Chụp ảnh container" : "Chụp ảnh seal"}>
-              <ImageOff size={16} />
-              <span>Chưa có ảnh</span>
+            <button type="button" className="ci-photo-tile__btn" disabled={busy} onClick={openScanner} aria-label={isCont ? "Chụp ảnh container" : "Chụp ảnh seal"}>
+              {busy ? <Loader2 size={18} className="spin" /> : <Camera size={22} strokeWidth={1.6} />}
+              <span>Chụp</span>
             </button>
           ) : (
             <>
-              {urls.map((u, uIdx) => {
-                const isPending = u.startsWith("blob:");
-                return (
-                  <span key={`${u}-${uIdx}`} className="ci-photo-slot">
-                    <button
-                      type="button"
-                      className="ci-photo-slot__view"
-                      disabled={busy}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setLightbox({
-                          rowKey: row._key,
-                          type: pType,
-                          urls: urls.map(photoSrc),
-                          index: 0,
-                        });
-                      }}
-                      aria-label={`Mở ảnh ${field} ${uIdx + 1}`}
-                    >
-                      <img src={photoSrc(u)} alt={`Ảnh ${field} ${uIdx + 1}`} />
-                    </button>
-                    <button
-                      type="button"
-                      className="ci-photo-slot__remove"
-                      disabled={busy}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void removePhotoFromRow(row, pType, u);
-                      }}
-                      aria-label={isCont ? "Xoá ảnh container" : "Xoá ảnh seal"}
-                      title={isCont ? "Xoá ảnh container" : "Xoá ảnh seal"}
-                    >
-                      {deletingPhotos[row._key]?.[field] ? <Loader2 size={11} className="spin" /> : <X size={11} />}
-                    </button>
-                    {isPending && (
-                      <span className="ci-photo-slot__pending" title="Chưa lưu — sẽ tải lên khi bấm Lưu cập nhật">
-                        chưa lưu
-                      </span>
-                    )}
-                  </span>
-                );
-              })}
+              <button
+                type="button"
+                className="ci-photo-tile__btn"
+                disabled={busy}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setLightbox({ rowKey: row._key, type: pType, urls: urls.map(photoSrc), index: 0 });
+                }}
+                aria-label={`Xem ảnh ${field}`}
+              >
+                <img src={photoSrc(urls[0])} alt={`Ảnh ${field}`} />
+              </button>
+              <button type="button" className="ci-photo-tile__act ci-photo-tile__act--retake" disabled={busy} onClick={(event) => { event.stopPropagation(); openScanner(); }} aria-label="Chụp lại" title="Chụp lại">
+                {busy ? <Loader2 size={11} className="spin" /> : <Camera size={12} />}
+              </button>
+              <button
+                type="button"
+                className="ci-photo-tile__act ci-photo-tile__act--remove"
+                disabled={busy}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void removePhotoFromRow(row, pType, urls[0]);
+                }}
+                aria-label={removeLabel}
+                title={removeLabel}
+              >
+                {deletingPhotos[row._key]?.[field] ? <Loader2 size={11} className="spin" /> : <X size={11} />}
+              </button>
             </>
           )}
         </div>
