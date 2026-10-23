@@ -40,6 +40,7 @@ export const AGENT_ROUTE_KEYS = [
   'tripNew',
   'tripDetail',
   'tripEdit',
+  'bangKeHoach',
   // Finance
   'finance',
   'profit',

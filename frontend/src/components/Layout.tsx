@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Truck,
+  ClipboardList,
   Wallet,
   Receipt,
   AlertTriangle,
@@ -59,6 +60,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
 
         { key: 'dispatch', label: 'Phân xe', path: routes.dispatch, icon: Compass, section: 'operations', count: dispatchCount },
         { key: 'trips', label: 'Sổ chuyến đi', path: routes.trips, icon: Truck, section: 'operations' },
+        { key: 'bang-ke-hoach', label: 'Bảng kế hoạch', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
 
         { key: 'salary', label: 'Lương & Chấm công', path: routes.salary, icon: CalendarDays, section: 'hr' },
         { key: 'penalties', label: 'Kỷ luật', path: routes.penalties, icon: AlertTriangle, section: 'hr', count: penaltiesCount },

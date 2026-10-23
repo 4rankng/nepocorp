@@ -15,7 +15,6 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { Breadcrumbs, Alert } from '../components/shared';
 import { useDebouncedValue, useTableQueryState, EmptyState, Pagination } from '../design-system';
 import { buildTripColumns, tripRowStyle, TripMobileCard, TripFiltersBar, breakdownPctFromCounts, defaultStatusCounts, DEFAULT_WARN_THRESHOLD, PAGE_SIZE, createTripListReturnState, readTripListReturnState, shouldSyncTripListReturnState, type StatusFilter, type StatusCounts, type TripQuickEditDraft, getMissingPlanFields, isTripToday } from '../features/trips';
-import { LedgerGrid } from '../features/ledger/LedgerGrid';
 import { TRIP_LIST_EXPORT_HEADERS, buildTripListExportRows } from '../features/trips/tripListExport';
 import { TripQuickEditMobileCard } from '../features/trips/tripQuickEditCard';
 import { columnClass, draftChanged, figuresPayloadFromDraft, invalidQuickField, isEditableInQuickMode, quickDraftFromTrip, QUICK_DRAFT_FIELD_LABELS } from './trip-list-helpers';
@@ -423,11 +422,6 @@ export default function TripListPage() {
 
   const todayLabel = `Tháng ${month}/${year}`;
 
-  // Bảng hiển thị: "Điều vận" là lưới phân xe hiện có; "Thu chi" là bảng tổng
-  // hợp kế toán (yêu cầu nepoUI 2026-10-22: 1 bảng thể hiện hết thông tin như
-  // quyển sổ cái Google Sheet). Cùng bộ lọc tháng / khách hàng / trạng thái.
-  const [tableView, setTableView] = useState<'dispatch' | 'thu-chi'>('dispatch');
-
   return (
     <div ref={rootRef} className={`trip-list-page${quickEdit ? ' quick-edit-mode' : ''}`} style={{ paddingBottom: 40 }}>
       <Breadcrumbs
@@ -438,60 +432,23 @@ export default function TripListPage() {
         ]}
         renderLink={(to, children) => <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>}
       />
-      {tableView !== 'thu-chi' && (
-        <TripListHero todayLabel={todayLabel} statusCounts={statusCounts} summary={summary} quickEdit={quickEdit} toggleQuickEdit={toggleQuickEdit} handleExport={handleExport} onAdd={() => navigate('/trips/new')} breakdownPct={breakdownPct} warnThreshold={warnThreshold} month={month} />
-      )}
+      <TripListHero todayLabel={todayLabel} statusCounts={statusCounts} summary={summary} quickEdit={quickEdit} toggleQuickEdit={toggleQuickEdit} handleExport={handleExport} onAdd={() => navigate('/trips/new')} breakdownPct={breakdownPct} warnThreshold={warnThreshold} month={month} />
 
-      {tableView !== 'thu-chi' && (
-        <TripFiltersBar
-          statusCounts={statusCounts}
-          statusFilter={statusFilter}
-          onStatusFilter={setStatusFilter}
-          searchQuery={searchInput}
-          onSearch={setSearchInput}
-          truckOptions={truckOptions}
-          truckFilter={truckFilter}
-          onTruckFilter={setTruckFilter}
-          customerOptions={customerOptions}
-          customerFilter={customerFilter}
-          onCustomerFilter={setCustomerFilter}
-        />
-      )}
+      <TripFiltersBar
+        statusCounts={statusCounts}
+        statusFilter={statusFilter}
+        onStatusFilter={setStatusFilter}
+        searchQuery={searchInput}
+        onSearch={setSearchInput}
+        truckOptions={truckOptions}
+        truckFilter={truckFilter}
+        onTruckFilter={setTruckFilter}
+        customerOptions={customerOptions}
+        customerFilter={customerFilter}
+        onCustomerFilter={setCustomerFilter}
+      />
 
-      <div className="trip-view-toggle" role="tablist" aria-label="Chế độ xem bảng">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tableView === 'dispatch'}
-          className={tableView === 'dispatch' ? 'is-active' : ''}
-          onClick={() => setTableView('dispatch')}
-        >
-          Điều vận
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tableView === 'thu-chi'}
-          className={tableView === 'thu-chi' ? 'is-active' : ''}
-          onClick={() => setTableView('thu-chi')}
-        >
-          Thu chi
-        </button>
-      </div>
-
-      {tableView === 'thu-chi' ? (
-        // Sổ cái giữ nguyên khoảng tháng của chip tháng (tìm kiếm vẫn giới
-        // hạn trong tháng — kế toán đối chiếu theo kỳ đang xem).
-        <LedgerGrid
-          from={dateFrom}
-          to={dateTo}
-          customerId={customerFilter || undefined}
-          status={statusFilter || undefined}
-          search={debouncedSearch}
-        />
-      ) : (
-        <>
-          <div className="table-hint">
+      <div className="table-hint">
         <MousePointerClick size={13} strokeWidth={2.2} />
         <span>
           <b>Mẹo:</b> nhấp vào một hàng để mở chi tiết chuyến
@@ -648,8 +605,6 @@ export default function TripListPage() {
           </div>
         )}
       </div>
-        </>
-      )}
     </div>
   );
 }

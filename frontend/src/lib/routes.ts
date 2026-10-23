@@ -34,6 +34,7 @@ export const routes = {
   tripNew: PAGE_CATALOG.tripNew.path,
   tripDetail: (id: number | string) => PAGE_CATALOG.tripDetail.path({ id }),
   tripEdit: (id: number | string) => PAGE_CATALOG.tripEdit.path({ id }),
+  bangKeHoach: PAGE_CATALOG.bangKeHoach.path,
   finance: PAGE_CATALOG.finance.path,
   profit: PAGE_CATALOG.profit.path,
   debt: PAGE_CATALOG.debt.path,

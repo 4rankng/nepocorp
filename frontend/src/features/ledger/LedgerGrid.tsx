@@ -4,15 +4,17 @@ import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tan
 import { Download, FilePlus2, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useMonth } from '../../hooks/useMonth';
+import { getCalendarMonthRange } from '../../lib/calendar-month';
 import { api } from '../../lib/api';
 import { downloadBlob } from '../../lib/download';
 import { ledgerClient } from '../../api/ledgerClient';
 import { qk } from '../../api/keys';
 import { useCatalogs } from '../../hooks/useCatalogs';
+import { EmptyState, Pagination, useDebouncedValue } from '../../design-system';
 import { ANCILLARY_EXPENSE_TYPES, LoadingType, TripStatus, type LedgerRow } from '@tingting/shared';
 import { Btn } from '../../components/UI';
 import { Alert } from '../../components/shared';
-import { EmptyState, Pagination } from '../../design-system';
 import { buildLedgerColumns, containerReconStatus, type LedgerCellContext, type LedgerCellPatch, type LedgerGroup, type LedgerLeaf } from './ledgerColumns';
 import { ContainerStatusDot } from './LedgerEditableCell';
 import { LedgerExpandPanel } from './LedgerExpandPanel';
@@ -62,28 +64,24 @@ const QUICK_FILTER_LABELS: Record<QuickFilter, string> = {
 const PAGE_SIZE = 100;
 
 /**
- * Sổ cái — the accountant's consolidated table, rendered inside Sổ chuyến đi
- * (the customer's "1 bảng thể hiện hết thông tin": trips + revenue + advances
- * + costs + results, editable per column group like the master Google Sheet).
- * Filters come from the page (month chip / customer / status / search); this
- * component owns the grid, the quick-add row, and the Excel export.
+ * Bảng kế hoạch (/bang-ke-hoach) — bảng tổng hợp một lệnh một dòng, sửa trực
+ * tiếp từng ô theo nhóm quyền (kế hoạch / thu chi), đối chiếu container ngay
+ * trong bảng. Tự chứa: tháng từ chip trên topbar, bộ lọc tìm kiếm / khách
+ * hàng / trạng thái nội bộ, quick-add và xuất Excel.
  */
-export function LedgerGrid({ from, to, customerId, status, search, onCustomerChange, onStatusChange, onSearchChange }: {
-  from: string;
-  to: string;
-  customerId?: number;
-  status?: string;
-  search?: string;
-  onCustomerChange?: (customerId: number | undefined) => void;
-  onStatusChange?: (status: string | undefined) => void;
-  onSearchChange?: (search: string) => void;
-}) {
+export function LedgerGrid() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: catalogs } = useCatalogs();
   const role = user?.role;
   const canPlan = canEditLedgerPlan(role);
   const canMoney = canEditLedgerMoney(role);
+  const { month, year } = useMonth();
+  const { start: from, end: to } = useMemo(() => getCalendarMonthRange(year, month), [month, year]);
+  const [customerId, setCustomerId] = useState<number | undefined>(undefined);
+  const [status, setStatus] = useState<string | undefined>(undefined);
+  const [searchInput, setSearchInput] = useState('');
+  const search = useDebouncedValue(searchInput, 300);
 
   const [page, setPage] = useState(0);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -291,20 +289,20 @@ export function LedgerGrid({ from, to, customerId, status, search, onCustomerCha
 
   return (
     <div className="ledger-page">
-      <div className="ledger-toolbar" role="toolbar" aria-label="Bộ lọc sổ chuyến đi">
+      <div className="ledger-toolbar" role="toolbar" aria-label="Bộ lọc bảng kế hoạch">
         <input
           type="search"
           aria-label="Tìm kiếm"
           placeholder="Tìm mã chuyến, KH, biển số, số cont…"
           className="ledger-toolbar__search"
-          value={search ?? ''}
-          onChange={(e) => onSearchChange?.(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
         <select
           aria-label="Khách hàng"
           className="ledger-toolbar__select"
           value={customerId ?? ''}
-          onChange={(e) => onCustomerChange?.(e.target.value ? Number(e.target.value) : undefined)}
+          onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : undefined)}
         >
           <option value="">Tất cả khách hàng</option>
           {(catalogs?.customers ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -313,7 +311,7 @@ export function LedgerGrid({ from, to, customerId, status, search, onCustomerCha
           aria-label="Trạng thái"
           className="ledger-toolbar__select"
           value={status ?? ''}
-          onChange={(e) => onStatusChange?.(e.target.value || undefined)}
+          onChange={(e) => setStatus(e.target.value || undefined)}
         >
           <option value="">Tất cả trạng thái</option>
           <option value={TripStatus.CREATED}>Mới tạo</option>

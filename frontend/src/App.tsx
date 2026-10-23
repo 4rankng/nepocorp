@@ -17,6 +17,7 @@ const TripListPage = lazyPage(() => import('./pages/TripListPage'));
 const TripCreatePage = lazyPage(() => import('./pages/TripCreatePage'));
 const TripDetailPage = lazyPage(() => import('./pages/TripDetailPage'));
 const TripEditPage = lazyPage(() => import('./pages/TripEditPage'));
+const BangKeHoachPage = lazyPage(() => import('./pages/BangKeHoachPage'));
 const FinancePage = lazyPage(() => import('./pages/FinancePage'));
 const DebtListPage = lazyPage(() => import('./pages/DebtListPage'));
 const DebtDetailPage = lazyPage(() => import('./pages/DebtDetailPage'));
@@ -138,6 +139,7 @@ function AppRoutes() {
           <Route path="/trips/new" element={adminOnly(page(<TripCreatePage />))} />
           <Route path="/trips/:id" element={adminOnly(page(<TripDetailPage />))} />
           <Route path="/trips/:id/edit" element={adminOnly(page(<TripEditPage />))} />
+          <Route path="/bang-ke-hoach" element={officeStaffOnly(page(<BangKeHoachPage />))} />
           <Route path="/finance" element={adminOnly(page(<FinancePage />))} />
           <Route path="/profit" element={adminOnly(page(<ProfitPage />))} />
           <Route path="/debt" element={adminOnly(page(<DebtListPage />))} />

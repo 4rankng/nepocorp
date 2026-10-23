@@ -117,52 +117,63 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
   const plan = ctx.canPlan;
   const canMoney = ctx.canMoney;
 
-  const frozen: LedgerLeaf = {
-    id: 'ledger-code',
-    header: 'Lệnh',
-    meta: { group: 'plan', groupEnd: true },
-    cell: ({ row }) => {
-      const r = row.original;
-      const missing: string[] = [];
-      if (r.containerTypeCodes.length === 0) missing.push('loại container');
-      if (!r.driverName && r.carrierType === 'OWN') missing.push('lái xe');
-      // Customer short name rides the frozen column: when the accountant has
-      // scrolled 40 columns right to the money block, the row must still say
-      // whose trip it is (master sheet keeps Khách hàng in the frozen left).
-      const customer = (r.customerName ?? `KH #${r.customerId}`).replace(/\b(CÔNG TY|CHI NHÁNH|TNHH|MTV|CỔ PHẦN)\b\s*/gi, '').trim() || r.customerName;
-      return (
-        <div className="ledger-code">
-          <button
-            type="button"
-            className="ledger-code__code"
-            title="Bấm để xem đối chiếu theo container"
-            onClick={(e) => {
-              e.stopPropagation();
-              ctx.onToggleExpand(r.id);
-            }}
-          >
-            {r.tripCode ?? `#${r.id}`}
-          </button>
-          <span className="ledger-code__customer" title={r.customerName ?? undefined}>{customer}</span>
-          <StatusPill variant={STATUS_PILL_VARIANT[r.status] ?? 'neutral'}>
-            {TRIP_STATUS_LABELS[r.status] ?? r.status}
-          </StatusPill>
-          {missing.length > 0 && (
-            <span className="ledger-code__warn" title={`Còn thiếu: ${missing.join(', ')}`} aria-label="Còn thiếu dữ liệu">!</span>
-          )}
-        </div>
-      );
-    },
-  };
-
-  // The identity column rides in its own single-column group with an empty
-  // label so both header bands stay structurally uniform (all leaves on one
+  // Ba cột phí của sheet (nepoUI xlsx cột G/H/I): nâng hạ / nộp hộ / khác —
+  // gom từ 8 loại phí ancillary; giá trị = Σ bán thu của nhóm.
   // depth) and the frozen column can stick on both scroll axes.
   const identityGroup: LedgerGroup = {
     id: 'g-identity',
     header: '',
     meta: { group: 'plan', groupEnd: true },
-    columns: [frozen],
+    columns: [
+      {
+        id: 'ledger-code',
+        header: 'Lệnh',
+        meta: { group: 'plan' },
+        cell: ({ row }) => {
+          const r = row.original;
+          // Tên khách rút gọn nằm trong cột frozen: khi kế toán cuộn ngang tới
+          // cột thứ 40 vẫn biết dòng này của khách hàng nào (sheet cột D).
+          const customer = (r.customerName ?? `KH #${r.customerId}`).replace(/\b(CÔNG TY|CHI NHÁNH|TNHH|MTV|CỔ PHẦN)\b\s*/gi, '').trim() || r.customerName;
+          return (
+            <div className="ledger-code">
+              <button
+                type="button"
+                className="ledger-code__code"
+                title="Bấm để xem đối chiếu theo container"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  ctx.onToggleExpand(r.id);
+                }}
+              >
+                {r.tripCode ?? `#${r.id}`}
+              </button>
+              <span className="ledger-code__customer" title={r.customerName ?? undefined}>{customer}</span>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'ledger-status',
+        header: 'Trạng thái',
+        meta: { group: 'plan', groupEnd: true },
+        cell: ({ row }) => {
+          const r = row.original;
+          const missing: string[] = [];
+          if (r.containerTypeCodes.length === 0) missing.push('loại container');
+          if (!r.driverName && r.carrierType === 'OWN') missing.push('lái xe');
+          return (
+            <div className="ledger-status">
+              <StatusPill variant={STATUS_PILL_VARIANT[r.status] ?? 'neutral'}>
+                {TRIP_STATUS_LABELS[r.status] ?? r.status}
+              </StatusPill>
+              {missing.length > 0 && (
+                <span className="ledger-status__warn" title={`Còn thiếu: ${missing.join(', ')}`} aria-label="Còn thiếu dữ liệu">!</span>
+              )}
+            </div>
+          );
+        },
+      },
+    ],
   };
 
   const planGroup: LedgerGroup = {
