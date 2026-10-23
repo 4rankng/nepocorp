@@ -401,6 +401,15 @@
   border-radius: 50%;
   background: var(--accent);
 }
+/* Chưa gán xe: gạch mờ trần, không pill/điểm màu (feedback QA 23/10). */
+.trip-list-page .plate--empty {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.trip-list-page .plate--empty::before { content: none; }
 .trip-list-page .plate.idle {
   color: var(--ink-3);
   background: var(--surface-3);

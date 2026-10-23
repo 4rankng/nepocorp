@@ -227,8 +227,12 @@ export function buildTripColumns(
         const isCanceled = trip.status === TripStatus.CANCELED;
         const isExternal = trip.carrierType === 'EXTERNAL';
         // External trips are flagged by the "Xe ngoài" badge beside the customer
-        // name, so the plate cell only shows an actual plate — '—' when absent.
-        const plate = isExternal ? (trip.externalPlateNumber || '—') : (trip.truck?.licensePlate ?? '—');
+        // name. Chưa gán xe thì hiển thị gạch mờ, KHÔNG bọc vào pill đen
+        // (pill rỗng đọc như một nút bấm - feedback QA 23/10).
+        const plate = isExternal ? (trip.externalPlateNumber || null) : (trip.truck?.licensePlate ?? null);
+        if (!plate) {
+          return <span className="plate plate--empty">—</span>;
+        }
         return (
           <span className={`plate${isCreated || isCanceled ? ' idle' : ''}${isExternal ? ' external' : ''}`}>
             {plate}
