@@ -187,7 +187,6 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     // chụp lại / xoá khi hover.
     return (
       <div className="ci-photo-item">
-        <span className="ci-photo-item__label">{title}</span>
         <div className={`ci-photo-tile${urls.length > 0 ? ' has-photo' : ''}`} aria-busy={busy}>
           {urls.length === 0 ? (
             <button type="button" className="ci-photo-tile__btn" disabled={busy} onClick={openScanner} aria-label={isCont ? "Chụp ảnh container" : "Chụp ảnh seal"}>
@@ -227,6 +226,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
             </>
           )}
         </div>
+        <span className="ci-photo-item__label">{title}</span>
       </div>
     );
   };
@@ -384,9 +384,9 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
     const seal = row.seals[index];
     const hasSealValue = !!(seal?.sealNumber.trim() || seal?.notes.trim());
     return (
-      <div className="ci-seal-section">
-        <span className="ci-label ci-seal-section__label">Seal {index + 1}</span>
-        <div className="ci-seal-row">
+      <div className="ci-seal-inline">
+        <span className="ci-seal-inline__label">Seal {index + 1}</span>
+        <div className="ci-seal-inline__inputs">
           <input className="input ci-input-sm" placeholder={`Số seal ${index + 1}`} value={seal?.sealNumber ?? ""} onChange={(e) => updateSeal(row._key, index, "sealNumber", e.target.value.toUpperCase())} />
           <input className="input ci-input-sm" placeholder="Ghi chú (tuỳ chọn)" value={seal?.notes ?? ""} onChange={(e) => updateSeal(row._key, index, "notes", e.target.value)} />
           <button type="button" className="btn btn--ghost btn--icon btn--sm ci-seal-row__clear" style={{ visibility: hasSealValue ? "visible" : "hidden" }} onClick={() => clearSeal(row._key, index)} aria-label={`Xoá seal ${index + 1}`} title={`Xoá seal ${index + 1}`}>
@@ -435,6 +435,7 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 </button>
               </div>
 
+              <div className="ci-body">
               <div className="ci-grid">
                 <div className="ci-field">
                   <label className="ci-label" htmlFor={`containerNumber-${row._key}`}>
@@ -479,23 +480,21 @@ export function ContainerInstancesCard({ tripId, expectedCount = 1, requiresPhot
                 </div>
               </div>
 
-              {/* Inputs seal thành 1 band ngang trên (audit vòng 4): 3 dropzone
-                  dưới chỉ còn head + ảnh — đều nhau tuyệt đối, hết cột trống. */}
-              <div className="ci-seal-band">
+              {/* 2 cột (demo2 QA): trái = dữ liệu cont + seal stack, phải =
+                  rail Ảnh cont & seal 3 tile vuông. Divider dọc giữa. */}
+              <div className="ci-seal-stack">
                 {renderSealFields(row, 0)}
                 {renderSealFields(row, 1)}
               </div>
 
-              <div className="ci-evidence-grid">
-                <div className="ci-evidence-col">
+              <div className="ci-photo-rail">
+                <span className="ci-photo-rail__title">Ảnh cont &amp; seal</span>
+                <div className="ci-photo-rail__row">
                   {renderPhotoLane(row, "CONTAINER")}
-                </div>
-                <div className="ci-evidence-col">
                   {renderPhotoLane(row, "SEAL", 0)}
-                </div>
-                <div className="ci-evidence-col">
                   {renderPhotoLane(row, "SEAL", 1)}
                 </div>
+              </div>
               </div>
             </div>
           ))}

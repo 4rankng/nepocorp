@@ -35,13 +35,13 @@
 /* Identity fields (container number, weight, notes) fill as many tracks as fit. */
 .ci-grid {
   display: grid;
-  /* Field ngắn vừa giá trị (feedback QA): mã cont 11 ký tự = 200px, trọng
-     lượng = 140px, ghi chú = 240px — KHÔNG giãn 1fr full hàng. */
-  grid-template-columns: 200px 140px 240px;
+  /* demo2: hàng 1 [số cont co giãn | trọng lượng 130px], hàng 2 ghi chú full
+     — trong cột trái của layout 2 cột. */
+  grid-template-columns: minmax(0, 1fr) 130px;
   gap: 10px 12px;
   align-items: start;
-  width: fit-content;
 }
+.ci-grid > .ci-field:nth-child(3) { grid-column: 1 / -1; }
 
 @media (max-width: 640px) {
   /* Phone density (kanban 20260924_2): pair container identity fields. */
@@ -95,50 +95,54 @@ select.input.ci-input-sm {
   border-top: 1px solid var(--line);
 }
 
-/* Band input seal ngang trên: [Seal N | số | ghi chú (x)] x2 (vòng 4). */
-.ci-seal-band {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+./* Seal stack dọc: [Seal N] [số | ghi chú | (x)] trên 1 hàng inline. */
+.ci-seal-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 10px;
 }
-.ci-seal-band .ci-seal-section {
+.ci-seal-inline {
   display: grid;
-  grid-template-columns: auto minmax(140px, 1fr) minmax(140px, 1.2fr) 32px;
-  align-items: center;
+  grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1.3fr) 28px;
   gap: 8px;
-  padding: 0;
+  align-items: center;
 }
-.ci-seal-band .ci-seal-row {
-  display: contents;
+.ci-seal-inline__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
-/* 3 cột ngang: ảnh cont | seal 1 | seal 2 (audit Gemini 23/10). */
-.ci-evidence-grid {
+/* Rail ảnh phải: divider dọc + 3 tile vuông 96px, label dưới tile. */
+.ci-photo-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-left: 1px solid var(--line);
+  padding-left: 20px;
+}
+.ci-photo-rail__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ci-photo-rail__row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* Body 2 cột: fields trái | rail ảnh phải. */
+.ci-body {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 16px 20px;
+  align-items: start;
 }
-.ci-evidence-col {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-/* Cột đồng nhất: head + drop 120px — 3 cột giống hệt nhau. */
-.ci-evidence-col .ci-photo-lane {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0;
-  overflow-x: visible;
-}
-.ci-evidence-col .ci-photo-lane__drop {
-  height: 120px;
-  min-height: 120px;
+@media (max-width: 900px) {
+  .ci-body { grid-template-columns: 1fr; }
+  .ci-photo-rail { border-left: none; padding-left: 0; }
 }
 .ci-evidence-col .ci-seal-section {
   grid-template-columns: 1fr;
@@ -381,17 +385,16 @@ select.input.ci-input-sm {
   gap: 6px;
   min-width: 0;
 }
-/* Label trên tile — cùng nhịp với label input phía trên (mockup QA vòng 8). */
-.ci-photo-item__label {
-  font-size: var(--fs-control, 13px);
-  font-weight: 500;
-  color: var(--fg-2);
-}
 .ci-photo-tile {
   position: relative;
-  width: 100%;
-  max-width: 190px;
-  aspect-ratio: 1;
+  width: 96px;
+  height: 96px;
+}
+.ci-photo-item__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-2);
+  text-align: center;
 }
 .ci-photo-tile__btn {
   width: 100%;
