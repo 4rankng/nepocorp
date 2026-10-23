@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { Download, FilePlus2, Loader2 } from 'lucide-react';
@@ -8,7 +8,7 @@ import { downloadBlob } from '../../lib/download';
 import { ledgerClient } from '../../api/ledgerClient';
 import { qk } from '../../api/keys';
 import { useCatalogs } from '../../hooks/useCatalogs';
-import { ANCILLARY_EXPENSE_TYPES, TripStatus, type LedgerRow } from '@tingting/shared';
+import { ANCILLARY_EXPENSE_TYPES, LoadingType, TripStatus, type LedgerRow } from '@tingting/shared';
 import { Btn } from '../../components/UI';
 import { Alert } from '../../components/shared';
 import { EmptyState, Pagination } from '../../design-system';
@@ -374,7 +374,7 @@ export function LedgerGrid({ from, to, customerId, status, search }: {
                         key={cell.column.id}
                         className={`ledger-td${(cell.column.columnDef.meta as { align?: 'num' } | undefined)?.align === 'num' ? ' ledger-td--num' : ''}${cell.column.id === 'ledger-code' ? ' ledger-td--frozen' : ''}`}
                       >
-                        <FooterTotal columnId={cell.column.id} rows={rows} />
+                        {footerTotalFor(cell.column.id, rows)}
                       </td>
                     ))}
                   </tr>
@@ -443,62 +443,38 @@ function SubRowCell({ columnId, container, index }: {
   }
 }
 
-/** Money columns summed across the loaded rows (sheet footer convention). */
-const TOTAL_MONEY_BY_COLUMN: Record<string, true> = {
-  revenue: true,
-  'sell-LIFTING': true,
-  'sell-LOWERING': true,
-  'sell-other': true,
-  advanceTotal: true,
-  tollCost: true,
-  totalFuelCost: true,
-  driverSalary: true,
-  roadAllowance: true,
-  externalFreight: true,
-  totalCost: true,
-  grossProfit: true,
-};
-const TOTAL_COUNT_BY_COLUMN: Record<string, true> = {
-  fuelLiters: true,
-  'km-HANG-1': true,
-  'km-VO-1': true,
-  'km-HANG-2': true,
-  'km-VO-2': true,
-};
-
-function FooterTotal({ columnId, rows }: { columnId: string; rows: LedgerRow[] }) {
+/** Footer totals: every column names its own extractor — several grid column
+ *  ids intentionally differ from the LedgerRow field names (sell fees live in
+ *  expenseRollup, km in legs[], roadAllowance maps to totalRoadAllowance). */
+function footerTotalFor(columnId: string, rows: LedgerRow[]): ReactNode | null {
   if (columnId === 'ledger-code') {
     return <span className="ledger-tfoot__label">Tổng ({rows.length} lệnh)</span>;
   }
-  const isCount = !!TOTAL_COUNT_BY_COLUMN[columnId];
-  if (!isCount && !TOTAL_MONEY_BY_COLUMN[columnId]) return null;
-  // Sell-fee columns sum their expenseRollup entries (LedgerRow carries no
-  // flat field per fee type — the naive field lookup silently summed 0).
-  const rollupSum = (expenseType: string) => rows.reduce(
-    (acc, row) => acc + Number(row.expenseRollup.find(e => e.expenseType === expenseType)?.sellTotal || 0),
-    0,
-  );
-  let sum = 0;
-  for (const row of rows) {
-    switch (columnId) {
-      case 'sell-LIFTING':
-        sum += rollupSum(ANCILLARY_EXPENSE_TYPES[0]);
-        continue;
-      case 'sell-LOWERING':
-        sum += rollupSum(ANCILLARY_EXPENSE_TYPES[1]);
-        continue;
-      case 'sell-other': {
-        const named = new Set<string>([ANCILLARY_EXPENSE_TYPES[0], ANCILLARY_EXPENSE_TYPES[1]]);
-        sum += row.expenseRollup
-          .filter(e => !named.has(e.expenseType))
-          .reduce((acc, e) => acc + Number(e.sellTotal || 0), 0);
-        continue;
-      }
-      default: {
-        const value = (row as unknown as Record<string, string | null>)[columnId];
-        sum += Number(value ?? 0) || 0;
-      }
-    }
+  const num = (row: LedgerRow, field: string): number => Number((row as unknown as Record<string, string | null>)[field] ?? 0) || 0;
+  const rollup = (row: LedgerRow, expenseType: string): number =>
+    Number(row.expenseRollup.find(e => e.expenseType === expenseType)?.sellTotal || 0);
+  const km = (row: LedgerRow, loadingType: LoadingType, sequence: number): number =>
+    row.legs.find(l => l.sequence === sequence && l.loadingType === loadingType)?.km ?? 0;
+  const named = new Set<string>([ANCILLARY_EXPENSE_TYPES[0], ANCILLARY_EXPENSE_TYPES[1]]);
+
+  switch (columnId) {
+    case 'revenue': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'revenue'), 0))}</>;
+    case 'sell-LIFTING': return <>{formatCurrency(rows.reduce((a, r) => a + rollup(r, ANCILLARY_EXPENSE_TYPES[0]), 0))}</>;
+    case 'sell-LOWERING': return <>{formatCurrency(rows.reduce((a, r) => a + rollup(r, ANCILLARY_EXPENSE_TYPES[1]), 0))}</>;
+    case 'sell-other': return <>{formatCurrency(rows.reduce((a, r) => a + r.expenseRollup.filter(e => !named.has(e.expenseType)).reduce((s, e) => s + Number(e.sellTotal || 0), 0), 0))}</>;
+    case 'advanceTotal': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'advanceTotal'), 0))}</>;
+    case 'tollCost': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'tollCost'), 0))}</>;
+    case 'km-HANG-1': return <>{formatNumber(rows.reduce((a, r) => a + km(r, LoadingType.HANG, 1), 0))}</>;
+    case 'km-VO-1': return <>{formatNumber(rows.reduce((a, r) => a + km(r, LoadingType.VO, 1), 0))}</>;
+    case 'km-HANG-2': return <>{formatNumber(rows.reduce((a, r) => a + km(r, LoadingType.HANG, 2), 0))}</>;
+    case 'km-VO-2': return <>{formatNumber(rows.reduce((a, r) => a + km(r, LoadingType.VO, 2), 0))}</>;
+    case 'fuelLiters': return <>{formatNumber(rows.reduce((a, r) => a + num(r, 'fuelLiters'), 0))}</>;
+    case 'totalFuelCost': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'totalFuelCost'), 0))}</>;
+    case 'driverSalary': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'driverSalary'), 0))}</>;
+    case 'roadAllowance': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'totalRoadAllowance'), 0))}</>;
+    case 'externalFreight': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'externalFreightCost'), 0))}</>;
+    case 'totalCost': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'totalCost'), 0))}</>;
+    case 'grossProfit': return <>{formatCurrency(rows.reduce((a, r) => a + num(r, 'grossProfit'), 0))}</>;
+    default: return null;
   }
-  return <>{isCount ? formatNumber(Math.round(sum)) : formatCurrency(Math.round(sum))}</>;
 }
