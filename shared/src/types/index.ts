@@ -1798,6 +1798,8 @@ export interface LedgerRow {
   customerName: string | null;
   /** Tên rút gọn (operational label) cho bảng dense — fallback về name. */
   customerShortName: string | null;
+  /** MST khách hàng — copy nhanh cho kế toán (vòng 6). */
+  customerTaxCode: string | null;
   /** Số BKG column. */
   customerReference: string | null;
   truckPlate: string | null;

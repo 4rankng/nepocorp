@@ -147,7 +147,23 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
               >
                 {r.tripCode ?? `#${r.id}`}
               </button>
-              <span className="ledger-code__customer" title={r.customerName ?? undefined}>{customer}</span>
+              {/* Click tên khách = copy MST (vòng 6): kế toán dán thẳng vào
+                  app ngân hàng/hóa đơn mà không mở chi tiết. */}
+              <button
+                type="button"
+                className="ledger-code__customer"
+                title={r.customerTaxCode ? `${r.customerName} — bấm để copy MST ${r.customerTaxCode}` : (r.customerName ?? undefined)}
+                onClick={r.customerTaxCode ? (e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(r.customerTaxCode!);
+                  const el = e.currentTarget;
+                  const old = el.textContent;
+                  el.textContent = 'Đã copy MST ✓';
+                  window.setTimeout(() => { el.textContent = old; }, 1200);
+                } : undefined}
+              >
+                {customer}
+              </button>
             </div>
           );
         },

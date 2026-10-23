@@ -1,4 +1,6 @@
+import { useMemo } from 'react';
 import { UserX, Wrench } from 'lucide-react';
+import type { LiveFleetVehicle } from '@tingting/shared';
 import type { Driver, Truck } from '../utils';
 import type { NormalizedTrip } from '../../../hooks/useTripQueries';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
@@ -9,6 +11,16 @@ interface FleetGridProps {
   activeTrips: NormalizedTrip[];
   drivers: Driver[];
   onTripClick: (tripId: number) => void;
+  /** GPS live (tuỳ chọn): địa chỉ gần nhất cho tag dưới biển số — vòng 6. */
+  liveVehicles?: LiveFleetVehicle[];
+}
+
+function inspectionBadge(iso: string | null | undefined): { cls: string; title: string } | null {
+  if (!iso) return null;
+  const days = Math.round((new Date(iso).getTime() - Date.now()) / 86400000);
+  if (days < 0) return { cls: 'inspection-badge--expired', title: `Đăng kiểm QUÁ HẠN ${Math.abs(days)} ngày` };
+  if (days <= 7) return { cls: 'inspection-badge--soon', title: `Đăng kiểm còn ${days} ngày` };
+  return null;
 }
 
 function getActiveTripForTruck(truckId: number, activeTrips: NormalizedTrip[]) {
@@ -41,7 +53,8 @@ function getStatusKey(
   return 'noassign';
 }
 
-export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGridProps) {
+export function FleetGrid({ trucks, activeTrips, drivers, onTripClick, liveVehicles }: FleetGridProps) {
+  const liveByTruck = useMemo(() => new Map((liveVehicles ?? []).map(v => [v.truckId, v])), [liveVehicles]);
   if (trucks.length === 0) {
     return (
       <div className="fleet-empty">
@@ -85,7 +98,17 @@ export function FleetGrid({ trucks, activeTrips, drivers, onTripClick }: FleetGr
             <StatusStrip color={status.color} />
             {/* Biển số */}
             <div className="fleet-cell fleet-col-plate">
-              <span className={`plate${isMaint ? ' maint' : ''}`}>{truck.licensePlate}</span>
+              <span className="fleet-plate-line">
+                <span className={`plate${isMaint ? ' maint' : ''}`}>{truck.licensePlate}</span>
+                {(() => {
+                  const badge = inspectionBadge(truck.nextInspectionDate);
+                  return badge ? <span className={`inspection-badge ${badge.cls}`} title={badge.title} aria-label={badge.title} /> : null;
+                })()}
+              </span>
+              {(() => {
+                const addr = liveByTruck.get(truck.id)?.address;
+                return addr ? <span className="fleet-plate-addr" title={addr}>{addr}</span> : null;
+              })()}
             </div>
 
             {/* Lái xe — name only, no avatar */}

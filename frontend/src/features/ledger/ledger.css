@@ -195,6 +195,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Giờ là button copy-MST (vòng 6): reset về dạng text, hover gợi ý bấm. */
+button.ledger-code__customer {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.ledger-code__customer:hover { color: var(--accent-ink, var(--brand, #00B14F)); text-decoration: underline; }
 
 .ledger-code__code {
   border: 0;
@@ -919,3 +929,20 @@
   font-weight: 600;
 }
 .ledger-views__cost-toggle.is-active { color: var(--accent-ink, var(--brand, #00B14F)); }
+
+/* Scroll progress 3px dưới toolbar (vòng 6): định vị trong 5187px cuộn ngang. */
+.ledger-progress {
+  position: relative;
+  height: 3px;
+  background: var(--surface-2, #EDF0EE);
+  overflow: hidden;
+}
+.ledger-progress__fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent-ink, var(--brand, #00B14F));
+  transition: width 60ms linear;
+  pointer-events: none;
+}
+/* Hover cột: highlight header của cột đang trỏ (vòng 6). */
+.ledger-table thead th.ledger-th--colhover { background: color-mix(in srgb, var(--brand, #00B14F) 10%, var(--surface-2)); }

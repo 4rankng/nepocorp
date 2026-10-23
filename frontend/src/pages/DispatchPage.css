@@ -881,3 +881,34 @@ font-weight: 600;
   background: var(--d-red-bg, #FEE2E2);
   color: var(--d-red, #B91C1C);
 }
+
+/* ── Vòng 6: đăng kiểm badge + GPS address tag ─────────────────────────── */
+.dispatch-page .fleet-plate-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.dispatch-page .inspection-badge {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  cursor: help;
+}
+.dispatch-page .inspection-badge--soon { background: #F59E0B; }
+.dispatch-page .inspection-badge--expired {
+  background: var(--d-red, #B91C1C);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.15);
+}
+.dispatch-page .fleet-plate-addr {
+  display: block;
+  margin-top: 2px;
+  max-width: 150px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--ink-3, #9CA3AF);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

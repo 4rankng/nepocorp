@@ -9,6 +9,8 @@ export interface Truck {
   id: number;
   licensePlate: string;
   status: string;
+  /** Hạn đăng kiểm tiếp theo (ISO date | null) — badge cảnh báo trên fleet-table. */
+  nextInspectionDate?: string | null;
 }
 
 export interface ReassignState {

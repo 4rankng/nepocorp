@@ -111,6 +111,29 @@ export function LedgerGrid() {
     localStorage.setItem('ledger-cost-detail', v ? '0' : '1');
     return !v;
   });
+  // Scroll progress ngang (vòng 6): kế toán biết đang ở khúc nào của 5000px.
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const progressRef = useRef<HTMLDivElement | null>(null);
+  const onTableScroll = React.useCallback(() => {
+    const el = scrollRef.current;
+    const bar = progressRef.current;
+    if (!el || !bar) return;
+    const max = el.scrollWidth - el.clientWidth;
+    bar.style.width = max > 0 ? `${Math.round((el.scrollLeft / max) * 100)}%` : '100%';
+  }, []);
+  // Hover cột: highlight header của cột đang trỏ (delegation, rẻ).
+  const onTableOver = React.useCallback((e: React.MouseEvent) => {
+    const cell = (e.target as HTMLElement).closest('td');
+    const table = scrollRef.current?.querySelector('table');
+    if (!cell || !table) return;
+    table.querySelectorAll('th.ledger-th--colhover').forEach(th => th.classList.remove('ledger-th--colhover'));
+    const idx = cell.cellIndex;
+    const head = table.querySelectorAll('thead tr:last-child th')[idx] as HTMLElement | undefined;
+    head?.classList.add('ledger-th--colhover');
+  }, []);
+  const onTableLeave = React.useCallback(() => {
+    scrollRef.current?.querySelectorAll('th.ledger-th--colhover').forEach(th => th.classList.remove('ledger-th--colhover'));
+  }, []);
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const quickCounts: Record<QuickFilter, number> = {
     all: rows.length,
@@ -443,7 +466,8 @@ export function LedgerGrid() {
         </>
       ) : (
         <div className="table-wrap">
-        <div className="table-scroll ledger-scroll">
+        <div className="ledger-progress" aria-hidden="true"><div ref={progressRef} className="ledger-progress__fill" /></div>
+        <div ref={scrollRef} className="table-scroll ledger-scroll" onScroll={onTableScroll} onMouseOver={onTableOver} onMouseLeave={onTableLeave}>
           {query.isLoading ? (
             <div className="ledger-skeleton" aria-label="Đang tải…">
               {Array.from({ length: 8 }, (_, i) => <div key={i} className="ledger-skeleton__row" />)}

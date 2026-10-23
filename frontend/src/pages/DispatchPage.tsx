@@ -24,7 +24,7 @@ export default function DispatchPage() {
   const { data: live } = useLiveFleet();
   const { rootRef } = usePageAnimations({ ready: !loading });
   const drivers = useMemo(() => (data?.drivers ?? []) as Driver[], [data]);
-  const trucks: Truck[] = useMemo(() => (data?.trucks ?? []).map((t) => ({ id: t.id, licensePlate: t.licensePlate ?? '', status: t.status ?? '' })), [data]);
+  const trucks: Truck[] = useMemo(() => (data?.trucks ?? []).map((t) => ({ id: t.id, licensePlate: t.licensePlate ?? '', status: t.status ?? '', nextInspectionDate: (t as Truck).nextInspectionDate ?? null })), [data]);
   // Đơn chờ sort cũ nhất trước (audit DeepSeek vòng 5): đơn quá hạn/sắp hạn
   // lên đầu nên điều phối xử lý đúng thứ tự khẩn cấp.
   const pendingTrips: NormalizedTrip[] = useMemo(
@@ -154,7 +154,7 @@ export default function DispatchPage() {
         <div className="section-title"><h2>Trạng thái đội xe</h2><span className="count">{fleetCounts.all} xe</span></div>
         <DispatchFilters fleetFilter={fleetFilter} fleetCounts={fleetCounts} onFilterChange={setFleetFilter} />
       </div>
-      <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} />
+      <FleetGrid trucks={filteredTrucks} activeTrips={activeTrips} drivers={drivers} onTripClick={(id) => navigate(`/trips/${id}`)} liveVehicles={live?.vehicles} />
 
       <div className="section-head"><div className="section-title"><h2>Đơn hàng cần điều vận</h2><span className="count">{pendingTrips.length} đơn</span></div></div>
       <div className="orders-card orders-card--capped">
