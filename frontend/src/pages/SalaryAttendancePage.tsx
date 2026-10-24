@@ -227,7 +227,7 @@ export default function SalaryAttendancePage() {
           <div className="hero-actions">
             {canPostPayout && (
               <button
-                className="btn btn--primary btn--sm"
+                className="btn btn--secondary btn--sm"
                 onClick={() => setPayoutOpen(true)}
               >
                 <Wallet size={14} style={{ marginRight: 6 }} />
@@ -306,7 +306,7 @@ export default function SalaryAttendancePage() {
                   onClick={() => setSelectedDriverId(d.id)}
                   className={`driver-select-card ${isSelected ? 'is-active' : ''}`}
                 >
-                  {isSelected && <span className="driver-select-card__dot" />}
+                  {isSelected && <span className="driver-select-card__dot" aria-hidden />}
                   <span className="driver-select-card__name">{d.name}</span>
                   {d.salary && (
                     <span
@@ -455,7 +455,7 @@ export default function SalaryAttendancePage() {
                 </div>
               ) : salary ? (
                 <>
-                  <SalarySummaryCard salary={salary} />
+                  <SalarySummaryCard salary={salary} driverName={drivers.find(d => d.id === selectedDriverId)?.name} />
                   {/* Confirmed status + lock notice — informational, scroll with the card */}
                   {isConfirmed && (
                     <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>

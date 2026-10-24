@@ -78,12 +78,10 @@
 }
 
 .driver-select-card__dot {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
+  align-self: center;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--accent-2);
 }
@@ -333,10 +331,11 @@
   background: #C3E9D3;
 }
 
-/* Chờ việc — amber */
+/* Chờ việc — amber (softened fill: standby is the dominant state, a full
+   amber block per cell reads as a warning wall; consult DeepSeek 24/10) */
 .cal-cell.status-standby {
-  background: #FBEBC7;
-  border-color: #D9A93A;
+  background: #FDF4DC;
+  border-color: #E8CE8E;
 }
 .cal-cell.status-standby .cal-cell-day-num {
   color: #7A4C05;
@@ -409,8 +408,8 @@
 }
 .calendar-legend-item:nth-child(2) {
   color: #7A4C05;
-  border-color: #D9A93A;
-  background: #FBEBC7;
+  border-color: #E8CE8E;
+  background: #FDF4DC;
 }
 .calendar-legend-item:nth-child(3) {
   color: #9E1035;

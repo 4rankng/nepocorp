@@ -58,7 +58,7 @@ export function CalCell({ dateStr, day: _day, isSunday, dayLabel, workDay, isUpd
 }
 
 // ── Salary Summary Card ───────────────────────────────────────────────────────
-export function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
+export function SalarySummaryCard({ salary, driverName }: { salary: AttendanceSalary; driverName?: string }) {
   return (
     <div className="salary-summary-dark">
       <div className="salary-summary-dark__topline">
@@ -67,6 +67,7 @@ export function SalarySummaryCard({ salary }: { salary: AttendanceSalary }) {
           {salary.confirmationStatus === 'CONFIRMED' ? 'Đã chốt' : 'Bản nháp'}
         </span>
       </div>
+      {driverName && <div className="salary-summary-dark__driver">{driverName}</div>}
       <div className="salary-summary-dark__big mono">
         <Money value={salary.netSalary} />
       </div>
