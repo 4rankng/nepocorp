@@ -155,11 +155,22 @@ export function buildTripColumns(
               style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
               onClick={(e) => e.stopPropagation()}
             >
+              {/* View mode: ngày xuống dòng riêng dưới mã (feedback owner
+                  24/10 — cùng dòng thì "23/10" bị cắt còn "23/1" khi cột hết
+                  chỗ). Quick-edit giữ inline vì grid figures đã chịu chỉnh độ
+                  cao hàng (kanban 20260922_28). */}
               <div className="trip-name">
                 <span style={{ fontFamily: 'var(--font-mono)' }}>{tripCode}</span>
-                <span className="trip-meta-sep">·</span>
-                <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
+                {quickEdit?.enabled && (
+                  <>
+                    <span className="trip-meta-sep">·</span>
+                    <span className="trip-date">{formatDayMonth(trip.departureDate)}</span>
+                  </>
+                )}
               </div>
+              {!quickEdit?.enabled && (
+                <div className="trip-date">{formatDayMonth(trip.departureDate)}</div>
+              )}
               {quickEdit?.enabled && (
                 <div className="trip-customer" title={customerName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
                   <span>{customerName}</span>

@@ -288,7 +288,10 @@
   font-size: var(--fs-xs); font-weight: 500;
   color: var(--ink-3);
   flex-shrink: 0;
+  line-height: 1.35;
 }
+/* Dạng khối (dòng riêng dưới mã ở view grid) đẩy nhẹ xuống cho khớp nhịp. */
+.trip-list-page .trip-col__link > .trip-date { margin-top: 1px; }
 .trip-list-page .trip-customer {
   font-size: var(--fs-xs); color: var(--ink-2);
   margin-top: 3px;
