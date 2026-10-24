@@ -306,8 +306,10 @@ export default function SalaryAttendancePage() {
                   onClick={() => setSelectedDriverId(d.id)}
                   className={`driver-select-card ${isSelected ? 'is-active' : ''}`}
                 >
-                  {isSelected && <span className="driver-select-card__dot" aria-hidden />}
-                  <span className="driver-select-card__name">{d.name}</span>
+                  <span className="driver-select-card__head">
+                    {isSelected && <span className="driver-select-card__dot" aria-hidden />}
+                    <span className="driver-select-card__name">{d.name}</span>
+                  </span>
                   {d.salary && (
                     <span
                       className="driver-select-card__salary"

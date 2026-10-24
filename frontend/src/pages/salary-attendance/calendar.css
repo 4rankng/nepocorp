@@ -34,9 +34,11 @@
   width: 100%;
 }
 
+/* Uniform tile grid — tên trên, số tiền dưới, rộng đều (NEPO-5; user 24/10:
+   chip 1 dòng trông lộn xộn, overrides consult DeepSeek cùng ngày) */
 .driver-select-row__list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 8px;
   padding: 2px 0 4px;
 }
@@ -46,18 +48,16 @@
   font: inherit;
   text-align: left;
   position: relative;
-  /* Consult DeepSeek 24/10: 1 dòng ngang 36px thay vì 2 dòng dọc. */
-  display: inline-flex;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 8px;
-  height: 36px;
-  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 12px;
   background: var(--surface);
   border: 1px solid var(--border-1);
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  flex-shrink: 0;
   transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
@@ -78,12 +78,18 @@
 }
 
 .driver-select-card__dot {
-  align-self: center;
   flex-shrink: 0;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--accent-2);
+}
+
+.driver-select-card__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
 }
 
 .driver-select-card__name {
@@ -93,7 +99,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
 }
 
 .driver-select-card.is-active .driver-select-card__name {
@@ -146,10 +151,9 @@
 
 @media (max-width: 640px) {
   .driver-select-card {
-    height: 34px;
-    padding: 0 10px;
-    gap: 6px;
-    border-radius: 7px;
+    padding: 7px 10px;
+    gap: 2px;
+    border-radius: 8px;
   }
 }
 

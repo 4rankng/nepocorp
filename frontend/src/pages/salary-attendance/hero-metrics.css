@@ -153,11 +153,8 @@
 .salary-page .driver-select-row__search {
   margin-bottom: 8px;
 }
-/* Consult DeepSeek 24/10: chip ngang 36px, tên đậm + số tiền 11px muted —
-   6 chip ≈ 1080px vừa 1440 không wrap. */
+/* NEPO-5: danh sách chip là grid uniform (xem calendar.css) — không override flex */
 .salary-page .driver-select-row__list {
-  display: flex;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -172,9 +169,6 @@
   .salary-page .hero-top { flex-direction: column; gap: 14px; }
   .salary-page .hero-actions { width: 100%; justify-content: center; }
   .salary-page .driver-select-row__list {
-    flex-wrap: wrap;
-    overflow: visible;
-    display: flex;
     gap: 8px;
     padding: 2px 0 6px;
   }
@@ -250,8 +244,6 @@
   }
   .salary-page .driver-select-row__search { margin-bottom: 8px; }
   .salary-page .driver-select-row__list {
-    display: flex;
-    flex-wrap: wrap;
     overflow: visible;
     gap: 8px;
   }

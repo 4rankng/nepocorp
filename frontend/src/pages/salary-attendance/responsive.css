@@ -66,15 +66,12 @@
   }
 
   .driver-select-card {
-    flex: 1 1 150px;
-    min-width: auto;
     padding: 8px 14px;
     border-radius: 10px;
   }
 
   .driver-select-card__name {
     font-size: var(--fs-table);
-    max-width: 100px;
   }
 
   .driver-select-card__salary {
@@ -345,7 +342,6 @@
 
   .driver-select-card__name {
     font-size: var(--fs-table);
-    max-width: 72px;
   }
 }
 
@@ -387,9 +383,8 @@
   .salary-summary-dark__row { font-size: var(--fs-xs); }
   .salary-summary-dark__row-val { font-size: var(--fs-xs); }
   .driver-select-card {
-    min-width: 88px;
     padding: 6px 10px;
   }
-  .driver-select-card__name { font-size: var(--fs-table); max-width: 120px; }
+  .driver-select-card__name { font-size: var(--fs-table); }
   .driver-select-card__salary { font-size: var(--fs-table); }
 } /* end 640px */
