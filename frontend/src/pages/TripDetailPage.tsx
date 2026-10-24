@@ -88,7 +88,7 @@ export default function TripDetailPage() {
         className="trip-detail__crumbs"
         items={[
           { label: 'Tổng quan', to: '/dashboard' },
-          { label: 'Sổ chuyến đi', to: '/trips' },
+          { label: 'Kế hoạch vận chuyển', to: '/trips' },
           { label: trip.tripCode || 'Chuyến chưa có mã' },
         ]}
         renderLink={(to, children) => (

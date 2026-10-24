@@ -431,7 +431,7 @@ export default function TripListPage() {
         className="trip-list-page__crumbs"
         items={[
           { label: 'Tổng quan', to: '/dashboard' },
-          { label: 'Sổ chuyến đi' },
+          { label: 'Kế hoạch vận chuyển' },
         ]}
         renderLink={(to, children) => <a onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>{children}</a>}
       />

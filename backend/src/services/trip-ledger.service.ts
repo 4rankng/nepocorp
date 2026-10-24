@@ -848,7 +848,7 @@ export async function exportLedgerXlsx(filter: LedgerQueryInput, writable: impor
   const ExcelJSMod = await import('exceljs');
   const ExcelJS = (ExcelJSMod as unknown as { default?: typeof ExcelJSMod }).default ?? ExcelJSMod;
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('Sổ chuyến đi');
+  const sheet = workbook.addWorksheet('Kế hoạch vận chuyển');
 
   sheet.columns = LEDGER_EXPORT_COLUMNS.map(col => ({ key: col.header, width: col.width }));
   const headerRow = sheet.getRow(1);

@@ -14,7 +14,7 @@ export function TripListHero({ todayLabel, statusCounts, summary, quickEdit, tog
         <section className="trip-hero-compact">
           <div className="thc-top">
             <h1 className="thc-title">
-              Sổ chuyến đi
+              Kế hoạch vận chuyển
               <span className="thc-period">· {todayLabel}</span>
             </h1>
             <div className="thc-sub">

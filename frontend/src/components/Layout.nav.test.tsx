@@ -24,10 +24,10 @@ describe('nav labels — Bảng số liệu rename (NEPO-3)', () => {
     });
   }
 
-  it('trips nav keeps its own "Sổ chuyến đi" label (màn /trips — không đổi)', () => {
+  it('trips nav keeps its own "Kế hoạch vận chuyển" label (màn /trips — không đổi)', () => {
     for (const { role } of officeRoles) {
       const trips = getNavItems(role).find((i) => i.key === 'trips');
-      expect(trips?.label).toBe('Sổ chuyến đi');
+      expect(trips?.label).toBe('Kế hoạch vận chuyển');
     }
   });
 
