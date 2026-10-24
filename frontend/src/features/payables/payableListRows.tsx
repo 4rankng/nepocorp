@@ -114,7 +114,6 @@ export function PayableDesktopTable({ payables }: { payables: PayableSummary[] }
                       `{phone || '—'}` fallback read as a stray '_' under 4 of
                       5 supplier names (audit 24/10). */}
                   <SubLine value={d.supplier.phone} />
->>>>>>> origin/fix-nepo-dense-debt
                 </td>
                 <td className="num typo-mono" style={{
                   fontWeight: 700,

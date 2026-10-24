@@ -97,10 +97,6 @@ export default function CustomersPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  // Hạn mức TD column auto-hides while no customer carries a credit limit and
-  // renders again as soon as at least one does. Judged on the full customer
-  // set so the column presence stays stable while filtering.
-  const showCreditLimit = useMemo(() => customers.some(c => Number(c.creditLimit || 0) > 0), [customers]);
   // Infinite scroll: everything loaded so far stays on screen and the sentinel
   // pulls the next batch.
   const visibleCustomers = filtered.slice(0, currentPage * pageSize);
@@ -325,7 +321,6 @@ export default function CustomersPage() {
                   debt={debtMap.get(c.id) ?? 0}
                   showCreditLimit={showCreditLimit}
                   visibleCount={visibleCustomers.length}
-                  showCreditLimit={showCreditLimit}
                   menuOpen={menuOpenId === c.id}
                   deleting={deleting === c.id}
                   onOpen={() => navigate(`/customers/${c.id}`)}

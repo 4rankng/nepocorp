@@ -512,7 +512,6 @@ export default function DebtListPage() {
                     {filteredDebts.length === 0 && (
                       <tr>
                         <td colSpan={showNetColumn ? 4 : 3} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
-                        <td colSpan={showNetColumn ? 4 : 3} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                             <img src={resolveEmptyIllustration('empty-debts')} alt="" aria-hidden="true" style={{ width: 130, height: 108, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             Không tìm thấy dữ liệu công nợ thỏa mãn bộ lọc.
