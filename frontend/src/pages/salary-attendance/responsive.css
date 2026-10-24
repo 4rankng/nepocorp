@@ -105,7 +105,9 @@
     border-bottom: none;
   }
 
-  /* Status strip — 3×20px centered indicator, NOT full-height border */
+  /* Status strip — 3×20px centered indicator, NOT full-height border.
+     NEPO-9: strip colors = calendar cell border palette (NEPO-7) — Chờ việc
+     là neutral slate, không amber. */
   .mobile-day-row::before {
     content: '';
     position: absolute;
@@ -123,15 +125,15 @@
   }
 
   .mobile-day-row.status-standby::before {
-    background: var(--warning);
+    background: #CBD6D0;
   }
 
   .mobile-day-row.status-personal_leave::before {
-    background: var(--danger);
+    background: #E8B9C0;
   }
 
   .mobile-day-row.status-weekly_off::before {
-    background: var(--ink-4);
+    background: #D8DEDA;
   }
 
   /* Tappable rows */
