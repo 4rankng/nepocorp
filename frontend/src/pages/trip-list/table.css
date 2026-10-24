@@ -467,6 +467,11 @@
    flex: none để không bóp chữ. */
 .trip-list-page .trip-col--customer {
   display: flex;
+  /* Row layout: name trái, pill Xe ngoài phải. Bắt buộc khai báo — .trip-col
+     base để flex-direction: column, kế thừa column làm span tên mang
+     flex: 1 1 0 co về height 0 trên trục dọc → tên khách vô hình
+     (NEPO-12, demo probe 24/10). */
+  flex-direction: row;
   align-items: center;
   gap: 6px;
   min-width: 0;
