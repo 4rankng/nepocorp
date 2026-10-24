@@ -4,13 +4,8 @@
 // collapses to height 0 on the vertical main axis — Khách hàng renders blank
 // while the Xe ngoài pill (flex: 0 0 auto) stays visible, exactly the demo
 // bug this ticket fixed (probe 24/10: height 0 → 30.8px once row is set).
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import tableCss from './table.css?raw';
 import { describe, expect, it } from 'vitest';
-
-// vitest runs with `frontend/` as cwd (jsdom makes import.meta.url non-file),
-// so resolve the stylesheet from the package root.
-const tableCss = readFileSync(resolve(process.cwd(), 'src/pages/trip-list/table.css'), 'utf8');
 
 /** Body of the first CSS rule whose selector appears immediately before `{`. */
 function rule(css: string, selector: string): string {
