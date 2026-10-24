@@ -24,14 +24,16 @@
   color: var(--ink-2);
 }
 
-/* ═══ ZONE 1 — Status Banner ═══ */
+/* ═══ Summary row — former status banner + 3 KPI cards folded into one
+       strip (NEPO-23: ≤80px before any data, watermarks gone) ═══ */
 .penalty-status-banner {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 16px;
-  margin-bottom: 20px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  min-height: 56px;
 }
 .penalty-status-banner--safe {
   background: var(--success-soft);
@@ -42,8 +44,8 @@
   border: 1px solid var(--danger);
 }
 .penalty-status-banner__icon {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   flex-shrink: 0;
   display: flex;
@@ -57,16 +59,19 @@
 .penalty-status-banner--violation .penalty-status-banner__icon {
   background: var(--danger);
 }
+.penalty-status-banner__text {
+  min-width: 0;
+}
 .penalty-status-banner__title {
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
   font-weight: 700;
   line-height: var(--lh-snug);
   letter-spacing: 0;
 }
 .penalty-status-banner__subtitle {
-  font-size: var(--driver-penalty-body);
+  font-size: var(--driver-penalty-muted);
   color: var(--ink-2);
-  margin-top: 2px;
+  margin-top: 1px;
   line-height: var(--lh-normal);
 }
 .penalty-status-banner--safe .penalty-status-banner__title {
@@ -74,6 +79,37 @@
 }
 .penalty-status-banner--violation .penalty-status-banner__title {
   color: var(--danger-text);
+}
+.penalty-status-banner__figures {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: var(--driver-penalty-muted);
+  color: var(--ink-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.penalty-status-banner__figures .fig strong {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--ink);
+  margin-right: 3px;
+}
+.penalty-status-banner--safe .penalty-status-banner__figures .fig strong {
+  color: var(--success-text);
+}
+.penalty-status-banner--violation .penalty-status-banner__figures .fig strong {
+  color: var(--danger-text);
+}
+.penalty-status-banner__figures .fig-sep { opacity: 0.5; }
+@media (max-width: 640px) {
+  .penalty-status-banner { flex-wrap: wrap; row-gap: 2px; }
+  .penalty-status-banner__figures {
+    margin-left: 48px; /* icon 36 + gap 12 — keeps figures on the text column */
+    width: 100%;
+  }
 }
 
 /* Loading banner */
@@ -90,69 +126,6 @@
   border: 1px solid var(--line-2);
   color: var(--ink-3);
   font-size: var(--driver-penalty-muted);
-}
-
-/* ═══ ZONE 2 — KPI Grid (reuse shared .kpi-grid and .kpi classes) ═══ */
-.penalty-kpi-grid {
-  margin-bottom: 24px;
-}
-
-.penalty-kpi-grid .kpi {
-  min-height: 108px;
-  padding: 16px 88px 16px 20px;
-}
-
-.penalty-kpi-grid .kpi__top {
-  margin-bottom: 10px;
-}
-
-.penalty-kpi-grid .kpi__label {
-  font-size: var(--driver-penalty-section);
-  letter-spacing: var(--tracking-wide);
-}
-
-.penalty-kpi-grid .kpi__value {
-  font-size: var(--driver-penalty-kpi) !important;
-  line-height: 1.25;
-  margin-bottom: 6px;
-  letter-spacing: 0;
-  word-break: normal;
-  white-space: nowrap;
-}
-
-.penalty-kpi-grid .kpi__value-unit {
-  font-size: var(--driver-penalty-muted);
-  letter-spacing: 0;
-}
-
-.penalty-kpi-grid .kpi__meta {
-  font-size: var(--driver-penalty-muted);
-  line-height: var(--lh-snug);
-}
-
-.penalty-kpi-grid .kpi__watermark {
-  top: 50%;
-  right: 24px;
-  bottom: auto;
-  width: 58px;
-  height: 58px;
-  color: var(--stat-rail);
-  opacity: 0.08;
-  transform: translateY(-50%);
-}
-
-.penalty-kpi-grid .kpi__watermark svg {
-  width: 58px;
-  height: 58px;
-  stroke-width: 1.7;
-}
-
-.penalty-kpi-grid .kpi--warn .kpi__watermark,
-.penalty-kpi-grid .kpi--success .kpi__watermark,
-.penalty-kpi-grid .kpi--danger .kpi__watermark,
-.penalty-kpi-grid .kpi--neutral .kpi__watermark {
-  color: var(--stat-rail);
-  opacity: 0.08;
 }
 
 /* ═══ ZONE 3 — Violations Data Card ═══ */

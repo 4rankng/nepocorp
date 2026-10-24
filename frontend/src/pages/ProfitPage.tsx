@@ -197,25 +197,9 @@ export default function ProfitPage() {
       ) : (
         <div className="profit-layout">
 
-          {/* Bento Item 1: Profit Hero */}
-          <div className="profit-bento-hero">
-            <div className="profit-hero" style={{ height: '100%', marginBottom: 0 }}>
-              <div className="profit-hero__label">Lợi nhuận ròng để phân chia · T{selectedMonth} / {selectedYear}</div>
-              <div className="profit-hero__value" style={{ color: netProfit < 0 ? 'var(--danger)' : undefined }}>
-                <span>{Math.round(netProfit).toLocaleString('vi-VN')}</span>
-                <span className="profit-hero__currency">₫</span>
-              </div>
-              <div className="profit-hero__sub">
-                {/* The P&L covers completed AND locked trips. Claiming all of
-                    them were "đã khóa" made the locked-only quarterly preview
-                    read as broken (kanban 101026211500). */}
-                Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã ghi nhận trong kỳ
-                {' · '}<strong>{report?.lockedTripCount ?? 0}</strong> đã chốt sổ
-              </div>
-            </div>
-          </div>
-
-          {/* Bento Item 2: Accounting Breakdown */}
+          {/* Bento Item 1: Accounting Breakdown — the final calc row below is
+              the page's single authoritative render of net profit (NEPO-22:
+              the standalone hero card that repeated the same figure is gone). */}
           <div className="profit-bento-breakdown">
             <Card
               title={
@@ -269,15 +253,25 @@ export default function ProfitPage() {
                   </div>
                   <div className="calc-row__value calc-row__value--positive"><Money value={report?.otherIncome || 0} sign="+" /></div>
                 </div>
-                <div className="calc-row calc-row--total calc-row--final" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                <div className="calc-row calc-row--total calc-row--final">
                   <div className="calc-row__label calc-row__label--bold">Lợi nhuận ròng chia cổ đông</div>
                   <div className="calc-row__value" style={{ color: netProfit < 0 ? 'var(--danger)' : undefined }}><Money value={netProfit} /></div>
+                </div>
+                {/* NEPO-22 — trip-basis footnote carried over from the removed
+                    hero: one line, counts only, never the net figure (the final
+                    row above is its only render). The P&L covers completed AND
+                    locked trips — saying "đã khóa" for all of them made the
+                    locked-only quarterly preview read as broken (kanban
+                    101026211500). */}
+                <div className="calc-footnote">
+                  Dựa trên <strong>{report?.tripCount || 0}</strong> chuyến đã ghi nhận trong kỳ
+                  {' · '}<strong>{report?.lockedTripCount ?? 0}</strong> đã chốt sổ
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Bento Item 3: Shareholders */}
+          {/* Bento Item 2: Shareholders */}
           <div className="profit-bento-shareholders">
             <Card
               title={
@@ -343,8 +337,8 @@ export default function ProfitPage() {
             </Card>
           </div>
 
-          {/* Bento Item 4: Quarterly Settlement */}
-          <div className={history.length === 0 ? "profit-bento-settlement profit-bento-settlement--full" : "profit-bento-settlement"}>
+          {/* Bento Item 3: Quarterly Settlement */}
+          <div className="profit-bento-settlement">
             <Card
               style={{ height: '100%' }}
               title="Quyết toán & Chốt Quý"
@@ -397,13 +391,14 @@ export default function ProfitPage() {
 
               {preview && !distResult && (
                 <div style={{ marginTop: 16, padding: 16, background: 'var(--bg-2)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                  <h4 style={{ margin: '0 0 10px', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--fg-1)' }}>📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}</h4>
-                  <p style={{ margin: '0 0 12px', fontSize: 'var(--fs-body)', color: 'var(--fg-2)' }}>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--fg-1)' }}>
+                    📋 Dự kiến phân phối Quý {preview.quarter} / {preview.year}
                     {/* The plan covers the quarter's reportable trips — the same
                         completed + locked set the monthly P&L counts (kanban
-                        101026211500). */}
-                    Lợi nhuận ròng từ <strong>{preview.tripCount ?? '?'} chuyến đã hoàn thành / chốt sổ trong quý</strong>: <strong style={{ color: preview.netProfit < 0 ? 'var(--danger)' : undefined }}>{formatVND(preview.netProfit)}</strong>
-                  </p>
+                        101026211500). NEPO-22: one line, no net-figure repeat —
+                        the per-partner table below carries the amounts. */}
+                    {' · '}{preview.tripCount ?? '?'} chuyến đã hoàn thành / chốt sổ
+                  </h4>
 
                   {(preview.undistributedProfit ?? 0) > 0 && (
                     <div style={{ marginBottom: 10, padding: 10, background: 'var(--warn-soft)', color: 'var(--warn)', borderRadius: 6, fontSize: 'var(--fs-body)' }}>
@@ -479,8 +474,10 @@ export default function ProfitPage() {
 
               {distResult && (
                 <div style={{ marginTop: 16, padding: 16, background: 'var(--brand-soft)', borderRadius: 8, border: '1px dashed var(--brand)' }}>
-                  <h4 style={{ margin: '0 0 10px', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--brand)' }}>✅ Đã phân chia lợi nhuận Quý {distResult.quarter} / {distResult.year}</h4>
-                  <p style={{ margin: '0 0 12px', fontSize: 'var(--fs-body)', color: 'var(--fg-2)' }}>Tổng lợi nhuận ròng phân phối: <strong style={{ color: distResult.netProfit < 0 ? 'var(--danger)' : undefined }}>{formatVND(distResult.netProfit)}</strong></p>
+                  <h4 style={{ margin: '0 0 10px', fontSize: 'var(--fs-body)', fontWeight: 700, color: 'var(--brand)' }}>
+                    ✅ Đã phân chia lợi nhuận Quý {distResult.quarter} / {distResult.year}
+                    {distResult.tripCount != null ? ` · ${distResult.tripCount} chuyến` : ''}
+                  </h4>
                   <table style={{ width: '100%', fontSize: 'var(--fs-table)' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-2)', color: 'var(--fg-3)' }}>
@@ -503,7 +500,7 @@ export default function ProfitPage() {
             </Card>
           </div>
 
-          {/* Bento Item 5: Distribution History */}
+          {/* Bento Item 4: Distribution History */}
           {history.length > 0 && (
             <div className="profit-bento-history">
               <Card title="Lịch sử phân phối" subtitle="Các lần phân chia lợi nhuận đã thực hiện" style={{ height: '100%' }}>

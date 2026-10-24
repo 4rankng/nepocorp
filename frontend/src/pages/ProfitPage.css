@@ -13,23 +13,19 @@
 .profit-layout > * {
   min-width: 0;
 }
-.profit-bento-hero {
-  grid-column: span 8;
-}
+/* NEPO-22 — the standalone profit-hero cell is gone: the breakdown card's
+   final row is the only render of net profit. Flat auto-height grid — no
+   rowspan stretching, no dead card space. */
 .profit-bento-breakdown {
   grid-column: span 4;
-  grid-row: span 2;
 }
 .profit-bento-shareholders {
   grid-column: span 8;
 }
 .profit-bento-settlement {
-  grid-column: span 8;
+  grid-column: span 12;
 }
 .profit-bento-history {
-  grid-column: span 4;
-}
-.profit-bento-settlement--full {
   grid-column: span 12;
 }
 
@@ -37,67 +33,28 @@
   .profit-layout {
     grid-template-columns: 1fr;
   }
-  .profit-bento-hero,
   .profit-bento-breakdown,
   .profit-bento-shareholders,
   .profit-bento-settlement,
-  .profit-bento-history,
-  .profit-bento-settlement--full {
+  .profit-bento-history {
     grid-column: span 1 / auto;
     grid-row: span 1 / auto;
   }
 }
 
-.profit-hero {
-  background:
-    linear-gradient(135deg, rgba(0, 90, 45, 0.08), rgba(255, 255, 255, 0) 42%),
-    var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 22px 24px;
-  margin-bottom: 16px;
-  position: relative;
-  overflow: hidden;
-}
-.profit-hero::after {
-  content: none;
-}
-.profit-hero__label {
-  font-family: var(--font-body);
-  font-size: var(--fs-xs);
-  color: var(--accent-ink);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 600;
-  margin-bottom: 8px;
-  position: relative;
-  z-index: 1;
-}
-.profit-hero__value {
-  font-family: var(--font-display);
-  font-size: var(--fs-3xl);
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.25;
-  color: var(--ink);
-  position: relative;
-  z-index: 1;
-}
-.profit-hero__currency {
-  font-family: var(--font-display);
+/* NEPO-22 — one-line footnote under the final calc row: trip counts only,
+   never a repeat of the net figure. */
+.calc-footnote {
+  padding: 8px 16px 10px;
   font-size: var(--fs-xs);
   color: var(--ink-3);
-  margin-left: 6px;
-  font-weight: 500;
+  background: var(--surface-2);
+  border-top: 1px dashed var(--line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.profit-hero__sub {
-  margin-top: 8px;
-  font-size: var(--fs-xs);
-  color: var(--ink-2);
-  position: relative;
-  z-index: 1;
-}
+.calc-footnote strong { font-family: var(--font-mono); color: var(--ink-2); font-weight: 600; }
 
 .partner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 1023px) { .partner-grid { grid-template-columns: 1fr; } }
@@ -216,11 +173,6 @@
 /* ── Responsive overrides (from responsive.css decomposition) ── */
 @media (max-width: 640px) {
   /* ── Profit page ── */
-  .profit-hero { padding: 18px 16px; border-radius: 14px; margin-bottom: 16px; }
-  .profit-hero__label { font-size: var(--fs-xs); margin-bottom: 6px; letter-spacing: 0.06em; }
-  .profit-hero__value { font-size: var(--fs-3xl); letter-spacing: 0; word-break: break-word; }
-  .profit-hero__currency { font-size: var(--fs-xs); margin-left: 4px; }
-  .profit-hero__sub { font-size: var(--fs-xs); margin-top: 8px; line-height: 1.4; }
   .partner-grid { gap: 10px; }
   .partner-card { padding: 14px; border-radius: 12px; }
   .partner-card__head { gap: 10px; margin-bottom: 8px; }
@@ -234,6 +186,7 @@
   .calc-row__label { font-size: var(--fs-sm); }
   .calc-row__value { font-size: var(--fs-table); }
   .calc-row--final .calc-row__value { font-size: var(--fs-lg); }
+  .calc-footnote { padding: 8px 12px 10px; }
 } /* end 640px */
 
 /* The enclosing section supplies the surface; these are report rows. */
