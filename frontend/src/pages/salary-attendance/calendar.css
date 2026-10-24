@@ -2,14 +2,15 @@
 .salary-page-layout {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
+  gap: 16px;
   align-items: start;
-  max-width: 1180px; /* 840px calendar + 20px gap + 320px sidebar */
+  /* Consult DeepSeek 24/10: bỏ cap 1180px — lịch chiếm toàn bộ chiều rộng
+     còn lại (rail 320px giữ nguyên), ô lịch ~152px rộng đủ 3 dòng nội dung. */
 }
 
 @media (min-width: 1025px) {
   .salary-page-layout.has-selected {
-    grid-template-columns: minmax(auto, 840px) 320px;
+    grid-template-columns: minmax(0, 1fr) 320px;
   }
 }
 
@@ -29,7 +30,7 @@
 
 /* ─── Driver Selector Strip ─── */
 .driver-select-row {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   width: 100%;
 }
 
@@ -45,18 +46,19 @@
   font: inherit;
   text-align: left;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 8px 14px;
+  /* Consult DeepSeek 24/10: 1 dòng ngang 36px thay vì 2 dòng dọc. */
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
   background: var(--surface);
   border: 1px solid var(--border-1);
   border-radius: 8px;
   cursor: pointer;
   flex-shrink: 0;
   transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
-  min-width: 120px;
 }
 
 .driver-select-card:focus-visible {
@@ -77,8 +79,9 @@
 
 .driver-select-card__dot {
   position: absolute;
-  top: 8px;
+  top: 50%;
   right: 8px;
+  transform: translateY(-50%);
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -89,10 +92,10 @@
   font-size: var(--fs-table);
   font-weight: 600;
   color: var(--fg-1);
-  white-space: normal;
-  overflow: visible;
-  overflow-wrap: anywhere;
-  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
 }
 
 .driver-select-card.is-active .driver-select-card__name {
@@ -100,9 +103,11 @@
 }
 
 .driver-select-card__salary {
-  font-size: var(--fs-table);
+  font-size: var(--fs-xs);
   font-weight: 600;
   font-family: var(--font-mono);
+  color: var(--ink-2);
+  white-space: nowrap;
 }
 
 .driver-select-card.is-active .driver-select-card__salary {
@@ -143,16 +148,16 @@
 
 @media (max-width: 640px) {
   .driver-select-card {
-    padding: 7px 12px;
+    height: 34px;
+    padding: 0 10px;
+    gap: 6px;
     border-radius: 7px;
-    min-width: 100px;
   }
 }
 
 /* ─── Calendar Panel ─── */
 .salary-calendar-area {
   width: 100%;
-  max-width: 840px;
 }
 
 .calendar-card-header {

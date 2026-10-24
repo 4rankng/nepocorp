@@ -58,7 +58,7 @@
     var(--surface);
   color: var(--ink);
   border-radius: 16px;
-  padding: 22px 22px 20px;
+  padding: 14px 16px 12px;
   border: 1px solid var(--line);
   position: relative;
   overflow: hidden;
