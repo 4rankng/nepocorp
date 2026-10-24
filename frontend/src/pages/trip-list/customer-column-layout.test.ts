@@ -1,16 +1,15 @@
-// NEPO-12 — the Khách hàng cell must lay out horizontally. `.trip-col` base
-// sets flex-direction: column for every cell; if `.trip-col--customer` ever
-// loses its explicit `flex-direction: row`, the name span (flex: 1 1 0)
-// collapses to height 0 on the vertical main axis — Khách hàng renders blank
-// while the Xe ngoài pill (flex: 0 0 auto) stays visible, exactly the demo
-// bug this ticket fixed (probe 24/10: height 0 → 30.8px once row is set).
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+// NEPO-12 — Khách hàng cell layout contract (owner 24/10: tên trên 1-2 dòng,
+// pill "Xe ngoài" xuống dòng riêng BÊN DƯỚI — không cùng hàng).
+//
+// Hai cái bẫy đã bite thật:
+// 1. `.trip-col` base để `flex-direction: column` — nếu span tên mang
+//    `flex: 1 1 0` thì basis 0 nằm trên trục DỌC → height về 0 → tên vô hình
+//    trong khi pill vẫn hiện (bug demo 24/10, probe: height 0 → 30.8px).
+//    Vì vậy layout này PHẢI là column và tên PHẢI basis auto.
+// 2. `flex-direction: row` (bản fix đầu) đổ tên và pill cùng hàng — owner
+//    bác. Không được quay lại row.
+import tableCss from './table.css?raw';
 import { describe, expect, it } from 'vitest';
-
-// vitest runs with `frontend/` as cwd (jsdom makes import.meta.url non-file),
-// so resolve the stylesheet from the package root.
-const tableCss = readFileSync(resolve(process.cwd(), 'src/pages/trip-list/table.css'), 'utf8');
 
 /** Body of the first CSS rule whose selector appears immediately before `{`. */
 function rule(css: string, selector: string): string {
@@ -20,17 +19,20 @@ function rule(css: string, selector: string): string {
 }
 
 describe('trip-list customer column layout (NEPO-12)', () => {
-  it('pins flex-direction: row on the customer cell (must not inherit column from .trip-col)', () => {
-    expect(rule(tableCss, '.trip-list-page .trip-col--customer')).toMatch(/flex-direction\s*:\s*row/);
+  it('stacks the cell: flex-direction column with vertical centering', () => {
+    const cell = rule(tableCss, '.trip-list-page .trip-col--customer');
+    expect(cell).toMatch(/flex-direction\s*:\s*column/);
+    expect(cell).toMatch(/justify-content\s*:\s*center/);
+    expect(cell).not.toMatch(/flex-direction\s*:\s*row/);
   });
 
-  it('keeps the flex-basis-0 name span safe: the clamp rule carries flex: 1 1 0 only alongside row direction', () => {
-    // The 2-line-clamp rule (the SECOND .trip-customer-name block, identified
-    // by its -webkit-line-clamp declaration) relies on flex: 1 1 0; that basis
-    // is only harmful on a vertical main axis, so the pair is safe together.
+  it('keeps the name span basis-auto on the vertical main axis (no flex: 1 1 0 collapse)', () => {
+    // The 2-line-clamp block is the SECOND .trip-customer-name rule — identify
+    // it by its -webkit-line-clamp declaration.
     const clampRule = tableCss.match(
       /\.trip-list-page \.trip-col--customer \.trip-customer-name\s*\{[^}]*-webkit-line-clamp[^}]*\}/,
     )?.[0] ?? '';
-    expect(clampRule).toMatch(/flex\s*:\s*1\s+1\s+0/);
+    expect(clampRule).not.toMatch(/flex\s*:\s*[^;]*\b0\b[^;]*[,)]/);
+    expect(clampRule).toMatch(/align-self\s*:\s*stretch/);
   });
 });

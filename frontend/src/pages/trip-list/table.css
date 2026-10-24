@@ -457,29 +457,31 @@
   min-width: 0;
   overflow: hidden;
 }
-/* Tên khách được co để pill Xe ngoài không bị đẩy tràn sang cột Xe. */
+/* Co tên trong ô để không tràn sang cột Xe; flex-basis auto (không 0). */
 .trip-list-page .trip-col--customer .trip-customer-name {
   min-width: 0;
   flex: 0 1 auto;
 }
 /* Cột Khách hàng riêng (view mode) — consult DeepSeek 24/10: 2 dòng line-clamp
-   thay vì 1 dòng ellipsis (chủ sở hữu không chấp nhận text bị cắt), pill Xe ngoài
-   flex: none để không bóp chữ. */
+   thay vì 1 dòng ellipsis (chủ sở hữu không chấp nhận text bị cắt). Owner
+   24/10: pill Xe ngoài phải nằm DƯỚI tên, không cùng hàng. */
 .trip-list-page .trip-col--customer {
   display: flex;
-  /* Row layout: name trái, pill Xe ngoài phải. Bắt buộc khai báo — .trip-col
-     base để flex-direction: column, kế thừa column làm span tên mang
-     flex: 1 1 0 co về height 0 trên trục dọc → tên khách vô hình
-     (NEPO-12, demo probe 24/10). */
-  flex-direction: row;
-  align-items: center;
+  /* Stacked: tên trên, pill dưới. Column cũng là kế thừa từ .trip-col — cột
+     này PHẢI giữ column; tên không được mang flex-basis 0 (flex: 1 1 0 trên
+     trục dọc co height về 0 → tên vô hình, bug NEPO-12). */
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
   gap: 6px;
   min-width: 0;
 }
 .trip-list-page .trip-col--customer .trip-customer-name {
   font-size: var(--fs-sm);
   color: var(--ink);
-  flex: 1 1 0;
+  /* Full rộng của ô để line-clamp 2 dòng đúng; basis auto nên height theo
+     content — không bao giờ co 0 như flex: 1 1 0 cũ. */
+  align-self: stretch;
   min-width: 0;
   text-align: left;
   display: -webkit-box;

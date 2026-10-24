@@ -13,7 +13,7 @@ export default defineConfig({
     // tests can read them via `?raw`. Every other .css id stays stubbed to
     // an empty string (Vitest default) — cheaper and side-effect free.
     css: {
-      include: [/salary-attendance\/[^?]+\.css(\?.*)?$/],
+      include: [/(salary-attendance|trip-list)\/[^?]+\.css(\?.*)?$/],
     },
   },
   resolve: {
