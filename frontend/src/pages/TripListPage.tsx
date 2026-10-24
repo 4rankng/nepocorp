@@ -397,7 +397,7 @@ export default function TripListPage() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     // View grid 9 track (audit 23/10): ẩn road/totalCost — số liệu vẫn đầy đủ
-    // ở quick-edit (lưới figures 10 track) và Bảng kế hoạch. Defs giữ nguyên
+    // ở quick-edit (lưới figures 10 track) và Bảng tổng hợp số liệu. Defs giữ nguyên
     // để cell renderer + test không đổi.
     state: quickEdit ? undefined : { columnVisibility: { road: false, totalCost: false } },
   });

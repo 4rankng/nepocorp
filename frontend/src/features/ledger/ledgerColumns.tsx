@@ -200,7 +200,7 @@ export function buildLedgerColumns(ctx: LedgerCellContext): Array<LedgerLeaf | L
             editType="date"
             rawValue={row.original.departureDate}
             display={formatDatePadded(row.original.departureDate)}
-            lockedTitle="Chỉ Quản lý / Quản trị sửa được cột Kế hoạch"
+            lockedTitle="Chỉ Quản lý / Kế toán / Quản trị sửa được cột Kế hoạch"
             buildPatch={(r, draft) => (draft ? { kind: 'plan', body: { departureDate: draft } } : null)}
           />
         ),
