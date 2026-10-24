@@ -41,7 +41,7 @@ export interface Customer {
   id: number;
   /** Legal/accounting name used on documents. */
   name: string;
-  /** Operational label for dense grids (Sổ cái, Bảng kế hoạch). */
+  /** Operational label for dense grids (Sổ cái, Bảng tổng hợp số liệu). */
   shortName: string | null;
   taxCode: string | null;
   contactPerson: string | null;

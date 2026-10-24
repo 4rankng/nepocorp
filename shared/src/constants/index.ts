@@ -57,9 +57,10 @@ export function isFinancialRole(role: Role | string | undefined): boolean {
 /**
  * Sổ cái (/ledger) column groups — the "per hạng mục" permission model that
  * mirrors how the company shares the master Google Sheet with scoped sections.
- * PLAN mirrors dispatch data entry (dispatch is ADMIN/MANAGER — there is no
- * DISPATCHER role); MONEY mirrors the accountant's columns; RESULT is computed
- * and read-only for everyone, so its role list is deliberately empty.
+ * PLAN mirrors dispatch data entry plus the accountant's planning columns
+ * (Pete 24/10: kế toán và quản lý được sửa trực tiếp Bảng tổng hợp số liệu);
+ * MONEY mirrors the accountant's columns; RESULT is computed and read-only
+ * for everyone, so its role list is deliberately empty.
  */
 export enum LedgerColumnGroup {
   PLAN = 'PLAN',
@@ -69,7 +70,7 @@ export enum LedgerColumnGroup {
 
 /** Roles allowed to write each ledger column group. Empty = nobody writes. */
 export const LEDGER_GROUP_ROLES: Readonly<Record<LedgerColumnGroup, readonly Role[]>> = {
-  [LedgerColumnGroup.PLAN]: [Role.ADMIN, Role.MANAGER],
+  [LedgerColumnGroup.PLAN]: [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT],
   [LedgerColumnGroup.MONEY]: [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT],
   [LedgerColumnGroup.RESULT]: [],
 };

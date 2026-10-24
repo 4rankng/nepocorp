@@ -49,7 +49,8 @@ import { useButtonLabelLayout } from './shared/useButtonLabelLayout';
 
 // ─── Navigation config ────────────────────────────────────────────────────
 
-function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number): NavItem[] {
+// eslint-disable-next-line react-refresh/only-export-components -- pure nav config, exported for the nav-label pin tests
+export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number): NavItem[] {
   const normRole = String(role || '').toUpperCase();
   switch (normRole) {
     case 'MANAGER':
@@ -60,7 +61,7 @@ function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?: number
 
         { key: 'dispatch', label: 'Điều vận', path: routes.dispatch, icon: Compass, section: 'operations', count: dispatchCount },
         { key: 'trips', label: 'Sổ chuyến đi', path: routes.trips, icon: Truck, section: 'operations' },
-        { key: 'bang-ke-hoach', label: 'Bảng kế hoạch', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
+        { key: 'bang-ke-hoach', label: 'Bảng tổng hợp số liệu', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
 
         { key: 'salary', label: 'Lương & Chấm công', path: routes.salary, icon: CalendarDays, section: 'hr' },
         { key: 'penalties', label: 'Kỷ luật', path: routes.penalties, icon: AlertTriangle, section: 'hr', count: penaltiesCount },
