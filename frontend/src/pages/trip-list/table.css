@@ -459,7 +459,9 @@
   min-width: 0;
   flex: 0 1 auto;
 }
-/* Cột Khách hàng riêng (view mode) — 1 dòng truncate + pill Xe ngoài inline. */
+/* Cột Khách hàng riêng (view mode) — consult DeepSeek 24/10: 2 dòng line-clamp
+   thay vì 1 dòng ellipsis (chủ sở hữu không chấp nhận text bị cắt), pill Xe ngoài
+   flex: none để không bóp chữ. */
 .trip-list-page .trip-col--customer {
   display: flex;
   align-items: center;
@@ -469,9 +471,19 @@
 .trip-list-page .trip-col--customer .trip-customer-name {
   font-size: var(--fs-sm);
   color: var(--ink);
-  white-space: nowrap;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  word-break: break-word;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+.trip-list-page .trip-col--customer .badge,
+.trip-list-page .trip-col--customer > *:not(.trip-customer-name) {
+  flex: 0 0 auto;
 }
 /* Cảnh báo gom 1 dòng trong ô Chuyến · Mã. */
 .trip-list-page .trip-missing-line {

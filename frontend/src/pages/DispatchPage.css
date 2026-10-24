@@ -1036,15 +1036,19 @@ font-weight: 600;
   box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.15);
 }
 .dispatch-page .fleet-plate-addr {
-  display: block;
+  /* Consult DeepSeek 24/10: 2 dòng line-clamp thay vì 1 dòng ellipsis —
+     22px pill + 2px gap + 2×14px dòng = 64px vẫn khớp row height. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   margin-top: 2px;
   max-width: 100%;
   font-size: 11px;
   line-height: 1.3;
   color: var(--ink-3, #9CA3AF);
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ── Vòng 7: bulk 'Khởi hành' ──────────────────────────────────────────── */
