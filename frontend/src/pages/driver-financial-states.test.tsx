@@ -67,12 +67,13 @@ it('shows penalty-history failure separately from the loaded earnings totals', (
   expect(mocks.retry).toHaveBeenCalled();
 });
 
-it('keeps the deduction minus sign and currency when income counters animate', () => {
+it('renders deduction and salary figures statically with sign and currency (no counter animation)', () => {
   render(<DriverEarningsPage />);
-  const targets = mocks.animateCounters.mock.calls[0][0] as Array<{ value: number; prefix?: string; suffix?: string }>;
-  // The VND sign is '₫' everywhere (kanban 091026235520 unified the symbol).
-  expect(targets.find(target => target.value === 150000)).toMatchObject({ prefix: '-', suffix: ' ₫' });
-  expect(targets.find(target => target.value === 5000000)).toMatchObject({ suffix: ' ₫' });
+  // NEPO-16: money renders authoritatively from React — no count-up that
+  // briefly shows wrong temporary values. The VND sign is '₫' everywhere
+  // (kanban 091026235520 unified the symbol) and the deduction keeps its minus.
+  expect(screen.getAllByText('-150.000 ₫').length).toBeGreaterThan(0);
+  expect(screen.getAllByText('5.000.000 ₫').length).toBeGreaterThan(0);
 });
 
 it('retains canceled penalties in history without counting them as current violations', () => {

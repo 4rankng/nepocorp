@@ -18,6 +18,7 @@ import { PageHeader } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { ListFilterBar } from '../components/shared/ListFilterBar';
 import { ClickableCard } from '../components/shared/ClickableCard';
+import { useAutoHideColumn } from '../design-system';
 import { useCustomerAging } from '../hooks/useQueries';
 import type { CustomerAging } from '../hooks/useQueries';
 import {
@@ -225,6 +226,13 @@ export default function DebtListPage() {
   // jumps to the real figures is exactly the flicker QA logged, so the card
   // shows "no value yet", never a wrong one (kanban 091026010100).
   const heroMoney = moneyParts(totals.total, false);
+
+  // NEPO-16 AutoHideColumn: when no customer in the filtered set links to a
+  // supplier the "Số ròng" column rendered a full run of '—' (audit 24/10).
+  // Hide it until one row carries a linked-AP net balance.
+  const showNetColumn = useAutoHideColumn(
+    useMemo(() => filteredDebts.map(d => (d.linkedSupplierId == null ? null : formatCurrency(d.netBalance))), [filteredDebts]),
+  );
 
   return (
     <div ref={rootRef} className="debt-list-page">
@@ -460,8 +468,10 @@ export default function DebtListPage() {
                         <th className="num">Tổng nợ (gồm VAT)</th>
                         {/* "Số ròng" matches the same figure's label on the AR
                             detail's linked-AP summary; "Net công nợ" was the
-                            only English word in the row (kanban 091026010110). */}
-                        <th className="num">Số ròng (gồm VAT)</th>
+                            only English word in the row (kanban 091026010110).
+                            Auto-hidden while no row links a supplier
+                            (NEPO-16). */}
+                        {showNetColumn && <th className="num">Số ròng (gồm VAT)</th>}
                         <th className="num" style={{ textAlign: 'center' }}>Tuổi nợ</th>
                       </tr>
                     </thead>
@@ -509,16 +519,18 @@ export default function DebtListPage() {
                             {formatCurrency(d.totalOutstanding)}
                           </td>
 
-                          <td className="num typo-mono" style={{
-                            fontWeight: 600,
-                            color: d.linkedSupplierId == null
-                              ? 'var(--fg-3)'
-                              : (d.netBalance > 0 ? 'var(--danger)' : d.netBalance < 0 ? 'var(--success)' : 'var(--fg-3)')
-                          }}>
-                            {d.linkedSupplierId == null
-                              ? <span style={{ color: 'var(--fg-3)' }}>&mdash;</span>
-                              : formatCurrency(d.netBalance)}
-                          </td>
+                          {showNetColumn && (
+                            <td className="num typo-mono" style={{
+                              fontWeight: 600,
+                              color: d.linkedSupplierId == null
+                                ? 'var(--fg-3)'
+                                : (d.netBalance > 0 ? 'var(--danger)' : d.netBalance < 0 ? 'var(--success)' : 'var(--fg-3)')
+                            }}>
+                              {d.linkedSupplierId == null
+                                ? <span style={{ color: 'var(--fg-3)' }}>&mdash;</span>
+                                : formatCurrency(d.netBalance)}
+                            </td>
+                          )}
 
                           <td className="num" style={{ textAlign: 'center', fontWeight: 600 }}>
                             {d.maxOverdueDays > 0 ? (
@@ -536,7 +548,7 @@ export default function DebtListPage() {
 
                     {filteredDebts.length === 0 && (
                       <tr>
-                        <td colSpan={4} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
+                        <td colSpan={showNetColumn ? 4 : 3} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                             <img src={resolveEmptyIllustration('empty-debts')} alt="" aria-hidden="true" style={{ width: 130, height: 108, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             Không tìm thấy dữ liệu công nợ thỏa mãn bộ lọc.

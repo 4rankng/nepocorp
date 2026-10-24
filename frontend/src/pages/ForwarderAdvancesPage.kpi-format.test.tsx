@@ -2,7 +2,6 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ToastProvider } from '../components/shared/Toast';
-import type { CounterTarget } from '../hooks/animations';
 import ForwarderAdvancesPage from './ForwarderAdvancesPage';
 
 const mocks = vi.hoisted(() => ({
@@ -33,17 +32,6 @@ vi.mock('../hooks/animations', () => ({
 vi.mock('../hooks/usePrefersReducedMotion', () => ({
   usePrefersReducedMotion: () => mocks.prefersReduced.value,
 }));
-
-/** Settled-counter stand-in for the documented useCounterAnimation contract:
- *  el.textContent = prefix + formatted value + suffix (verbatim concatenation). */
-function settleCounters(targets: CounterTarget[]) {
-  for (const { el, value, prefix = '', suffix = '', locale = 'vi-VN', format } of targets) {
-    if (!el) continue;
-    el.textContent = format
-      ? format(value)
-      : `${prefix}${Math.round(value).toLocaleString(locale)}${suffix}`;
-  }
-}
 
 const request = {
   id: 1,
@@ -84,10 +72,11 @@ it('renders the pending count with exactly one space before the counter runs', (
   expect(container.querySelector('.hero-kpi-mini--warn .hero-kpi-mini__value')?.textContent).toBe('1 chờ duyệt');
 });
 
-it('keeps one space and the ₫ marker after the counter animation settles', () => {
+it('renders the hero figures statically — no counter animation writes the values (NEPO-16)', () => {
   mocks.prefersReduced.value = false;
-  mocks.animateCounters.mockImplementation(settleCounters);
   const { container } = render(<MemoryRouter><ToastProvider><ForwarderAdvancesPage /></ToastProvider></MemoryRouter>);
+  // Values come from React render, not from an out-of-band textContent write.
+  expect(mocks.animateCounters).not.toHaveBeenCalled();
   expect(container.querySelector('.hero-kpi-mini--warn .hero-kpi-mini__value')?.textContent).toBe('1 chờ duyệt');
   const value = container.querySelector('.hero-kpi-mini--accent .hero-kpi-mini__value');
   expect(value?.textContent).toBe('197.090.978₫');

@@ -1,5 +1,5 @@
 import { ListFilterBar } from '../components/shared/ListFilterBar';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Loader2, Plus, ArrowRight, Clock } from 'lucide-react';
 import { EmptyState } from '../design-system';
@@ -11,8 +11,7 @@ import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderSettlements } from '../hooks/useForwarderQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
-import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
-import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { useMonth } from '../hooks/useMonth';
 import { getCalendarMonthRange } from '../lib/calendar-month';
 import './ForwarderSettlementsPage.css';
@@ -86,10 +85,6 @@ export default function ForwarderSettlementsPage() {
     selectors: ['.page-header', '.hero-kpi-row', '.fwd-filter-pills', '.fset-card'],
   });
   const { data: catalogs } = useCatalogs();
-  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
-  const heroExpenseRef = useRef<HTMLSpanElement>(null);
-  const heroTotalRef = useRef<HTMLSpanElement>(null);
-  const heroPendingRef = useRef<HTMLSpanElement>(null);
 
   const settlements = useMemo(() => (settlementsData?.items ?? settlementsData ?? []) as Settlement[], [settlementsData]);
   const expenseTypeOptions = catalogs?.forwarderExpenseTypes ?? [];
@@ -100,17 +95,9 @@ export default function ForwarderSettlementsPage() {
   const pending = settlements.filter(s => s.status === 'PENDING').length;
   const totalExpenseAll = settlements.reduce((sum, s) => sum + Number(s.totalExpenseAmount), 0);
 
-  const prefersReduced = usePrefersReducedMotion();
-
-  // Kick counter animations when data is ready
-  useEffect(() => {
-    if (loadingSettlements || settlements.length === 0 || prefersReduced) return;
-    animateCounters([
-      { el: heroExpenseRef.current, value: totalExpenseAll, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
-      { el: heroTotalRef.current, value: settlements.length },
-      { el: heroPendingRef.current, value: pending },
-    ]);
-  }, [loadingSettlements, settlements.length, totalExpenseAll, pending, animateCounters, prefersReduced]);
+  // NEPO-16: no count-up on the hero figures — the counter rewrote
+  // textContent out-of-band of React and a reload caught wrong temporary
+  // values. Money renders authoritatively from React.
 
   // Status counts & filtered list
   const statusCounts = useMemo(() => {
@@ -163,7 +150,7 @@ export default function ForwarderSettlementsPage() {
         <div className="hero-kpi-row">
           <div className="hero-kpi-card">
             <span className="hero-kpi-card__eyebrow">Tổng chi phí thanh toán</span>
-            <span className="hero-kpi-card__amount"><span ref={heroExpenseRef}>{Math.round(totalExpenseAll).toLocaleString('vi-VN')}</span><span className="hero-kpi-card__currency">₫</span></span>
+            <span className="hero-kpi-card__amount"><span>{Math.round(totalExpenseAll).toLocaleString('vi-VN')}</span><span className="hero-kpi-card__currency">₫</span></span>
             <span className="hero-kpi-card__subtitle">{settlements.length} phiếu thanh toán</span>
             <FileText size={72} className="hero-kpi-card__watermark" aria-hidden />
           </div>
@@ -171,7 +158,7 @@ export default function ForwarderSettlementsPage() {
             <div className="hero-kpi-mini hero-kpi-mini--accent">
               <div className="hero-kpi-mini__body">
                 <span className="hero-kpi-mini__title">Tổng phiếu</span>
-                <span className="hero-kpi-mini__value" ref={heroTotalRef}>{settlements.length}</span>
+                <span className="hero-kpi-mini__value">{settlements.length}</span>
                 <span className="hero-kpi-mini__label">phiếu</span>
               </div>
               <FileText size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
@@ -179,7 +166,7 @@ export default function ForwarderSettlementsPage() {
             <div className="hero-kpi-mini hero-kpi-mini--warn">
               <div className="hero-kpi-mini__body">
                 <span className="hero-kpi-mini__title">Chờ xử lý</span>
-                <span className="hero-kpi-mini__value" ref={heroPendingRef}>{pending}</span>
+                <span className="hero-kpi-mini__value">{pending}</span>
                 <span className="hero-kpi-mini__label">phiếu chờ xử lý</span>
               </div>
               <Clock size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />

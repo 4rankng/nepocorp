@@ -7,8 +7,8 @@ import { api } from '../lib/api';
 import { downloadCSV } from '../lib/csv';
 import { PageHeader, KPI } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
-import { EmptyState, Pagination } from '../design-system';
-import { formatNumber } from '../lib/format';
+import { EmptyState, Pagination, useAutoHideColumn } from '../design-system';
+import { formatNumber, formatCurrency } from '../lib/format';
 import { CustomerStatus } from '@tingting/shared';
 import { useAllCustomers, useCustomerBalances, useSuppliers } from '../hooks/useQueries';
 import { usePageAnimations } from '../hooks/animations';
@@ -103,6 +103,14 @@ export default function CustomersPage() {
   const loadMoreCustomers = useCallback(() => {
     setPage((current) => (current < totalPages ? current + 1 : current));
   }, [totalPages]);
+
+  // NEPO-16 AutoHideColumn: with no credit limit recorded on any filtered
+  // customer the column was a full run of '—' (audit 24/10). It hides until
+  // one row carries a limit, then renders again. The cell display value is
+  // mapped here so the predicate and CustomerRow's renderer cannot disagree.
+  const showCreditLimit = useAutoHideColumn(
+    useMemo(() => filtered.map(c => (Number(c.creditLimit || 0) > 0 ? formatCurrency(c.creditLimit) : '—')), [filtered]),
+  );
 
   async function doCreate(body: Record<string, unknown>) {
     setSaving(true);
@@ -280,7 +288,7 @@ export default function CustomersPage() {
             <colgroup>
               <col style={{ width: '44%' }} />
               <col style={{ width: '22%' }} />
-              <col style={{ width: '14%' }} />
+              {showCreditLimit && <col style={{ width: '14%' }} />}
               <col style={{ width: '14%' }} />
               <col style={{ width: 60 }} />
             </colgroup>
@@ -288,20 +296,20 @@ export default function CustomersPage() {
               <tr>
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Khách hàng</th>
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Liên hệ</th>
-                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}>Hạn mức TD</th>
+                {showCreditLimit && <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}>Hạn mức TD</th>}
                 <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}>Công nợ</th>
                 <th style={{ width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                <tr><td colSpan={showCreditLimit ? 5 : 4} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
                   <p style={{ fontSize: 'var(--fs-body)' }}>Đang tải…</p>
                 </td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                <tr><td colSpan={showCreditLimit ? 5 : 4} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <EmptyIllustration name="empty-clients" width={140} height={116} style={{ margin: '0 auto 8px', display: 'block' }} />
                   <div>Chưa có dữ liệu</div>
                 </td></tr>
@@ -312,6 +320,7 @@ export default function CustomersPage() {
                   customer={c}
                   index={index}
                   debt={debtMap.get(c.id) ?? 0}
+                  showCreditLimit={showCreditLimit}
                   visibleCount={visibleCustomers.length}
                   menuOpen={menuOpenId === c.id}
                   deleting={deleting === c.id}

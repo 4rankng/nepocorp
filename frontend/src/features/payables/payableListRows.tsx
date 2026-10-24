@@ -2,6 +2,7 @@ import type { PayableSummary } from '@tingting/shared';
 import { ChevronRight } from 'lucide-react';
 import { formatCurrency } from '../../lib/format';
 import { ClickableCard } from '../../components/shared/ClickableCard';
+import { SubLine } from '../../design-system';
 import { resolveEmptyIllustration } from '../../lib/emptyIllustrations';
 import { payableDetailHref, AGING_BUCKET_LABELS } from './payableListUtils';
 
@@ -95,9 +96,10 @@ export function PayableDesktopTable({ payables }: { payables: PayableSummary[] }
                   <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, color: 'var(--fg-1)' }}>
                     {d.supplier.name}
                   </div>
-                  <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)' }}>
-                    {d.supplier.phone || '—'}
-                  </div>
+                  {/* NEPO-16 SubLine: no phone → no line at all. The old
+                      `{phone || '—'}` fallback read as a stray '_' under 4 of
+                      5 supplier names (audit 24/10). */}
+                  <SubLine value={d.supplier.phone} />
                 </td>
                 <td className="num typo-mono" style={{
                   fontWeight: 700,

@@ -1,0 +1,73 @@
+/* ============================================================================
+ * Density tokens — data-dense law 27/9 (NEPO-16)
+ *
+ * FinancePage's summary strip is the house reference for KPI density:
+ *   · card padding        14px 16px  (roomy 20-24px paddings push lists off screen)
+ *   · value               var(--fs-2xl), one line, never split mid-amount
+ *   · label               var(--fs-xs) uppercase tracking
+ *   · unit / meta         var(--fs-xs), muted
+ *   · zero-row rule       a list surface with no rows renders its empty state
+ *                         only — no pagination chrome, no tall blank footer
+ *   · row floor           44px min-height (touch-friendly, still dense)
+ *
+ * These custom properties + the .ds-kpi classes codify those numbers so pages
+ * consume tokens instead of copying the FinancePage layout wholesale (verdict b:
+ * tokens/components only — each page keeps its own table/aging/filter pattern).
+ * ========================================================================== */
+
+:root {
+  --kpi-pad-y: 14px;
+  --kpi-pad-x: 16px;
+  --kpi-value-size: var(--fs-2xl);
+  --table-row-min-h: 44px;
+}
+
+/* Dense KPI card — drop-in replacement for page-local hero/stat cards. */
+.ds-kpi {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: var(--kpi-pad-y) var(--kpi-pad-x);
+  min-width: 0;
+}
+.ds-kpi__label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--fg-3, var(--ink-3));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.ds-kpi__value {
+  font-size: var(--kpi-value-size);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1.25;
+  color: var(--fg-1, var(--ink));
+  margin-bottom: 4px;
+  /* A complete signed VND amount must never wrap between digits. */
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.ds-kpi__unit {
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+  font-weight: 500;
+  margin-left: 2px;
+  color: var(--fg-2, var(--ink-2));
+}
+.ds-kpi__meta {
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  color: var(--fg-3, var(--ink-3));
+}
+
+/* Row floor for hand-rolled dense tables. Apply to tbody td (height acts as
+   min-height on table cells). */
+.ds-dense-cell {
+  height: var(--table-row-min-h);
+}

@@ -1,0 +1,8 @@
+/* SubLine — muted second line under a primary cell value (NEPO-16).
+   Replaces the per-page inline style blocks so every list reads the same. */
+.ds-sub-line {
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  color: var(--fg-3, var(--ink-3));
+  overflow-wrap: anywhere;
+}

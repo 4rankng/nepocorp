@@ -51,10 +51,17 @@ export function Pagination({
   const pages = useMemo(() => buildPageWindow(page, totalPages, siblingCount), [page, totalPages, siblingCount]);
   const infinite = mode === 'infinite';
 
+  // Data-dense law 27/9 (NEPO-16): with at most one page there is nothing to
+  // paginate — prev/next, page buttons, the size selector and the infinite
+  // sentinel would only pad the page (they used to render unconditionally on
+  // /customers and /expenses). The count line stays so the user still sees
+  // how many rows the filter matched.
+  const singlePage = totalPages <= 1;
+
   // The sentinel lives at the bottom of the list; re-arm only while a batch can
   // actually be requested so a finished list never re-fires.
   const sentinelRef = useInfiniteScroll({
-    enabled: infinite && hasMore && !isLoadingMore && !!onLoadMore,
+    enabled: infinite && !singlePage && hasMore && !isLoadingMore && !!onLoadMore,
     onLoadMore: () => onLoadMore?.(),
   });
 
@@ -96,7 +103,7 @@ export function Pagination({
         {summary ?? (infinite ? infiniteSummary : defaultSummary)}
       </div>
 
-      {infinite ? (
+      {!singlePage && (infinite ? (
         <div className="ds-pagination__controls">
           {sizeSelect}
           <div ref={sentinelRef} className="ds-pagination__sentinel" aria-hidden="true" />
@@ -146,7 +153,7 @@ export function Pagination({
             <ChevronRight size={14} />
           </button>
         </div>
-      )}
+      ))}
     </div>
   );
 }
