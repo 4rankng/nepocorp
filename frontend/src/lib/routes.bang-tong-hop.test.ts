@@ -7,15 +7,15 @@ import { titleForPath } from './routes';
  * from PAGE_CATALOG via this projection; pin the renamed title and the
  * untouched /trips entry.
  */
-describe('page title — Bảng tổng hợp số liệu (NEPO-3)', () => {
+describe('page title — Bảng số liệu (NEPO-3)', () => {
   it('titleForPath resolves /bang-ke-hoach to the new name', () => {
-    expect(titleForPath('/bang-ke-hoach')).toBe('Bảng tổng hợp số liệu');
+    expect(titleForPath('/bang-ke-hoach')).toBe('Bảng số liệu');
   });
 
   it('catalog entry keeps the path but renames title + description', () => {
-    expect(PAGE_CATALOG.bangKeHoach.title).toBe('Bảng tổng hợp số liệu');
+    expect(PAGE_CATALOG.bangKeHoach.title).toBe('Bảng số liệu');
     expect(PAGE_CATALOG.bangKeHoach.path).toBe('/bang-ke-hoach');
-    expect(PAGE_CATALOG.bangKeHoach.agent?.description).toContain('Bảng tổng hợp số liệu');
+    expect(PAGE_CATALOG.bangKeHoach.agent?.description).toContain('Bảng số liệu');
     expect(PAGE_CATALOG.bangKeHoach.agent?.description).not.toContain('Bảng kế hoạch');
   });
 

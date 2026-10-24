@@ -64,7 +64,7 @@ const QUICK_FILTER_LABELS: Record<QuickFilter, string> = {
 const PAGE_SIZE = 200;
 
 /**
- * Bảng tổng hợp số liệu (/bang-ke-hoach) — hợp nhất một lệnh một dòng, sửa trực
+ * Bảng số liệu (/bang-ke-hoach) — hợp nhất một lệnh một dòng, sửa trực
  * tiếp từng ô theo nhóm quyền (kế hoạch / thu chi), đối chiếu container ngay
  * trong bảng. Tự chứa: tháng từ chip trên topbar, bộ lọc tìm kiếm / khách
  * hàng / trạng thái nội bộ, quick-add và xuất Excel.
@@ -326,7 +326,7 @@ export function LedgerGrid() {
 
   return (
     <div className="ledger-page">
-      <div className="ledger-toolbar" role="toolbar" aria-label="Bộ lọc bảng tổng hợp số liệu">
+      <div className="ledger-toolbar" role="toolbar" aria-label="Bộ lọc bảng số liệu">
         <input
           type="search"
           aria-label="Tìm kiếm"

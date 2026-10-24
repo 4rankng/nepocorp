@@ -61,7 +61,7 @@ export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?:
 
         { key: 'dispatch', label: 'Điều vận', path: routes.dispatch, icon: Compass, section: 'operations', count: dispatchCount },
         { key: 'trips', label: 'Sổ chuyến đi', path: routes.trips, icon: Truck, section: 'operations' },
-        { key: 'bang-ke-hoach', label: 'Bảng tổng hợp số liệu', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
+        { key: 'bang-ke-hoach', label: 'Bảng số liệu', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
 
         { key: 'salary', label: 'Lương & Chấm công', path: routes.salary, icon: CalendarDays, section: 'hr' },
         { key: 'penalties', label: 'Kỷ luật', path: routes.penalties, icon: AlertTriangle, section: 'hr', count: penaltiesCount },

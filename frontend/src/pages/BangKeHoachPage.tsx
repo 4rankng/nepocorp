@@ -1,7 +1,7 @@
 import { LedgerGrid } from '../features/ledger/LedgerGrid';
 import { Breadcrumbs } from '../components/shared';
 
-/** Bảng tổng hợp số liệu — bảng thu chi hợp nhất một lệnh một dòng, sửa trực
+/** Bảng số liệu — bảng thu chi hợp nhất một lệnh một dòng, sửa trực
  *  tiếp theo nhóm quyền (kế hoạch / thu chi), đối chiếu container ngay trong bảng. */
 export default function BangKeHoachPage() {
   return (
@@ -9,7 +9,7 @@ export default function BangKeHoachPage() {
       <Breadcrumbs
         items={[
           { label: 'Tổng quan', to: '/dashboard' },
-          { label: 'Bảng tổng hợp số liệu' },
+          { label: 'Bảng số liệu' },
         ]}
         renderLink={(to, children) => <a onClick={() => window.history.pushState({}, '', to)} style={{ cursor: 'pointer' }}>{children}</a>}
       />

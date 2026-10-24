@@ -21,7 +21,7 @@ export function requireGroupRole(group: LedgerColumnGroup) {
     const allowed = LEDGER_GROUP_ROLES[group];
     if (!allowed.includes(req.user.role as Role)) {
       return res.status(403).json({
-        error: `Không có quyền sửa cột ${GROUP_LABELS[group]} trong Bảng tổng hợp số liệu`,
+        error: `Không có quyền sửa cột ${GROUP_LABELS[group]} trong Bảng số liệu`,
       });
     }
     next();

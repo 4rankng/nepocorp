@@ -75,12 +75,12 @@ export const PAGE_CATALOG = {
     agent: { description: 'Điều vận & phân xe — danh sách chuyến cần điều động, bản đồ GPS.' },
   },
   bangKeHoach: {
-    title: 'Bảng tổng hợp số liệu',
+    title: 'Bảng số liệu',
     path: '/bang-ke-hoach',
     section: 'operations',
     agent: {
-      description: 'Bảng tổng hợp số liệu — bảng thu chi hợp nhất một lệnh một dòng: kế hoạch, doanh thu, tạm ứng/hoàn ứng, chi phí, kết quả; sửa trực tiếp từng ô theo nhóm quyền.',
-      aliases: ['bang ke hoach', 'bảng tổng hợp', 'sổ cái', 'thu chi', 'ledger'],
+      description: 'Bảng số liệu — bảng thu chi hợp nhất một lệnh một dòng: kế hoạch, doanh thu, tạm ứng/hoàn ứng, chi phí, kết quả; sửa trực tiếp từng ô theo nhóm quyền.',
+      aliases: ['bang ke hoach', 'bảng số liệu', 'bang so lieu', 'sổ cái', 'thu chi', 'ledger'],
     },
   },
   fleet: {

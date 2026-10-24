@@ -58,7 +58,7 @@ export function isFinancialRole(role: Role | string | undefined): boolean {
  * Sổ cái (/ledger) column groups — the "per hạng mục" permission model that
  * mirrors how the company shares the master Google Sheet with scoped sections.
  * PLAN mirrors dispatch data entry plus the accountant's planning columns
- * (Pete 24/10: kế toán và quản lý được sửa trực tiếp Bảng tổng hợp số liệu);
+ * (Pete 24/10: kế toán và quản lý được sửa trực tiếp Bảng số liệu);
  * MONEY mirrors the accountant's columns; RESULT is computed and read-only
  * for everyone, so its role list is deliberately empty.
  */

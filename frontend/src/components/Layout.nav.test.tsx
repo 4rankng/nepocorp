@@ -3,7 +3,7 @@ import { Role } from '@tingting/shared';
 import { getNavItems } from './Layout';
 
 /** NEPO-3 — nav label pins: màn hình đổi tên, /trips giữ nguyên. */
-describe('nav labels — Bảng tổng hợp số liệu rename (NEPO-3)', () => {
+describe('nav labels — Bảng số liệu rename (NEPO-3)', () => {
   const officeRoles: Array<{ role: Role; label: string }> = [
     { role: Role.MANAGER, label: 'MANAGER' },
     { role: Role.ACCOUNTANT, label: 'ACCOUNTANT' },
@@ -11,10 +11,10 @@ describe('nav labels — Bảng tổng hợp số liệu rename (NEPO-3)', () =>
   ];
 
   for (const { role, label } of officeRoles) {
-    it(`${label} nav shows the item as "Bảng tổng hợp số liệu" under the unchanged key`, () => {
+    it(`${label} nav shows the item as "Bảng số liệu" under the unchanged key`, () => {
       const items = getNavItems(role);
       const item = items.find((i) => i.key === 'bang-ke-hoach');
-      expect(item?.label).toBe('Bảng tổng hợp số liệu');
+      expect(item?.label).toBe('Bảng số liệu');
       expect(item?.path).toBe('/bang-ke-hoach');
     });
 
