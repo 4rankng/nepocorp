@@ -1,19 +1,17 @@
 import { ListFilterBar } from '../components/shared/ListFilterBar';
-import { useState, useRef, useEffect } from 'react';
-import { Truck, Calendar, ArrowRight, Loader2, Package, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Truck, Calendar, ArrowRight, Loader2, Package, Search, Info } from 'lucide-react';
 import { formatDatePadded } from '../lib/format';
 import { TripStatus, TRIP_STATUS_LABELS, TRIP_STATUS_COLORS } from '@tingting/shared';
 import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderTrips } from '../hooks/useQueries';
-import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
-import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { useMonth } from '../hooks/useMonth';
 import { useDebouncedValue, DateInput } from '../design-system';
 import { getCalendarMonthRange } from '../lib/calendar-month';
 import './ForwarderTripsPage.css';
-import '../components/shared/HeroKpiRow.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 interface TripSummary {
@@ -84,13 +82,12 @@ export default function ForwarderTripsPage() {
   }
 
   const totalTrips = Object.values(counts).reduce((sum: number, c) => sum + c, 0);
-  const totalContainers = trips.reduce((sum, t) => sum + (t.containerCount ?? 0), 0);
   const hasPaymentHighlights = trips.some((trip) => trip.statusColor === 'paid' || trip.statusColor === 'pending');
 
   /* ── Page entrance animation ── */
   const { rootRef } = usePageAnimations({
     ready: !loading,
-    selectors: ['.page-header', '.hero-kpi-row', '.fwd-filter-pills', '.ftrip-card'],
+    selectors: ['.page-header', '.fwd-filter-pills', '.ftrip-card'],
   });
 
   /* ── List stagger animation ── */
@@ -100,49 +97,26 @@ export default function ForwarderTripsPage() {
     deps: [trips],
   });
 
-  /* ── Counter animation ── */
-  const prefersReduced = usePrefersReducedMotion();
-  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
-  const heroTotalRef = useRef<HTMLSpanElement>(null);
-  const heroContainersRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    if (loading || totalTrips === 0 || prefersReduced) return;
-    animateCounters(
-      [
-        { el: heroTotalRef.current, value: totalTrips, suffix: ' chuyến' },
-        { el: heroContainersRef.current, value: totalContainers },
-      ],
-    );
-  }, [loading, totalTrips, totalContainers, animateCounters, prefersReduced]);
-
   return (
     <div ref={rootRef}>
-      <PageHeader title="Chuyến đi" description="Danh sách chuyến đi vận chuyển" />
-
-      {/* ── Hero KPI Row ── */}
-      {!loading && !error && <div className="hero-kpi-row">
-        <div className="hero-kpi-card">
-          <span className="hero-kpi-card__eyebrow">Tổng chuyến đi</span>
-          <span className="hero-kpi-card__amount" ref={heroTotalRef}>{totalTrips} chuyến</span>
-          <span className="hero-kpi-card__subtitle">Danh sách chuyến đi vận chuyển</span>
-          <Truck size={72} className="hero-kpi-card__watermark" aria-hidden="true" />
-        </div>
-        <div className="hero-kpi-stack">
-          <div className="hero-kpi-mini hero-kpi-mini--accent">
-            <div className="hero-kpi-mini__body">
-              <span className="hero-kpi-mini__value" ref={heroContainersRef}>{totalContainers}</span>
-              <span className="hero-kpi-mini__label">container</span>
-            </div>
-            <Package size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />
-          </div>
-        </div>
-      </div>}
+      <PageHeader
+        title={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            Chuyến đi
+            <span
+              className="fwd-trips-hint"
+              title="Cổng Giao nhận theo dõi chuyến, phân công lái xe và nhập chi phí — chuyến đi do Quản lý điều vận tạo."
+              aria-label="Ghi chú: Cổng Giao nhận theo dõi chuyến, phân công lái xe và nhập chi phí — chuyến đi do Quản lý điều vận tạo."
+              tabIndex={0}
+            >
+              <Info size={14} aria-hidden="true" />
+            </span>
+          </span>
+        }
+        description="Danh sách chuyến đi vận chuyển"
+      />
 
       {/* ── Search + date-range filter (N4) ── */}
-      <p className="fwd-trips-note">
-        Cổng Giao nhận theo dõi chuyến, phân công lái xe và nhập chi phí — chuyến đi do <strong>Quản lý điều vận</strong> tạo.
-      </p>
       <div className="fwd-trip-filters">
         <div className="fwd-trip-filters__search">
           <Search size={14} />
@@ -247,10 +221,12 @@ export default function ForwarderTripsPage() {
                 </div>
                 <div className="driver-trip-card__meta">
                   <span className="driver-trip-card__meta-item">{TRIP_STATUS_LABELS[trip.status]}</span>
-                  <span className="driver-trip-card__plate-badge">
-                    <Truck size={12} />
-                    <span className="driver-trip-card__badge-text">{trip.truckPlate || '—'}</span>
-                  </span>
+                  {trip.truckPlate && (
+                    <span className="driver-trip-card__plate-badge">
+                      <Truck size={12} />
+                      <span className="driver-trip-card__badge-text">{trip.truckPlate}</span>
+                    </span>
+                  )}
                   {trip.containerNumbers && (
                     <span className="driver-trip-card__plate-badge">
                       <Package size={12} />

@@ -50,10 +50,16 @@ it('keeps forwarder search available after zero matches and can clear it', () =>
   expect(screen.getByText(trip.routeName)).toBeTruthy();
 });
 
-it('renders actual forwarder totals when reduced motion skips counters', () => {
+it('renders the trip count once in the filter chip, with no hero row or empty plate badge', () => {
   const { container } = render(<MemoryRouter><ForwarderTripsPage /></MemoryRouter>);
-  expect(container.querySelector('.hero-kpi-card__amount')?.textContent).toBe('1 chuyến');
-  expect(container.querySelector('.hero-kpi-mini__value')?.textContent).toBe('3');
+  expect(container.querySelector('.hero-kpi-row')).toBeNull();
+  expect(container.querySelector('.hero-kpi-card__amount')).toBeNull();
+  const allChip = screen.getByRole('button', { name: /Tất cả/ });
+  expect(allChip.textContent).toMatch(/^Tất cả\s*1$/);
+  // The mocked trip has no truck assigned — no '—' plate badge may render.
+  const card = container.querySelector('.ftrip-card');
+  expect(card?.querySelector('.driver-trip-card__plate-badge')).toBeNull();
+  expect(card?.textContent).not.toContain('—');
 });
 
 it('preserves forwarder search focus while the next query is loading', () => {
