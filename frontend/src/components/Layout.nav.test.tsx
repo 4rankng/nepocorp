@@ -30,4 +30,16 @@ describe('nav labels — Bảng số liệu rename (NEPO-3)', () => {
       expect(trips?.label).toBe('Sổ chuyến đi');
     }
   });
+
+  /** Pete 24/10: kế toán không thấy Điều vận và Người dùng; MANAGER/ADMIN giữ. */
+  it('ACCOUNTANT nav has neither "Điều vận" nor "Người dùng"; MANAGER and ADMIN keep both', () => {
+    const acc = getNavItems(Role.ACCOUNTANT);
+    expect(acc.some((i) => i.key === 'dispatch')).toBe(false);
+    expect(acc.some((i) => i.key === 'users')).toBe(false);
+    for (const role of [Role.MANAGER, Role.ADMIN]) {
+      const items = getNavItems(role);
+      expect(items.find((i) => i.key === 'dispatch')?.label).toBe('Điều vận');
+      expect(items.find((i) => i.key === 'users')?.label).toBe('Người dùng');
+    }
+  });
 });

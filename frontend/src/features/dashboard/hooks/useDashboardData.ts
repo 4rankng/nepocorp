@@ -4,7 +4,7 @@ import { api } from '../../../lib/api';
 import { qk } from '../../../api/keys';
 import { formatCompact } from '../../../lib/format';
 import type { TripDetail, TripLeg } from '@tingting/shared';
-import { FINANCIAL_ROLES, parseThreshold } from '@tingting/shared';
+import { parseThreshold } from '@tingting/shared';
 import { useAuth } from '../../../hooks/useAuth';
 import {
   useDashboardStats,
@@ -89,7 +89,10 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
   // Only ADMIN/MANAGER/ACCOUNTANT can access audit logs — skip the query entirely
   // for DRIVER/FORWARDER to avoid wasted 403s.
   const { user } = useAuth();
-  const canSeeAudit = user?.role && (FINANCIAL_ROLES as readonly string[]).includes(user.role);
+  // Pete 24/10: kế toán không thấy "Hoạt động gần đây" — audit feed chỉ cho
+  // ADMIN/MANAGER (khớp /audit-logs managerOrAdminOnly); DRIVER/FORWARDER skip
+  // để tránh 403 thừa.
+  const canSeeAudit = user?.role === 'ADMIN' || user?.role === 'MANAGER';
   const { data: recentAudit = [] } = useQuery<DashboardAuditEntry[]>({
     queryKey: qk.dashboard.auditRecent,
     queryFn: async () => {

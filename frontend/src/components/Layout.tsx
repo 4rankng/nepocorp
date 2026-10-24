@@ -59,7 +59,8 @@ export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?:
       return [
         { key: 'dashboard', label: 'Tổng quan', path: routes.dashboard, icon: LayoutDashboard },
 
-        { key: 'dispatch', label: 'Điều vận', path: routes.dispatch, icon: Compass, section: 'operations', count: dispatchCount },
+        // Pete 24/10: kế toán không cần thấy Điều vận — chỉ ẩn nav, MANAGER/ADMIN giữ nguyên.
+        ...(role === 'ACCOUNTANT' ? [] : [{ key: 'dispatch', label: 'Điều vận', path: routes.dispatch, icon: Compass, section: 'operations', count: dispatchCount }]),
         { key: 'trips', label: 'Sổ chuyến đi', path: routes.trips, icon: Truck, section: 'operations' },
         { key: 'bang-ke-hoach', label: 'Bảng số liệu', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
 
@@ -80,7 +81,8 @@ export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?:
         { key: 'suppliers', label: 'Nhà cung cấp', path: routes.suppliers, icon: Store, section: 'master-data' },
         { key: 'routes', label: 'Tuyến đường', path: routes.configRoutes, icon: Route, section: 'master-data' },
 
-        ...(role === 'ADMIN' || role === 'MANAGER' || role === 'ACCOUNTANT' ? [
+        // Pete 24/10: kế toán không cần thấy Người dùng — chỉ ADMIN/MANAGER.
+        ...(role === 'ADMIN' || role === 'MANAGER' ? [
           { key: 'users', label: 'Người dùng', path: routes.users, icon: Users, section: 'system' as const },
         ] : []),
         ...(role === 'ADMIN' ? [
