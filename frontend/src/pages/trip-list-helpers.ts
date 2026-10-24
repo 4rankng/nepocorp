@@ -159,6 +159,7 @@ export function columnClass(columnId: string): string {
   if (columnId === 'select') return 'col-select center';
   if (columnId === 'truck') return 'col-truck';
   if (columnId === 'route') return 'col-route';
+  if (columnId === 'customer') return 'col-customer';
   if (columnId === 'container') return 'col-container';
   if (columnId === 'consumption') return 'col-consumption';
   if (columnId === 'road') return 'col-road right';
