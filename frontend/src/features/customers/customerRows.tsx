@@ -68,8 +68,11 @@ export function CustomerCard({ customer, debt, onOpen, onEdit }: {
 }
 
 /** Desktop table row (>640px) for one customer, including its action menu. */
-export function CustomerRow({ customer, index, debt, visibleCount, menuOpen, deleting, onOpen, onEdit, onDelete, onToggleMenu }: {
+export function CustomerRow({ customer, index, debt, visibleCount, showCreditLimit, menuOpen, deleting, onOpen, onEdit, onDelete, onToggleMenu }: {
   customer: Customer; index: number; debt: number; visibleCount: number;
+  /** Mirrors the page-wide decision: the column only exists while at least one
+   *  customer carries a credit limit. */
+  showCreditLimit: boolean;
   menuOpen: boolean; deleting: boolean;
   onOpen: () => void; onEdit: () => void; onDelete: () => void; onToggleMenu: () => void;
 }) {
@@ -107,11 +110,12 @@ export function CustomerRow({ customer, index, debt, visibleCount, menuOpen, del
             {customer.phone || customer.contactInfo}
           </div>
         )}
-        {!customer.contactPerson && !customer.phone && !customer.contactInfo && <span style={{ color: 'var(--ink-3)' }}>—</span>}
       </td>
-      <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {customer.creditLimit ? formatCurrency(customer.creditLimit) : '—'}
-      </td>
+      {showCreditLimit && (
+        <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {customer.creditLimit ? formatCurrency(customer.creditLimit) : '—'}
+        </td>
+      )}
       <td style={{ padding: 12, borderBottom: '1px solid var(--line)', verticalAlign: 'middle', whiteSpace: 'nowrap', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         <span style={debt ? { color: 'var(--danger)', fontFamily: 'var(--font-mono)' } : { color: 'var(--ink-3)' }}>
           <Money value={debt} />

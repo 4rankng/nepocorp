@@ -97,6 +97,10 @@ export default function CustomersPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
+  // Hạn mức TD column auto-hides while no customer carries a credit limit and
+  // renders again as soon as at least one does. Judged on the full customer
+  // set so the column presence stays stable while filtering.
+  const showCreditLimit = useMemo(() => customers.some(c => Number(c.creditLimit || 0) > 0), [customers]);
   // Infinite scroll: everything loaded so far stays on screen and the sentinel
   // pulls the next batch.
   const visibleCustomers = filtered.slice(0, currentPage * pageSize);
@@ -165,7 +169,6 @@ export default function CustomersPage() {
       <PageHeader
         title="Khách hàng"
         iconName="customer"
-        description={`${total} khách hàng đang quản lý`}
         action={
           <>
             <button className="btn btn--secondary" onClick={async () => {
@@ -195,14 +198,14 @@ export default function CustomersPage() {
 
       {mutationError && !showAddForm && editingId == null && <p role="alert" style={{ color: 'var(--danger)' }}>{mutationError}</p>}
 
-      {/* KPI strip */}
+      {/* KPI strip — "Tổng khách hàng" KPI value is the single count source
+          on the page; header/subtitle/meta no longer repeat it. */}
       <div className="kpi-grid">
         <KPI
           label="Tổng khách hàng"
           value={total}
           icon={Users}
           assetIconName="customer"
-          meta={<span>{total} khách hàng</span>}
         />
         <KPI
           label="Đang hoạt động"
@@ -220,7 +223,7 @@ export default function CustomersPage() {
           icon={BarChart3}
           assetIconName="profit"
           meta={top4Revenue.total > 0
-            ? `${top4Revenue.customers.length} KH · ${formatNumber(top4Revenue.total)} ₫`
+            ? `${top4Revenue.customers.length} KH`
             : 'Chưa có dữ liệu doanh thu'
           }
         />
@@ -280,7 +283,7 @@ export default function CustomersPage() {
             <colgroup>
               <col style={{ width: '44%' }} />
               <col style={{ width: '22%' }} />
-              <col style={{ width: '14%' }} />
+              {showCreditLimit && <col style={{ width: '14%' }} />}
               <col style={{ width: '14%' }} />
               <col style={{ width: 60 }} />
             </colgroup>
@@ -288,20 +291,20 @@ export default function CustomersPage() {
               <tr>
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Khách hàng</th>
                 <th style={{ textAlign: 'left', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>Liên hệ</th>
-                <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}>Hạn mức TD</th>
+                {showCreditLimit && <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}>Hạn mức TD</th>}
                 <th style={{ textAlign: 'right', padding: '11px 12px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line)', fontSize: 'var(--fs-label)', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)' }}>Công nợ</th>
                 <th style={{ width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                <tr><td colSpan={showCreditLimit ? 5 : 4} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <Loader2 size={22} className="spin" style={{ display: 'inline-block', marginBottom: 8 }} />
                   <p style={{ fontSize: 'var(--fs-body)' }}>Đang tải…</p>
                 </td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
+                <tr><td colSpan={showCreditLimit ? 5 : 4} style={{ textAlign: 'center', padding: 32, color: 'var(--ink-3)' }}>
                   <EmptyIllustration name="empty-clients" width={140} height={116} style={{ margin: '0 auto 8px', display: 'block' }} />
                   <div>Chưa có dữ liệu</div>
                 </td></tr>
@@ -313,6 +316,7 @@ export default function CustomersPage() {
                   index={index}
                   debt={debtMap.get(c.id) ?? 0}
                   visibleCount={visibleCustomers.length}
+                  showCreditLimit={showCreditLimit}
                   menuOpen={menuOpenId === c.id}
                   deleting={deleting === c.id}
                   onOpen={() => navigate(`/customers/${c.id}`)}
@@ -326,18 +330,29 @@ export default function CustomersPage() {
         </div>
 
       </div>
-      <Pagination
-        mode="infinite"
-        page={currentPage}
-        totalPages={totalPages}
-        totalItems={filtered.length}
-        pageSize={pageSize}
-        onPageSizeChange={setPageSize}
-        onChange={setPage}
-        hasMore={currentPage < totalPages}
-        onLoadMore={loadMoreCustomers}
-        summary={<span>Hiển thị <strong>{visibleCustomers.length}</strong>/<strong>{filtered.length}</strong> khách hàng</span>}
-      />
+      {/* ≤ one page: only the count line — no page-size selector, no
+          prev/next or load-more controls. A shared auto-hide pagination
+          primitive will own this behavior across pages later. */}
+      {filtered.length > pageSize ? (
+        <Pagination
+          mode="infinite"
+          page={currentPage}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          onChange={setPage}
+          hasMore={currentPage < totalPages}
+          onLoadMore={loadMoreCustomers}
+          summary={<span>Hiển thị <strong>{visibleCustomers.length}</strong>/<strong>{filtered.length}</strong> khách hàng</span>}
+        />
+      ) : (
+        <div className="ds-pagination">
+          <div className="ds-pagination__summary-slot">
+            <span className="ds-pagination__summary">Hiển thị <strong>{visibleCustomers.length}</strong>/<strong>{filtered.length}</strong> khách hàng</span>
+          </div>
+        </div>
+      )}
 
       {/* Customer add/edit modal */}
       <CustomerFormModal
