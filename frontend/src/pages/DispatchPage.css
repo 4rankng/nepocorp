@@ -296,6 +296,13 @@
   display: flex;
   align-items: center;
 }
+/* Ô biển số xếp dọc: pill trên, địa chỉ GPS dưới (consult DeepSeek 24/10 —
+   flex-row 120px trước đây đẩy addr 150px nowrap đè sang cột Lái xe). */
+.dispatch-page .fleet-col-plate {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
 .dispatch-page .plate {
   font-family: var(--font-mono);
   font-weight: 700; font-size: var(--fs-xs);
@@ -402,19 +409,22 @@
   border: none;
   border-radius: 0;
 }
-/* Chip biển số không bao giờ co/wrap trong cột 120px — badge đăng kiểm rơi
-   xuống dòng addr thay vì nén chip (font mono 87px + badge tràn cell 96px). */
-.dispatch-page .dispatch-live-row .fleet-plate-line { flex-wrap: wrap; }
+/* Chip biển số 1 dòng với badge trong cột 130px (87px pill + 6 gap + 9 badge
+   = 102px vừa); addr GPS rơi xuống dòng DƯỚI pill — không đè ngang anymore. */
+.dispatch-page .dispatch-live-row .fleet-plate-line { flex-wrap: nowrap; }
 .dispatch-page .dispatch-live-row .fleet-plate-line .plate { white-space: nowrap; flex-shrink: 0; }
 @media (min-width: 1281px) {
   .dispatch-page .dispatch-live-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    /* Bảng 53.5% : map 46.5% (consult DeepSeek 24/10) — map vẫn dùng được
+       4-20 xe, bảng đủ 4 cột không bị bóp. */
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   }
-  /* Bảng co còn ~640px: biển số/lái xe hẹp lại, tuyến + khách giữ ưu tiên
-     (audit: KHÔNG ẩn cột khách hàng — dispatcher scan để gọi điện/ghép chuyến). */
+  /* Biển số 130px + lái xe 120px: pill mono 87px + badge 9px nằm 1 dòng,
+     tên dài không bị bóp; tuyến + khách giữ ưu tiên (audit: KHÔNG ẩn cột
+     khách hàng — dispatcher scan để gọi điện/ghép chuyến). */
   .dispatch-page .dispatch-live-row .fleet-head,
   .dispatch-page .dispatch-live-row .fleet-row {
-    grid-template-columns: 120px 110px minmax(0, 2.2fr) minmax(0, 1.4fr);
+    grid-template-columns: 130px 120px minmax(0, 2.2fr) minmax(0, 1.4fr);
     gap: 10px;
   }
 }
@@ -1028,7 +1038,7 @@ font-weight: 600;
 .dispatch-page .fleet-plate-addr {
   display: block;
   margin-top: 2px;
-  max-width: 150px;
+  max-width: 100%;
   font-size: 11px;
   line-height: 1.3;
   color: var(--ink-3, #9CA3AF);
