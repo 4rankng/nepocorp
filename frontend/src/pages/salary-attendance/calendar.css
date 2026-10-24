@@ -240,6 +240,11 @@
   pointer-events: none;
 }
 
+/* NEPO-7: khi hover/click dòng chi phí, các ngày khác trạng thái mờ đi */
+.cal-cell.is-dimmed {
+  opacity: 0.35;
+}
+
 .cal-cell.is-clickable {
   cursor: pointer;
 }
@@ -322,10 +327,14 @@
  * white, which halved the perceived state area and left the 1.2:1 pastel
  * borders invisible against the white panel. Day number and icon glyph both
  * clear 4.5:1 against the fill they sit on. */
-/* Đi chuyến — green */
+/* ── Status palettes — NEPO-7 (consult DeepSeek 24/10): cell = nền sáng +
+   token icon; amber warning chỉ dành cho trạng thái cần chú ý, không dùng
+   làm nền cho trạng thái phổ biến. Legend (desktop + mobile) phải khớp. ── */
+
+/* Đi chuyến — green tint */
 .cal-cell.status-trip_day {
-  background: #DDF3E7;
-  border-color: #7FC79E;
+  background: #F3FAF6;
+  border-color: #A9DCC0;
 }
 .cal-cell.status-trip_day .cal-cell-day-num {
   color: #12693A;
@@ -335,24 +344,23 @@
   background: #C3E9D3;
 }
 
-/* Chờ việc — amber (softened fill: standby is the dominant state, a full
-   amber block per cell reads as a warning wall; consult DeepSeek 24/10) */
+/* Chờ việc — neutral slate (trạng thái phổ biến nhất, không được đọc là cảnh báo) */
 .cal-cell.status-standby {
-  background: #FDF4DC;
-  border-color: #E8CE8E;
+  background: #F4F6F5;
+  border-color: #CBD6D0;
 }
 .cal-cell.status-standby .cal-cell-day-num {
-  color: #7A4C05;
+  color: #46554D;
 }
 .cal-cell.status-standby .cal-cell-icon-wrap {
-  color: #7A4C05;
-  background: #F3DCA6;
+  color: #46554D;
+  background: #E2E9E5;
 }
 
 /* Nghỉ riêng — rose */
 .cal-cell.status-personal_leave {
-  background: #FBD9DD;
-  border-color: #DB8A96;
+  background: #FDF4F5;
+  border-color: #E8B9C0;
 }
 .cal-cell.status-personal_leave .cal-cell-day-num {
   color: #9E1035;
@@ -364,15 +372,15 @@
 
 /* Nghỉ tuần — neutral */
 .cal-cell.status-weekly_off {
-  background: #E4E9E6;
-  border-color: #ADB9B3;
+  background: #F4F6F5;
+  border-color: #D8DEDA;
 }
 .cal-cell.status-weekly_off .cal-cell-day-num {
   color: var(--ink-3);
 }
 .cal-cell.status-weekly_off .cal-cell-icon-wrap {
   color: var(--ink-3);
-  background: #D5DCD8;
+  background: #E4E9E6;
 }
 
 /* ─── Calendar Footer: Legend + Instruction ─── */
@@ -404,26 +412,26 @@
   background: var(--surface);
 }
 
-/* Semantic legend tints — must match the cell palette exactly */
+/* Semantic legend tints — must match the cell palette exactly (NEPO-7) */
 .calendar-legend-item:nth-child(1) {
   color: #12693A;
-  border-color: #7FC79E;
-  background: #DDF3E7;
+  border-color: #A9DCC0;
+  background: #F3FAF6;
 }
 .calendar-legend-item:nth-child(2) {
-  color: #7A4C05;
-  border-color: #E8CE8E;
-  background: #FDF4DC;
+  color: #46554D;
+  border-color: #CBD6D0;
+  background: #F4F6F5;
 }
 .calendar-legend-item:nth-child(3) {
   color: #9E1035;
-  border-color: #DB8A96;
-  background: #FBD9DD;
+  border-color: #E8B9C0;
+  background: #FDF4F5;
 }
 .calendar-legend-item:nth-child(4) {
   color: var(--ink-3);
-  border-color: #ADB9B3;
-  background: #E4E9E6;
+  border-color: #D8DEDA;
+  background: #F4F6F5;
 }
 
 .calendar-legend-instruction {

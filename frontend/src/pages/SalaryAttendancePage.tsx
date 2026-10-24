@@ -29,6 +29,9 @@ export default function SalaryAttendancePage() {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
   });
   const [searchTerm, setSearchTerm] = useState('');
+  // NEPO-7: hover/click trên dòng chi phí ở card tổng kết → làm nổi các ngày
+  // cùng trạng thái trên lịch (TRIP_DAY | STANDBY | null).
+  const [highlightStatus, setHighlightStatus] = useState<'TRIP_DAY' | 'STANDBY' | null>(null);
 
   const listQuery = useSalaryList(year, month);
   const { data: salaryList, isLoading: listLoading } = listQuery;
@@ -368,7 +371,7 @@ export default function SalaryAttendancePage() {
                     <div className="calendar-grid">
                       {calCells.map((dateStr, idx) => {
                         if (dateStr === null) {
-                          return <div key={`blank-${idx}`} className="cal-cell is-empty" />;
+                          return <div key={`blank-${idx}`} className={`cal-cell is-empty ${highlightStatus ? 'is-dimmed' : ''}`} />;
                         }
                         const [cy, cm, cd] = dateStr.split('-').map(Number);
                         const dateObj = new Date(cy, cm - 1, cd);
@@ -389,6 +392,8 @@ export default function SalaryAttendancePage() {
                             workDay={workDayMap.get(dateStr)}
                             isUpdating={isUpdating}
                             isLocked={isConfirmed}
+                            isDimmed={highlightStatus !== null
+                              && (workDayMap.get(dateStr)?.status ?? (isSun ? 'WEEKLY_OFF' : 'STANDBY')) !== highlightStatus}
                             onCycle={handleCellClick}
                           />
                         );
@@ -457,7 +462,12 @@ export default function SalaryAttendancePage() {
                 </div>
               ) : salary ? (
                 <>
-                  <SalarySummaryCard salary={salary} driverName={drivers.find(d => d.id === selectedDriverId)?.name} />
+                  <SalarySummaryCard
+                    salary={salary}
+                    driverName={drivers.find(d => d.id === selectedDriverId)?.name}
+                    highlightStatus={highlightStatus}
+                    onHighlightStatus={setHighlightStatus}
+                  />
                   {/* Confirmed status + lock notice — informational, scroll with the card */}
                   {isConfirmed && (
                     <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -509,6 +519,7 @@ export default function SalaryAttendancePage() {
                     className="btn btn--primary btn--sm"
                     style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                     disabled={confirmMutation.isPending}
+                    title="Xác nhận lương của lái xe đang chọn"
                     onClick={() => {
                       confirmMutation.mutate(undefined, {
                         onError: (err: unknown) => {

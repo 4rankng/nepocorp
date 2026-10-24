@@ -208,6 +208,31 @@
   opacity: 0.78;
 }
 
+/* NEPO-7: cost rows act as calendar highlight toggles */
+.salary-summary-dark__row--link {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 3px 6px;
+  margin: 0 -6px;
+  transition: background 120ms ease;
+}
+
+.salary-summary-dark__row--link:hover,
+.salary-summary-dark__row--link:focus-visible {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  outline: none;
+}
+
+.salary-summary-dark__row--link.is-active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 .salary-confirm-status {
   display: flex;
   align-items: center;

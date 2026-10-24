@@ -21,10 +21,11 @@ export interface CalCellProps {
   workDay: WorkDayRecord | undefined;
   isUpdating: boolean;
   isLocked: boolean;
+  isDimmed?: boolean;
   onCycle: (date: string, current: WorkDayRecord | undefined) => void;
 }
 
-export function CalCell({ dateStr, day: _day, isSunday, dayLabel, workDay, isUpdating, isLocked, onCycle }: CalCellProps) {
+export function CalCell({ dateStr, day: _day, isSunday, dayLabel, workDay, isUpdating, isLocked, isDimmed, onCycle }: CalCellProps) {
   const status = workDay?.status ?? (isSunday ? 'WEEKLY_OFF' : 'STANDBY');
   const cfg = status ? STATUS_CONFIG[status] : null;
   const isClickable = !isUpdating && !isLocked && status !== 'TRIP_DAY';
@@ -33,7 +34,7 @@ export function CalCell({ dateStr, day: _day, isSunday, dayLabel, workDay, isUpd
     <div
       title={workDay?.trip ? `${workDay.trip.tripCode || ''} – ${workDay.trip.routeName || ''}` : cfg?.label || ''}
       onClick={() => isClickable && onCycle(dateStr, workDay)}
-      className={`cal-cell ${isClickable ? 'is-clickable' : ''} ${status ? `status-${status.toLowerCase()}` : ''}`}
+      className={`cal-cell ${isClickable ? 'is-clickable' : ''} ${status ? `status-${status.toLowerCase()}` : ''} ${isDimmed ? 'is-dimmed' : ''}`}
     >
       <span className="cal-cell-day-num">
         {dayLabel}
@@ -58,7 +59,33 @@ export function CalCell({ dateStr, day: _day, isSunday, dayLabel, workDay, isUpd
 }
 
 // ── Salary Summary Card ───────────────────────────────────────────────────────
-export function SalarySummaryCard({ salary, driverName }: { salary: AttendanceSalary; driverName?: string }) {
+export type SalaryHighlightStatus = 'TRIP_DAY' | 'STANDBY';
+
+export function SalarySummaryCard({ salary, driverName, highlightStatus, onHighlightStatus }: {
+  salary: AttendanceSalary;
+  driverName?: string;
+  highlightStatus?: SalaryHighlightStatus | null;
+  onHighlightStatus?: (s: SalaryHighlightStatus | null) => void;
+}) {
+  // NEPO-7: hover/focus/click on a cost row highlights the matching days on
+  // the calendar (cause-and-effect between attendance and pay).
+  const costRow = (status: SalaryHighlightStatus, icon: React.ReactNode, label: string, value: React.ReactNode) => (
+    <button
+      type="button"
+      className={`salary-summary-dark__row salary-summary-dark__row--muted salary-summary-dark__row--link ${highlightStatus === status ? 'is-active' : ''}`}
+      onMouseEnter={() => onHighlightStatus?.(status)}
+      onMouseLeave={() => onHighlightStatus?.(null)}
+      onFocus={() => onHighlightStatus?.(status)}
+      onBlur={() => onHighlightStatus?.(null)}
+      onClick={() => onHighlightStatus?.(highlightStatus === status ? null : status)}
+    >
+      <span className="salary-summary-dark__row-lbl">
+        {icon} {label}
+      </span>
+      <span className="salary-summary-dark__row-val">{value}</span>
+    </button>
+  );
+
   return (
     <div className="salary-summary-dark">
       <div className="salary-summary-dark__topline">
@@ -113,23 +140,19 @@ export function SalarySummaryCard({ salary, driverName }: { salary: AttendanceSa
           Phân bổ chi phí (Nội bộ)
         </div>
 
-        <div className="salary-summary-dark__row salary-summary-dark__row--muted">
-          <span className="salary-summary-dark__row-lbl">
-            <Truck size={12} /> Lương chuyến ({salary.tripDays} ngày)
-          </span>
-          <span className="salary-summary-dark__row-val">
-            <Money value={salary.totalTripSalary} />
-          </span>
-        </div>
+        {costRow(
+          'TRIP_DAY',
+          <Truck size={12} />,
+          `Lương chuyến (${salary.tripDays} ngày)`,
+          <Money value={salary.totalTripSalary} />,
+        )}
 
-        <div className="salary-summary-dark__row salary-summary-dark__row--muted">
-          <span className="salary-summary-dark__row-lbl">
-            <Coffee size={12} /> Lương chờ việc ({salary.standbyDays} ngày)
-          </span>
-          <span className="salary-summary-dark__row-val">
-            <Money value={salary.supplementPay} />
-          </span>
-        </div>
+        {costRow(
+          'STANDBY',
+          <Coffee size={12} />,
+          `Lương chờ việc (${salary.standbyDays} ngày)`,
+          <Money value={salary.supplementPay} />,
+        )}
       </div>
     </div>
   );

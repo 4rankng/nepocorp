@@ -256,29 +256,29 @@
     border: 1px solid var(--line);
   }
 
-  /* Legend status tints — must match the calendar cell palette exactly */
+  /* Legend status tints — must match the calendar cell palette exactly (NEPO-7) */
   .mobile-day-legend__item.status-trip_day {
     color: #12693A;
-    border-color: #7FC79E;
-    background: #DDF3E7;
+    border-color: #A9DCC0;
+    background: #F3FAF6;
   }
 
   .mobile-day-legend__item.status-standby {
-    color: #7A4C05;
-    border-color: #E8CE8E;
-    background: #FDF4DC;
+    color: #46554D;
+    border-color: #CBD6D0;
+    background: #F4F6F5;
   }
 
   .mobile-day-legend__item.status-personal_leave {
     color: #9E1035;
-    border-color: #DB8A96;
-    background: #FBD9DD;
+    border-color: #E8B9C0;
+    background: #FDF4F5;
   }
 
   .mobile-day-legend__item.status-weekly_off {
     color: var(--ink-3);
-    border-color: #ADB9B3;
-    background: #E4E9E6;
+    border-color: #D8DEDA;
+    background: #F4F6F5;
   }
 
   /* --- Summary card mobile adjustments --- */
