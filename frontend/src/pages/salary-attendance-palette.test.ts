@@ -3,15 +3,10 @@
 // of truth; the mobile day-list badge (STATUS_CONFIG), the row strip and both
 // legends must carry the same palette. Guards against token/hex drift like
 // the amber-vs-slate "Chờ việc" mismatch this ticket fixed.
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import calendarCss from './salary-attendance/calendar.css?raw';
+import responsiveCss from './salary-attendance/responsive.css?raw';
 import { describe, expect, it } from 'vitest';
 import { STATUS_CONFIG } from './salary-attendance-constants';
-
-// vitest runs with `frontend/` as cwd (jsdom makes import.meta.url non-file),
-// so resolve the sibling stylesheets from the package root.
-const calendarCss = readFileSync(resolve(process.cwd(), 'src/pages/salary-attendance/calendar.css'), 'utf8');
-const responsiveCss = readFileSync(resolve(process.cwd(), 'src/pages/salary-attendance/responsive.css'), 'utf8');
 
 /** Body of the first CSS rule whose selector list starts with `selector`. */
 function rule(css: string, selector: string): string {

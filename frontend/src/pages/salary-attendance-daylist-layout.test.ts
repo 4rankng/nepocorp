@@ -2,11 +2,8 @@
 // grid instead of full-width separator rows, collapse to 1 column on narrow
 // phones (≤640px), and keep the legend full-width below the grid. CSS
 // contract test pinning the ticket's acceptance criteria.
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import responsiveCss from './salary-attendance/responsive.css?raw';
 import { describe, expect, it } from 'vitest';
-
-const responsiveCss = readFileSync(resolve(process.cwd(), 'src/pages/salary-attendance/responsive.css'), 'utf8');
 
 /** Body of the first CSS rule whose selector list starts with `selector`. */
 function rule(css: string, selector: string): string {
