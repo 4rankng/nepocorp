@@ -97,17 +97,11 @@ export default function DispatchPage() {
   const filteredTrucks = useMemo(() => {
     if (fleetFilter === 'all') return trucks;
     return trucks.filter((t) => {
-      if (fleetFilter === 'maint') return t.status === 'MAINTENANCE';
       if (t.status === 'MAINTENANCE') return false;
-      const ha = !!getActive(t.id);
-      if (fleetFilter === 'running') return ha;
-      const hd = !!getDefault(t.id);
-      if (fleetFilter === 'waiting') return !ha && hd && !!getBusyElsewhere(t.id);
-      if (fleetFilter === 'ready') return !ha && hd && !getBusyElsewhere(t.id);
-      if (fleetFilter === 'noassign') return !ha && !hd;
-      return true;
+      if (fleetFilter === 'running') return !!getActive(t.id);
+      return !getActive(t.id) && !getDefault(t.id);
     });
-  }, [trucks, fleetFilter, getActive, getDefault, getBusyElsewhere]);
+  }, [trucks, fleetFilter, getActive, getDefault]);
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><div className="spin" style={{ width: 32, height: 32, border: '4px solid var(--border-2)', borderTopColor: 'var(--brand)', borderRadius: '50%' }} /></div>;
 

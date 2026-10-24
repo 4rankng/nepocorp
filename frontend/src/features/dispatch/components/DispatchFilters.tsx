@@ -4,10 +4,7 @@ import type { FleetFilter } from '../utils';
 interface FleetCounts {
   all: number;
   running: number;
-  ready: number;
-  waiting: number;
   noassign: number;
-  maint: number;
 }
 
 interface DispatchFiltersProps {
@@ -19,10 +16,7 @@ interface DispatchFiltersProps {
 const FILTER_TABS: { key: FleetFilter; label: string }[] = [
   { key: 'all', label: 'Tất cả' },
   { key: 'running', label: 'Đang chạy' },
-  { key: 'ready', label: 'Sẵn sàng' },
-  { key: 'waiting', label: 'Chờ tài xế' },
   { key: 'noassign', label: 'Chưa giao' },
-  { key: 'maint', label: 'Bảo dưỡng' },
 ];
 
 export function DispatchFilters({ fleetFilter, fleetCounts, onFilterChange }: DispatchFiltersProps) {
