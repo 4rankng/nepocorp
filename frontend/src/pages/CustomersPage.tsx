@@ -97,6 +97,10 @@ export default function CustomersPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
+  // Hạn mức TD column auto-hides while no customer carries a credit limit and
+  // renders again as soon as at least one does. Judged on the full customer
+  // set so the column presence stays stable while filtering.
+  const showCreditLimit = useMemo(() => customers.some(c => Number(c.creditLimit || 0) > 0), [customers]);
   // Infinite scroll: everything loaded so far stays on screen and the sentinel
   // pulls the next batch.
   const visibleCustomers = filtered.slice(0, currentPage * pageSize);
@@ -173,7 +177,6 @@ export default function CustomersPage() {
       <PageHeader
         title="Khách hàng"
         iconName="customer"
-        description={`${total} khách hàng đang quản lý`}
         action={
           <>
             <button className="btn btn--secondary" onClick={async () => {
@@ -203,14 +206,14 @@ export default function CustomersPage() {
 
       {mutationError && !showAddForm && editingId == null && <p role="alert" style={{ color: 'var(--danger)' }}>{mutationError}</p>}
 
-      {/* KPI strip */}
+      {/* KPI strip — "Tổng khách hàng" KPI value is the single count source
+          on the page; header/subtitle/meta no longer repeat it. */}
       <div className="kpi-grid">
         <KPI
           label="Tổng khách hàng"
           value={total}
           icon={Users}
           assetIconName="customer"
-          meta={<span>{total} khách hàng</span>}
         />
         <KPI
           label="Đang hoạt động"
@@ -228,7 +231,7 @@ export default function CustomersPage() {
           icon={BarChart3}
           assetIconName="profit"
           meta={top4Revenue.total > 0
-            ? `${top4Revenue.customers.length} KH · ${formatNumber(top4Revenue.total)} ₫`
+            ? `${top4Revenue.customers.length} KH`
             : 'Chưa có dữ liệu doanh thu'
           }
         />
@@ -322,6 +325,7 @@ export default function CustomersPage() {
                   debt={debtMap.get(c.id) ?? 0}
                   showCreditLimit={showCreditLimit}
                   visibleCount={visibleCustomers.length}
+                  showCreditLimit={showCreditLimit}
                   menuOpen={menuOpenId === c.id}
                   deleting={deleting === c.id}
                   onOpen={() => navigate(`/customers/${c.id}`)}
@@ -335,18 +339,29 @@ export default function CustomersPage() {
         </div>
 
       </div>
-      <Pagination
-        mode="infinite"
-        page={currentPage}
-        totalPages={totalPages}
-        totalItems={filtered.length}
-        pageSize={pageSize}
-        onPageSizeChange={setPageSize}
-        onChange={setPage}
-        hasMore={currentPage < totalPages}
-        onLoadMore={loadMoreCustomers}
-        summary={<span>Hiển thị <strong>{visibleCustomers.length}</strong>/<strong>{filtered.length}</strong> khách hàng</span>}
-      />
+      {/* ≤ one page: only the count line — no page-size selector, no
+          prev/next or load-more controls. A shared auto-hide pagination
+          primitive will own this behavior across pages later. */}
+      {filtered.length > pageSize ? (
+        <Pagination
+          mode="infinite"
+          page={currentPage}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          onChange={setPage}
+          hasMore={currentPage < totalPages}
+          onLoadMore={loadMoreCustomers}
+          summary={<span>Hiển thị <strong>{visibleCustomers.length}</strong>/<strong>{filtered.length}</strong> khách hàng</span>}
+        />
+      ) : (
+        <div className="ds-pagination">
+          <div className="ds-pagination__summary-slot">
+            <span className="ds-pagination__summary">Hiển thị <strong>{visibleCustomers.length}</strong>/<strong>{filtered.length}</strong> khách hàng</span>
+          </div>
+        </div>
+      )}
 
       {/* Customer add/edit modal */}
       <CustomerFormModal

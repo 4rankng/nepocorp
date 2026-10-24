@@ -81,3 +81,20 @@ it('shows a retry when balances fail instead of asserting every customer owes ze
   fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }));
   expect(mocks.retry).toHaveBeenCalledTimes(2);
 });
+it('renders one short page as a count line only and hides the all-empty credit column', () => {
+  mocks.customers.mockReturnValue(ready(Array.from({ length: 3 }, (_, index) => ({
+    id: index + 1, name: `KH nhỏ ${index + 1}`, status: 'ACTIVE',
+    creditLimit: null, taxCode: null, contactPerson: null, phone: null, contactInfo: null,
+  }))));
+  const view = mount();
+  // ≤1 page → count line, no page-size selector, no prev/next or load-more controls.
+  const summary = view.container.querySelector('.ds-pagination__summary');
+  expect(summary?.textContent).toContain('Hiển thị 3/3');
+  expect(view.container.querySelector('.ds-pagination__controls')).toBeNull();
+  expect(view.container.querySelector('.ds-pagination__size')).toBeNull();
+  // No customer carries a credit limit → the column is hidden entirely.
+  const desktop = within(view.container.querySelector('.desktop-only') as HTMLElement);
+  expect(desktop.queryByText('Hạn mức TD')).toBeNull();
+  // Contact cells with nothing to show render no '—' placeholder.
+  expect(within(view.container.querySelector('.desktop-only table') as HTMLElement).queryAllByText('—')).toHaveLength(0);
+});
