@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMonth } from '../../../hooks/useMonth';
-import { Shield, ShieldCheck, Download, Plus, FileText, Zap, Trophy, Users, DollarSign, XCircle, Loader2, UserRound } from 'lucide-react';
+import { Shield, ShieldCheck, Download, Plus, FileText, Trophy, DollarSign, XCircle, Loader2, UserRound } from 'lucide-react';
 import { Panel, Btn, KPI, PageHeader } from '../../../components/UI';
 import { StatusStrip } from '../../../components/shared/StatusStrip';
 import { formatCurrency, formatDate } from '../../../lib/format';
@@ -59,9 +59,6 @@ export function PenaltyTable({
     ? `Giảm ${Math.round((1 - incidentCount / prevMonthCount) * 100)}% so với ${String(prevMonthNum).padStart(2, '0')}/${String(prevYearNum).slice(-2)}`
     : incidentCount === 0 ? 'Tháng an toàn' : '';
 
-  const penalizedDriverIds = new Set(monthPenalties.map(p => p.driverId));
-  const safeCount = drivers.filter(d => !penalizedDriverIds.has(d.id)).length;
-
   const yearStart = `${now.getFullYear()}-01-01`;
   const ytdPenalties = penalties.filter(p => p.date >= yearStart);
   const ytdTotal = ytdPenalties.reduce((s, p) => s + parseFloat(p.amount), 0);
@@ -86,10 +83,6 @@ export function PenaltyTable({
   }).sort((a, b) => b.streakDays - a.streakDays || a.violationsInPeriod - b.violationsInPeriod);
 
   const longestStreak = driverDetails.reduce((max, d) => Math.max(max, d.streakDays), 0);
-  const streakLeader = driverDetails.length > 0
-    ? [...driverDetails]
-        .sort((a, b) => b.streakDays - a.streakDays || a.violationsInPeriod - b.violationsInPeriod)[0]?.name || '—'
-    : '—';
   const avgStreak = driverDetails.length > 0
     ? Math.round(driverDetails.reduce((s, d) => s + d.streakDays, 0) / driverDetails.length)
     : 0;
@@ -108,6 +101,19 @@ export function PenaltyTable({
 
   const pendingCount = driverFiltered.filter(p => p.status === 'ACTIVE').length;
   const deductedCount = driverFiltered.filter(p => p.status === 'CANCELED').length;
+
+  // NEPO-23 — one legend source rendered by both the mobile and the desktop
+  // scoreboard variant, so the two variants can no longer drift or repeat
+  // each other's counts.
+  const scoreLegend = (
+    <div className="legend">
+      <span>TB chuỗi an toàn: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
+      <span style={{ opacity: 0.5 }}>·</span>
+      <span>{driversOver90} lái xe đạt mốc 90 ngày</span>
+      <span style={{ opacity: 0.5 }}>·</span>
+      <span>{driversOver6m} lái xe vượt 6 tháng</span>
+    </div>
+  );
 
   return (
     <>
@@ -152,14 +158,16 @@ export function PenaltyTable({
         }
       />
 
-      {/* ── KPI strip (4 cards) ──────────────────────────────────────────── */}
+      {/* ── KPI strip (NEPO-23: 2 figures — the other two former cards were
+             re-encodings of the scoreboard right below: longest streak is its
+             first row, safe drivers are its zero-violation rows) ──────────── */}
       {periodLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '24px 0', color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>
           <Loader2 size={16} className="spin" />
           Đang tải dữ liệu kỳ lương...
         </div>
       ) : (
-      <div className="kpi-grid">
+      <div className="kpi-grid cols-2">
         <KPI
           label={`Vi phạm ${monthLabel}`}
           value={incidentCount}
@@ -184,37 +192,6 @@ export function PenaltyTable({
               <span>Khấu trừ vào bảng lương</span>
               <span className="sep">·</span>
               <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink-2)' }}>YTD {formatCurrency(ytdTotal)}</span>
-            </span>
-          }
-        />
-        <KPI
-          label="Lái xe đạt chuẩn"
-          value={safeCount}
-          unit={`/${drivers.length} lái xe`}
-          icon={Users}
-          assetIconName="driver"
-          variant="info"
-          meta={
-            <span className="penalty-kpi-meta">
-              <span className="dot" />
-              <span className="pos">{drivers.length > 0 ? Math.round(safeCount / drivers.length * 100) : 0}% toàn đội</span>
-              <span className="sep">·</span>
-              <span>{drivers.length - safeCount} cần nhắc nhở</span>
-            </span>
-          }
-        />
-        <KPI
-          label="Chuỗi an toàn"
-          value={longestStreak}
-          unit="ngày"
-          icon={Zap}
-          assetIconName="checklist"
-          variant="warn"
-          meta={
-            <span className="penalty-kpi-meta">
-              {longestStreak > 0
-                ? <span>{streakLeader} dẫn đầu</span>
-                : <span style={{ opacity: 0.7 }}>Chưa có dữ liệu chuỗi an toàn</span>}
             </span>
           }
         />
@@ -299,11 +276,7 @@ export function PenaltyTable({
             })}
           </div>
           <div className="penalty-table-foot">
-            <div className="legend">
-              <span>TB: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
-              <span style={{ opacity: 0.5 }}>·</span>
-              <span>{driversOver90} đạt 90 ngày</span>
-            </div>
+            {scoreLegend}
           </div>
         </div>
         <div className="desktop-only">
@@ -312,26 +285,20 @@ export function PenaltyTable({
               <table>
                 <thead>
                   <tr>
-                    <th style={{ width: 48, textAlign: 'center' }}>#</th>
                     <th>Lái xe</th>
                     <th>Chuỗi an toàn</th>
                     <th>Vi phạm {scoreFilter === '90d' ? '90N' : scoreFilter.toUpperCase()}</th>
                     <th>Phạt YTD</th>
-                    <th style={{ textAlign: 'center' }}>Mức</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {driverDetails.map((d, idx) => {
-                    const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+                  {driverDetails.map((d) => {
                     const streakPct = Math.min(100, (d.streakDays / 180) * 100);
                     const vClass = d.violationsInPeriod === 0 ? 'zero' : d.violationsInPeriod <= 2 ? 'warn' : 'bad';
                     const moneyClass = d.fineYTD === 0 ? 'zero' : '';
                     const gc = getGradeClass(d.grade);
                     return (
                       <tr key={d.id} onClick={() => onOpenDrawer(d.id)} style={{ cursor: 'pointer' }}>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className={`penalty-rank ${rankClass}`}>{idx + 1}</span>
-                        </td>
                         <td>
                           <span className="penalty-driver-cell">
                             <span className="penalty-driver-mini">
@@ -346,16 +313,21 @@ export function PenaltyTable({
                           </span>
                         </td>
                         <td>
+                          {/* NEPO-23 — one safety cell: streak value + bar and the
+                              violation grade badge live together; the separate rank
+                              column and grade column are gone (three encodings of
+                              the same metric before). */}
                           <span className="penalty-streak">
                             <span className="penalty-streak-num">
                               {d.streakDays}<span className="unit">ngày</span>
                             </span>
                             <span className="penalty-streak-bar">
                               <span
-                                className={`fill ${idx === 0 ? 'gold' : ''}`}
+                                className="fill"
                                 style={{ width: `${streakPct}%` }}
                               />
                             </span>
+                            <span className={`penalty-grade ${gc}`}>{d.grade}</span>
                           </span>
                         </td>
                         <td>
@@ -372,9 +344,6 @@ export function PenaltyTable({
                             {formatCurrency(d.fineYTD)}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className={`penalty-grade ${gc}`}>{d.grade}</span>
-                        </td>
                       </tr>
                     );
                   })}
@@ -383,14 +352,7 @@ export function PenaltyTable({
             </div>
           </div>
           <div className="penalty-table-foot">
-            <div className="legend">
-              <span>TB chuỗi an toàn: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{avgStreak} ngày</strong></span>
-              <span style={{ opacity: 0.5 }}>·</span>
-              <span>{driversOver90} lái xe đạt mốc 90 ngày</span>
-              <span style={{ opacity: 0.5 }}>·</span>
-              <span>{driversOver6m} lái xe vượt 6 tháng</span>
-            </div>
-            <span>Hiển thị {drivers.length}/{drivers.length}</span>
+            {scoreLegend}
           </div>
         </div>
       </Panel>

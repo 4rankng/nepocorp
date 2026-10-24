@@ -245,36 +245,6 @@
   gap: 8px;
 }
 
-/* ─── Rank badge ─── */
-
-.penalty-rank {
-  display: inline-grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  background: var(--surface-3);
-  color: var(--ink-3);
-}
-
-.penalty-rank.gold {
-  background: #FEF3C7;
-  color: #92400E;
-}
-
-.penalty-rank.silver {
-  background: #F1F5F9;
-  color: #475569;
-}
-
-.penalty-rank.bronze {
-  background: #FED7AA;
-  color: #9A3412;
-}
-
 /* ─── Driver cell ─── */
 
 .penalty-driver-cell {
@@ -309,6 +279,13 @@
 }
 
 /* ─── Streak bar ─── */
+
+/* NEPO-23 — scoreboard rows at 40–44px: with the rank column gone every
+   remaining cell is single-line, so the global 10px row padding is just
+   dead height (32px avatar + 2×5px + border = 43px row). */
+.penalty-page .table-wrap tbody td {
+  padding: 5px 14px;
+}
 
 .penalty-streak {
   display: inline-flex;
@@ -346,10 +323,6 @@
   bottom: 0;
   background: var(--accent);
   border-radius: 2px;
-}
-
-.penalty-streak-bar .fill.gold {
-  background: linear-gradient(90deg, var(--accent), #FCD34D);
 }
 
 /* ─── Violation count indicator ─── */

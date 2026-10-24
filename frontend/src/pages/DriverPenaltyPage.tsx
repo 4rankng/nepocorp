@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { PenaltyStatus } from '@tingting/shared';
 import { formatCurrency, formatDate } from '../lib/format';
-import { Money } from '../components/shared/Money';
 import { ShieldCheck, AlertTriangle, AlertOctagon, Loader2, Calendar, Truck } from 'lucide-react';
 import { PageHeader } from '../components/UI';
 import { useSalaryPeriod, useDriverPenalties } from '../hooks/useQueries';
@@ -72,7 +71,10 @@ export default function DriverPenaltyPage() {
       {/* ── Page header ─────────────────────────────────────────────────────── */}
       <PageHeader title="Kỷ luật của tôi" description="Lịch sử vi phạm và khấu trừ lương của bạn" iconName="alert" />
 
-      {/* ── Zone 1: Status banner ───────────────────────────────────────────── */}
+      {/* ── Summary row (NEPO-23 — former status banner + 3 KPI cards folded
+             into one ≤80px strip; the two figures that matter — this month's
+             violations and the salary deduction — live here, and the static
+             all-time count only exists as the ledger card title below) ──── */}
       {summaryError ? (
         <div className="penalty-loading-banner" role="alert">
           <AlertTriangle size={16} />
@@ -87,55 +89,30 @@ export default function DriverPenaltyPage() {
       ) : (
         <div className={`penalty-status-banner ${isSafeThisMonth ? 'penalty-status-banner--safe' : 'penalty-status-banner--violation'}`}>
           <div className="penalty-status-banner__icon">
-            {isSafeThisMonth ? <ShieldCheck size={22} /> : <AlertOctagon size={22} />}
+            {isSafeThisMonth ? <ShieldCheck size={20} /> : <AlertOctagon size={20} />}
           </div>
-          <div>
+          <div className="penalty-status-banner__text">
             <div className="penalty-status-banner__title">
               {isSafeThisMonth ? `Không vi phạm ${monthLabel}` : `${incidentCount} vi phạm ${monthLabel}`}
             </div>
             <div className="penalty-status-banner__subtitle">
               {isSafeThisMonth
                 ? 'Bạn đang chấp hành tốt nội quy công ty. Tiếp tục phát huy!'
-                : `Tổng khấu trừ lương: ${formatCurrency(totalMonthAmount)}`
+                : 'Khấu trừ trực tiếp vào lương tháng này'
               }
             </div>
           </div>
+          <div className="penalty-status-banner__figures">
+            <span className="fig">
+              <strong>{incidentCount}</strong> vụ vi phạm
+            </span>
+            <span className="fig-sep">·</span>
+            <span className="fig">
+              <strong>{totalMonthAmount > 0 ? formatCurrency(totalMonthAmount) : '0 ₫'}</strong> khấu trừ
+            </span>
+          </div>
         </div>
       )}
-
-      {/* ── Zone 2: KPI grid ──────────────────────────────────────────────── */}
-      {!isLoadingPeriod && !summaryError && <div className="kpi-grid penalty-kpi-grid">
-        <div className={`kpi ${incidentCount > 0 ? 'kpi--danger' : 'kpi--success'}`}>
-          <div className="kpi__top"><span className="kpi__label">Vi phạm {monthLabel}</span></div>
-          <div className="kpi__value">
-            {incidentCount}<span className="kpi__value-unit"> vụ</span>
-          </div>
-          <div className="kpi__meta">Trong tháng này</div>
-          <div className="kpi__watermark" aria-hidden="true">
-            {incidentCount > 0 ? <AlertTriangle size={72} /> : <ShieldCheck size={72} />}
-          </div>
-        </div>
-
-        <div className={`kpi ${totalMonthAmount > 0 ? 'kpi--warn' : 'kpi--success'}`}>
-          <div className="kpi__top"><span className="kpi__label">Khấu trừ {monthLabel}</span></div>
-          <div className="kpi__value">
-            {totalMonthAmount > 0 ? <Money value={totalMonthAmount} /> : '—'}
-          </div>
-          <div className="kpi__meta">Trừ vào lương tháng</div>
-          <div className="kpi__watermark" aria-hidden="true">
-            <svg aria-hidden="true" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-        </div>
-
-        <div className="kpi kpi--neutral">
-          <div className="kpi__top"><span className="kpi__label">Tổng biên bản</span></div>
-          <div className="kpi__value">
-            {allPenalties.length}<span className="kpi__value-unit"> vụ</span>
-          </div>
-          <div className="kpi__meta">Toàn lịch sử</div>
-          <div className="kpi__watermark" aria-hidden="true"><AlertOctagon size={72} /></div>
-        </div>
-      </div>}
 
       {/* ── Zone 3: Violations data card ───────────────────────────────────── */}
       <div className="penalty-data-card">
