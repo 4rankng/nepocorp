@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { formatNumber } from '../../../lib/format';
 import { EmptyState as DsEmptyState } from '../../../design-system/EmptyState';
 import { RevenueTrendChart } from '../../../components/charts/RevenueTrendChart';
+import { DailyBarsChart } from '../../../components/charts/DailyBarsChart';
 import { CostBreakdown, type CostBreakdownItem } from './dashboard-presenters';
 
 export interface FleetStats {
@@ -30,37 +31,71 @@ export interface RouteProfitRow {
   profit: number;
 }
 
+/** Hero chart modes (NEPO-15): daily bars read the still-open month
+ * honestly; the cumulative running-sum stays as the "Cộng dồn" view. */
+export type ChartView = 'day' | 'cumulative' | 'month';
+
 interface RevenueChartCardProps {
+  /** Day labels for the daily-bars view */
+  dailyLabels: string[];
+  dailyRevenue: number[];
+  dailyGross: number[];
+  /** Cumulative (day) or trailing-12-month (month) series for the line view */
   chartMonths: string[];
   chartRevenue: number[];
   chartGross: number[];
-  chartView: 'day' | 'month';
-  onChartViewChange: (view: 'day' | 'month') => void;
+  chartView: ChartView;
+  onChartViewChange: (view: ChartView) => void;
   currentMonth: number;
   currentYear: number;
   onNavigate: (path: string) => void;
 }
 
+const CHART_VIEWS: Array<{ key: ChartView; label: string }> = [
+  { key: 'day', label: 'Ngày' },
+  { key: 'cumulative', label: 'Cộng dồn' },
+  { key: 'month', label: 'Tháng' },
+];
+
 export function RevenueChartCard({
-  chartMonths, chartRevenue, chartGross, chartView, onChartViewChange, currentMonth, currentYear, onNavigate,
+  dailyLabels, dailyRevenue, dailyGross,
+  chartMonths, chartRevenue, chartGross,
+  chartView, onChartViewChange, currentMonth, currentYear, onNavigate,
 }: RevenueChartCardProps) {
+  const isDaily = chartView === 'day';
+  const barsEmpty = dailyRevenue.every(v => v === 0) && dailyGross.every(v => v === 0);
+  const lineEmpty = chartRevenue.every(v => v === 0) && chartGross.every(v => v === 0);
   return (
     <section className="d-card d-card-border bg-base-100 wf-card wf-chart wf-bento-hero" aria-labelledby="dashboard-revenue-title">
         <div className="wf-card-h">
           <div>
             <h2 className="ttl" id="dashboard-revenue-title">Doanh thu & Lợi nhuận gộp</h2>
             <div className="sub">
-              {chartMonths.length > 0
-                ? chartView === 'day'
-                  ? `${chartMonths.length} ngày · Tháng ${currentMonth}/${currentYear}`
-                  : `${chartMonths.length} tháng gần nhất`
-                : 'Chưa có dữ liệu'}
+              {isDaily
+                ? dailyLabels.length > 0
+                  ? `${dailyLabels.length} ngày · Tháng ${currentMonth}/${currentYear}`
+                  : 'Chưa có dữ liệu'
+                : chartView === 'cumulative'
+                  ? chartMonths.length > 0
+                    ? `Cộng dồn ${chartMonths.length} ngày · Tháng ${currentMonth}/${currentYear}`
+                    : 'Chưa có dữ liệu'
+                  : chartMonths.length > 0
+                    ? `${chartMonths.length} tháng gần nhất`
+                    : 'Chưa có dữ liệu'}
             </div>
           </div>
           <div className="wf-chart-actions">
-            <div className="wf-chart-toggle">
-              <button className={`d-btn d-btn-sm wf-chart-toggle__btn${chartView === 'day' ? ' is-active' : ''}`} onClick={() => onChartViewChange('day')} aria-pressed={chartView === 'day'}>Ngày</button>
-              <button className={`d-btn d-btn-sm wf-chart-toggle__btn${chartView === 'month' ? ' is-active' : ''}`} onClick={() => onChartViewChange('month')} aria-pressed={chartView === 'month'}>Tháng</button>
+            <div className="wf-chart-toggle" role="group" aria-label="Kiểu hiển thị biểu đồ">
+              {CHART_VIEWS.map(v => (
+                <button
+                  key={v.key}
+                  className={`d-btn d-btn-sm wf-chart-toggle__btn${chartView === v.key ? ' is-active' : ''}`}
+                  onClick={() => onChartViewChange(v.key)}
+                  aria-pressed={chartView === v.key}
+                >
+                  {v.label}
+                </button>
+              ))}
             </div>
             <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => onNavigate('/finance')}>Xem báo cáo
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -73,33 +108,25 @@ export function RevenueChartCard({
         </div>
         <div className="body">
           {(() => {
-            if (chartRevenue.length === 0) {
+            const empty = isDaily ? barsEmpty : lineEmpty;
+            const rawEmpty = isDaily ? dailyRevenue.length === 0 : chartRevenue.length === 0;
+            if (rawEmpty || empty) {
               return (
                 <div style={{ padding: '24px 16px', flex: 1 }}>
                   <DsEmptyState
-                    title="Đang tải dữ liệu"
-                    description="Đang thu thập số liệu doanh thu và lợi nhuận…"
+                    title={rawEmpty ? 'Đang tải dữ liệu' : 'Chưa đủ dữ liệu lịch sử'}
+                    description={rawEmpty
+                      ? 'Đang thu thập số liệu doanh thu và lợi nhuận…'
+                      : 'Biểu đồ doanh thu & lợi nhuận gộp sẽ xuất hiện tại đây sau khi có chuyến đầu tiên trong kỳ.'}
                     preview="rows"
-                    previewCount={3}
+                    previewCount={rawEmpty ? 3 : 4}
                   />
                 </div>
               );
             }
-            const totalRev = chartRevenue.reduce((a, b) => a + b, 0);
-            const totalGp = chartGross.reduce((a, b) => a + b, 0);
-            if (totalRev === 0 && totalGp === 0) {
-              return (
-                <div style={{ padding: '24px 16px', flex: 1 }}>
-                  <DsEmptyState
-                    title="Chưa đủ dữ liệu lịch sử"
-                    description="Biểu đồ doanh thu & lợi nhuận gộp sẽ xuất hiện tại đây sau khi có chuyến đầu tiên trong kỳ."
-                    preview="rows"
-                    previewCount={4}
-                  />
-                </div>
-              );
-            }
-            return <RevenueTrendChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
+            return isDaily
+              ? <DailyBarsChart labels={dailyLabels} revenue={dailyRevenue} gross={dailyGross} />
+              : <RevenueTrendChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
           })()}
         </div>
       </section>
@@ -191,7 +218,7 @@ interface ProfitByTruckCardProps {
 
 export function ProfitByTruckCard({ trucks, currentMonth, currentYear }: ProfitByTruckCardProps) {
   return (
-    <div className="d-card d-card-border bg-base-100 wf-card wf-bento-half">
+    <div className="d-card d-card-border bg-base-100 wf-card wf-bento-third">
           <div className="wf-card-h">
             <div>
               <h2 className="ttl">Lợi nhuận theo xe</h2>

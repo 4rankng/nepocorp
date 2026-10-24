@@ -146,6 +146,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const toggleUserMenu = useCallback(() => setUserMenuOpen(v => !v), []);
   const closeUserMenu = useCallback(() => setUserMenuOpen(false), []);
+  // NEPO-15: .app-body is the ONE scroll container and it survives route
+  // changes, so its scroll offset persisted across navigation — opening e.g.
+  // the dashboard after a long scroll rendered it mid-page with the page head
+  // sheared at the container's top edge and card figures cut in half
+  // (owner screenshot 24/10). Reset to top on every route change; 'instant'
+  // overrides the smooth scrolling set on .content so the new page does not
+  // visibly scroll.
+  const mainRef = useRef<HTMLElement>(null);
+  const { pathname } = location;
+  useEffect(() => {
+    // Optional call: Element.scrollTo is unimplemented in jsdom test envs.
+    mainRef.current?.scrollTo?.({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+  }, [pathname]);
   const accountSheetOpen = user?.role === 'DRIVER' && isMobileViewport && userMenuOpen;
   useDialogFocus(accountSheetRef, accountSheetOpen);
   const closeSidebar = useCallback(() => {
@@ -402,7 +415,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className={`app-main ${isDriver ? 'driver-mode' : ''}`}>
         <Topbar {...topbarProps} />
 
-        <main className="app-body" id="main-content" tabIndex={-1}>
+        <main ref={mainRef} className="app-body" id="main-content" tabIndex={-1}>
           {children}
         </main>
 

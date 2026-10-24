@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Settings, Truck, DollarSign, LogIn, FileText, Activity } from 'lucide-react';
 import type { DashboardAuditEntry } from '../hooks/useDashboardData';
-import { ACTION_LABELS, resolveCategory, formatTimeShort } from '../../../lib/audit-helpers';
+import { ACTION_LABELS, resolveCategory, formatTimeShort, groupRecentAuditEntries } from '../../../lib/audit-helpers';
 import { ClickableCard } from '../../../components/shared/ClickableCard';
 
 function categoryDotClass(c: string): string {
@@ -30,10 +30,13 @@ interface AuditLogWidgetProps {
 }
 
 export function AuditLogWidget({ entries, navigate }: AuditLogWidgetProps) {
-  // Normalize: fill in category if backend didn't provide it
+  // Collapse same-actor/same-action/same-object repeats (NEPO-15): double
+  // login rows and double-saved trip updates rendered as identical pairs one
+  // hour apart and read as a defect. One row + ×N badge; detail lives on
+  // /audit-log. Timestamps arrive newest-first; the group keeps the latest.
   const normalized = useMemo(
     () =>
-      entries.map((e) => ({
+      groupRecentAuditEntries(entries).map((e) => ({
         ...e,
         category: e.category || resolveCategory(e.action || ''),
       })),
@@ -60,7 +63,7 @@ export function AuditLogWidget({ entries, navigate }: AuditLogWidgetProps) {
             Chưa có hoạt động nào được ghi nhận.
           </div>
         ) : (
-          normalized.map((entry, idx) => {
+          normalized.slice(0, 6).map((entry, idx) => {
             const label = ACTION_LABELS[entry.action] || entry.action || 'Hoạt động';
             return (
               <React.Fragment key={entry.id ?? idx}>
@@ -77,7 +80,12 @@ export function AuditLogWidget({ entries, navigate }: AuditLogWidgetProps) {
                         {categoryIcon(entry.category)}
                         <span className="lbl-txt">{label}</span>
                       </span>
-                      <span className="t">{formatTimeShort(entry.timestamp)}</span>
+                      <span className="t">
+                        {entry.count > 1 && (
+                          <span className="wf-aurow__count" title={`${entry.count} sự kiện trùng đã gộp`}>×{entry.count}</span>
+                        )}
+                        {formatTimeShort(entry.timestamp)}
+                      </span>
                     </div>
                     <div className="msg" title={entry.message}>
                       {entry.message}
