@@ -59,8 +59,12 @@ export interface DashboardKpiRowProps {
   grossMargin: number;
   netProfit: number;
   netMoM: string | null;
+  /** NEPO-13 — no company expense / other income: net ≡ gross, say so. */
+  netEqualsGross: boolean;
   totalOutstanding: number;
   overdueCustomers: number;
+  /** NEPO-13 — count in the worst aging bucket ('90+') for the debt card. */
+  over90Count: number;
   onNavigate: (path: string) => void;
 }
 
@@ -69,8 +73,8 @@ export function DashboardKpiRow({
   revenue, prevRevenue, revenueMoM,
   costs, costsMoM, costRatio,
   grossProfit, grossMoM, grossMargin,
-  netProfit, netMoM,
-  totalOutstanding, overdueCustomers,
+  netProfit, netMoM, netEqualsGross,
+  totalOutstanding, overdueCustomers, over90Count,
   onNavigate,
 }: DashboardKpiRowProps) {
   return (
@@ -79,9 +83,11 @@ export function DashboardKpiRow({
         tone="revenue"
         icon={<AssetIcon name="analytics" size={15} />}
         label={`Doanh thu (chưa VAT) · ${String(currentMonth).padStart(2, '0')}/${currentYear}`}
-        delta={<DeltaPill mom={revenueMoM} />}
+        delta={revenueMoM ? <DeltaPill mom={revenueMoM} /> : undefined}
         value={fmtVN(revenue)}
-        description={<>Tháng trước · {formatNumber(prevRevenue)} ₫</>}
+        description={prevRevenue > 0
+          ? <>Tháng trước · {formatNumber(prevRevenue)} ₫</>
+          : <>Không có số tháng trước</>}
       />
       <DashboardStat
         tone="cost"
@@ -105,14 +111,16 @@ export function DashboardKpiRow({
         label="Lợi nhuận ròng"
         delta={<DeltaPill mom={netMoM} />}
         value={fmtVN(netProfit)}
-        description={<>Sau phí quản lý · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/profit')}>Phân chia →</button></>}
+        description={netEqualsGross
+          ? <>Bằng LN gộp — chưa có chi phí công ty / thu khác · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/profit')}>Phân chia →</button></>
+          : <>Sau phí quản lý · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/profit')}>Phân chia →</button></>}
       />
       <DashboardStat
         tone="debt"
         icon={<AssetIcon name="receivables" size={15} />}
         label="Công nợ phải thu (gồm VAT)"
         value={fmtVN(totalOutstanding)}
-        description={<>{overdueCustomers} khách quá hạn</>}
+        description={<>{overdueCustomers} khách quá hạn · {over90Count} trên 90 ngày · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/debt')}>Xem công nợ →</button></>}
       />
     </div>
   );

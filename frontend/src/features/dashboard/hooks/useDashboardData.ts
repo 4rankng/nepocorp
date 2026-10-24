@@ -48,6 +48,9 @@ export interface DerivedData {
   prevCosts: number;
   prevGross: number;
   prevNet: number;
+  /** True when no company expense / other income exists — net ≡ gross, and the
+   * KPI row must say so instead of showing two identical figures (NEPO-13). */
+  netEqualsGross: boolean;
 }
 
 export interface ReceivablesSummary {
@@ -248,6 +251,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
     const prevGross = prevPnlReport?.grossProfit ?? 0;
     const prevNet = prevPnlReport?.netProfit
       ?? (prevGross - (prevPnlReport?.companyExpenses ?? 0) + (prevPnlReport?.otherIncome ?? 0));
+    const netEqualsGross = companyExpenses === 0 && otherIncome === 0;
 
     return {
       revenue, costs, grossProfit, netProfit,
@@ -255,6 +259,7 @@ export function useDashboardData(currentMonth: number, currentYear: number) {
       fuelCost, roadCost, driverCost,
       slicesWithPct, conicGradient, totalPie,
       prevRevenue, prevCosts, prevGross, prevNet,
+      netEqualsGross,
     };
   }, [stats, pnlReport, prevPnlReport, allTrips]);
 

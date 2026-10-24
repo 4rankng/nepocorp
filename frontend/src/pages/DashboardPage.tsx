@@ -90,10 +90,13 @@ export default function DashboardPage() {
   const prevGross = d?.prevGross ?? 0;
   const prevNet = d?.prevNet ?? 0;
 
-  const revenueMoM = fmtMoM(revenue, prevRevenue);
-  const costsMoM = fmtMoM(costs, prevCosts);
-  const grossMoM = fmtMoM(grossProfit, prevGross);
-  const netMoM = fmtMoM(netProfit, prevNet);
+  // NEPO-13: a zero baseline is NOT a comparison — 'Mới' pills on all four
+  // cards read as data noise. No pill until the previous month has figures.
+  const revenueMoM = prevRevenue > 0 ? fmtMoM(revenue, prevRevenue) : null;
+  const costsMoM = prevCosts > 0 ? fmtMoM(costs, prevCosts) : null;
+  const grossMoM = prevGross > 0 ? fmtMoM(grossProfit, prevGross) : null;
+  const netMoM = prevNet > 0 ? fmtMoM(netProfit, prevNet) : null;
+  const netEqualsGross = d?.netEqualsGross ?? false;
 
   const grossMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
   const costRatio = revenue > 0 ? (costs / revenue) * 100 : 0;
@@ -322,7 +325,7 @@ export default function DashboardPage() {
           </h1>
           <div className="wf-sum">
             Tháng {currentMonth}/{currentYear} đang hoạt động — doanh thu{' '}
-            {prevPnlReport ? (
+            {prevPnlReport && prevRevenue > 0 ? (
               revenue >= prevRevenue
                 ? <span className="pos">{revenueMoM} so với tháng trước</span>
                 : <span className="neg">{revenueMoM} so với tháng trước</span>
@@ -357,8 +360,10 @@ export default function DashboardPage() {
         grossMargin={grossMargin}
         netProfit={netProfit}
         netMoM={netMoM}
+        netEqualsGross={netEqualsGross}
         totalOutstanding={receivablesSummary?.totalOutstanding ?? 0}
         overdueCustomers={receivablesSummary?.overdueCustomers ?? 0}
+        over90Count={over90Count}
         onNavigate={navigate}
       />
 

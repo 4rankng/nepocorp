@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { MousePointerClick, Save, X } from 'lucide-react';
@@ -60,7 +60,15 @@ export default function TripListPage() {
     }
   }, [month, restoredList?.month, restoredList?.year, setMonthYear, year]);
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => restoredFilters?.statusFilter ?? '');
+  // NEPO-14: dashboard decision items deep-link `/trips?status=COMPLETED` —
+  // honour the URL status once at mount. Session-restored filter still wins;
+  // unknown values fall back to '' so a stale link can never poison the list.
+  const [searchParams] = useSearchParams();
+  const urlStatus = searchParams.get('status');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    () => restoredFilters?.statusFilter
+      ?? (urlStatus && Object.values(TripStatus).includes(urlStatus as TripStatus) ? urlStatus as StatusFilter : ''),
+  );
   const [truckFilter, setTruckFilter] = useState<number | ''>(() => restoredFilters?.truckFilter ?? '');
   const [customerFilter, setCustomerFilter] = useState<number | ''>(() => restoredFilters?.customerFilter ?? '');
   const [searchInput, setSearchInput] = useState(() => restoredFilters?.searchInput ?? '');
