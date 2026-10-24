@@ -78,36 +78,37 @@
     font-size: var(--fs-table);
   }
 
-  /* --- Day list wrapper --- */
+  /* --- Day list wrapper ---
+     NEPO-10: 2-column card grid. Full-width single rows wasted the
+     768–1023px band; each day is now its own card. ≤640px drops back to
+     one column (small phones). */
   .mobile-day-list {
-    display: flex;
-    flex-direction: column;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
   }
 
-  /* --- Day list row --- */
+  /* --- Day list row (card) --- */
   .mobile-day-row {
     display: flex;
     align-items: center;
     position: relative;
     min-height: 50px;
-    padding: 0 14px 0 10px;
-    border-bottom: 1px solid var(--line);
+    padding: 6px 14px 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
     gap: 10px;
     transition: background 120ms ease, transform 120ms ease;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .mobile-day-row:last-of-type {
-    border-bottom: none;
-  }
-
   /* Status strip — 3×20px centered indicator, NOT full-height border.
-     NEPO-9: strip colors = calendar cell border palette (NEPO-7) — Chờ việc
-     là neutral slate, không amber. */
+     Colors = calendar cell border palette (NEPO-7/NEPO-9). */
   .mobile-day-row::before {
     content: '';
     position: absolute;
@@ -240,8 +241,10 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    grid-column: 1 / -1;
     padding: 10px 14px;
-    border-top: 1px solid var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
     background: var(--surface-2, #F7F8FA);
   }
 
@@ -313,6 +316,10 @@
 
 /* ── Small phones (≤640px) — tighter spacing ── */
 @media (max-width: 640px) {
+  .mobile-day-list {
+    grid-template-columns: 1fr;
+  }
+
   .mobile-day-row {
     min-height: 48px;
     padding-right: 10px;
