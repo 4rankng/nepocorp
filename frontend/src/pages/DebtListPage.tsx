@@ -7,9 +7,6 @@ import { downloadBlob } from '../lib/download';
 import { useToast } from '../components/shared/Toast';
 import {
   Clock,
-  CalendarCheck2,
-  Hourglass,
-  AlertOctagon,
   Building2,
   Phone,
   Loader2,
@@ -25,9 +22,7 @@ import {
   usePageAnimations,
   useListAnimations,
 } from '../hooks/animations';
-import { AssetIcon } from '../components/AssetIcon';
 import './DebtListPage.css';
-import '../components/shared/HeroKpiRow.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 interface CustomerDebtInfo {
@@ -53,6 +48,24 @@ function classifyRisk(totalOutstanding: number, aging: CustomerAging['aging'], _
   if (aging.over90 > 0 || totalOutstanding > 100_000_000) return 'high';
   if (aging.d30 > 0 || aging.d60 > 0) return 'med';
   return 'low';
+}
+
+/**
+ * The one-line status the customer rows used to spell out on a second line
+ * under every name (NEPO-18): the label now rides the colored dot beside the
+ * name (title + aria-label). Same overload rule as everywhere else — the
+ * status reads from the aging buckets via `oldestAgingBucketIdx`.
+ */
+function debtStatus(d: CustomerDebtInfo): { key: 'overdue' | 'ontime' | 'prepaid' | 'paid'; label: string } {
+  if (d.totalOutstanding > 0) {
+    const overdue = oldestAgingBucketIdx([d.aging.current, d.aging.d30, d.aging.d60, d.aging.over90]) > 0;
+    return overdue ? { key: 'overdue', label: 'Nợ quá hạn' } : { key: 'ontime', label: 'Trong hạn' };
+  }
+  // "Cân bằng" disagreed with the detail header's badge for the same
+  // zero-balance state (kanban 091026010110).
+  return d.totalOutstanding < 0
+    ? { key: 'prepaid', label: 'Trả trước' }
+    : { key: 'paid', label: 'Đã thanh toán đủ' };
 }
 
 /* ─── Aging bucket config ────────────────────────────────────────────────── */
@@ -82,12 +95,13 @@ const AGING_BUCKETS: AgingBucket[] = [
   { key: 'over90', label: 'TRÊN 90 NGÀY', amountKey: 'over90', countKey: 'over90Custs', dotClass: 'debt-aging__dot--danger', color: '#E32434', filterMode: 'over90' },
 ];
 
-/* Map bucket → lucide icon (semantic progression: on-time → critical) */
-const BUCKET_ICONS: Record<string, typeof CalendarCheck2> = {
-  current: CalendarCheck2,
-  d30: Clock,
-  d60: Hourglass,
-  over90: AlertOctagon,
+/* Map bucket → band dot color class (the cards are gone; the band shows the
+   four bucket amounts and the ListFilterBar tabs carry the filtering). */
+const BUCKET_DOT_CLASSES: Record<string, string> = {
+  current: 'debt-band__dot--ok',
+  d30: 'debt-band__dot--warn',
+  d60: 'debt-band__dot--deep',
+  over90: 'debt-band__dot--danger',
 };
 
 /* ─── Component ──────────────────────────────────────────────────────────── */
@@ -114,7 +128,6 @@ export default function DebtListPage() {
     }
   };
   const rawCustomers = useMemo(() => data?.customers ?? [], [data?.customers]);
-  const totalCustomers = data?.total ?? rawCustomers.length;
   const error = queryError ? (queryError as Error).message : null;
   // The active bucket tab lives in the ?filter= param so a reload keeps the
   // user's selection — the dashboard links here as /debt?filter=over90. The
@@ -137,7 +150,7 @@ export default function DebtListPage() {
   const compact = false; // full VND everywhere — no short form (e.g. "12,5 tr")
   const { rootRef } = usePageAnimations({
     ready: !loading,
-    selectors: ['.hero-kpi-card', '.hero-kpi-mini', '.debt-aging-card', '.debt-data-card'],
+    selectors: ['.debt-band', '.debt-data-card'],
   });
 
   /* ── Data processing (preserved exactly) ── */
@@ -211,6 +224,12 @@ export default function DebtListPage() {
 
   const { rootRef: listRef } = useListAnimations({ itemSelector: '.m-card, table tbody tr', deps: [filteredDebts] });
 
+  // SỔ RÒNG auto-hide (NEPO-18): the column is only meaningful for customers
+  // linked to a supplier (net = AR − linked AP). When every row would render
+  // "—" the column is removed entirely; a single linked supplier brings it
+  // back. Individual rows without a link still show "—" while the column is
+  // visible — that per-row N/A stays honest.
+
   /* ── Helpers ── */
   // No count-up animation on the money figures. The hero card and the four
   // aging buckets used to be filled in by an anime.js counter that wrote
@@ -248,7 +267,10 @@ export default function DebtListPage() {
       />
       <PageHeader
         title="Công nợ phải thu"
-        description={loading ? 'Đang tải dữ liệu công nợ…' : `${totalCustomers} khách hàng · cập nhật vừa xong`}
+        // The customer count lives in one place — the "Tất cả N" filter tab
+        // below (NEPO-18). The header and the summary band repeat neither the
+        // count nor the amount, so every figure has exactly one source.
+        description={loading ? 'Đang tải dữ liệu công nợ…' : 'Cập nhật vừa xong'}
         iconName="receivables"
         action={
           <div className="page-actions">
@@ -269,114 +291,47 @@ export default function DebtListPage() {
       />
 
       {/* ══════════════════════════════════════════════════════════════════════
-        *  ZONE 1 — Hero KPI Row (bento: 3-col hero + 1-col stacked minis)
+        *  ZONE 1 — Summary band (NEPO-18): one ≤96px band replaces the 160px
+        *  hero + illustration, the 2 mini cards and the 4 aging cards. Numbers
+        *  only — no customer count (it lives once, in the "Tất cả N" tab).
         * ══════════════════════════════════════════════════════════════════════ */}
-      <div className="hero-kpi-row debt-hero-row">
-        {/* Hero card — spans 3 columns */}
-        <div className="hero-kpi-card debt-hero">
-          <div className="debt-hero__content">
-            <span className="hero-kpi-card__eyebrow">
-              Tổng công nợ phải thu (gồm VAT)
-            </span>
-            <div className="hero-kpi-card__amount debt-hero__amount">
-              <span>
-                {loading ? '—' : heroMoney.num}
-              </span>
-              <span className="debt-hero__currency">{heroMoney.unit}</span>
-            </div>
-            <span className="hero-kpi-card__subtitle">
-              {loading ? 'Đang tải dữ liệu công nợ…' : `${totalCustomers} khách hàng · cập nhật vừa xong`}
-            </span>
-          </div>
-          <div className="debt-hero__art" aria-hidden="true">
-            <img
-              src={resolveEmptyIllustration('finance')}
-              alt=""
-              className="debt-hero__illustration"
-              draggable={false}
-            />
-          </div>
+      <div className="debt-band" data-tour-id="debt-aging">
+        <div className="debt-band__total">
+          <span className="debt-band__label">Tổng công nợ phải thu (gồm VAT)</span>
+          <span className="debt-band__amount">
+            <span>{loading ? '—' : heroMoney.num}</span>
+            <span className="debt-band__unit">{heroMoney.unit}</span>
+          </span>
         </div>
-
-        {/* Stacked mini-KPI cards — span 1 column */}
-        <div className="hero-kpi-stack debt-kpi-stack">
-          <div className="hero-kpi-mini debt-kpi-mini--danger">
-            <div className="hero-kpi-mini__body">
-              <span className="hero-kpi-mini__value">
-                <span>
-                  {loading ? '—' : totals.overdueCount}
-                </span>
-              </span>
-              <span className="hero-kpi-mini__label">quá hạn</span>
-            </div>
-            <div className="hero-kpi-mini__watermark debt-kpi-mini__asset" aria-hidden="true">
-              <AssetIcon name="overdue" size={38} />
-            </div>
-          </div>
-          <div className="hero-kpi-mini debt-kpi-mini--warning">
-            <div className="hero-kpi-mini__body">
-              <span className="hero-kpi-mini__value">
-                <span>
-                  {loading ? '—' : totals.highRiskCount}
-                </span>
-              </span>
-              <span className="hero-kpi-mini__label">rủi ro cao</span>
-            </div>
-            <div className="hero-kpi-mini__watermark debt-kpi-mini__asset" aria-hidden="true">
-              <AssetIcon name="alert" size={38} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ══════════════════════════════════════════════════════════════════════
-        *  ZONE 2 — Aging Distribution (4 equal glass cards)
-        * ══════════════════════════════════════════════════════════════════════ */}
-      <div className="debt-aging-grid" data-tour-id="debt-aging">
-        {AGING_BUCKETS.map((bucket) => {
-          const amount = totals[bucket.amountKey];
-          const count = totals[bucket.countKey];
-          const money = moneyParts(amount, compact);
-          const isActive = filterMode === bucket.filterMode;
-          const BucketIcon = BUCKET_ICONS[bucket.key];
-
-          return (
-            <button
-              key={bucket.key}
-              type="button"
-              className={`debt-aging-card${isActive ? ' is-active' : ''}`}
-              onClick={() => setFilterMode(bucket.filterMode)}
-              style={{ '--bucket-color': bucket.color } as React.CSSProperties}
-              aria-label={loading
-                ? `${bucket.label}, đang tải dữ liệu`
-                : `${bucket.label}: ${formatCurrency(amount)}, ${count} khách hàng`}
-            >
-              <div className="debt-aging-card__header">
-                {BucketIcon && (
-                  <BucketIcon
-                    size={16}
-                    strokeWidth={2}
-                    aria-hidden="true"
-                    style={{ color: bucket.color, flex: '0 0 auto' }}
-                  />
-                )}
-                <span className={`debt-aging__dot ${bucket.dotClass}`} />
-                <span className="debt-aging-card__label">{bucket.label}</span>
-              </div>
-              <div className="debt-aging-card__amount">
-                <span>
+        <span className="debt-band__chip debt-band__chip--danger">
+          <span className="debt-band__chip-value">{loading ? '—' : totals.overdueCount}</span>
+          {' quá hạn'}
+        </span>
+        <span className="debt-band__chip debt-band__chip--warning">
+          <span className="debt-band__chip-value">{loading ? '—' : totals.highRiskCount}</span>
+          {' rủi ro cao'}
+        </span>
+        <div className="debt-band__aging" aria-label="Phân bổ tuổi nợ">
+          {AGING_BUCKETS.map((bucket) => {
+            const money = moneyParts(totals[bucket.amountKey], compact);
+            return (
+              <span key={bucket.key} className="debt-band__bucket">
+                <span className={`debt-band__dot ${BUCKET_DOT_CLASSES[bucket.key]}`} />
+                <span className="debt-band__bucket-label">{bucket.label}</span>
+                <span className="debt-band__bucket-amount">
                   {loading ? '—' : money.num}
+                  <span className="debt-band__bucket-unit">{' '}{money.unit}</span>
                 </span>
-                <span className="debt-aging-card__unit">{money.unit}</span>
-              </div>
-              <div className="debt-aging-card__count">{loading ? '—' : count} khách hàng</div>
-            </button>
-          );
-        })}
+                <span className="debt-band__bucket-count">{loading ? '—' : totals[bucket.countKey]} KH</span>
+              </span>
+            );
+          })}
+        </div>
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════
-        *  ZONE 3 — Data Section (full-width card with filters + table/cards)
+        *  ZONE 2 — Filter tabs + search (the four aging buckets filter from
+        *  here now, same per-bucket modes and ?filter= param as before).
         * ══════════════════════════════════════════════════════════════════════ */}
       <ListFilterBar<BucketFilterMode>
         label="Lọc công nợ khách hàng"
@@ -384,7 +339,14 @@ export default function DebtListPage() {
         onChange={setFilterMode}
         // While the report is loading, render no count rather than a misleading
         // "Tất cả 0" (same rule as the payables chip row, kanban 091026235510).
-        options={[{ value: 'all', label: 'Tất cả', count: loading ? undefined : customerDebts.length }]}
+        options={[
+          { value: 'all', label: 'Tất cả', count: loading ? undefined : customerDebts.length },
+          ...AGING_BUCKETS.map(bucket => ({
+            value: bucket.filterMode,
+            label: bucket.label,
+            count: loading ? undefined : totals[bucket.countKey],
+          })),
+        ]}
         search={{ value: search, onChange: setSearch, label: 'Tìm công nợ theo khách hàng', placeholder: 'Tìm khách hàng…' }}
       />
       <div className="debt-data-card" data-tour-id="debt-customer-list">
@@ -461,7 +423,7 @@ export default function DebtListPage() {
             {/* ── Desktop table (>640px) ── */}
             <div className="desktop-only table-wrap">
               <div className="table-scroll">
-                <table className="debt-list-table">
+                <table className={`debt-list-table${showNetColumn ? '' : ' debt-list-table--no-net'}`}>
                     <thead>
                       <tr>
                         <th>Khách hàng</th>
@@ -471,6 +433,7 @@ export default function DebtListPage() {
                             only English word in the row (kanban 091026010110).
                             Auto-hidden while no row links a supplier
                             (NEPO-16). */}
+                        {showNetColumn && <th className="num">Số ròng (gồm VAT)</th>}
                         {showNetColumn && <th className="num">Số ròng (gồm VAT)</th>}
                         <th className="num" style={{ textAlign: 'center' }}>Tuổi nợ</th>
                       </tr>
@@ -493,7 +456,15 @@ export default function DebtListPage() {
                           >
                           <td className="debt-list-table__customer">
                             <div className="debt-list-table__customer-main">
-                              <span className={`risk-dot risk-dot--${d.riskClass}`} />
+                              {/* The status the old second line used to spell
+                                  out ("Nợ quá hạn" / "Trong hạn" / …) rides the
+                                  colored dot beside the name — tooltip on hover,
+                                  aria-label for screen readers (NEPO-18). */}
+                              <span
+                                className={`debt-status-dot debt-status-dot--${debtStatus(d).key}`}
+                                title={debtStatus(d).label}
+                                aria-label={debtStatus(d).label}
+                              />
                               <Building2 size={14} aria-hidden="true" style={{ color: 'var(--fg-3)', flex: '0 0 auto' }} />
                               <span className="debt-list-table__customer-name">{d.customerName}</span>
                               {d.linkedSupplierId != null && (
@@ -501,14 +472,6 @@ export default function DebtListPage() {
                                   2 chiều
                                 </span>
                               )}
-                            </div>
-                            <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginLeft: 16 }}>
-                              {d.totalOutstanding > 0
-                                ? (oldestAgingBucketIdx([d.aging.current, d.aging.d30, d.aging.d60, d.aging.over90]) > 0 ? "Nợ quá hạn" : "Trong hạn")
-                                // "Cân bằng" disagreed with the detail header's
-                                // badge for the same zero-balance state (kanban
-                                // 091026010110).
-                                : (d.totalOutstanding < 0 ? "Trả trước" : "Đã thanh toán đủ")}
                             </div>
                           </td>
 
@@ -548,6 +511,7 @@ export default function DebtListPage() {
 
                     {filteredDebts.length === 0 && (
                       <tr>
+                        <td colSpan={showNetColumn ? 4 : 3} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
                         <td colSpan={showNetColumn ? 4 : 3} style={{ textAlign: 'center', padding: '24px 40px', color: 'var(--fg-3)' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                             <img src={resolveEmptyIllustration('empty-debts')} alt="" aria-hidden="true" style={{ width: 130, height: 108, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />

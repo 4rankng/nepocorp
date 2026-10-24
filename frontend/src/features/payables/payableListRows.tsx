@@ -69,11 +69,25 @@ export function PayableMobileCardList({ payables }: { payables: PayableSummary[]
 
 /* ─── Desktop table (>640px) ──────────────────────────────────────────────── */
 
+/**
+ * One aging bucket cell. A zero balance renders an EMPTY cell — the old "—"
+ * turned every current-only supplier's row into three dashes pretending to be
+ * data (NEPO-19). No amount, no dash, no wrapper.
+ */
+function PayableAgingCell({ amount, tone }: { amount: number; tone: string }) {
+  if (amount <= 0) return <td className="num" />;
+  return (
+    <td className="num" style={{ fontSize: 'var(--fs-body)', color: tone }}>
+      {formatCurrency(amount)}
+    </td>
+  );
+}
+
 export function PayableDesktopTable({ payables }: { payables: PayableSummary[] }) {
   return (
     <div className="desktop-only table-wrap">
       <div className="table-scroll">
-        <table>
+        <table className="payables-table">
           <thead>
             <tr>
               <th>Nhà cung cấp</th>
@@ -96,10 +110,11 @@ export function PayableDesktopTable({ payables }: { payables: PayableSummary[] }
                   <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, color: 'var(--fg-1)' }}>
                     {d.supplier.name}
                   </div>
-                  {/* NEPO-16 SubLine: no phone → no line at all. The old
+                  {/* NEPO-16/19: no phone → no line at all. The old
                       `{phone || '—'}` fallback read as a stray '_' under 4 of
                       5 supplier names (audit 24/10). */}
                   <SubLine value={d.supplier.phone} />
+>>>>>>> origin/fix-nepo-dense-debt
                 </td>
                 <td className="num typo-mono" style={{
                   fontWeight: 700,
@@ -107,18 +122,10 @@ export function PayableDesktopTable({ payables }: { payables: PayableSummary[] }
                 }}>
                   {formatCurrency(d.totalOutstanding)}
                 </td>
-                <td className="num" style={{ fontSize: 'var(--fs-body)', color: d.aging.current > 0 ? 'var(--fg-1)' : 'var(--fg-3)' }}>
-                  {d.aging.current > 0 ? formatCurrency(d.aging.current) : '—'}
-                </td>
-                <td className="num" style={{ fontSize: 'var(--fs-body)', color: d.aging.d30 > 0 ? 'var(--warning)' : 'var(--fg-3)' }}>
-                  {d.aging.d30 > 0 ? formatCurrency(d.aging.d30) : '—'}
-                </td>
-                <td className="num" style={{ fontSize: 'var(--fs-body)', color: d.aging.d60 > 0 ? '#D97706' : 'var(--fg-3)' }}>
-                  {d.aging.d60 > 0 ? formatCurrency(d.aging.d60) : '—'}
-                </td>
-                <td className="num" style={{ fontSize: 'var(--fs-body)', color: d.aging.over90 > 0 ? 'var(--danger)' : 'var(--fg-3)' }}>
-                  {d.aging.over90 > 0 ? formatCurrency(d.aging.over90) : '—'}
-                </td>
+                <PayableAgingCell amount={d.aging.current} tone="var(--fg-1)" />
+                <PayableAgingCell amount={d.aging.d30} tone="var(--warning)" />
+                <PayableAgingCell amount={d.aging.d60} tone="#D97706" />
+                <PayableAgingCell amount={d.aging.over90} tone="var(--danger)" />
                 <td style={{ textAlign: 'right' }}>
                   <ChevronRight size={14} style={{ color: 'var(--fg-3)' }} />
                 </td>

@@ -1,6 +1,11 @@
 /* ============================================================================
- * DebtListPage — Bento Grid Layout
+ * DebtListPage — summary band + filter tabs + data table
  * TingTing AR Receivables · Vantai design system
+ *
+ * NEPO-18: the 160px hero (with illustration), the 2 mini KPI cards and the
+ * 4 aging cards collapsed into ONE summary band ≤96px. The four aging buckets
+ * filter from the ListFilterBar tabs (same per-bucket modes + ?filter= param
+ * as before); the band itself is numbers-only.
  * ========================================================================== */
 
 /* Breadcrumb trail — consistent with TripListPage / detail pages. */
@@ -12,245 +17,146 @@
 .debt-list-page__crumbs ul { gap: 4px; }
 
 /* ════════════════════════════════════════════════════════════════════════════
- *  ZONE 1 — Hero KPI Row (page-specific overrides on shared HeroKpiRow.css)
+ *  ZONE 1 — Summary band (total + quá hạn/rủi ro chips + 4 aging buckets)
  * ════════════════════════════════════════════════════════════════════════════ */
 
-/* Debt page: smaller gap, bottom margin */
-.debt-hero-row {
-  gap: 14px;
+.debt-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 12px 18px;
   margin-bottom: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
 }
 
-/* Debt page: hero card uses horizontal layout (flex row) instead of column */
-.debt-hero {
-  position: relative;
-  display: block;
-  min-height: 160px;
-  padding: 16px 18px;
-  border-radius: 16px;
-  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
-  overflow: hidden;
-}
-
-.debt-hero__content {
-  position: relative;
-  z-index: 1;
-  max-width: none;
+.debt-band__total {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   min-width: 0;
 }
 
-.debt-hero__amount {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  line-height: 1.35;
-}
-
-.debt-hero__amount > span,
-.debt-aging-card__amount > span {
-  line-height: 1.35;
-}
-
-.debt-hero__currency {
-  font-size: var(--fs-xs);
-  line-height: 1.35;
-  font-weight: 600;
-  opacity: 0.6;
-}
-
-.debt-hero__art {
-  position: absolute;
-  right: 14px;
-  bottom: 8px;
-  z-index: 0;
-  width: 176px;
-  height: 104px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-.debt-hero__art::before {
-  content: "";
-  position: absolute;
-  inset: 4px 6px 2px 2px;
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 58%),
-    linear-gradient(150deg, rgba(0, 177, 79, 0.12), rgba(0, 177, 79, 0.01));
-  border: 1px solid rgba(0, 177, 79, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
-
-.debt-hero__illustration {
-  position: relative;
-  z-index: 1;
-  width: 144px;
-  height: 94px;
-  object-fit: contain;
-  filter: saturate(0.92) drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
-}
-
-/* Debt page: watermark tints for danger/warning mini KPIs */
-.hero-kpi-mini.debt-kpi-mini--danger { --stat-rail: var(--danger); }
-.hero-kpi-mini.debt-kpi-mini--warning { --stat-rail: var(--warning); }
-.debt-kpi-mini--danger .hero-kpi-mini__watermark { color: rgba(227, 36, 52, 0.14); }
-.debt-kpi-mini--warning .hero-kpi-mini__watermark { color: rgba(217, 119, 6, 0.14); }
-
-/* Debt page: colored values for danger/warning mini KPIs */
-.debt-kpi-mini--danger .hero-kpi-mini__value {
-  color: var(--danger);
-}
-
-.debt-kpi-mini--warning .hero-kpi-mini__value {
-  color: var(--warning-text);
-}
-
-.debt-kpi-mini__asset {
-  right: 12px;
-  bottom: 8px;
-}
-
-.debt-kpi-mini__asset img {
-  display: block;
-  width: 38px;
-  height: 38px;
-  object-fit: contain;
-  opacity: 0.94;
-  filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.10));
-}
-
-/* Debt page: smaller gap in stack */
-.debt-kpi-stack {
-  gap: 14px;
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
- *  ZONE 2 — Aging Distribution Grid (4 equal glass cards)
- * ════════════════════════════════════════════════════════════════════════════ */
-
-.debt-aging-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.debt-aging-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 18px 20px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  position: relative;
-  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  color: inherit;
-  transition:
-    transform 0.15s var(--ease),
-    box-shadow 0.15s var(--ease),
-    border-color 0.2s var(--ease);
-}
-
-.debt-aging-card:hover {
-  border-color: var(--line-2);
-  background: var(--surface-hover);
-}
-
-.debt-aging-card.is-active {
-  border-color: var(--accent-2);
-  background: var(--accent-soft);
-}
-
-/* Status strip — 3×20px centered indicator, NOT full-height border */
-.debt-aging-card.is-active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  border-radius: 0 2px 2px 0;
-  background: var(--bucket-color, var(--accent));
-}
-
-.debt-aging-card__header {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.debt-aging__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.debt-aging__dot--ok     { background: var(--accent); }
-.debt-aging__dot--warn   { background: var(--warning); }
-.debt-aging__dot--deep   { background: var(--warning-deep); }
-.debt-aging__dot--danger { background: var(--danger); }
-
-.debt-aging-card__label {
+.debt-band__label {
   font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--ink-3);
 }
 
-.debt-aging-card__amount {
+.debt-band__amount {
   display: flex;
   align-items: baseline;
   gap: 4px;
   font-family: var(--font-display);
-  font-size: var(--fs-3xl);
-  font-weight: 600;
-  letter-spacing: 0;
+  font-size: var(--fs-xl);
+  font-weight: 700;
   line-height: 1.25;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.debt-band__unit {
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+  font-weight: 500;
+  opacity: 0.6;
+}
+
+.debt-band__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.debt-band__chip-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.debt-band__chip--danger {
+  color: var(--danger);
+  background: rgba(227, 36, 52, 0.08);
+}
+
+.debt-band__chip--warning {
+  color: var(--warning-text);
+  background: rgba(217, 119, 6, 0.10);
+}
+
+.debt-band__aging {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+
+.debt-band__bucket {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.debt-band__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.debt-band__dot--ok     { background: var(--accent); }
+.debt-band__dot--warn   { background: var(--warning); }
+.debt-band__dot--deep   { background: var(--warning-deep, #DD5A1F); }
+.debt-band__dot--danger { background: var(--danger); }
+
+.debt-band__bucket-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.debt-band__bucket-amount {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 600;
   color: var(--ink);
 }
 
-.debt-aging-card__unit {
-  font-size: var(--fs-md);
-  line-height: 1.35;
+.debt-band__bucket-unit {
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--ink-3);
 }
 
-.debt-aging-card__count {
-  /* "9 khách hàng" is a sentence, not a figure — mono only widens it
-     (kanban 20260921_18). */
+.debt-band__bucket-count {
   font-family: var(--font-body);
   font-size: var(--fs-xs);
   color: var(--ink-3);
 }
 
-.debt-aging-card__bar-track {
-  height: 4px;
-  background: var(--surface-3);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-
-.debt-aging-card__bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
 /* ════════════════════════════════════════════════════════════════════════════
- *  ZONE 3 — Data Card (full-width glass card)
+ *  ZONE 2 — Data Card (filter tabs + search live in the shared ListFilterBar)
  * ════════════════════════════════════════════════════════════════════════════ */
 
 .debt-data-card {
@@ -263,6 +169,16 @@
 
 .debt-list-table {
   table-layout: fixed;
+}
+
+/* Dense rows (NEPO-18): 44–48px — one line per customer, no status sub-line. */
+.debt-list-table thead th {
+  padding: 8px 12px;
+}
+
+.debt-list-table tbody td {
+  padding: 9px 12px;
+  vertical-align: middle;
 }
 
 .debt-list-table thead th:nth-child(1) {
@@ -278,13 +194,18 @@
   width: 12%;
 }
 
+/* SỔ RÒNG auto-hidden (3 columns): give the room back to name + total. */
+.debt-list-table--no-net thead th:nth-child(1) { width: 58%; }
+.debt-list-table--no-net thead th:nth-child(2) { width: 26%; }
+.debt-list-table--no-net thead th:nth-child(3) { width: 16%; }
+
 .debt-list-table__customer {
   white-space: normal;
 }
 
 .debt-list-table__customer-main {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
   font-weight: 600;
   color: var(--fg-1);
@@ -298,131 +219,48 @@
   line-height: 1.35;
 }
 
+/* Row status dot — the old sub-line's text ("Nợ quá hạn" / "Trong hạn" /
+ * "Trả trước" / "Đã thanh toán đủ") rides this dot as a tooltip. */
+.debt-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  cursor: help;
+}
+
+.debt-status-dot--overdue { background: var(--danger); }
+.debt-status-dot--ontime  { background: var(--accent); }
+.debt-status-dot--prepaid { background: #0284c7; }
+.debt-status-dot--paid    { background: var(--fg-3, #94a3b8); }
+
 /* ════════════════════════════════════════════════════════════════════════════
- *  Mobile overrides (≤640px)
+ *  Responsive — tablet / phone: the band wraps into stacked rows, the aging
+ *  strip scrolls horizontally so the band never grows a third row.
  * ════════════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
-  /* Hero row: 2-col with hero spanning full width */
-  .debt-list-page .hero-kpi-row {
-    grid-template-columns: 1fr 1fr;
-  }
-  .debt-list-page .hero-kpi-card.debt-hero {
-    grid-column: 1 / -1;
-    min-height: 148px;
-    padding: 16px 18px;
-  }
-  .debt-hero__art {
-    right: 12px;
-    bottom: 8px;
-    width: 160px;
-    height: 96px;
-  }
-  .debt-hero__illustration {
-    width: 128px;
-    height: 84px;
-  }
-  /* Mini KPIs: side by side on tablet */
-  .debt-list-page .hero-kpi-stack.debt-kpi-stack {
-    flex-direction: row;
-    grid-column: 1 / -1;
-  }
-  .debt-list-page .hero-kpi-mini {
-    flex: 1;
-  }
-  /* Aging: 2x2 grid */
-  .debt-aging-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+@media (max-width: 1023px) {
+  .debt-band { gap: 8px 14px; }
+  .debt-band__aging {
+    margin-left: 0;
+    flex-basis: 100%;
   }
 }
 
 @media (max-width: 640px) {
-  /* Hero row: single column, everything stacked */
-  .debt-list-page .hero-kpi-row.debt-hero-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
+  .debt-band {
+    padding: 10px 14px;
+    gap: 8px 10px;
   }
-  .debt-list-page .hero-kpi-card.debt-hero {
-    grid-column: auto;
-    min-height: 136px;
-    padding: 16px;
-    gap: 10px;
-  }
-  .debt-list-page .hero-kpi-card__amount.debt-hero__amount {
-    font-size: var(--fs-3xl);
-  }
-  .debt-hero__art {
-    right: 10px;
-    bottom: 8px;
-    width: 144px;
-    height: 88px;
-  }
-  .debt-hero__art::before {
-    inset: 4px 6px 2px 2px;
-  }
-  .debt-hero__illustration {
-    width: 118px;
-    height: 78px;
-  }
-  .debt-list-page .hero-kpi-stack.debt-kpi-stack {
-    flex-direction: row;
-    grid-column: auto;
-    gap: 10px;
-  }
-
-  /* Aging: 2x2 compact */
-  .debt-aging-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .debt-aging-card {
-    padding: 12px 14px;
-    border-radius: 14px;
-  }
-  .debt-aging-card__amount {
-    font-size: var(--fs-lg);
-  }
-
-  /* Mobile card amount styling */
-  .debt-list-page .m-card .debt-list-page__amount {
-    font-family: var(--font-mono);
-    font-size: var(--fs-md);
-    font-weight: 700;
-    letter-spacing: 0;
-  }
+  .debt-band__amount { font-size: var(--fs-lg); }
+  .debt-band__aging { gap: 14px; }
+  .debt-band__bucket-count { display: none; }
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
- *  Narrow phone (≤420px) — ultra-compact
- * ════════════════════════════════════════════════════════════════════════════ */
-
 @media (max-width: 420px) {
-  .debt-list-page .hero-kpi-card__amount.debt-hero__amount {
-    font-size: var(--fs-3xl);
-  }
-  .debt-hero__art {
-    width: 132px;
-    height: 82px;
-  }
-  .debt-hero__illustration {
-    width: 108px;
-    height: 72px;
-  }
-  .debt-list-page .hero-kpi-mini {
-    padding: 10px 12px;
-    gap: 10px;
-  }
-  .debt-list-page .hero-kpi-mini__value {
-    font-size: var(--fs-lg);
-  }
-  .debt-kpi-mini__asset img {
-    width: 30px;
-    height: 30px;
-  }
-  .debt-aging-card__amount {
-    font-size: var(--fs-md);
-  }
+  .debt-band__label { display: none; }
+  .debt-band__bucket-label { letter-spacing: 0; }
+  .debt-band__bucket-amount { font-size: var(--fs-xs); }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════

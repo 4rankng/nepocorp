@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { PayableSummary, Supplier } from '@tingting/shared';
 import { formatCurrency, moneyParts } from '../../lib/format';
 import { AGING_BUCKET_LABELS, type PayablesAgingTotals } from './payableListUtils';
-import { PayableAgingGrid, PayableHeroKpiRow } from './payableListPanels';
+import { PayableSummaryBand } from './payableListPanels';
 import { PayableDesktopTable, PayableMobileCardList } from './payableListRows';
 
 /**
@@ -17,6 +17,10 @@ import { PayableDesktopTable, PayableMobileCardList } from './payableListRows';
  * These assertions read `textContent`, not a screenshot: the whole defect was
  * invisible in pixels (a CSS `gap` supplied the visual space the DOM lacked),
  * so only the text stream proves it.
+ *
+ * NEPO-19: the hero + minis + four aging cards collapsed into ONE summary
+ * band; zero aging cells render empty (no "—"); a supplier without a phone
+ * renders no sub-line wrapper at all.
  */
 
 function supplier(id: number, name: string): Supplier {
@@ -47,24 +51,27 @@ const TOTALS: PayablesAgingTotals = {
 
 const PAYABLE = row(1, 'NCC AN KHÁNH', 311_270_004, { current: 311_270_004, d30: 0, d60: 0, over90: 0 });
 
-function renderAgingGrid() {
+function renderBand() {
   return render(
     <MemoryRouter>
-      <PayableAgingGrid
+      <PayableSummaryBand
         totals={TOTALS}
-        currentMoney={moneyParts(TOTALS.current, false)}
-        d30Money={moneyParts(TOTALS.d30, false)}
-        d60Money={moneyParts(TOTALS.d60, false)}
-        over90Money={moneyParts(TOTALS.over90, false)}
+        heroMoney={moneyParts(TOTALS.total, false)}
+        bucketMoney={[
+          moneyParts(TOTALS.current, false),
+          moneyParts(TOTALS.d30, false),
+          moneyParts(TOTALS.d60, false),
+          moneyParts(TOTALS.over90, false),
+        ]}
       />
     </MemoryRouter>,
   );
 }
 
-function renderTable() {
+function renderTable(payables: PayableSummary[] = [PAYABLE]) {
   return render(
     <MemoryRouter>
-      <PayableDesktopTable payables={[PAYABLE]} />
+      <PayableDesktopTable payables={payables} />
     </MemoryRouter>,
   );
 }
@@ -111,58 +118,62 @@ function gluedNumberWord(root: HTMLElement): string[] {
 }
 
 describe('payables aging buckets — one dash, one label (101026102020)', () => {
-  it('renders the shared AGING_BUCKET_LABELS in the aging cards', () => {
-    const { container } = renderAgingGrid();
+  it('renders the shared AGING_BUCKET_LABELS in the summary band', () => {
+    const { container } = renderBand();
 
-    expect([...container.querySelectorAll('.aging-card__label')].map(el => el.textContent))
+    expect([...container.querySelectorAll('.payables-band__bucket-label')].map(el => el.textContent))
       .toEqual([...AGING_BUCKET_LABELS]);
   });
 
-  it('renders the same four labels in the table header as in the cards', () => {
-    const cards = renderAgingGrid();
-    const cardLabels = [...cards.container.querySelectorAll('.aging-card__label')].map(el => el.textContent);
-    cards.unmount();
+  it('renders the same four labels in the table header as in the band', () => {
+    const band = renderBand();
+    const bandLabels = [...band.container.querySelectorAll('.payables-band__bucket-label')].map(el => el.textContent);
+    band.unmount();
 
     const { container } = renderTable();
-    expect(tableBucketLabels(container)).toEqual(cardLabels);
+    expect(tableBucketLabels(container)).toEqual(bandLabels);
     expect(tableBucketLabels(container)).toEqual([...AGING_BUCKET_LABELS]);
   });
 
   it('never spells a bucket with an ASCII hyphen or a ">" in either place', () => {
-    const cards = renderAgingGrid();
-    const cardLabels = [...cards.container.querySelectorAll('.aging-card__label')].map(el => el.textContent ?? '');
-    cards.unmount();
+    const band = renderBand();
+    const bandLabels = [...band.container.querySelectorAll('.payables-band__bucket-label')].map(el => el.textContent ?? '');
+    band.unmount();
     const { container } = renderTable();
-    const labels = [...cardLabels, ...tableBucketLabels(container)];
+    const labels = [...bandLabels, ...tableBucketLabels(container)];
 
     for (const label of labels) {
       expect(label).not.toContain('-');
       expect(label).not.toContain('>');
     }
     // En dash (U+2013) on the three ranges, and the word — not the glyph — on >90.
-    for (const label of cardLabels.slice(0, 3)) expect(label).toContain('\u2013');
-    expect(cardLabels[3]).toBe('Trên 90 ngày');
+    for (const label of bandLabels.slice(0, 3)) expect(label).toContain('\u2013');
+    expect(bandLabels[3]).toBe('Trên 90 ngày');
   });
 });
 
-describe('payables aging cards — a real space, never a glue (101026102020)', () => {
-  it('keeps a space between the count and "nhà cung cấp"', () => {
-    const { container } = renderAgingGrid();
+describe('payables summary band — a real space, never a glue (101026102020, NEPO-19)', () => {
+  it('is the single source of the totals: chips carry count + overdue, no repetition', () => {
+    const { container } = renderBand();
 
-    const counts = [...container.querySelectorAll('.aging-card__count')].map(el => el.textContent);
-    expect(counts).toEqual([
-      '6 nhà cung cấp',
-      '0 nhà cung cấp',
-      '0 nhà cung cấp',
-      '0 nhà cung cấp',
-    ]);
-    for (const count of counts) expect(count).toMatch(/^\d+ nhà cung cấp$/);
+    const chips = [...container.querySelectorAll('.payables-band__chip')].map(el => el.textContent);
+    expect(chips).toEqual(['6 NCC', '1 quá hạn']);
+    // The band total matches the server aggregate shape used by table cells.
+    expect(container.querySelector('.payables-band__amount')?.textContent).toBe('311.270.004 ₫');
+  });
+
+  it('keeps a space between every bucket count and "NCC"', () => {
+    const { container } = renderBand();
+
+    const counts = [...container.querySelectorAll('.payables-band__bucket-count')].map(el => el.textContent);
+    expect(counts).toEqual(['6 NCC', '0 NCC', '0 NCC', '0 NCC']);
+    for (const count of counts) expect(count).toMatch(/^\d+ NCC$/);
   });
 
   it('carries the ₫ unit with a space before it on every bucket value', () => {
-    const { container } = renderAgingGrid();
+    const { container } = renderBand();
 
-    const values = [...container.querySelectorAll('.aging-card__value')].map(el => el.textContent);
+    const values = [...container.querySelectorAll('.payables-band__bucket-amount')].map(el => el.textContent);
     expect(values[0]).toBe('311.270.004 ₫');
     for (const value of values) {
       expect(value).toContain('₫');
@@ -179,32 +190,10 @@ describe('payables aging cards — a real space, never a glue (101026102020)', (
     expect(totalCell?.textContent).toBe('311.270.004 ₫');
   });
 
-  it('separates the hero KPI counts from their words', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <PayableHeroKpiRow totals={TOTALS} heroMoney={moneyParts(TOTALS.total, false)} />
-      </MemoryRouter>,
-    );
-
-    expect(container.querySelector('.hero-kpi-card__subtitle')?.textContent)
-      .toBe('6 nhà cung cấp · cập nhật vừa xong');
-    const minis = [...container.querySelectorAll('.hero-kpi-mini__body')].map(el => el.textContent ?? '');
-    expect(minis).toEqual(['1 quá hạn', '6 nhà cung cấp']);
-  });
-
-  it('leaves no digit glued to a following letter anywhere in the aging grid', () => {
-    const { container } = renderAgingGrid();
+  it('leaves no digit glued to a following letter anywhere in the band', () => {
+    const { container } = renderBand();
     // The scan must actually have text flows to inspect, or it proves nothing.
-    expect(textFlowElements(container).length).toBeGreaterThanOrEqual(12);
-    expect(gluedNumberWord(container)).toEqual([]);
-  });
-
-  it('leaves no digit glued to a following letter in the hero KPIs', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <PayableHeroKpiRow totals={TOTALS} heroMoney={moneyParts(TOTALS.total, false)} />
-      </MemoryRouter>,
-    );
+    expect(textFlowElements(container).length).toBeGreaterThanOrEqual(8);
     expect(gluedNumberWord(container)).toEqual([]);
   });
 
@@ -233,5 +222,37 @@ describe('payables aging cards — a real space, never a glue (101026102020)', (
     host.innerHTML = '<span>6nhà cung cấp</span><span>4NCC</span>';
     expect(gluedNumberWord(host)).toContain('6nhà cung cấp');
     expect(gluedNumberWord(host)).toContain('4NCC');
+  });
+});
+
+describe('NEPO-19 — zero cells stay empty, phoneless suppliers keep one line', () => {
+  it('renders an empty cell — never "—" — for a zero aging bucket', () => {
+    const { container } = renderTable();
+
+    const agingCells = [...container.querySelectorAll('tbody tr td')].slice(2, 6);
+    expect(agingCells.map(td => td.textContent)).toEqual(['311.270.004 ₫', '', '', '']);
+    // Not even a dash glyph in the empty cells.
+    for (const td of agingCells.slice(1)) expect(td.textContent).not.toContain('—');
+  });
+
+  it('renders no sub-line wrapper when the supplier has no phone', () => {
+    const { container } = renderTable();
+
+    const nameCell = container.querySelector('tbody td');
+    expect(nameCell?.textContent).toBe('NCC AN KHÁNH');
+    expect(nameCell?.querySelectorAll('div')).toHaveLength(1);
+    expect(nameCell?.textContent).not.toContain('—');
+  });
+
+  it('keeps the phone as the only sub-line when it exists', () => {
+    const withPhone = {
+      ...PAYABLE,
+      supplier: { ...PAYABLE.supplier, phone: '0901234567' },
+    };
+    const { container } = renderTable([withPhone]);
+
+    const nameCell = container.querySelector('tbody td');
+    expect(nameCell?.querySelectorAll('div')).toHaveLength(2);
+    expect(nameCell?.textContent).toContain('0901234567');
   });
 });
