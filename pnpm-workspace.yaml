@@ -34,3 +34,9 @@ onlyBuiltDependencies:
   - protobufjs
   - puppeteer
   - sharp
+
+allowBuilds:
+  esbuild: set this to true or false
+  protobufjs: set this to true or false
+  puppeteer: set this to true or false
+# pnpm 10 blocks dependency postinstall scripts by default; esbuild's binary
