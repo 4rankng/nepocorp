@@ -58,3 +58,54 @@ export function formatTimeShort(iso: string): string {
   if (diffH < 24) return `${diffH} giờ trước`;
   return d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
+
+// ─── Duplicate collapse (NEPO-15) ─────────────────────────────────────────────
+// The dashboard "Hoạt động gần đây" feed repeatedly showed pairs of
+// near-identical rows (same actor + same action + same object minutes-to-an-
+// hour apart) that read as rendering bugs: double login after a session drop,
+// a trip form saved twice. Real events, but noise at a glance level — collapse
+// them into one row carrying a ×N count. Full traceability stays on
+// /audit-logs ("Xem tất cả").
+
+export interface GroupableAuditEntry {
+  id: number;
+  timestamp: string;
+  userName: string;
+  action: string;
+  message: string;
+}
+
+/** Collapse window for identical (actor, action, object) events. */
+export const AUDIT_GROUP_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Collapse consecutive duplicates from a newest-first audit feed.
+ * Identity key = userName + action + rendered message (the message already
+ * carries the object: "… cập nhật thông tin lệnh vận chuyển TRP-…-0068").
+ * Two same-key events merge only when their timestamps sit inside
+ * `windowMs` of the group's latest event; the row keeps the LATEST
+ * timestamp so ordering stays chronological. Generic: extra fields on the
+ * entry type (e.g. `category`) survive the collapse.
+ */
+export function groupRecentAuditEntries<T extends GroupableAuditEntry>(
+  entries: T[],
+  windowMs: number = AUDIT_GROUP_WINDOW_MS,
+): Array<T & { count: number }> {
+  const groups: Array<{ entry: T; count: number; latestMs: number; key: string }> = [];
+  for (const e of entries) {
+    const t = Date.parse(e.timestamp);
+    const key = `${e.userName}\u0000${e.action}\u0000${e.message}`;
+    const hit = groups.find(g => g.key === key && g.latestMs - t <= windowMs);
+    if (hit) {
+      hit.count += 1;
+      hit.latestMs = Math.max(hit.latestMs, t);
+    } else {
+      groups.push({ entry: e, count: 1, latestMs: t, key });
+    }
+  }
+  return groups.map(({ entry, count, latestMs }) => ({
+    ...entry,
+    count,
+    timestamp: new Date(Number.isNaN(latestMs) ? Date.parse(entry.timestamp) : latestMs).toISOString(),
+  }));
+}

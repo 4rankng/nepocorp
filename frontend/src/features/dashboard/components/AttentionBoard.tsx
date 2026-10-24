@@ -25,7 +25,7 @@ export function AttentionBoard({
 }: AttentionBoardProps) {
   return (
     <section
-      className={`d-card d-card-border bg-base-100 wf-card wf-att wf-att--wide wf-bento-full wf-priority-board${showAllAttention ? ' is-expanded' : ''}`}
+      className={`d-card d-card-border bg-base-100 wf-card wf-att wf-att--wide wf-bento-third wf-rail wf-priority-board${showAllAttention ? ' is-expanded' : ''}`}
       data-tour-id="dashboard-attention"
       aria-labelledby="dashboard-priority-title"
     >

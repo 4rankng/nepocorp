@@ -385,7 +385,9 @@
   background: var(--wf-card);
   border: 0;
   border-radius: 0;
-  padding: 14px 16px; position: relative; overflow: hidden;
+  /* NEPO-15: the hairline separators stay (border-gap trick), but cells get
+     real breathing room so the strip stops reading as a dense table row. */
+  padding: 16px 18px; position: relative; overflow: hidden;
   min-width: 0;
 }
 .dash-wf .wf-kpi .row1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -432,7 +434,39 @@
 .dash-wf .wf-bento > .wf-bento-side  { grid-column: span 4; grid-row: span 2; }
 .dash-wf .wf-bento > .wf-bento-half  { grid-column: span 6; }
 .dash-wf .wf-bento > .wf-bento-third { grid-column: span 4; }
-.dash-wf .wf-bento > .wf-bento-full  { grid-column: span 12; }
+.dash-wf .wf-bento > .wf-bento-full { grid-column: span 12; }
+
+/* ── Action rail (NEPO-15) ──
+   Grid rows take the max of their items' content height, so the rail cards
+   beside the 2-row hero dictate the hero's height. Cap both rail cards and
+   let their lists scroll internally; without this an 8-item queue stretched
+   the hero chart past the viewport height. Desktop container only — the
+   single-column layout below 1101px must keep its natural heights. */
+@container (min-width: 1101px) {
+  .dash-wf .wf-bento > .wf-rail {
+    max-height: 380px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .dash-wf .wf-rail > .wf-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 380px;
+    display: flex;
+    flex-direction: column;
+  }
+  .dash-wf .wf-rail .wf-att .body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .dash-wf .wf-rail .approval-queue__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
 
 .dash-wf .dashboard-schedule-load-error {
   display: flex;
@@ -659,9 +693,12 @@
 }
 
 .dash-wf .wf-att .body { padding: 8px; }
+/* NEPO-15: the decision board lives in the 4-col action rail beside the
+   hero now — a 2-up card grid crushed at rail width, so one column of
+   bordered rows. */
 .dash-wf .wf-att--wide .body {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   padding: 12px;
 }
@@ -815,26 +852,22 @@
   word-break: break-word;
 }
 
-/* Keep the activity stream compact on wide dashboards while preserving a
-   single chronological reading order on smaller screens. */
-@container (min-width: 980px) {
-  .dash-wf .wf-audit .body {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 32px;
-    padding: 4px 16px 12px;
-  }
-
-  .dash-wf .wf-audit .body > .wf-divider {
-    display: none;
-  }
-
-  .dash-wf .wf-audit .body > .wf-aurow {
-    min-height: 68px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--wf-border);
-    border-radius: 0;
-  }
+/* NEPO-15: single chronological column — the old 2-col split interleaved
+   the feed so same-event pairs landed side by side and read as duplicates.
+   Grouped rows render a ×N badge instead; detail stays on /audit-log.
+   (Body falls back to the single-column base rule + .wf-divider rows.) */
+.dash-wf .wf-aurow__count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--wf-amber-soft);
+  color: var(--wf-amber);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* Audit log feed — .audit-event-tag + .audit-dot are also defined in

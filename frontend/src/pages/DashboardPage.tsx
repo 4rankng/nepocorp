@@ -24,19 +24,25 @@ import {
   ProfitByTruckCard,
   RevenueChartCard,
   TopRoutesCard,
+  type ChartView,
 } from '../features/dashboard/components/DashboardPanels';
 import { VehicleScheduleBanner } from '../features/fleet/schedules/VehicleScheduleBanner';
 import { useActiveVehicleSchedules } from '../hooks/useVehicleSchedules';
 
 /**
- * Dashboard — wireframe redesign per /wireframe/nepo-dashboard.html.
+ * Dashboard — NEPO-15 overhaul (24/10 consult: deepseek UX verdict + Untitled
+ * UI dashboard conventions).
  *
- * Layout (1.62fr / 1fr split on ≥1180px, single column below):
+ * Layout (12-col bento, single column below 1100px):
  *   • Page head (greeting + summary + 2 actions)
- *   • 4 KPI cards (revenue / total cost / gross / net) with mom delta pills
- *   • Main grid:
- *       left  → Doanh thu & Lợi nhuận gộp chart (12 months) + sub2 (top trucks + top routes)
- *       right → Tình trạng đội xe + Cơ cấu chi phí donut + Cần chú ý list
+ *   • 5 KPI cells in one strip (revenue / total cost / gross / net / debt)
+ *     with mom delta pills
+ *   • Bento grid:
+ *       hero  → Doanh thu & LN gộp (8×2; default = daily bars, "Cộng dồn"/
+ *               "Tháng" keep the cumulative line views)
+ *       rail  → Cần duyệt (4) + Việc cần xử lý (4) — actions above the fold
+ *       row   → Fleet + Cơ cấu chi phí + Lợi nhuận theo xe (4/4/4)
+ *       row   → Top tuyến (6) + Hoạt động gần đây (6, single column)
  *
  * Styles live in DashboardPage.css under .dash-wf scope to avoid clashing
  * with the legacy widgets.
@@ -55,7 +61,7 @@ export default function DashboardPage() {
     refetch: retryVehicleSchedules,
   } = useActiveVehicleSchedules(canSeeVehicleSchedules);
   const { month: currentMonth, year: currentYear } = useMonth();
-  const [chartView, setChartView] = useState<'day' | 'month'>('day');
+  const [chartView, setChartView] = useState<ChartView>('day');
   const [showAllAttention, setShowAllAttention] = useState(false);
 
   // KPI figures are rendered straight from the data. They used to be filled in
@@ -119,26 +125,30 @@ export default function DashboardPage() {
   }, [allTrips]);
 
   const { chartMonths, chartRevenue, chartGross } = useMemo(() => {
-    if (chartView === 'day') {
+    if (chartView === 'month') {
+      // Monthly view — trim leading months with no data
+      if (!yearlySeries || yearlySeries.length === 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
+      const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
+      const baseIdx = currentMonth - 1;
+      const allMonths = yearlySeries.map((_, i) => months[(baseIdx - yearlySeries.length + 1 + i + 12) % 12]);
+      const allRev = yearlySeries.map((p) => Number(p.revenue ?? 0) / 1_000_000);
+      const allGross = yearlySeries.map((p) => Number(p.grossProfit ?? 0) / 1_000_000);
+      const firstDataIdx = allRev.findIndex((r, i) => r > 0 || allGross[i] > 0);
+      if (firstDataIdx < 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
       return {
-        chartMonths: dailyChartData.labels,
-        chartRevenue: runningSum(dailyChartData.revenue),
-        chartGross: runningSum(dailyChartData.gross),
+        chartMonths: allMonths.slice(firstDataIdx),
+        chartRevenue: runningSum(allRev.slice(firstDataIdx)),
+        chartGross: runningSum(allGross.slice(firstDataIdx)),
       };
     }
-    // Monthly view — trim leading months with no data
-    if (!yearlySeries || yearlySeries.length === 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
-    const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-    const baseIdx = currentMonth - 1;
-    const allMonths = yearlySeries.map((_, i) => months[(baseIdx - yearlySeries.length + 1 + i + 12) % 12]);
-    const allRev = yearlySeries.map((p) => Number(p.revenue ?? 0) / 1_000_000);
-    const allGross = yearlySeries.map((p) => Number(p.grossProfit ?? 0) / 1_000_000);
-    const firstDataIdx = allRev.findIndex((r, i) => r > 0 || allGross[i] > 0);
-    if (firstDataIdx < 0) return { chartMonths: [], chartRevenue: [], chartGross: [] };
+    // Line views plot the cumulative running sum; the raw daily series (used
+    // by the default 'Ngày' bars view) stays in dailyChartData. NEPO-15: the
+    // running sum demoted from default — on a still-open month it always
+    // reads "steadily climbing" and hides the daily rhythm.
     return {
-      chartMonths: allMonths.slice(firstDataIdx),
-      chartRevenue: runningSum(allRev.slice(firstDataIdx)),
-      chartGross: runningSum(allGross.slice(firstDataIdx)),
+      chartMonths: dailyChartData.labels,
+      chartRevenue: runningSum(dailyChartData.revenue),
+      chartGross: runningSum(dailyChartData.gross),
     };
   }, [chartView, dailyChartData, yearlySeries, currentMonth]);
 
@@ -368,10 +378,14 @@ export default function DashboardPage() {
       />
 
       {/* ── Operations grid ──
-           Tiles auto-flow into rows based on their grid-column/row spans.
-           The decision board is deliberately first so the user's next work is
-           visible before historical analysis. On mobile every tile drops to
-           full width via the .wf-bento override in DashboardPage.css. */}
+           NEPO-15 layout (consult verdict 24/10, Untitled UI dashboard
+           conventions): hero chart left, ACTION rail right — the approval
+           queue and the decision board sit above the fold instead of being
+           buried in full-width bands at the bottom. Row of thirds: fleet,
+           cost composition (promoted from ~2 viewports down), truck margins.
+           Bottom row: top routes beside a single-column audit feed.
+           On mobile every tile drops to full width via the .wf-bento
+           overrides in DashboardPage.css. */}
       <div className="wf-bento">
 
         {canSeeVehicleSchedules && (
@@ -393,18 +407,11 @@ export default function DashboardPage() {
           )
         )}
 
-        {/* Action-first priority board — the most important operational
-            decisions stay in the first scan path on every breakpoint. */}
-        <AttentionBoard
-          orderedAttention={orderedAttention}
-          visibleAttention={visibleAttention}
-          showAllAttention={showAllAttention}
-          onToggleShowAll={() => setShowAllAttention(value => !value)}
-          onNavigate={navigate}
-        />
-
         {/* Hero 1 — Chart (8 cols × 2 rows) */}
         <RevenueChartCard
+          dailyLabels={dailyChartData.labels}
+          dailyRevenue={dailyChartData.revenue}
+          dailyGross={dailyChartData.gross}
           chartMonths={chartMonths}
           chartRevenue={chartRevenue}
           chartGross={chartGross}
@@ -415,27 +422,11 @@ export default function DashboardPage() {
           onNavigate={navigate}
         />
 
-        {/* Fleet (4 cols × 1 row) — right of chart, row 1 */}
-        <FleetStatusCard fleet={fleet} onNavigate={navigate} />
-
-        {/* Cost composition (4 cols × 1 row) — right of chart, row 2 */}
-        <CostCompositionCard
-          items={costBreakdown}
-          total={d?.totalPie ?? costs}
-          currentMonth={currentMonth}
-          currentYear={currentYear}
-        />
-
-        {/* Lợi nhuận theo xe (6 cols × 1 row) — below chart */}
-        <ProfitByTruckCard trucks={topTrucks} currentMonth={currentMonth} currentYear={currentYear} />
-
-        {/* Top tuyến sinh lời (6 cols × 1 row) — below chart, right half */}
-        <TopRoutesCard routes={topRoutes} currentMonth={currentMonth} currentYear={currentYear} onNavigate={navigate} />
-
-        {/* Cần duyệt — full-width so its height does not inherit the much
-            taller decision list beside it. */}
+        {/* Action rail — approvals first (NEPO-15 verdict 5: pending actions
+            belong above the fold, not in a bottom band), then the decision
+            board. Both 4 cols, stacked beside the 2-row hero. */}
         {showApprovalQueue && (
-          <div className="wf-bento-full">
+          <div className="wf-bento-third wf-rail">
             <ApprovalQueueCard
               data={approvalQueue}
               loading={approvalQueueLoading}
@@ -444,11 +435,37 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Hoạt động gần đây (12 cols × 1 row) — full-width band, only for
-            roles allowed by casbin. recentAudit is empty for DRIVER so this
-            is skipped. */}
+        <AttentionBoard
+          orderedAttention={orderedAttention}
+          visibleAttention={visibleAttention}
+          showAllAttention={showAllAttention}
+          onToggleShowAll={() => setShowAllAttention(value => !value)}
+          onNavigate={navigate}
+        />
+
+        {/* Fleet (4 cols) — row of thirds under the hero */}
+        <FleetStatusCard fleet={fleet} onNavigate={navigate} />
+
+        {/* Cost composition (4 cols) — promoted into the first scroll
+            viewport; it used to sit ~2 viewports down (NEPO-15). */}
+        <CostCompositionCard
+          items={costBreakdown}
+          total={d?.totalPie ?? costs}
+          currentMonth={currentMonth}
+          currentYear={currentYear}
+        />
+
+        {/* Lợi nhuận theo xe (4 cols) */}
+        <ProfitByTruckCard trucks={topTrucks} currentMonth={currentMonth} currentYear={currentYear} />
+
+        {/* Top tuyến sinh lời (6 cols) — beside the activity feed */}
+        <TopRoutesCard routes={topRoutes} currentMonth={currentMonth} currentYear={currentYear} onNavigate={navigate} />
+
+        {/* Hoạt động gần đây (6 cols, single column list) — only for roles
+            allowed by casbin. recentAudit is empty for DRIVER so this is
+            skipped. */}
         {recentAudit.length > 0 && (
-          <div className="wf-bento-full">
+          <div className="wf-bento-half">
             <AuditLogWidget entries={recentAudit} navigate={navigate} />
           </div>
         )}
