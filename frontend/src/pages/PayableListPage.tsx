@@ -1,23 +1,23 @@
-import { useState, useMemo, useEffect } from 'react';
-import { formatCurrency, moneyParts } from '../lib/format';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { moneyParts } from '../lib/format';
 import { downloadCSV } from '../lib/csv';
 import type { PayablesCategory } from '@tingting/shared';
-import { Search, Gift } from 'lucide-react';
+import { Search, Gift, ChevronDown } from 'lucide-react';
 import { PageHeader, Modal } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
+import { AnchoredDropdown } from '../components/shared/AnchoredDropdown';
 import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
 import './PayableListPage.css';
-import '../components/shared/HeroKpiRow.css';
 import {
   AGING_BUCKET_LABELS,
   CATEGORY_CHIPS,
   computeAgingTotals,
   type PayablesResponse,
 } from '../features/payables/payableListUtils';
-import { PayableAgingGrid, PayableHeroKpiRow } from '../features/payables/payableListPanels';
+import { PayableSummaryBand } from '../features/payables/payableListPanels';
 import { PayableDesktopTable, PayableMobileCardList } from '../features/payables/payableListRows';
 
 /* ─── Commission modal ────────────────────────────────────────────────────── */
@@ -169,16 +169,24 @@ export default function PayableListPage() {
   // undefined this is the same query as `data`, so it costs no extra request.
   const { data: countsData } = usePayablesSummary(undefined);
   const categoryCounts = (countsData as unknown as PayablesResponse | undefined)?.categoryCounts;
-  // Every chip is always rendered, in a fixed order. The chip row used to hide a
-  // category whose count had not arrived yet, so the same data showed five tabs on
-  // one reload and two on the next, and a chip could vanish the moment it was
-  // clicked (kanban 091026235510). A chip that is genuinely empty now says so —
-  // as a "0" badge plus an empty-state row — instead of disappearing, which also
-  // settles the "does this tab actually filter?" doubt.
+  // Every chip is always REACHABLE: a chip whose category is empty leaves the
+  // chip row (three zero chips read as noise — NEPO-19) but stays selectable
+  // through the "Khác" dropdown beside the row, so no category is unreachable.
+  // While counts have not arrived yet nothing is hidden, so the row never
+  // flickers between reloads (kanban 091026235510).
   const chipCount = (value: PayablesCategory | undefined): number | null => {
     if (value === undefined) return null;
     return categoryCounts ? categoryCounts[value] ?? 0 : null;
   };
+  const visibleChips = CATEGORY_CHIPS.filter(chip => {
+    if (chip.value === undefined) return true; // "Tất cả" always visible
+    if (chip.value === category) return true; // the active state stays visible
+    const count = chipCount(chip.value);
+    return count === null || count > 0;
+  });
+  /* ── "Khác" dropdown (all categories, incl. the empty ones) ── */
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreAnchorRef = useRef<HTMLDivElement>(null);
   const payables = useMemo(
     () => (data as unknown as PayablesResponse | undefined)?.items ?? [],
     [data],
@@ -204,13 +212,11 @@ export default function PayableListPage() {
   const canPostCommission =
     user?.role === 'ADMIN' || user?.role === 'MANAGER' || user?.role === 'ACCOUNTANT';
 
-  /* ── Page entrance animation (custom selectors for bento zones) ── */
+  /* ── Page entrance animation (custom selectors for page zones) ── */
   const { rootRef } = usePageAnimations({
     ready: !loading,
     selectors: [
-      '.hero-kpi-card',
-      '.hero-kpi-mini',
-      '.aging-card',
+      '.payables-band',
       '.payables-data-card',
     ],
   });
@@ -233,12 +239,12 @@ export default function PayableListPage() {
     return result;
   }, [payables, search]);
 
-  // No count-up animation on this page: the header ("Tổng nợ: …") and the hero
-  // card render from the same `totals.total`, but the card used to be filled in
-  // by an anime.js counter over ~1.6s, so staff reading the page during the
-  // count saw two different totals for the same number — QA logged an 8.244.831đ
-  // gap (kanban 081026232530). Money figures are now rendered authoritatively by
-  // React and there is no window in which they disagree with each other.
+  // No count-up animation on this page: the summary band renders from the
+  // server's aggregate, and it used to be filled in by an anime.js counter
+  // over ~1.6s, so staff reading the page during the count saw figures move
+  // under them — QA logged an 8.244.831đ gap (kanban 081026232530). Money
+  // figures are rendered authoritatively by React and there is no window in
+  // which they disagree with each other.
   // `computeAgingTotals` also guarantees they agree: `total` is the server's
   // aggregate, which equals the sum of the per-supplier rows and of the four
   // aging buckets.
@@ -283,7 +289,9 @@ export default function PayableListPage() {
       <PageHeader
         title="Công nợ phải trả"
         iconName="payables"
-        description={`Tổng nợ (gồm VAT): ${formatCurrency(totals.total)} · ${totals.supplierCount} nhà cung cấp · cập nhật vừa xong`}
+        // NEPO-19: the amount, supplier count and overdue count live in the
+        // summary band below — the header repeats none of them.
+        description={loading ? 'Đang tải dữ liệu công nợ phải trả…' : 'Cập nhật vừa xong'}
         action={
           <div className="page-actions">
             {canPostCommission && (
@@ -304,58 +312,84 @@ export default function PayableListPage() {
         }
       />
 
-      {/* ── Zone 1: Hero KPI Row ────────────────────────────────────────── */}
-      <PayableHeroKpiRow
+      {/* ── Zone 1: Summary band (NEPO-19) — one ≤96px band replaces the hero
+          + watermark + 2 minis + 4 aging cards; single source of the totals ── */}
+      <PayableSummaryBand
         totals={totals}
         heroMoney={heroMoney}
+        bucketMoney={[currentMoney, d30Money, d60Money, over90Money]}
       />
 
-      {/* ── Zone 2: Aging Distribution ──────────────────────────────────── */}
-      <PayableAgingGrid
-        totals={totals}
-        currentMoney={currentMoney}
-        d30Money={d30Money}
-        d60Money={d60Money}
-        over90Money={over90Money}
-      />
-
-      {/* ── Zone 3: Data Card ───────────────────────────────────────────── */}
+      {/* ── Zone 2: Data Card ───────────────────────────────────────────── */}
       <div className="payables-data-card">
-        {/* Category chips */}
-        <div className="payables-category-chips" role="tablist" aria-label="Lọc theo loại công nợ">
-          {CATEGORY_CHIPS.map(chip => {
-            const isActive = chip.value === category;
-            const count = chipCount(chip.value);
-            return (
-              <button
-                key={chip.label}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                className={`payables-category-chip${isActive ? ' is-active' : ''}${count === 0 ? ' is-empty' : ''}`}
-                onClick={() => setCategory(chip.value)}
-              >
-                {chip.label}
-                {/* The button is a block container, so an explicit space here is
-                    the separator that keeps the DOM text "Xăng dầu 1" — the two
-                    children used to sit flush and the chip read "Xăng dầu1" to
-                    anything copying the page (kanban 101026102020). The badge's
-                    CSS margin is reduced by the width of this space to keep the
-                    rendered gap at 7px. */}
-                {count !== null && (
-                  <>
-                    {' '}
-                    <span className="payables-category-chip__count">{count}</span>
-                  </>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Toolbar row */}
-        <div className="payables-toolbar">
-          <div className="payables-toolbar__spacer" />
+        {/* Filter row: chips + "Khác" dropdown + search on ONE row (NEPO-19). */}
+        <div className="payables-filter-row">
+          <div className="payables-category-chips" role="tablist" aria-label="Lọc theo loại công nợ">
+            {visibleChips.map(chip => {
+              const isActive = chip.value === category;
+              const count = chipCount(chip.value);
+              return (
+                <button
+                  key={chip.label}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`payables-category-chip${isActive ? ' is-active' : ''}`}
+                  onClick={() => setCategory(chip.value)}
+                >
+                  {chip.label}
+                  {/* The button is a block container, so an explicit space here is
+                      the separator that keeps the DOM text "Xăng dầu 1" — the two
+                      children used to sit flush and the chip read "Xăng dầu1" to
+                      anything copying the page (kanban 101026102020). The badge's
+                      CSS margin is reduced by the width of this space to keep the
+                      rendered gap at 7px. */}
+                  {count !== null && (
+                    <>
+                      {' '}
+                      <span className="payables-category-chip__count">{count}</span>
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <div className="payables-more" ref={moreAnchorRef}>
+            <button
+              type="button"
+              className="payables-more__trigger"
+              aria-label="Chọn loại công nợ khác"
+              title="Mọi loại công nợ — gồm các loại đang trống"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen(o => !o)}
+            >
+              <ChevronDown size={15} aria-hidden="true" />
+            </button>
+            <AnchoredDropdown
+              open={moreOpen}
+              anchorRef={moreAnchorRef}
+              onDismiss={() => setMoreOpen(false)}
+              className="payables-more__menu"
+              minWidth={230}
+            >
+              {CATEGORY_CHIPS.map(chip => {
+                const isActive = chip.value === category;
+                const count = chipCount(chip.value);
+                return (
+                  <button
+                    key={chip.label}
+                    type="button"
+                    role="menuitem"
+                    className={`payables-more__item${isActive ? ' is-active' : ''}`}
+                    onClick={() => { setCategory(chip.value); setMoreOpen(false); }}
+                  >
+                    <span className="payables-more__item-label">{chip.label}</span>
+                    {count !== null && <span className="payables-more__item-count">{count}</span>}
+                  </button>
+                );
+              })}
+            </AnchoredDropdown>
+          </div>
           <div className="payables-toolbar__search">
             <Search size={14} style={{ color: 'var(--ink-3)' }} />
             <input

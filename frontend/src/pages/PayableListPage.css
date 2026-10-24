@@ -1,9 +1,10 @@
 /* ============================================================================
- * PayableListPage — Bento Grid Layout (Vantai Design System)
+ * PayableListPage — summary band + filter row + data table (Vantai system)
  *
- * Zone 1: Hero KPI Row (4-column grid: hero span-3 + mini-KPI stack span-1)
- * Zone 2: Aging Distribution (4 equal cards with progress bars)
- * Zone 3: Data Card (full-width card wrapping toolbar + table/mobile cards)
+ * NEPO-19: ONE ≤96px summary band (total + NCC/quá hạn chips + stacked aging
+ * bar) replaces the hero + watermark + 2 minis + 4 aging cards. Chips with a
+ * zero count leave the chip row but stay choosable in the "Khác" dropdown;
+ * chips + search share one 40–44px row.
  * ========================================================================== */
 
 /* ── Page wrapper ──────────────────────────────────────────────────────────── */
@@ -11,119 +12,157 @@
   /* Ensures animation selectors are scoped */
 }
 
-/* ============================================================================
- * Zone 2 — Aging Distribution (4 equal cards)
- * ========================================================================== */
-.payables-aging-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
-.aging-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: var(--r-lg, 18px);
-  padding: 16px 18px 14px;
+/* ════════════════════════════════════════════════════════════════════════════
+ * Zone 1 — Summary band (single source of the totals)
+ * ════════════════════════════════════════════════════════════════════════════ */
+.payables-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 12px 18px;
+  margin-bottom: 14px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #EAECEF);
+  border-radius: 14px;
   box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
-  transition: transform 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
-              box-shadow 0.2s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
 }
 
-.aging-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(9, 9, 11, 0.07);
+.payables-band__total {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
 }
 
-.aging-card__header {
+.payables-band__label {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3, #8B919B);
+}
+
+.payables-band__amount {
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink, #0A0A0A);
+  white-space: nowrap;
+}
+
+.payables-band__unit {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-3, #8B919B);
+}
+
+.payables-band__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  background: var(--surface-3, #f1f5f9);
+  color: var(--fg-2, #475569);
+}
+
+.payables-band__chip--danger {
+  background: rgba(227, 36, 52, 0.08);
+  color: var(--danger, #E32434);
+}
+
+.payables-band__chip-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.payables-band__aging {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.payables-band__bar {
+  display: flex;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--line, #EAECEF);
+}
+
+.payables-band__bar-seg {
+  height: 100%;
+  transition: width 0.6s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+.payables-band__buckets {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
+  flex-wrap: wrap; /* 2×2 on wide screens — every bucket visible, no scroll */
+  gap: 4px 18px;
+  min-width: 0;
 }
 
-.aging-card__dot {
+.payables-band__bucket {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.payables-band__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  align-self: center;
 }
 
-.aging-card__dot--ok     { background: var(--accent, #00B14F); }
-.aging-card__dot--warn   { background: var(--warning); }
-.aging-card__dot--deep   { background: var(--warning-deep, #DD5A1F); }
-.aging-card__dot--danger { background: var(--danger, #E32434); }
-
-.aging-card__label {
+.payables-band__bucket-label {
   font-family: var(--font-body);
   font-size: var(--fs-xs);
-  line-height: 1.35;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   color: var(--ink-3, #8B919B);
 }
 
-/* The amount and its unit are one text flow, not two flex items: as flex items
-   Chrome reported them on separate lines ("311.270.004\n₫") and the two spans
-   carried no separator, so the card read "311.270.004₫" to anything copying the
-   page while a table cell read "311.270.004 ₫" (kanban 101026102020). */
-.aging-card__value {
-  display: block;
-  font-family: var(--font-display);
-  font-size: var(--fs-xl);
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.35;
-  color: var(--ink, #0A0A0A);
-  margin-bottom: 4px;
-}
-
-/* Currency unit / compact suffix rendered with clear legibility */
-.aging-card__unit {
+.payables-band__bucket-amount {
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
-  font-weight: 500;
-  color: var(--ink-2, #475467);
-  white-space: nowrap;
-  margin-left: 3px;
+  font-weight: 600;
+  color: var(--ink, #0A0A0A);
 }
 
-.aging-card__count {
-  display: block;
-  font-family: var(--font-mono);
+.payables-band__bucket-unit {
   font-size: var(--fs-xs);
-  line-height: 1.35;
+  font-weight: 500;
   color: var(--ink-3, #8B919B);
-  margin-bottom: 10px;
 }
 
-/* ── Progress bars ───────────────────────────────────────────────────────── */
-.aging-card__bar-track {
-  width: 100%;
-  height: 4px;
-  background: var(--line, #EAECEF);
-  border-radius: 2px;
-  overflow: hidden;
+.payables-band__bucket-count {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  color: var(--ink-3, #8B919B);
 }
 
-.aging-card__bar {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.6s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
-}
-
-.aging-card__bar--ok     { background: var(--accent, #00B14F); }
-.aging-card__bar--warn   { background: var(--warning); }
-.aging-card__bar--deep   { background: var(--warning-deep, #DD5A1F); }
-.aging-card__bar--danger { background: var(--danger, #E32434); }
-
-/* ============================================================================
- * Zone 3 — Data Card
- * ========================================================================== */
+/* ════════════════════════════════════════════════════════════════════════════
+ * Zone 2 — Data Card + one-row filter (chips · dropdown · search)
+ * ════════════════════════════════════════════════════════════════════════════ */
 .payables-data-card {
   background: var(--surface, #FFFFFF);
   border: 1px solid var(--line, #EAECEF);
@@ -132,18 +171,25 @@
   box-shadow: 0 1px 2px rgba(9, 9, 11, 0.04);
 }
 
-/* ── Toolbar inside data card ────────────────────────────────────────────── */
-.payables-toolbar {
+.payables-filter-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  min-height: 40px;
+  margin-bottom: 14px;
 }
 
-.payables-toolbar__spacer {
-  flex: 1;
+/* The search keeps its own class (shared markup) but lives in the row now.
+   Its vertical budget is clamped so the shared row stays in the 40–44px
+   density band (NEPO-19): 30px input + 2×5px padding + 2px border = 42px. */
+.payables-filter-row .payables-toolbar__search {
+  flex: 0 1 280px;
+  margin-left: auto;
+  padding: 5px 12px;
 }
 
+/* ── Toolbar search (unchanged visuals, now inside the filter row) ──────── */
 .payables-toolbar__search {
   display: flex;
   align-items: center;
@@ -152,8 +198,8 @@
   border: 1px solid var(--line, #EAECEF);
   border-radius: var(--r-sm, 8px);
   padding: 8px 14px;
-  min-height: 42px;
-  width: 300px;
+  min-height: 40px;
+  width: 280px;
   transition: border-color 0.15s var(--ease, cubic-bezier(0.4, 0, 0.2, 1)),
               box-shadow 0.15s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
 }
@@ -169,7 +215,7 @@
   outline: none;
 
   line-height: 1.35;
-  min-height: 32px;
+  min-height: 30px;
   color: var(--ink, #0A0A0A);
   width: 100%;
   font-family: inherit;
@@ -179,178 +225,95 @@
   color: var(--ink-3, #8B919B);
 }
 
-/* ============================================================================
- * Responsive — Tablet (<=1023px)
- * ========================================================================== */
-@media (max-width: 1023px) {
-  .payables-page .hero-kpi-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-
-  .payables-aging-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-
-  .payables-data-card {
-    padding: 16px;
-  }
-
-  .payables-toolbar__search {
-    width: 240px;
-  }
+/* ── "Khác" dropdown trigger + menu: reaches the categories hidden from the
+      chip row (the zero-count ones) ───────────────────────────────────────── */
+.payables-more {
+  position: relative;
+  flex: 0 0 auto;
 }
 
-/* ============================================================================
- * Responsive — Phone (<=640px)
- * ========================================================================== */
-@media (max-width: 640px) {
-  .payables-page .page-header {
-    margin-bottom: 14px;
-  }
-
-  .payables-page .page-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .payables-page .page-actions .btn {
-    width: 100%;
-    justify-content: center;
-    min-height: var(--control-h);
-  }
-
-  .payables-page .hero-kpi-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-
-  .payables-page .hero-kpi-card {
-    min-height: 116px;
-    padding: 18px 20px;
-  }
-
-  .payables-page .hero-kpi-stack {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .payables-page .hero-kpi-mini {
-    min-height: 82px;
-    padding: 14px 16px;
-  }
-
-  .payables-page .hero-kpi-mini__value {
-    font-size: var(--fs-3xl);
-  }
-
-  .payables-page .hero-kpi-mini__label {
-    max-width: 88px;
-    line-height: 1.25;
-  }
-
-  .payables-page .hero-kpi-mini__watermark {
-    right: 8px;
-    bottom: 6px;
-    opacity: 0.8;
-  }
-
-  .payables-aging-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-
-  .aging-card {
-    padding: 13px 16px 12px;
-    border-radius: var(--r, 12px);
-  }
-
-  .aging-card__header {
-    margin-bottom: 8px;
-  }
-
-  .aging-card__value {
-    font-size: var(--fs-xl);
-  }
-
-  .aging-card__count {
-    margin-bottom: 8px;
-  }
-
-  .payables-data-card {
-    padding: 12px;
-    border-radius: var(--r, 12px);
-  }
-
-  .payables-toolbar {
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-
-  .payables-toolbar__search {
-    width: 100%;
-    order: -1;
-    min-height: var(--control-h);
-  }
-
-  .payables-page .payables-category-chips {
-    gap: 8px;
-    margin-bottom: 12px;
-    scrollbar-width: none;
-  }
-
-  .payables-page .payables-category-chips::-webkit-scrollbar {
-    display: none;
-  }
-
-  .payables-page .payables-category-chip {
-    min-height: var(--control-h);
-    padding: 5px 14px;
-  }
-
-  /* Mobile amount text in card list */
-  .payables-page .m-card .m-card__row-value {
-    font-family: var(--font-mono);
-    font-size: var(--fs-md);
-    font-weight: 700;
-    letter-spacing: 0;
-  }
+.payables-more__trigger {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line, #EAECEF);
+  border-radius: 999px;
+  background: var(--surface-2, #fff);
+  color: var(--fg-2, #475569);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-/* ============================================================================
- * Responsive — Narrow phone (<=420px)
- * ========================================================================== */
-@media (max-width: 420px) {
-  .payables-page .page-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .payables-page .hero-kpi-card__amount {
-    font-size: var(--fs-4xl);
-  }
-
-  .payables-page .hero-kpi-mini {
-    min-height: 76px;
-  }
+.payables-more__trigger:hover {
+  background: var(--surface-3, #f1f5f9);
+  color: var(--fg-1, #1e293b);
 }
 
-/* ============================================================================
- * V2 — Category filter chips + commission posting form
- * ========================================================================== */
+.payables-more__trigger:focus-visible {
+  outline: 2px solid var(--primary, #0f766e);
+  outline-offset: 2px;
+}
 
-/* Category chip row above the table (inside data card). */
+.payables-more__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 9px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--fg-2, #475569);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm, 13px);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.payables-more__item:hover { background: var(--surface-3, #f1f5f9); }
+.payables-more__item.is-active { color: var(--primary, #0f766e); font-weight: 700; }
+
+.payables-more__item-count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--fg-3, #94a3b8);
+}
+
+.payables-more__item.is-active .payables-more__item-count { color: inherit; }
+
+/* ── Table — dense rows (44–48px), no phone dash line ─────────────────────── */
+.payables-table thead th {
+  padding: 8px 12px;
+}
+
+.payables-table tbody td {
+  padding: 9px 12px;
+  vertical-align: middle;
+}
+
+.payables-table__sub {
+  font-size: var(--fs-body);
+  line-height: 1.35;
+  color: var(--fg-3);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * Category chips (unchanged look — now filtered by count in the JSX)
+ * ════════════════════════════════════════════════════════════════════════════ */
+
 .payables-page .payables-category-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  margin-bottom: 16px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+
+.payables-page .payables-category-chips::-webkit-scrollbar { display: none; }
 
 .payables-page .payables-category-chip {
   appearance: none;
@@ -367,6 +330,7 @@
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .payables-page .payables-category-chip:hover {
@@ -385,12 +349,9 @@
   outline-offset: 2px;
 }
 
-/* Per-category supplier count. The chip row is never hidden any more, so the
-   count is what tells an accountant whether a tab will have rows (091026235510).
-   While it is still loading nothing is rendered rather than a misleading 0.
-   The label and this badge are separated by a real space character in the
-   markup (kanban 101026102020), so the margin is only the remainder of the 7px
-   gap the badge carried on its own. */
+/* Per-category supplier count badge. The label and this badge are separated by
+   a real space character in the markup (kanban 101026102020), so the margin is
+   only the remainder of the 7px gap the badge carried on its own. */
 .payables-page .payables-category-chip__count {
   display: inline-flex;
   align-items: center;
@@ -410,20 +371,6 @@
 
 .payables-page .payables-category-chip.is-active .payables-category-chip__count {
   background: rgba(255, 255, 255, 0.24);
-  color: #fff;
-}
-
-/* A category with no suppliers still stays clickable, just visually quiet. */
-.payables-page .payables-category-chip.is-empty {
-  color: var(--fg-3, #94a3b8);
-}
-
-.payables-page .payables-category-chip.is-empty .payables-category-chip__count {
-  background: transparent;
-  color: var(--fg-3, #94a3b8);
-}
-
-.payables-page .payables-category-chip.is-active.is-empty {
   color: #fff;
 }
 
@@ -456,10 +403,102 @@
   background: var(--surface-3, #f1f5f9);
 }
 
-/* Commission posting form (inside Modal).
-   NOTE: the Modal is rendered through a portal at document.body, OUTSIDE the
-   .payables-page wrapper — so these rules MUST NOT be scoped under .payables-page
-   or they will never match and the form renders unstyled. */
+/* ════════════════════════════════════════════════════════════════════════════
+ * Responsive — Tablet (<=1023px)
+ * ════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  .payables-band { gap: 8px 14px; }
+
+  .payables-band__aging {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+
+  .payables-band__buckets {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-2) transparent;
+  }
+
+  .payables-data-card {
+    padding: 16px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * Responsive — Phone (<=640px)
+ * ════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .payables-page .page-header {
+    margin-bottom: 14px;
+  }
+
+  .payables-page .page-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .payables-page .page-actions .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: var(--control-h);
+  }
+
+  .payables-band {
+    padding: 10px 14px;
+    gap: 8px 10px;
+  }
+
+  .payables-band__amount { font-size: var(--fs-lg); }
+
+  .payables-band__buckets { gap: 14px; }
+  .payables-band__bucket-count { display: none; }
+
+  .payables-data-card {
+    padding: 12px;
+    border-radius: var(--r, 12px);
+  }
+
+  /* Search drops to its own full-width line below the chips row. */
+  .payables-filter-row .payables-toolbar__search {
+    flex-basis: 100%;
+    width: 100%;
+    order: 10;
+    margin-left: 0;
+    min-height: var(--control-h);
+  }
+
+  /* Mobile amount text in card list */
+  .payables-page .m-card .m-card__row-value {
+    font-family: var(--font-mono);
+    font-size: var(--fs-md);
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * Responsive — Narrow phone (<=420px)
+ * ════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 420px) {
+  .payables-page .page-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .payables-band__label { display: none; }
+  .payables-band__bucket-label { letter-spacing: 0; }
+  .payables-band__bucket-amount { font-size: var(--fs-xs); }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * Commission posting form (inside Modal).
+ * NOTE: the Modal is rendered through a portal at document.body, OUTSIDE the
+ * .payables-page wrapper — so these rules MUST NOT be scoped under .payables-page
+ * or they will never match and the form renders unstyled.
+ * ════════════════════════════════════════════════════════════════════════════ */
 .commission-form {
   display: flex;
   flex-direction: column;
@@ -507,21 +546,5 @@
   .commission-form .input {
     height: 46px;
 
-  }
-}
-
-@media (max-width: 420px) {
-  .payables-page .payables-category-chips {
-    gap: 6px;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
-    padding-right: 26px;
-    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
-    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
-  }
-
-  .payables-page .payables-category-chips::-webkit-scrollbar {
-    display: none;
   }
 }
