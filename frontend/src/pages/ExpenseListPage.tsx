@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronRight, ChevronLeft, AlertTriangle, X, Loader2, Download, Printer } from 'lucide-react';
+import { Plus, ChevronRight, AlertTriangle, X, Loader2, Download, Printer } from 'lucide-react';
 import { api } from '../lib/api';
 import { configClient } from '../api/configClient';
 import { formatCurrency, formatNumber, formatDate, formatDatePadded } from '../lib/format';
@@ -9,7 +9,7 @@ import { PageHeader } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { Alert } from '../components/shared/Alert';
 import { AssetIcon } from '../components/AssetIcon';
-import { EmptyState } from '../design-system';
+import { EmptyState, Pagination } from '../design-system';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useCatalogs } from '../hooks/useCatalogs';
@@ -23,16 +23,17 @@ import { qk } from '../api/keys';
 import { resolveExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import type { ExpenseCatalogs } from '../features/expenses/expenseCatalogs';
 import { buildExpenseListSearchParams } from '../features/expenses/expense-list-query';
+import { useExpensesSummary, fetchAllFilteredExpenses } from '../features/expenses/expenseTotals';
 import { downloadCSV, type ColumnType } from '../lib/csv';
 import { printSheet, PRINT_OUTCOME_TOAST } from '../lib/download';
 import { buildPrintableSheetHtml } from '../lib/printSheet';
 import { useToast } from '../components/shared/Toast';
+// Density tokens (--kpi-pad-*, --kpi-value-size, --table-row-min-h) from the
+// NEPO-16 primitive bundle — the page consumes tokens, not the FinancePage layout.
+import '../design-system/Density.css';
 import './ExpenseListPage.css';
 
 const PAGE_SIZE = 20;
-
-/** Exports walk every filtered page, so they need more headroom than one query. */
-const EXPORT_TIMEOUT_MS = 30_000;
 
 const EXPENSE_STATUS_COLORS: Record<string, string> = {
   PAID: '#059669',
@@ -95,6 +96,21 @@ export default function ExpenseListPage() {
     dateTo: dateTo || undefined,
   });
 
+  // NEPO-17: the KPI figures aggregate EVERY filtered row, not just the
+  // visible page — the old reduce over `expenseData.items` silently reported
+  // page-1-only totals whenever data spanned more than one page (audit
+  // 24/10). The summary query is keyed on filters only, so paging never
+  // changes (or refetches) it.
+  const filters = useMemo(() => ({
+    supplierId: supplierId || undefined,
+    categoryId: categoryId || undefined,
+    truckId: truckId || undefined,
+    vehicleComponent: vehicleComponent || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+  }), [supplierId, categoryId, truckId, vehicleComponent, dateFrom, dateTo]);
+  const { data: summary, isLoading: summaryLoading } = useExpensesSummary({ page: 1, pageSize: PAGE_SIZE, ...filters });
+
   const { rootRef } = usePageAnimations({ ready: !isLoading });
 
   const { data: catalogData } = useCatalogs();
@@ -139,55 +155,10 @@ export default function ExpenseListPage() {
   };
 
   /**
-   * Reject rather than hang forever.
-   *
-   * The export buttons share one "Đang chuẩn bị…" busy state, so a request that
-   * never settles leaves the page permanently disabled until a reload — the
-   * report in kanban 101026003010. A bounded wait turns that into an ordinary
-   * error the user can retry.
+   * Exports walk every filtered page via the shared bounded walker in
+   * `expenseTotals.ts` — the same one the KPI summary uses, so the sheet and
+   * the cards can never disagree about what the filters matched.
    */
-  const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> =>
-    new Promise<T>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error(`${label} quá ${Math.round(ms / 1000)} giây — vui lòng thử lại.`)), ms);
-      promise.then(
-        value => { clearTimeout(timer); resolve(value); },
-        err => { clearTimeout(timer); reject(err); },
-      );
-    });
-
-  /** Every expense matching the current filters, not just the visible page. */
-  const fetchAllFilteredExpenses = async (): Promise<ExpenseWithRefs[]> => {
-    const query = {
-      supplierId: supplierId || undefined,
-      categoryId: categoryId || undefined,
-      truckId: truckId || undefined,
-      vehicleComponent: vehicleComponent || undefined,
-      dateFrom,
-      dateTo,
-    };
-    const first = await withTimeout(
-      api.get<PaginatedResponse<ExpenseWithRefs>>(
-        `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: 1, pageSize: 100 })}`,
-      ),
-      EXPORT_TIMEOUT_MS,
-      'Tải danh sách chi phí',
-    );
-    // `pageCount` must stay finite: a malformed total/pageSize would otherwise
-    // make `Array.from({ length: Infinity })` allocate forever and freeze the tab.
-    const pageSize = first.pageSize > 0 ? first.pageSize : 100;
-    const pageCount = Math.ceil((first.total || 0) / pageSize);
-    const remaining = await withTimeout(
-      Promise.all(
-        Array.from({ length: Math.max(0, Math.min(pageCount, 500) - 1) }, (_, index) => api.get<PaginatedResponse<ExpenseWithRefs>>(
-          `${FINANCIAL.EXPENSES}?${buildExpenseListSearchParams({ ...query, page: index + 2, pageSize: 100 })}`,
-        )),
-      ),
-      EXPORT_TIMEOUT_MS,
-      'Tải danh sách chi phí',
-    );
-    return [first, ...remaining].flatMap(response => response.items);
-  };
-
   const EXPENSE_SHEET_HEADERS = ['Ngày phát sinh', 'Nhà cung cấp', 'Hạng mục', 'Xe', 'Thành phần', 'Số tiền', 'Trạng thái', 'Ghi chú'];
   const EXPENSE_SHEET_TYPES: ColumnType[] = ['date', 'text', 'text', 'text', 'text', 'currency', 'text', 'text'];
 
@@ -208,7 +179,7 @@ export default function ExpenseListPage() {
   const downloadMonthlySummary = async () => {
     setIsExporting(true);
     try {
-      const expenses = await fetchAllFilteredExpenses();
+      const expenses = await fetchAllFilteredExpenses({ page: 1, pageSize: PAGE_SIZE, ...filters });
       await downloadCSV(
         `tong-ket-chi-phi-${dateFrom}-${dateTo}.xlsx`,
         EXPENSE_SHEET_HEADERS,
@@ -243,7 +214,7 @@ export default function ExpenseListPage() {
   const printExpenseSheet = async () => {
     setIsExporting(true);
     try {
-      const expenses = await fetchAllFilteredExpenses();
+      const expenses = await fetchAllFilteredExpenses({ page: 1, pageSize: PAGE_SIZE, ...filters });
       const html = buildPrintableSheetHtml(
         EXPENSE_SHEET_HEADERS,
         expenses.map(expenseToSheetRow),
@@ -265,18 +236,18 @@ export default function ExpenseListPage() {
     }
   };
 
-  const stats = useMemo(() => {
-    const items = expenseData?.items ?? [];
-    const totalAmount = items.reduce((s, e) => s + parseFloat(String(e.amount)), 0);
-    const unpaidItems = items.filter(e => e.paymentStatus === 'UNPAID');
-    const paidItems = items.filter(e => e.paymentStatus === 'PAID');
-    const unpaidAmount = unpaidItems.reduce((s, e) => s + parseFloat(String(e.amount)), 0);
-    const paidAmount = paidItems.reduce((s, e) => s + parseFloat(String(e.amount)), 0);
-    return { totalAmount, unpaidCount: unpaidItems.length, unpaidAmount, paidCount: paidItems.length, paidAmount };
-  }, [expenseData]);
-
   const hasFilters = supplierId || categoryId || truckId || vehicleComponent || dateFrom !== monthRange.start || dateTo !== monthRange.end;
-  const kpiTotal = splitKpi(stats.totalAmount);
+  // NEPO-17: while the full walk is in flight the cards show "no value yet" —
+  // a page-1-only 0 ₫ that later jumps was exactly the wrong-number defect.
+  const kpiTotal = splitKpi(summary?.totalAmount ?? 0);
+  // NEPO-17 AC3: the Thành phần/Xe columns auto-hide when the filtered set
+  // (all pages, not just the visible one) has no component/vehicle on any
+  // row — the "Chi phí công ty" view used to render two blank columns. The
+  // predicate comes from the shared AutoHideColumn primitive, fed by the same
+  // walk that feeds the KPIs. Columns stay visible until the data lands.
+  const showVehicleColumn = summary ? summary.hasVehicleData : true;
+  const showComponentColumn = summary ? summary.hasComponentData : true;
+  const columnCount = 6 + (showVehicleColumn ? 1 : 0) + (showComponentColumn ? 1 : 0);
 
   const renderStatusBadge = (status: string) => status === 'PAID' ? (
     <span className="expense-status expense-status--paid">
@@ -345,7 +316,7 @@ export default function ExpenseListPage() {
             Tổng chi phí
           </div>
           <div className="expense-kpi-value">
-            {kpiTotal.num}
+            {summaryLoading ? '—' : kpiTotal.num}
             {kpiTotal.suffix && <span className="expense-kpi-value-unit">{kpiTotal.suffix} ₫</span>}
             {!kpiTotal.suffix && <span className="expense-kpi-value-unit">₫</span>}
           </div>
@@ -359,10 +330,10 @@ export default function ExpenseListPage() {
             Chưa thanh toán
           </div>
           <div className="expense-kpi-value">
-            {stats.unpaidCount}{' '}
+            {summaryLoading ? '—' : `${summary?.unpaidCount ?? 0}`}{' '}
             <span className="expense-kpi-value-unit">phiếu</span>
           </div>
-          <div className="expense-kpi-meta">{formatNumber(stats.unpaidAmount)} ₫</div>
+          <div className="expense-kpi-meta">{summaryLoading ? '—' : `${formatNumber(summary?.unpaidAmount ?? 0)} ₫`}</div>
         </div>
 
         <div className="expense-kpi-card expense-kpi-card--paid">
@@ -373,10 +344,10 @@ export default function ExpenseListPage() {
             Đã thanh toán
           </div>
           <div className="expense-kpi-value">
-            {stats.paidCount}{' '}
+            {summaryLoading ? '—' : `${summary?.paidCount ?? 0}`}{' '}
             <span className="expense-kpi-value-unit">phiếu</span>
           </div>
-          <div className="expense-kpi-meta">{formatNumber(stats.paidAmount)} ₫</div>
+          <div className="expense-kpi-meta">{summaryLoading ? '—' : `${formatNumber(summary?.paidAmount ?? 0)} ₫`}</div>
         </div>
       </div>
 
@@ -545,8 +516,8 @@ export default function ExpenseListPage() {
                 <th>Ngày phát sinh</th>
                 <th>Nhà cung cấp</th>
                 <th>Hạng mục</th>
-                <th>Xe</th>
-                <th>Thành phần</th>
+                {showVehicleColumn && <th>Xe</th>}
+                {showComponentColumn && <th>Thành phần</th>}
                 <th className="num">Số tiền</th>
                 <th>Trạng thái</th>
                 <th style={{ width: 40 }}></th>
@@ -555,11 +526,11 @@ export default function ExpenseListPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={8}>{renderLoadingState()}</td>
+                  <td colSpan={columnCount}>{renderLoadingState()}</td>
                 </tr>
               ) : expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={8}>{renderEmptyState()}</td>
+                  <td colSpan={columnCount}>{renderEmptyState()}</td>
                 </tr>
               ) : (
                 expenses.map(e => (
@@ -586,13 +557,17 @@ export default function ExpenseListPage() {
                     </td>
                     <td style={{ fontWeight: 600 }}>{e.supplier?.name || '—'}</td>
                     <td style={{ color: 'var(--ink-2)' }}>{e.category?.name || '—'}</td>
-                    <td>
-                      {e.vehicleComponent === 'TRAILER'
-                        ? (e.trailer?.licensePlate ? <span className="expense-plate">{e.trailer.licensePlate}</span> : <span style={{ color: 'var(--ink-4)' }}>—</span>)
-                        : (e.truck?.licensePlate ? <span className="expense-plate">{e.truck.licensePlate}</span> : <span style={{ color: 'var(--ink-4)' }}>—</span>)
-                      }
-                    </td>
-                    <td style={{ color: 'var(--ink-2)' }}>{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.vehicleComponent === 'TRUCK' ? 'Đầu kéo' : ''}</td>
+                    {showVehicleColumn && (
+                      <td>
+                        {e.vehicleComponent === 'TRAILER'
+                          ? (e.trailer?.licensePlate ? <span className="expense-plate">{e.trailer.licensePlate}</span> : <span style={{ color: 'var(--ink-4)' }}>—</span>)
+                          : (e.truck?.licensePlate ? <span className="expense-plate">{e.truck.licensePlate}</span> : <span style={{ color: 'var(--ink-4)' }}>—</span>)
+                        }
+                      </td>
+                    )}
+                    {showComponentColumn && (
+                      <td style={{ color: 'var(--ink-2)' }}>{e.vehicleComponent === 'TRAILER' ? 'Rơ-mooc' : e.vehicleComponent === 'TRUCK' ? 'Đầu kéo' : ''}</td>
+                    )}
                     <td className={`num expense-amount expense-amount--${e.paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
                       {formatCurrency(e.amount)}
                     </td>
@@ -609,31 +584,25 @@ export default function ExpenseListPage() {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination — shared design-system primitive (NEPO-16/17): with a
+            single page only the count line renders, no dead buttons. */}
         <div className="expense-table-foot">
-          <span>
-            Đang hiển thị{' '}
-            <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>
-              {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)}
-            </strong>{' '}
-            trên <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{total}</strong> phiếu
-          </span>
-          <div className="expense-pagination">
-            <button className="expense-page-btn" aria-label="Trang trước" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft size={14} />
-            </button>
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              const p = i + 1;
-              return (
-                <button key={p} className={`expense-page-btn${p === page ? ' is-active' : ''}`} onClick={() => setPage(p)}>
-                  {p}
-                </button>
-              );
-            })}
-            <button className="expense-page-btn" aria-label="Trang sau" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight size={14} />
-            </button>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={total}
+            pageSize={PAGE_SIZE}
+            onChange={setPage}
+            summary={(
+              <span>
+                Đang hiển thị{' '}
+                <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>
+                  {total === 0 ? 0 : `${((page - 1) * PAGE_SIZE) + 1}–${Math.min(page * PAGE_SIZE, total)}`}
+                </strong>{' '}
+                trên <strong style={{ color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{total}</strong> phiếu
+              </span>
+            )}
+          />
         </div>
       </div>
     </div>

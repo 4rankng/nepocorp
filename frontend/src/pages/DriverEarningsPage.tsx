@@ -1,12 +1,10 @@
-import { useRef, useEffect } from 'react';
 import { PenaltyStatus } from '@tingting/shared';
 import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, Calendar } from 'lucide-react';
 import { formatCurrency, formatNumber, formatDate } from '../lib/format';
 import { PageHeader } from '../components/UI';
 import { useSalaryPeriod, useDriverEarnings, useDriverPenalties, useDriverVehicleAlerts } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
-import { usePageAnimations, useCounterAnimation } from '../hooks/animations';
-import type { CounterTarget } from '../hooks/animations';
+import { usePageAnimations } from '../hooks/animations';
 import './DriverEarningsPage.css';
 import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
@@ -44,47 +42,11 @@ export default function DriverEarningsPage() {
   const penaltyHistoryLoading = periodLoading || penaltiesLoading;
   const penaltyHistoryError = periodError || penaltiesError;
   const { rootRef } = usePageAnimations({ ready: !loading });
-  const heroValueRef = useRef<HTMLSpanElement>(null);
-  const kpiRefs = useRef<{
-    baseSalary: HTMLSpanElement | null;
-    adjustment: HTMLSpanElement | null;
-    penalties: HTMLSpanElement | null;
-    productionSalary: HTMLSpanElement | null;
-    roadAllowance: HTMLSpanElement | null;
-    paidOrAdvanced: HTMLSpanElement | null;
-    payableBalance: HTMLSpanElement | null;
-  }>({ baseSalary: null, adjustment: null, penalties: null, productionSalary: null, roadAllowance: null, paidOrAdvanced: null, payableBalance: null });
-  const { animateCounters } = useCounterAnimation({ delay: 100 });
-
-  useEffect(() => {
-    if (!earnings) return;
-    const targets: CounterTarget[] = [];
-    const salaryNum = parseFloat(earnings.baseSalary);
-    const penaltyNum = parseFloat(earnings.penalties);
-
-    if (heroValueRef.current) {
-      const payable = parseFloat(earnings.payableBalance);
-      targets.push({ el: heroValueRef.current, value: Math.abs(payable), prefix: payable < 0 ? '-' : '' });
-    }
-    if (kpiRefs.current.baseSalary) targets.push({ el: kpiRefs.current.baseSalary, value: salaryNum, suffix: ' ₫' });
-    // F2 / B2 — trip-income cards always animate (headline breakdown).
-    // animateCounters rewrites the element's whole textContent, so every target
-    // must carry its ' ₫' unit or the count-up wipes it off the value
-    // (kanban 101026004010).
-    const productionNum = parseFloat(earnings.productionSalary);
-    const roadNum = parseFloat(earnings.roadAllowance);
-    const paidOrAdvancedNum = parseFloat(earnings.paidOrAdvanced ?? '0');
-    const payableNum = parseFloat(earnings.payableBalance);
-    if (kpiRefs.current.productionSalary) targets.push({ el: kpiRefs.current.productionSalary, value: productionNum, suffix: ' ₫' });
-    if (kpiRefs.current.roadAllowance) targets.push({ el: kpiRefs.current.roadAllowance, value: roadNum, suffix: ' ₫' });
-    if (kpiRefs.current.paidOrAdvanced) targets.push({ el: kpiRefs.current.paidOrAdvanced, value: paidOrAdvancedNum, suffix: ' ₫' });
-    if (kpiRefs.current.payableBalance) targets.push({ el: kpiRefs.current.payableBalance, value: Math.abs(payableNum), prefix: payableNum < 0 ? '-' : '', suffix: ' ₫' });
-    if (penaltyNum > 0 && kpiRefs.current.penalties) targets.push({ el: kpiRefs.current.penalties, value: penaltyNum, prefix: '-', suffix: ' ₫' });
-    if (earnings.adjustment !== undefined && earnings.adjustment !== 0 && kpiRefs.current.adjustment) {
-      targets.push({ el: kpiRefs.current.adjustment, value: Math.abs(earnings.adjustment), prefix: earnings.adjustment > 0 ? '+' : '-', suffix: ' ₫' });
-    }
-    if (targets.length > 0) animateCounters(targets);
-  }, [earnings, animateCounters]);
+  // NEPO-16: the earnings page used to count every VND figure up from 0 with
+  // an anime.js counter that rewrote textContent out-of-band of React — a
+  // reload caught wrong temporary salaries (and the deduction minus sign had
+  // to be re-pinned onto every target). Money now renders authoritatively
+  // from React with no animation.
 
   if (loading) return (
     <div className="driver-earnings-page">
@@ -160,7 +122,7 @@ export default function DriverEarningsPage() {
         <div className="earnings-hero-bento__content">
           <p className="earnings-hero-bento__eyebrow">{payableLabel}</p>
           <div className="earnings-hero-bento__amount">
-            <span ref={heroValueRef}>{formatNumber(earnings.payableBalance)}</span>
+            <span>{formatNumber(earnings.payableBalance)}</span>
             <span className="earnings-hero-bento__currency">₫</span>
           </div>
           <p className="earnings-hero-bento__note">
@@ -195,11 +157,11 @@ export default function DriverEarningsPage() {
           </div>
           <div className="earnings-equation__item">
             <span>Đã tạm ứng/đã thanh toán</span>
-            <strong ref={(el) => { kpiRefs.current.paidOrAdvanced = el; }}>{formatNumber(earnings.paidOrAdvanced ?? '0')} ₫</strong>
+            <strong>{formatNumber(earnings.paidOrAdvanced ?? '0')} ₫</strong>
           </div>
           <div className={`earnings-equation__item earnings-equation__item--total ${payableNum < 0 ? 'earnings-equation__item--danger' : 'earnings-equation__item--success'}`}>
             <span>Còn chưa thanh toán</span>
-            <strong ref={(el) => { kpiRefs.current.payableBalance = el; }}>{formatNumber(earnings.payableBalance)} ₫</strong>
+            <strong>{formatNumber(earnings.payableBalance)} ₫</strong>
           </div>
         </div>
       </div>
@@ -213,18 +175,18 @@ export default function DriverEarningsPage() {
           <dl className="earnings-ledger-list">
             <div>
               <dt>Lương cơ bản</dt>
-              <dd ref={(el) => { kpiRefs.current.baseSalary = el; }}>{formatNumber(earnings.baseSalary)} ₫</dd>
+              <dd>{formatNumber(earnings.baseSalary)} ₫</dd>
             </div>
             {adjustmentNum !== 0 && (
               <div>
                 <dt>{adjustmentLabel}</dt>
                 {/* Bound like its sibling rows so the count-up animates this value too (kanban 101026004010). */}
-                <dd ref={(el) => { kpiRefs.current.adjustment = el; }} className={adjustmentNum >= 0 ? 'is-success' : 'is-danger'}>{adjustmentValue} ₫</dd>
+                <dd className={adjustmentNum >= 0 ? 'is-success' : 'is-danger'}>{adjustmentValue} ₫</dd>
               </div>
             )}
             <div>
               <dt>Khấu trừ kỷ luật</dt>
-              <dd ref={(el) => { kpiRefs.current.penalties = el; }} className={penaltyNum > 0 ? 'is-danger' : ''}>{penaltyNum > 0 ? '-' : ''}{formatNumber(earnings.penalties)} ₫</dd>
+              <dd className={penaltyNum > 0 ? 'is-danger' : ''}>{penaltyNum > 0 ? '-' : ''}{formatNumber(earnings.penalties)} ₫</dd>
             </div>
             <div>
               <dt>Lương thực tế</dt>
@@ -241,11 +203,11 @@ export default function DriverEarningsPage() {
           <dl className="earnings-ledger-list">
             <div>
               <dt>Lương sản xuất</dt>
-              <dd ref={(el) => { kpiRefs.current.productionSalary = el; }}>{formatNumber(earnings.productionSalary)} ₫</dd>
+              <dd>{formatNumber(earnings.productionSalary)} ₫</dd>
             </div>
             <div>
               <dt>Tiền đi đường</dt>
-              <dd ref={(el) => { kpiRefs.current.roadAllowance = el; }}>{formatNumber(earnings.roadAllowance)} ₫</dd>
+              <dd>{formatNumber(earnings.roadAllowance)} ₫</dd>
             </div>
             <div>
               <dt>Đã tạm ứng/đã thanh toán</dt>

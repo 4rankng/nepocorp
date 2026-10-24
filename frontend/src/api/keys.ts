@@ -293,6 +293,11 @@ export const qk = {
     /** Broad prefix — matches every supplier-statement query regardless of range. */
     supplierStatementAll: ['supplier-statement'] as const,
     expenses: (filters: unknown) => ['expenses', filters] as const,
+    /**
+     * NEPO-17 — the KPI summary walks every filtered page; its key carries the
+     * FILTERS ONLY (never `page`) so paging cannot change or refetch the KPIs.
+     */
+    expenseSummary: (filters: unknown) => ['expenses', 'summary', filters] as const,
     debtOffsets: (customerId: number | string) =>
       ['debt-offsets', customerId] as const,
     /** Broad prefix — matches all debtOffsets queries regardless of args. */

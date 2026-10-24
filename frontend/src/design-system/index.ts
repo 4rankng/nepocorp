@@ -19,6 +19,13 @@ export { Pagination } from './Pagination';
 export type { PaginationProps } from './Pagination';
 export { DataTable } from './DataTable';
 export type { DataTableProps, DataTableColumn } from './DataTable';
+// NEPO-16 density primitives (data-dense law 27/9).
+export { hasColumnData, useAutoHideColumn } from './AutoHideColumn';
+export type { AutoHideColumnOptions } from './AutoHideColumn';
+export { SubLine } from './SubLine';
+export type { SubLineProps } from './SubLine';
+export { DenseKpi } from './DenseKpi';
+export type { DenseKpiProps } from './DenseKpi';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps, EmptyStatePreview } from './EmptyState';
 // T2 (Tailkit a-c-statistics-11 pattern, hand-rolled SVG, no chart dep).

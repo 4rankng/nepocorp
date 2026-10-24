@@ -1,5 +1,5 @@
 import { ListFilterBar } from '../components/shared/ListFilterBar';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Truck, Calendar, ArrowRight, Loader2, Package, Search } from 'lucide-react';
 import { formatDatePadded } from '../lib/format';
 import { TripStatus, TRIP_STATUS_LABELS, TRIP_STATUS_COLORS } from '@tingting/shared';
@@ -7,8 +7,7 @@ import { PageHeader } from '../components/UI';
 import { ClickableCard } from '../components/shared/ClickableCard';
 import { StatusStrip } from '../components/shared/StatusStrip';
 import { useForwarderTrips } from '../hooks/useQueries';
-import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
-import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { useMonth } from '../hooks/useMonth';
 import { useDebouncedValue, DateInput } from '../design-system';
 import { getCalendarMonthRange } from '../lib/calendar-month';
@@ -100,21 +99,10 @@ export default function ForwarderTripsPage() {
     deps: [trips],
   });
 
-  /* ── Counter animation ── */
-  const prefersReduced = usePrefersReducedMotion();
-  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
-  const heroTotalRef = useRef<HTMLSpanElement>(null);
-  const heroContainersRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    if (loading || totalTrips === 0 || prefersReduced) return;
-    animateCounters(
-      [
-        { el: heroTotalRef.current, value: totalTrips, suffix: ' chuyến' },
-        { el: heroContainersRef.current, value: totalContainers },
-      ],
-    );
-  }, [loading, totalTrips, totalContainers, animateCounters, prefersReduced]);
+  // NEPO-16: the count-up animation rewrote the hero textContent out-of-band
+  // of React for ~1.2s, so a reload caught the card mid-animation showing a
+  // wrong temporary total (the same defect QA removed on /debt and
+  // /payables). Values now render authoritatively from React, no counter.
 
   return (
     <div ref={rootRef}>
@@ -124,14 +112,14 @@ export default function ForwarderTripsPage() {
       {!loading && !error && <div className="hero-kpi-row">
         <div className="hero-kpi-card">
           <span className="hero-kpi-card__eyebrow">Tổng chuyến đi</span>
-          <span className="hero-kpi-card__amount" ref={heroTotalRef}>{totalTrips} chuyến</span>
+          <span className="hero-kpi-card__amount">{totalTrips} chuyến</span>
           <span className="hero-kpi-card__subtitle">Danh sách chuyến đi vận chuyển</span>
           <Truck size={72} className="hero-kpi-card__watermark" aria-hidden="true" />
         </div>
         <div className="hero-kpi-stack">
           <div className="hero-kpi-mini hero-kpi-mini--accent">
             <div className="hero-kpi-mini__body">
-              <span className="hero-kpi-mini__value" ref={heroContainersRef}>{totalContainers}</span>
+              <span className="hero-kpi-mini__value">{totalContainers}</span>
               <span className="hero-kpi-mini__label">container</span>
             </div>
             <Package size={40} className="hero-kpi-mini__watermark" aria-hidden="true" />

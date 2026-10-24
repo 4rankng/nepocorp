@@ -26,4 +26,44 @@ describe('Pagination', () => {
     );
     expect(container.textContent).toContain('Hiển thị');
   });
+
+  // NEPO-16: with at most one page the controls are dead weight — the count
+  // line must be the only thing left, on both modes.
+  it('hides prev/next/page buttons and the size selector when totalPages <= 1, keeping the count line', () => {
+    const { container } = render(
+      <Pagination
+        page={1}
+        totalPages={1}
+        totalItems={7}
+        pageSize={25}
+        onPageSizeChange={() => {}}
+        onChange={() => {}}
+        summary={<span>Hiển thị <b>7</b>/<b>7</b> khách hàng</span>}
+      />,
+    );
+    expect(container.querySelector('.ds-pagination__controls')).toBeNull();
+    expect(container.querySelector('.ds-pagination__btn')).toBeNull();
+    expect(container.querySelector('select')).toBeNull();
+    expect(container.textContent).toContain('Hiển thị');
+    expect(container.textContent).toContain('khách hàng');
+  });
+
+  it('hides the infinite controls (sentinel, end pill) when totalPages <= 1', () => {
+    const { container } = render(
+      <Pagination
+        mode="infinite"
+        page={1}
+        totalPages={1}
+        totalItems={3}
+        pageSize={10}
+        onChange={() => {}}
+        hasMore={false}
+        summary={<span>Hiển thị <b>3</b>/<b>3</b> dòng</span>}
+      />,
+    );
+    expect(container.querySelector('.ds-pagination__controls')).toBeNull();
+    expect(container.querySelector('.ds-pagination__sentinel')).toBeNull();
+    expect(container.querySelector('.ds-pagination__end')).toBeNull();
+    expect(container.textContent).toContain('3/3');
+  });
 });

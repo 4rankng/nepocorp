@@ -1,5 +1,5 @@
 import { ListFilterBar } from '../components/shared/ListFilterBar';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Wallet, Loader2, Plus, X, User, AlertCircle, Clock, FileText, CheckCircle2, Pencil, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/format';
 import { ADVANCE_REQUEST_STATUS_LABELS, AdvanceSettlementStatus, type AdvanceRequestStatus } from '@tingting/shared';
@@ -15,8 +15,7 @@ import {
   useForwarderAdvanceBalance,
   useForwarderSettlements,
 } from '../hooks/useQueries';
-import { usePageAnimations, useListAnimations, useCounterAnimation } from '../hooks/animations';
-import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+import { usePageAnimations, useListAnimations } from '../hooks/animations';
 import { useMonth } from '../hooks/useMonth';
 import { getCalendarMonthRange } from '../lib/calendar-month';
 import './ForwarderAdvancesPage.css';
@@ -80,22 +79,9 @@ export default function ForwarderAdvancesPage() {
   const pendingCount = requests.filter(r => r.status === 'PENDING').length;
   const outstanding = balanceData ? Number(balanceData.outstanding) : 0;
 
-  const prefersReduced = usePrefersReducedMotion();
-  const { animateCounters } = useCounterAnimation({ duration: 1200, delay: 400 });
-  const heroAmountRef = useRef<HTMLSpanElement>(null);
-  const heroTotalRef = useRef<HTMLSpanElement>(null);
-  const heroPendingRef = useRef<HTMLSpanElement>(null);
-  const heroOutstandingRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    if (loading || totalRequests === 0 || prefersReduced) return;
-    animateCounters([
-      { el: heroAmountRef.current, value: totalAmount, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
-      { el: heroTotalRef.current, value: totalRequests, suffix: ' yêu cầu' },
-      { el: heroPendingRef.current, value: pendingCount, suffix: PENDING_VALUE_SUFFIX },
-      { el: heroOutstandingRef.current, value: outstanding, format: (v: number) => Math.round(v).toLocaleString('vi-VN') },
-    ]);
-  }, [loading, totalRequests, totalAmount, pendingCount, outstanding, animateCounters, prefersReduced]);
+  // NEPO-16: no count-up on the hero figures — the counter rewrote
+  // textContent out-of-band of React and a reload caught wrong temporary
+  // values. Money renders authoritatively from React.
 
   function resetForm() {
     setShowForm(false);
@@ -188,7 +174,7 @@ export default function ForwarderAdvancesPage() {
         <div className="hero-kpi-row">
           <div className="hero-kpi-card">
             <span className="hero-kpi-card__eyebrow">Tổng tạm ứng</span>
-            <span className="hero-kpi-card__amount"><span ref={heroAmountRef}>{Math.round(totalAmount).toLocaleString('vi-VN')}</span><span className="hero-kpi-card__currency">₫</span></span>
+            <span className="hero-kpi-card__amount"><span>{Math.round(totalAmount).toLocaleString('vi-VN')}</span><span className="hero-kpi-card__currency">₫</span></span>
             <span className="hero-kpi-card__subtitle">{totalRequests} yêu cầu tạm ứng</span>
             <Wallet size={72} className="hero-kpi-card__watermark" aria-hidden />
           </div>
@@ -197,7 +183,7 @@ export default function ForwarderAdvancesPage() {
               <div className="hero-kpi-mini__body">
                 <span className="hero-kpi-mini__title">Tồn tạm ứng</span>
                 <span className="hero-kpi-mini__value">
-                  <span ref={heroOutstandingRef}>{Math.round(outstanding).toLocaleString('vi-VN')}</span>
+                  <span>{Math.round(outstanding).toLocaleString('vi-VN')}</span>
                   <span className="hero-kpi-mini__currency">₫</span>
                 </span>
                 <span className="hero-kpi-mini__label">Đang tạm ứng thực tế</span>
@@ -207,7 +193,7 @@ export default function ForwarderAdvancesPage() {
             <div className="hero-kpi-mini hero-kpi-mini--warn">
               <div className="hero-kpi-mini__body">
                 <span className="hero-kpi-mini__title">Chờ duyệt</span>
-                <span className="hero-kpi-mini__value hero-kpi-mini__value--sentence" ref={heroPendingRef}>
+                <span className="hero-kpi-mini__value hero-kpi-mini__value--sentence">
                   {Math.round(pendingCount).toLocaleString('vi-VN')}{PENDING_VALUE_SUFFIX}
                 </span>
                 <span className="hero-kpi-mini__label">yêu cầu · Đang chờ kế toán duyệt</span>
