@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -9,6 +9,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
  * rows unfiltered; the query builder alone is pinned by
  * expense-list-query.test.ts, so this pins the missing link — the page's
  * select → state → request wiring — against the real page component.
+ *
+ * NEPO-24: the toolbar collapses "Xe"/"Loại chi phí" into the "Bộ lọc"
+ * popover on mid-size screens (the jsdom fallback), so the select lives
+ * inside the popover's dialog and the test drives it open first. The search
+ * input replaces the old supplier dropdown and must reach the API as `q`.
  */
 
 const urls: string[] = [];
@@ -53,6 +58,13 @@ const renderPage = () => {
   );
 };
 
+/** NEPO-24: on the jsdom fallback width the type filter sits in the popover. */
+const openOverflowPanel = async () => {
+  fireEvent.click(screen.getByRole('button', { name: /^Bộ lọc/ }));
+  const dialog = await screen.findByRole('dialog', { name: 'Bộ lọc bổ sung' });
+  return within(dialog);
+};
+
 afterEach(() => {
   cleanup();
   urls.length = 0;
@@ -63,7 +75,8 @@ describe('Loại chi phí filter drives the expense list request (kanban 1210262
     renderPage();
     await waitFor(() => expect(urls.length).toBeGreaterThan(0));
 
-    fireEvent.change(screen.getByLabelText('Loại chi phí'), { target: { value: 'TRAILER' } });
+    const panel = await openOverflowPanel();
+    fireEvent.change(panel.getByLabelText('Loại chi phí'), { target: { value: 'TRAILER' } });
     await waitFor(() => {
       expect(urls.some(u => u.includes('vehicleComponent=TRAILER'))).toBe(true);
     });
@@ -73,7 +86,8 @@ describe('Loại chi phí filter drives the expense list request (kanban 1210262
     renderPage();
     await waitFor(() => expect(urls.length).toBeGreaterThan(0));
 
-    const select = screen.getByLabelText('Loại chi phí');
+    const panel = await openOverflowPanel();
+    const select = panel.getByLabelText('Loại chi phí');
     fireEvent.change(select, { target: { value: 'COMPANY' } });
     await waitFor(() => {
       expect(urls.some(u => u.includes('vehicleComponent=COMPANY'))).toBe(true);
@@ -84,5 +98,33 @@ describe('Loại chi phí filter drives the expense list request (kanban 1210262
       const last = urls[urls.length - 1];
       expect(last).not.toContain('vehicleComponent=');
     });
+  });
+});
+
+describe('NEPO-24 — "Tìm NCC, mã phiếu" search drives the q param', () => {
+  it('sends the debounced search text as q and clears it cleanly', async () => {
+    renderPage();
+    await waitFor(() => expect(urls.length).toBeGreaterThan(0));
+
+    fireEvent.change(screen.getByLabelText('Tìm NCC, mã phiếu'), { target: { value: 'Sáng Bình' } });
+    // Debounced (300ms) — waitFor tolerates the delay.
+    await waitFor(() => {
+      expect(urls.some(u => u.includes('q=S'))).toBe(true);
+    }, { timeout: 2000 });
+    expect(urls.some(u => u.includes('q=S%C3%A1ng+B%C3%ACnh'))).toBe(true);
+
+    // Clearing removes the param again.
+    fireEvent.change(screen.getByLabelText('Tìm NCC, mã phiếu'), { target: { value: '' } });
+    await waitFor(() => {
+      const last = urls[urls.length - 1];
+      expect(last).not.toContain('q=');
+    }, { timeout: 2000 });
+  });
+
+  it('no longer renders a standalone supplier dropdown', async () => {
+    renderPage();
+    await waitFor(() => expect(urls.length).toBeGreaterThan(0));
+    // The old "Tất cả NCC" select is gone — its option set lives nowhere now.
+    expect(screen.queryByRole('option', { name: 'Tất cả NCC' })).toBeNull();
   });
 });
