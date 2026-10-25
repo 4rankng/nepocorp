@@ -26,8 +26,9 @@ export interface DailySeriesPoint {
   /** Raw VND, not yet scaled to millions. */
   revenue: number;
   gross: number;
-  /** False on window days with no trips — the chart gaps them instead of
-   *  plotting a misleading 0 (NEPO-26). */
+  /** False on window days without displayable figures — no trips, or only
+   *  unbilled in-flight trips. The chart gaps them instead of plotting a
+   *  misleading 0 (NEPO-26). */
   hasData: boolean;
 }
 
@@ -87,7 +88,11 @@ export function buildDailySeries(trips: readonly DailyTripLike[]): DailySeriesPo
       day: Number(dateKey.slice(8, 10)),
       revenue: point?.revenue ?? 0,
       gross: point?.gross ?? 0,
-      hasData: point != null,
+      // Same rule the window edges use: a day counts as data only when it
+      // has displayable figures. Days holding only unbilled in-flight trips
+      // (CREATED/IN_TRANSIT, display revenue 0, gross ≤ 0) gap out instead
+      // of plotting a 0 that reads as a crash (NEPO-26, demo day 22/10).
+      hasData: point != null && (point.revenue > 0 || point.gross > 0),
     });
   }
   return series;

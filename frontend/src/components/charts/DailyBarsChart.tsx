@@ -16,9 +16,10 @@ import { formatCurrency } from '../../lib/format';
  * NEPO-26 (consult verdict, deepseek 25/10): series pair is solid #005A2D
  * bars + #C2780B gross line on a white casing (the blue #2563EB fought the
  * green and sits ~1.6:1 over the bars; #C2780B alone is ~2.4:1 over emerald,
- * so the casing is what carries WCAG non-text contrast). Days with no trips
- * are gaps — no zero bar, line broken, "Không có chuyến" in tooltip/aria —
- * never a plotted 0 that reads as a crash. Tooltip adds gross-margin % and
+ * so the casing is what carries WCAG non-text contrast). Days without
+ * displayable figures are gaps — no zero bar, line broken — never a plotted
+ * 0 that reads as a crash, including days whose trips are still unbilled
+ * (CREATED/IN_TRANSIT). Tooltip adds gross-margin % and
  * the day-over-day revenue delta; a dashed month-average reference and a
  * "Hôm nay" marker orient the scan.
  */
@@ -38,9 +39,9 @@ export interface DailyBarsChartProps {
    *  Default 4 (the historical ¼ ladder); the dashboard hero passes 3 for
    *  the consultant's 3–4-tick y-axis (NEPO-25). */
   maxTicks?: number;
-  /** Parallel to `revenue` — false where the day has no trips (bar skipped,
-   *  line broken, tooltip says "Không có chuyến"). Undefined = every day has
-   *  data. */
+  /** Parallel to `revenue` — false where the day has no displayable figures
+   *  (bar skipped, line broken, tooltip says "Không có số liệu"). Undefined
+   *  = every day has data. */
   hasData?: boolean[];
   /** Index of today in the series — draws the "Hôm nay" marker. */
   todayIdx?: number;
@@ -274,7 +275,7 @@ export function DailyBarsChart({
             }}
             tabIndex={0}
             role="button"
-            aria-label={`Ngày ${d}${dayHasData(i) ? `: doanh thu (chưa VAT) ${fmtTip(revenue[i] || 0)}, lợi nhuận gộp ${fmtTip(gross[i] || 0)}` : ': không có chuyến'}`}
+            aria-label={`Ngày ${d}${dayHasData(i) ? `: doanh thu (chưa VAT) ${fmtTip(revenue[i] || 0)}, lợi nhuận gộp ${fmtTip(gross[i] || 0)}` : ': không có số liệu'}`}
           />
         ))}
       </svg>
@@ -318,7 +319,7 @@ export function DailyBarsChart({
           <div style={{ height: 1, background: '#EEF1EF', margin: '0 -14px 8px -14px' }} />
           {!hasDay ? (
             <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#8A988F', textAlign: 'center', padding: '2px 0' }}>
-              Không có chuyến
+              Không có số liệu
             </div>
           ) : (
             <>

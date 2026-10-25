@@ -38,6 +38,10 @@ describe('buildDailySeries — the daily chart x-axis', () => {
     expect(series[9]).toEqual({ day: 10, revenue: 0, gross: 0, hasData: false });
     expect(series[8]).toMatchObject({ hasData: true });
     expect(series[10]).toMatchObject({ hasData: true });
+    // NEPO-26: a day whose trips are all unbilled (display revenue 0, gross
+    // ≤ 0 — demo 22/10) gaps out too, it must not read as a crash to 0.
+    const withUnbilled = buildDailySeries([...trips, trip('2026-10-10', 0, -2_000_000)]);
+    expect(withUnbilled[9]).toEqual({ day: 10, revenue: 0, gross: -2_000_000, hasData: false });
     // The days around the gap keep their own figures.
     expect(series[8].revenue).toBe(1_000_000);
     expect(series[10].revenue).toBe(3_000_000);
