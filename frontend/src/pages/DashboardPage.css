@@ -189,7 +189,7 @@
   --wf-radius: 14px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   color: var(--wf-ink);
   font-size: var(--fs-sm);
   line-height: 1.45;
@@ -229,7 +229,8 @@
 }
 
 .dash-wf .wf-btn,
-.dash-wf .wf-minibtn {
+.dash-wf .wf-todo-chip,
+.dash-wf .wf-todo__tick {
   transition: background 150ms var(--ease), border-color 150ms var(--ease), color 150ms var(--ease);
 }
 
@@ -237,7 +238,7 @@
   .dash-wf .wf-head,
   .dash-wf .wf-kpi,
   .dash-wf .wf-bento > *,
-  .dash-wf .wf-arow,
+  .dash-wf .wf-todo,
   .dash-wf .wf-aurow {
     opacity: 1 !important;
     transform: none !important;
@@ -245,7 +246,8 @@
   .dash-wf .wf-kpi,
   .dash-wf .wf-card,
   .dash-wf .wf-btn,
-  .dash-wf .wf-minibtn {
+  .dash-wf .wf-todo-chip,
+  .dash-wf .wf-todo__tick {
     transition: none !important;
   }
 }
@@ -341,26 +343,67 @@
 .dash-wf .wf-link svg { width: 13px; height: 13px; }
 .dash-wf .wf-link:hover { color: var(--wf-green-700); background: var(--surface-2); }
 
-/* ── Chart day/month toggle ── */
+/* ── Chart card header (NEPO-25 §a/§b) ──
+   48px header: title 14/20/600 left, inline KPI cluster (Tổng tháng ·
+   TB/ngày · Đỉnh) beside it, segmented view tabs + "Xem báo cáo" at the
+   right corner. Wraps under the title when the 8-col hero gets narrow. */
+.dash-wf .wf-chart .wf-card-h { min-height: 48px; padding: 8px 16px; flex-wrap: wrap; row-gap: 2px; }
+.dash-wf .wf-chart .wf-card-h .ttl { font-size: 14px; line-height: 20px; font-weight: 600; }
+.dash-wf .wf-chart-title { min-width: 0; }
+.dash-wf .wf-chart-title .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-wf .wf-chart .wf-link { font-size: 13px; font-weight: 500; }
+
+/* Inline KPI cluster — label 11 uppercase, value 16/600 tabular, vertical
+   hairline dividers 1×24 (NEPO-25 §b). */
+.dash-wf .wf-metrics { display: flex; align-items: center; gap: 24px; margin-left: 12px; margin-right: auto; }
+.dash-wf .wf-metric { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dash-wf .wf-metric .k {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.dash-wf .wf-metric .v {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.dash-wf .wf-metrics__div { width: 1px; height: 24px; background: var(--wf-border); flex: 0 0 auto; }
+
+/* Segmented view tabs — 32px control, 28px items, 13/500 (NEPO-25 §a). */
 .dash-wf .wf-chart-toggle {
   display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: 2px;
   border: 1px solid var(--wf-border-2);
   border-radius: 8px;
-  overflow: hidden;
   background: var(--surface-2);
+  box-sizing: border-box;
 }
 .dash-wf .wf-chart-toggle__btn {
-  min-height: var(--control-h);
-  padding: 5px 11px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 10px;
   font-family: var(--font-body);
-  font-size: var(--fs-xs);
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
   color: var(--wf-ink-2);
   background: transparent;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
-  line-height: 1.4;
 }
 .dash-wf .wf-chart-toggle__btn:hover {
   color: var(--wf-ink);
@@ -369,7 +412,11 @@
 .dash-wf .wf-chart-toggle__btn.is-active {
   color: var(--fg-on-brand);
   background: var(--wf-green);
-  font-weight: 700;
+  font-weight: 600;
+}
+.dash-wf .wf-chart-toggle__btn:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 1px;
 }
 
 .dash-wf .wf-kpis {
@@ -418,11 +465,10 @@
    neighbouring column. */
 .dash-wf .wf-grid > .wf-col { overflow: hidden; }
 
-/* ── Bento grid (asymmetric 12-col, replaces the 2-col wf-grid above) ──
-   The page reads as: 2 hero tiles (chart, approval queue) + smaller tiles
-   clustered around them. Tile spans are encoded as class modifiers below
-   so the TSX stays declarative. Mobile (≤1180px) collapses to single
-   column — every tile gets full width regardless of span. */
+/* ── Hero row (NEPO-25 §e) ──
+   12-col grid, gap 24 @≥1280 / 16 below. Hero chart span 8 with a FIXED
+   body height so the rail's content can never stretch the chart (the old
+   row-span-2 feedback loop made the chart own ⅔ of the viewport). */
 .dash-wf .wf-bento {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -430,21 +476,39 @@
   align-items: stretch;
 }
 .dash-wf .wf-bento > * { min-width: 0; }   /* keep each tile inside its track */
-.dash-wf .wf-bento > .wf-bento-hero  { grid-column: span 8; grid-row: span 2; }
+.dash-wf .wf-bento > .wf-bento-hero  { grid-column: span 8; }
 .dash-wf .wf-bento > .wf-bento-side  { grid-column: span 4; grid-row: span 2; }
 .dash-wf .wf-bento > .wf-bento-half  { grid-column: span 6; }
 .dash-wf .wf-bento > .wf-bento-third { grid-column: span 4; }
 .dash-wf .wf-bento > .wf-bento-full { grid-column: span 12; }
 
-/* ── Action rail (NEPO-15) ──
-   Grid rows take the max of their items' content height, so the rail cards
-   beside the 2-row hero dictate the hero's height. Cap both rail cards and
-   let their lists scroll internally; without this an 8-item queue stretched
-   the hero chart past the viewport height. Desktop container only — the
-   single-column layout below 1101px must keep its natural heights. */
-@container (min-width: 1101px) {
+/* 1024–1279 (verdict §e): chart span 12, list span 12 below it — the rail
+   only lives beside the chart from 1280 up. Below 1024 the ≤1100 collapse
+   already stacks every tile. */
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .dash-wf .wf-bento > .wf-bento-hero,
   .dash-wf .wf-bento > .wf-rail {
-    max-height: 380px;
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}
+
+/* Fixed chart body: 280px desktop ≥1280, 240px at 1024–1279 and mobile —
+   verdict §a: no aspect-ratio stretching, chart ≤ ⅓ viewport. */
+.dash-wf .wf-chart .body { height: 240px; flex: 0 0 auto; }
+@media (min-width: 1280px) {
+  .dash-wf .wf-chart .body { height: 280px; }
+  .dash-wf .wf-bento { gap: 24px; }
+}
+
+/* ── Action rail (NEPO-25 §c) ──
+   ≥1280: the rail sits beside the hero, capped at the chart card's height
+   (280 body + header + legend), scrolling its list internally so a long
+   queue can never push the chart taller. Below 1280 everything stacks
+   full-width and the list takes its natural height. */
+@media (min-width: 1280px) {
+  .dash-wf .wf-bento > .wf-rail {
+    max-height: 400px;
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -452,16 +516,11 @@
   .dash-wf .wf-rail > .wf-card {
     flex: 1 1 auto;
     min-height: 0;
-    max-height: 380px;
+    max-height: 400px;
     display: flex;
     flex-direction: column;
   }
-  .dash-wf .wf-rail .wf-att .body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-  }
-  .dash-wf .wf-rail .approval-queue__body {
+  .dash-wf .wf-rail .wf-todo-list {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -494,7 +553,7 @@
 }
 
 .dash-wf .wf-chart { display: flex; flex-direction: column; }
-.dash-wf .wf-chart .body { padding: 8px 8px 6px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dash-wf .wf-chart .body { padding: 8px 8px 6px; min-height: 0; display: flex; flex-direction: column; }
 .dash-wf .wf-legend {
   display: flex;
   gap: 20px;
@@ -507,7 +566,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-sm);
+  font-size: 12px;
   color: var(--wf-ink);
   font-weight: 600;
 }
@@ -692,105 +751,160 @@
   border-radius: inherit;
 }
 
-.dash-wf .wf-att .body { padding: 8px; }
-/* NEPO-15: the decision board lives in the 4-col action rail beside the
-   hero now — a 2-up card grid crushed at rail width, so one column of
-   bordered rows. */
-.dash-wf .wf-att--wide .body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
-  padding: 12px;
+/* ── "Việc cần xử lý" rail (NEPO-25 §c/§d) ──
+   ONE merged to-do list: decision board + approval queue. Rows 44–48px,
+   severity-tinted 16px icon, 13/18 title + 11px meta, hairline dividers,
+   16px chevron, whole row is the hit target. Approval rows ("Duyệt") keep
+   a blue identity + the quick-approve tick for advance requests. */
+.dash-wf .wf-priority-board > .wf-card-h {
+  column-gap: 8px;
 }
-.dash-wf .wf-att--wide .wf-divider { display: none; }
-.dash-wf .wf-att--wide .wf-arow {
-  border: 1px solid var(--wf-border);
-  background: var(--surface-2);
-  border-radius: 10px;
-}
-.dash-wf .wf-arow {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 11px;
-  padding: 12px;
-  border-radius: 10px;
-  position: relative;
-  transition: background 150ms var(--ease), border-color 150ms var(--ease);
-}
-.dash-wf .wf-arow:hover { background: var(--surface-3); border-color: var(--wf-border-2); }
-.dash-wf .wf-arow .ic {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-}
-.dash-wf .wf-arow .ic img { width: 18px; height: 18px; object-fit: contain; }
-.dash-wf .wf-ic-critical { background: #FBE5E3; color: var(--wf-red); }
-.dash-wf .wf-ic-warning { background: var(--wf-amber-soft); color: var(--wf-amber); }
-.dash-wf .wf-ic-info { background: var(--wf-blue-soft); color: var(--wf-blue); }
-.dash-wf .wf-ic-success { background: var(--wf-green-soft); color: var(--wf-green-700); }
-.dash-wf .wf-arow .tx { min-width: 0; }
-.dash-wf .wf-arow .tx .t {
+.dash-wf .wf-todo-head {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
+  min-width: 0;
   flex-wrap: wrap;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  line-height: 1.35;
-  color: var(--wf-ink);
-  overflow-wrap: anywhere;
 }
-.dash-wf .wf-arow .tx .s { font-size: var(--fs-xs); color: var(--wf-ink-2); margin-top: 3px; line-height: 1.4; overflow-wrap: anywhere; font-weight: 500; }
-.dash-wf .wf-severity {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-family: var(--font-body);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  white-space: nowrap;
-}
-.dash-wf .wf-severity--critical { color: var(--wf-red); background: #FBE5E3; }
-.dash-wf .wf-severity--warning { color: var(--wf-amber); background: var(--wf-amber-soft); }
-.dash-wf .wf-severity--info { color: var(--wf-blue); background: var(--wf-blue-soft); }
-.dash-wf .wf-severity--success { color: var(--wf-green-700); background: var(--wf-green-soft); }
-.dash-wf .wf-arow .go { align-self: center; }
-.dash-wf .wf-minibtn {
-  min-height: var(--control-h);
-  padding: 0 12px 0 14px;
-  border-radius: 8px;
-  border: 1px solid var(--wf-border-2);
-  background: var(--surface);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: var(--fs-xs);
-  line-height: 1.35;
-  cursor: pointer;
-  color: var(--wf-ink);
+.dash-wf .wf-todo-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--wf-ink-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.dash-wf .wf-todo-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wf-blue-soft);
+  color: var(--wf-blue);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.dash-wf .wf-todo-chip:hover { background: #DBE7FB; }
+.dash-wf .wf-todo-chip.is-on {
+  background: var(--wf-blue);
+  color: #fff;
+}
+.dash-wf .wf-todo-chip:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 1px;
+}
+.dash-wf .wf-todo-loading {
+  font-size: var(--fs-xs);
+  color: var(--wf-ink-3);
   white-space: nowrap;
 }
-.dash-wf .wf-minibtn__icon {
-  width: 13px !important;
-  height: 13px !important;
-  max-width: 13px !important;
-  max-height: 13px !important;
+.dash-wf .wf-todo-list {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 4px 6px;
 }
-.dash-wf .wf-minibtn.green { background: var(--wf-green); border-color: var(--wf-green); color: var(--fg-on-brand); }
-.dash-wf .wf-minibtn:not(.green):hover { border-color: var(--wf-green); color: var(--wf-green-700); background: var(--surface); }
-.dash-wf .wf-minibtn.green:hover {
-  background: var(--brand-hover);
-  border-color: var(--brand-hover);
+/* Verdict §c: at 1024–1279 the full-width list breaks into 2 columns once
+   it holds more than 5 items. */
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .dash-wf .wf-todo-list.is-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .dash-wf .wf-todo-list.is-two-col .wf-todo { min-height: 44px; }
+}
+.dash-wf .wf-todo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.dash-wf .wf-todo + .wf-todo { border-top: 1px solid var(--wf-border); }
+.dash-wf .wf-todo:hover { background: var(--surface-2); }
+.dash-wf .wf-todo:focus-visible {
+  outline: 2px solid var(--wf-green);
+  outline-offset: -2px;
+}
+.dash-wf .wf-todo__ic { width: 16px; height: 16px; display: grid; place-items: center; flex: 0 0 auto; }
+.dash-wf .wf-todo__ic svg { width: 16px !important; height: 16px !important; max-width: 16px !important; max-height: 16px !important; }
+.dash-wf .wf-todo--critical .wf-todo__ic { color: var(--wf-red); }
+.dash-wf .wf-todo--warning .wf-todo__ic { color: var(--wf-amber); }
+.dash-wf .wf-todo--info .wf-todo__ic { color: var(--wf-blue); }
+.dash-wf .wf-todo--success .wf-todo__ic { color: var(--wf-green-500); }
+.dash-wf .wf-todo--approval .wf-todo__ic { color: var(--wf-blue); }
+.dash-wf .wf-todo__tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.dash-wf .wf-todo__t {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--wf-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-wf .wf-todo__m {
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-wf .wf-todo__chev { color: var(--wf-ink-3); flex: 0 0 auto; }
+.dash-wf .wf-todo__tick {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--wf-border-2);
+  background: var(--surface);
+  color: var(--wf-ink-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+  padding: 0;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.dash-wf .wf-todo__tick svg.spin { animation: wf-spin 0.8s linear infinite; }
+.dash-wf .wf-todo__tick:hover {
+  background: var(--wf-green);
+  border-color: var(--wf-green);
   color: var(--fg-on-brand);
+}
+.dash-wf .wf-todo__tick:focus-visible {
+  outline: 2px solid var(--wf-green);
+  outline-offset: 1px;
+}
+.dash-wf .wf-todo__tick:disabled { cursor: not-allowed; opacity: 0.6; }
+.dash-wf .wf-todo-empty {
+  padding: 14px 10px;
+  font-size: var(--fs-xs);
+  color: var(--wf-ink-3);
+}
+.dash-wf .wf-todo-more {
+  display: flex;
+  justify-content: center;
+  padding: 2px 8px 4px;
+  border-top: 1px solid var(--wf-border);
 }
 .dash-wf .wf-divider { height: 1px; background: var(--wf-border); margin: 2px 8px; }
 
@@ -1052,69 +1166,10 @@
   .dash-wf .wf-kpi .foot { font-size: var(--fs-xs); margin-top: 5px; }
   .dash-wf .wf-fstats { grid-template-columns: 1fr 1fr; }
 
-  .dash-wf .wf-att .body {
-    padding: 4px 6px 6px;
-  }
-
-  .dash-wf .wf-att--wide .body {
-    grid-template-columns: 1fr;
-    gap: 5px;
-  }
-
-  .dash-wf .wf-arow {
-    grid-template-columns: 32px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 9px;
-    min-height: 58px;
-    padding: 9px 6px 9px 9px;
-  }
-
-  .dash-wf .wf-arow .ic {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-  }
-
-  .dash-wf .wf-arow .tx .t {
-    gap: 5px;
-    font-size: var(--fs-sm);
-    line-height: 1.35;
-  }
-
-  .dash-wf .wf-arow .tx .s {
-    margin-top: 2px;
-    font-size: var(--fs-xs);
-    line-height: 1.35;
-    display: block;
-    overflow: visible;
-  }
-
-  .dash-wf .wf-severity {
-    min-height: 24px;
-    padding: 3px 8px;
-    font-size: var(--fs-xs);
-  }
-
-  .dash-wf .wf-arow .go {
-    grid-column: 3;
-    justify-self: end;
-    align-self: center;
-  }
-
-  .dash-wf .wf-minibtn {
-    min-height: var(--control-h);
-    padding: 0 9px 0 11px;
-    border-radius: 9px;
-    font-size: var(--fs-xs);
-    line-height: 1.35;
-  }
-
-  .dash-wf .wf-minibtn__icon {
-    width: 12px !important;
-    height: 12px !important;
-    max-width: 12px !important;
-    max-height: 12px !important;
-  }
+  /* To-do rail on phones: keep the 44px hit target, ease the paddings. */
+  .dash-wf .wf-todo-list { padding: 2px 2px 4px; }
+  .dash-wf .wf-todo { gap: 9px; padding: 5px 6px; }
+  .dash-wf .wf-todo__tick { width: 32px; height: 32px; }
 
   .dash-wf .wf-divider {
     margin: 0 8px;
@@ -1191,8 +1246,8 @@
 }
 
 .dash-wf .wf-kpi .delta,
-.dash-wf .wf-severity,
-.dash-wf .approval-queue__count {
+.dash-wf .wf-todo-count,
+.dash-wf .wf-todo-chip {
   border-width: 0;
 }
 
@@ -1231,21 +1286,11 @@
   text-decoration: none;
 }
 
-.dash-wf .wf-chart-toggle .d-btn {
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.dash-wf .wf-chart-toggle .d-btn.is-active {
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
 .dash-wf .wf-chart-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 
 @container (min-width: 900px) {
@@ -1283,266 +1328,6 @@
   }
 }
 
-/* ── Approval queue card ──
-   Pending-approval list ("Cần duyệt"). Scoped under .approval-queue to avoid
-   colliding with .wf-att/.wf-arow. Rows are dense (compact, no min-height
-   jitter), amount right-aligned in mono, urgent items get a red rail. */
-.dash-wf .approval-queue .wf-card-h__count,
-.dash-wf .approval-queue__count {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--fs-xs);
-  color: var(--wf-green-700);
-  background: var(--wf-green-soft);
-  padding: 2px 9px;
-  border-radius: 999px;
-  min-width: 24px;
-  text-align: center;
-  line-height: 1.6;
-}
-.dash-wf .approval-queue__head-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.dash-wf .approval-queue__pager {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.dash-wf .approval-queue__page-btn {
-  width: 45px;
-  height: var(--control-h);
-  border-radius: 8px;
-  border: 1px solid var(--wf-border-2);
-  background: var(--surface);
-  color: var(--wf-ink-2);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  padding: 0;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 80ms ease;
-}
-.dash-wf .approval-queue__page-btn:hover:not(:disabled) {
-  background: var(--wf-bg);
-  color: var(--wf-green-700);
-  border-color: var(--wf-green);
-}
-.dash-wf .approval-queue__page-btn:active:not(:disabled) {
-  background: var(--surface-3);
-}
-.dash-wf .approval-queue__page-btn:focus-visible {
-  outline: none;
-  outline: 2px solid var(--wf-green);
-  outline-offset: 2px;
-}
-.dash-wf .approval-queue__page-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-.dash-wf .approval-queue__page-label {
-  min-width: 76px;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--wf-ink-3);
-  white-space: nowrap;
-}
-.dash-wf .approval-queue__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 18px 12px 22px;
-  gap: 6px;
-}
-.dash-wf .approval-queue__empty-art {
-  width: 88px;
-  height: 88px;
-  opacity: 0.85;
-  margin-bottom: 2px;
-}
-.dash-wf .approval-queue__empty-title {
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  color: var(--wf-ink);
-}
-.dash-wf .approval-queue__empty-sub {
-  font-size: var(--fs-xs);
-  color: var(--wf-ink-3);
-}
-.dash-wf .approval-queue__body {
-  padding: 4px 6px 8px;
-  container-type: inline-size;
-  container-name: approval-queue;
-}
-.dash-wf .approval-queue__group-head {
-  font-family: var(--font-body);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--wf-ink-3);
-  padding: 8px 10px 4px;
-}
-.dash-wf .approval-queue__row {
-  display: grid;
-  /* icon | title/subtitle | amount | quick-approve | chevron */
-  grid-template-columns: 28px minmax(0, 1fr) auto auto 14px;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 8px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-.dash-wf .approval-queue__row:hover {
-  background: var(--wf-bg);
-}
-.dash-wf .approval-queue__row:focus-visible {
-  outline: 2px solid var(--wf-green);
-  outline-offset: -2px;
-}
-.dash-wf .approval-queue__row { position: relative; }
-/* Row is being processed — show muted state and disable row hover. */
-.dash-wf .approval-queue__row.is-approving {
-  opacity: 0.6;
-  pointer-events: none;       /* block double-click on row while in-flight */
-}
-.dash-wf .approval-queue__ic {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-}
-.dash-wf .approval-queue__ic--green {
-  background: var(--wf-green-soft);
-  color: var(--wf-green-700);
-}
-.dash-wf .approval-queue__ic--blue {
-  background: var(--wf-blue-soft);
-  color: var(--wf-blue);
-}
-.dash-wf .approval-queue__ic--amber {
-  background: var(--wf-amber-soft);
-  color: var(--wf-amber);
-}
-.dash-wf .approval-queue__tx {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.dash-wf .approval-queue__t {
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  color: var(--wf-ink);
-  white-space: normal;
-  overflow: visible;
-  overflow-wrap: anywhere;
-}
-.dash-wf .approval-queue__s {
-  font-size: var(--fs-xs);
-  color: var(--wf-ink-3);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  white-space: normal;
-  overflow: visible;
-  overflow-wrap: anywhere;
-}
-.dash-wf .approval-queue__tag {
-  font-family: var(--font-body);
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--wf-ink-2);
-  background: var(--wf-bg);
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-.dash-wf .approval-queue__amt {
-  grid-column: 3;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--fs-xs);
-  color: var(--wf-ink);
-  white-space: nowrap;
-}
-.dash-wf .approval-queue__amt i {
-  font-style: normal;
-  font-size: var(--fs-xs);
-  color: var(--wf-ink-3);
-  margin-left: 2px;
-}
-.dash-wf .approval-queue__caret {
-  grid-column: 5;
-  color: var(--wf-ink-3);
-  flex: 0 0 auto;
-}
-
-/* Quick-approve tick button — sits between the amount and the chevron.
-   Small circular icon button that does NOT trigger row navigation
-   (the row's onClick is stopped via e.stopPropagation in the handler). */
-.dash-wf .approval-queue__quick {
-  grid-column: 4;
-  width: 45px;
-  height: 45px;
-  border-radius: 8px;
-  border: 1px solid var(--wf-border-2);
-  background: var(--surface);
-  color: var(--wf-ink-3);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  flex: 0 0 auto;
-  padding: 0;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 80ms ease;
-}
-.dash-wf .approval-queue__quick:hover {
-  background: var(--wf-green);
-  color: var(--fg-on-brand);
-  border-color: var(--wf-green);
-}
-.dash-wf .approval-queue__quick:active {
-  background: var(--wf-green-700);
-}
-.dash-wf .approval-queue__quick:focus-visible {
-  outline: 2px solid var(--wf-green);
-  outline-offset: 2px;
-}
-.dash-wf .approval-queue__quick:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-.dash-wf .approval-queue__quick svg.spin {
-  animation: wf-spin 0.8s linear infinite;
-}
-@container approval-queue (max-width: 520px) {
-  .dash-wf .approval-queue__row {
-    grid-template-columns: 28px minmax(0, 1fr) auto 14px;
-    gap: 8px;
-  }
-  .dash-wf .approval-queue__ic { grid-area: 1 / 1; }
-  .dash-wf .approval-queue__tx { grid-area: 1 / 2 / 2 / 4; }
-  .dash-wf .approval-queue__caret { grid-area: 1 / 4; }
-  .dash-wf .approval-queue__amt { grid-area: 2 / 2; }
-  .dash-wf .approval-queue__quick { grid-area: 2 / 3 / 3 / 5; }
-}
 @keyframes wf-spin {
   to { transform: rotate(360deg); }
 }
@@ -1556,6 +1341,19 @@
 
 .app-body:has(> .dash-wf) {
   background: var(--bg);
+}
+
+/* NEPO-25 §e page rhythm: padding 24 desktop / 16 tablet — scoped to the
+   dashboard so other pages keep the shared shell padding. */
+@media (min-width: 1280px) {
+  .app-body:has(> .dash-wf) {
+    padding: 24px;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .app-body:has(> .dash-wf) {
+    padding: 16px;
+  }
 }
 
 .app:has(.dash-wf) .sidebar,
@@ -1611,23 +1409,11 @@
   border-bottom: 1px solid var(--wf-border);
 }
 
-.dash-wf .wf-priority-more {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  padding: 2px 8px 4px;
-  border-top: 1px solid var(--wf-border);
-}
 
 @media (max-width: 640px) {
   .dash-wf .wf-link {
     min-height: var(--control-h);
     padding: 8px;
-  }
-
-  .dash-wf .wf-chart-toggle__btn {
-    min-height: var(--control-h);
-    padding: 8px 12px;
   }
 
   .dash-wf .wf-kpi .val {

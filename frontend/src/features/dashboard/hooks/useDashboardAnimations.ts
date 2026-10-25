@@ -164,9 +164,9 @@ export function useDashboardAnimations(ready: boolean) {
       // Safety net: try again after data likely loaded
       setTimeout(animateAuditRows, 2000);
 
-      // Approval queue count follows the same flat fade language.
+      // Merged to-do rail count follows the same flat fade language.
       const countBadge = root.querySelector(
-        '.approval-queue__count',
+        '.wf-todo-count',
       ) as HTMLElement | null;
       if (countBadge) {
         animate(countBadge, {

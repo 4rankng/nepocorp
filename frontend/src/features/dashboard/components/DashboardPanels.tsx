@@ -4,6 +4,7 @@ import { formatNumber } from '../../../lib/format';
 import { EmptyState as DsEmptyState } from '../../../design-system/EmptyState';
 import { RevenueTrendChart } from '../../../components/charts/RevenueTrendChart';
 import { DailyBarsChart } from '../../../components/charts/DailyBarsChart';
+import { fmtMillionsTr } from './dashboardFormatters';
 import { CostBreakdown, type CostBreakdownItem } from './dashboard-presenters';
 
 export interface FleetStats {
@@ -48,6 +49,12 @@ interface RevenueChartCardProps {
   onChartViewChange: (view: ChartView) => void;
   currentMonth: number;
   currentYear: number;
+  /** Month totals from the plotted daily series, in millions — the KPI
+   *  cluster inline in the card header (NEPO-25 verdict §b:
+   *  Tổng tháng · TB/ngày · Đỉnh). */
+  monthTotalM: number;
+  dayAvgM: number;
+  dayPeakM: number;
   onNavigate: (path: string) => void;
 }
 
@@ -60,7 +67,8 @@ const CHART_VIEWS: Array<{ key: ChartView; label: string }> = [
 export function RevenueChartCard({
   dailyLabels, dailyRevenue, dailyGross,
   chartMonths, chartRevenue, chartGross,
-  chartView, onChartViewChange, currentMonth, currentYear, onNavigate,
+  chartView, onChartViewChange, currentMonth, currentYear,
+  monthTotalM, dayAvgM, dayPeakM, onNavigate,
 }: RevenueChartCardProps) {
   const isDaily = chartView === 'day';
   const barsEmpty = dailyRevenue.every(v => v === 0) && dailyGross.every(v => v === 0);
@@ -68,8 +76,8 @@ export function RevenueChartCard({
   return (
     <section className="d-card d-card-border bg-base-100 wf-card wf-chart wf-bento-hero" aria-labelledby="dashboard-revenue-title">
         <div className="wf-card-h">
-          <div>
-            <h2 className="ttl" id="dashboard-revenue-title">Doanh thu & Lợi nhuận gộp</h2>
+          <div className="wf-chart-title">
+            <h2 className="ttl" id="dashboard-revenue-title">Doanh thu &amp; Lợi nhuận gộp</h2>
             <div className="sub">
               {isDaily
                 ? dailyLabels.length > 0
@@ -84,12 +92,31 @@ export function RevenueChartCard({
                     : 'Chưa có dữ liệu'}
             </div>
           </div>
+          {/* KPI cluster inline beside the chart title (NEPO-25 §b) — the
+              month the chart plots, summarised where the eye already is. */}
+          <div className="wf-metrics" role="group" aria-label="Chỉ số doanh thu tháng">
+            <div className="wf-metric">
+              <span className="k">Tổng tháng</span>
+              <span className="v">{fmtMillionsTr(monthTotalM)}</span>
+            </div>
+            <span className="wf-metrics__div" aria-hidden="true" />
+            <div className="wf-metric">
+              <span className="k">TB/ngày</span>
+              <span className="v">{fmtMillionsTr(dayAvgM)}</span>
+            </div>
+            <span className="wf-metrics__div" aria-hidden="true" />
+            <div className="wf-metric">
+              <span className="k">Đỉnh</span>
+              <span className="v">{fmtMillionsTr(dayPeakM)}</span>
+            </div>
+          </div>
           <div className="wf-chart-actions">
             <div className="wf-chart-toggle" role="group" aria-label="Kiểu hiển thị biểu đồ">
               {CHART_VIEWS.map(v => (
                 <button
                   key={v.key}
-                  className={`d-btn d-btn-sm wf-chart-toggle__btn${chartView === v.key ? ' is-active' : ''}`}
+                  type="button"
+                  className={`wf-chart-toggle__btn${chartView === v.key ? ' is-active' : ''}`}
                   onClick={() => onChartViewChange(v.key)}
                   aria-pressed={chartView === v.key}
                 >
@@ -125,8 +152,8 @@ export function RevenueChartCard({
               );
             }
             return isDaily
-              ? <DailyBarsChart labels={dailyLabels} revenue={dailyRevenue} gross={dailyGross} />
-              : <RevenueTrendChart months={chartMonths} revenue={chartRevenue} gross={chartGross} />;
+              ? <DailyBarsChart labels={dailyLabels} revenue={dailyRevenue} gross={dailyGross} maxTicks={3} formatY={fmtMillionsTr} />
+              : <RevenueTrendChart months={chartMonths} revenue={chartRevenue} gross={chartGross} maxTicks={3} formatY={fmtMillionsTr} />;
           })()}
         </div>
       </section>
