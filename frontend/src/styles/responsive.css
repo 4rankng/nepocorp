@@ -301,7 +301,7 @@
   .wf-link { min-height: 44px; padding: 6px 0; }
   .wf-minibtn { min-height: 44px; padding: 4px 10px; }
   .wf-btn { min-height: 44px; }
-  .approval-queue__quick { min-width: 36px; min-height: 36px; padding: 6px; }
+  .approval-queue__quick { min-width: 40px; min-height: 40px; padding: 0; }
 
   /* ── Status pills & pagination ── */
   .stab-pill { min-height: 44px; padding: 6px 14px; }
