@@ -41,6 +41,10 @@ interface RevenueChartCardProps {
   dailyLabels: string[];
   dailyRevenue: number[];
   dailyGross: number[];
+  /** Parallel to dailyRevenue — false where the day has no trips (NEPO-26). */
+  dailyHasData?: boolean[];
+  /** Index of today in the daily series — renders the "Hôm nay" marker. */
+  todayIdx?: number;
   /** Cumulative (day) or trailing-12-month (month) series for the line view */
   chartMonths: string[];
   chartRevenue: number[];
@@ -65,7 +69,7 @@ const CHART_VIEWS: Array<{ key: ChartView; label: string }> = [
 ];
 
 export function RevenueChartCard({
-  dailyLabels, dailyRevenue, dailyGross,
+  dailyLabels, dailyRevenue, dailyGross, dailyHasData, todayIdx,
   chartMonths, chartRevenue, chartGross,
   chartView, onChartViewChange, currentMonth, currentYear,
   monthTotalM, dayAvgM, dayPeakM, onNavigate,
@@ -131,7 +135,7 @@ export function RevenueChartCard({
         </div>
         <div className="wf-legend">
           <span className="li"><span className="sw" style={{ background: 'var(--wf-green)' }} />Doanh thu (chưa VAT)</span>
-          <span className="li"><span className="sw" style={{ background: 'var(--wf-blue)' }} />Lợi nhuận gộp</span>
+          <span className="li"><span className="sw" style={{ background: 'var(--wf-amber)' }} />Lợi nhuận gộp</span>
         </div>
         <div className="body">
           {(() => {
@@ -152,7 +156,7 @@ export function RevenueChartCard({
               );
             }
             return isDaily
-              ? <DailyBarsChart labels={dailyLabels} revenue={dailyRevenue} gross={dailyGross} maxTicks={3} formatY={fmtMillionsTr} />
+              ? <DailyBarsChart labels={dailyLabels} revenue={dailyRevenue} gross={dailyGross} hasData={dailyHasData} todayIdx={todayIdx} maxTicks={3} formatY={fmtMillionsTr} />
               : <RevenueTrendChart months={chartMonths} revenue={chartRevenue} gross={chartGross} maxTicks={3} formatY={fmtMillionsTr} />;
           })()}
         </div>

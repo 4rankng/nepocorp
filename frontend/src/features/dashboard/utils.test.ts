@@ -33,7 +33,11 @@ describe('buildDailySeries — the daily chart x-axis', () => {
     const series = buildDailySeries(trips);
 
     expect(series.map((point) => point.day)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-    expect(series[9]).toEqual({ day: 10, revenue: 0, gross: 0 });
+    // NEPO-26: the gap day carries hasData=false so the chart gaps it
+    // instead of plotting a 0 that reads as a crash.
+    expect(series[9]).toEqual({ day: 10, revenue: 0, gross: 0, hasData: false });
+    expect(series[8]).toMatchObject({ hasData: true });
+    expect(series[10]).toMatchObject({ hasData: true });
     // The days around the gap keep their own figures.
     expect(series[8].revenue).toBe(1_000_000);
     expect(series[10].revenue).toBe(3_000_000);
@@ -45,7 +49,7 @@ describe('buildDailySeries — the daily chart x-axis', () => {
       trip('2026-10-05', 2_500_000, 400_000),
     ]);
 
-    expect(series).toEqual([{ day: 5, revenue: 4_000_000, gross: 500_000 }]);
+    expect(series).toEqual([{ day: 5, revenue: 4_000_000, gross: 500_000, hasData: true }]);
   });
 
   it('reads money fields that arrive as strings, the shape the API sends', () => {
@@ -53,7 +57,7 @@ describe('buildDailySeries — the daily chart x-axis', () => {
       { departureDate: '2026-10-02', status: 'COMPLETED', revenue: '10800000', grossProfit: '2480000' },
     ]);
 
-    expect(series).toEqual([{ day: 2, revenue: 10_800_000, gross: 2_480_000 }]);
+    expect(series).toEqual([{ day: 2, revenue: 10_800_000, gross: 2_480_000, hasData: true }]);
   });
 
   it('trims empty days at both edges instead of charting the whole month', () => {

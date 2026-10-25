@@ -121,8 +121,18 @@ export default function DashboardPage() {
       labels: series.map((point) => String(point.day)),
       revenue: series.map((point) => point.revenue / 1_000_000),
       gross: series.map((point) => point.gross / 1_000_000),
+      hasData: series.map((point) => point.hasData),
     };
   }, [allTrips]);
+
+  // "Hôm nay" marker only when today is inside the plotted window (today
+  // usually sits past the last day that has trips, where a marker would
+  // dangle over an empty slot).
+  const todayIdx = useMemo(() => {
+    const today = new Date().getDate();
+    const idx = dailyChartData.labels.findIndex((label) => Number(label) === today);
+    return idx >= 0 ? idx : undefined;
+  }, [dailyChartData]);
 
   // Inline header KPIs for the hero chart (NEPO-25 verdict §b): the month
   // the chart plots, summarised as Tổng tháng · TB/ngày · Đỉnh. Computed
@@ -435,6 +445,8 @@ export default function DashboardPage() {
           dailyLabels={dailyChartData.labels}
           dailyRevenue={dailyChartData.revenue}
           dailyGross={dailyChartData.gross}
+          dailyHasData={dailyChartData.hasData}
+          todayIdx={todayIdx}
           chartMonths={chartMonths}
           chartRevenue={chartRevenue}
           chartGross={chartGross}

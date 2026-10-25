@@ -12,6 +12,15 @@ import { formatCurrency } from '../../lib/format';
  *
  * Pattern + interaction conventions mirror RevenueTrendChart: inline SVG,
  * invisible per-day hit areas, crosshair, HTML overlay tooltip.
+ *
+ * NEPO-26 (consult verdict, deepseek 25/10): series pair is solid #005A2D
+ * bars + #C2780B gross line on a white casing (the blue #2563EB fought the
+ * green and sits ~1.6:1 over the bars; #C2780B alone is ~2.4:1 over emerald,
+ * so the casing is what carries WCAG non-text contrast). Days with no trips
+ * are gaps — no zero bar, line broken, "Không có chuyến" in tooltip/aria —
+ * never a plotted 0 that reads as a crash. Tooltip adds gross-margin % and
+ * the day-over-day revenue delta; a dashed month-average reference and a
+ * "Hôm nay" marker orient the scan.
  */
 
 export interface DailyBarsChartProps {
@@ -29,6 +38,12 @@ export interface DailyBarsChartProps {
    *  Default 4 (the historical ¼ ladder); the dashboard hero passes 3 for
    *  the consultant's 3–4-tick y-axis (NEPO-25). */
   maxTicks?: number;
+  /** Parallel to `revenue` — false where the day has no trips (bar skipped,
+   *  line broken, tooltip says "Không có chuyến"). Undefined = every day has
+   *  data. */
+  hasData?: boolean[];
+  /** Index of today in the series — draws the "Hôm nay" marker. */
+  todayIdx?: number;
   /** Custom SVG dimensions — defaults to Dashboard standard 760×280 */
   width?: number;
   height?: number;
@@ -41,6 +56,8 @@ export function DailyBarsChart({
   formatY,
   formatTooltip,
   maxTicks,
+  hasData,
+  todayIdx,
   width: initialW = 760,
   height: initialH = 280,
 }: DailyBarsChartProps) {
@@ -88,9 +105,32 @@ export function DailyBarsChart({
   const lineX = (i: number) => mL + slot * i + slot / 2;
   const Y = (v: number) => mT + pH * (1 - v / yMax);
 
-  const grossPath = gross
-    .map((v, i) => (i ? 'L' : 'M') + lineX(i).toFixed(1) + ' ' + Y(v).toFixed(1))
-    .join(' ');
+  const dayHasData = (i: number) => !hasData || hasData[i] !== false;
+
+  // Gross line broken into segments — a day with no trips is a gap, not a
+  // plotted 0 (NEPO-26): the old continuous path dove to the axis and read
+  // as a crash (day 22).
+  const grossPaths: string[] = [];
+  let seg: string[] = [];
+  let prevIdx = -2;
+  for (let i = 0; i < gross.length; i++) {
+    if (!dayHasData(i)) continue;
+    if (seg.length > 0 && i - prevIdx > 1) {
+      if (seg.length > 1) grossPaths.push(seg.join(' '));
+      seg = [];
+    }
+    seg.push((seg.length ? 'L' : 'M') + lineX(i).toFixed(1) + ' ' + Y(gross[i]).toFixed(1));
+    prevIdx = i;
+  }
+  if (seg.length > 1) grossPaths.push(seg.join(' '));
+
+  // Month-average reference over the days that have data — the same "TB/ngày"
+  // figure the card header shows, so bars get a baseline to be read against.
+  const dataIdxs = revenue.map((_, i) => i).filter(dayHasData);
+  const monthAvg = dataIdxs.length > 0
+    ? dataIdxs.reduce((sum, i) => sum + (revenue[i] || 0), 0) / dataIdxs.length
+    : 0;
+  const lastDataIdx = dataIdxs.length > 0 ? dataIdxs[dataIdxs.length - 1] : -1;
 
   const gridValues = Array.from({ length: Math.round(yMax / step) + 1 }, (_, i) => i * step);
 
@@ -150,8 +190,10 @@ export function DailyBarsChart({
           ) : null
         ))}
 
-        {/* Daily revenue bars */}
+        {/* Daily revenue bars — solid emerald (opacity .85 dulled the fill
+            against white, consult NEPO-26); no-data days draw no bar. */}
         {revenue.map((v, i) => {
+          if (!dayHasData(i)) return null;
           const y = Y(v);
           const h = Math.max(0, Y(0) - y);
           return (
@@ -164,19 +206,48 @@ export function DailyBarsChart({
               height={h}
               rx={Math.min(3, barW / 2)}
               fill="#005A2D"
-              opacity={activeIdx === null || activeIdx === i ? 0.85 : 0.35}
+              opacity={activeIdx === null || activeIdx === i ? 1 : 0.35}
             />
           );
         })}
 
-        {/* Gross profit line (drawn over the bars) */}
-        <path d={grossPath} fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Month-average reference — dashed, matches the header TB/ngày KPI */}
+        {monthAvg > 0 && (
+          <g>
+            <line x1={mL} y1={Y(monthAvg)} x2={W - mR} y2={Y(monthAvg)} stroke="#8A988F" strokeWidth="1" strokeDasharray="2 4" opacity={0.7} />
+            <text x={W - mR} y={Y(monthAvg) - 4} textAnchor="end" fontFamily="JetBrains Mono, monospace" fontSize="9" fill="#8A988F">TB/ngày</text>
+          </g>
+        )}
+
+        {/* Today marker — orients the scan without stealing ink from the data */}
+        {todayIdx != null && todayIdx >= 0 && todayIdx < n && (
+          <g>
+            <line x1={lineX(todayIdx)} y1={mT} x2={lineX(todayIdx)} y2={mT + pH} stroke="#56655C" strokeWidth="1" strokeDasharray="2 3" opacity={0.5} />
+            <text x={lineX(todayIdx)} y={mT + 9} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="9" fill="#56655C">Hôm nay</text>
+          </g>
+        )}
+
+        {/* Gross profit line — #C2780B over a white casing: the amber alone
+            is ~2.4:1 over emerald bars, the casing carries the contrast
+            (consult NEPO-26). Blue #2563EB fought the green. */}
+        {grossPaths.map((d, i) => (
+          <path key={`casing-${i}`} d={d} fill="none" stroke="#FFFFFF" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />
+        ))}
+        {grossPaths.map((d, i) => (
+          <path key={`gp-${i}`} d={d} fill="none" stroke="#C2780B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        ))}
+
+        {/* Direct end-of-line label — legend becomes reinforcement, not the
+            only key (consult NEPO-26) */}
+        {lastDataIdx >= 0 && (
+          <text x={lineX(lastDataIdx)} y={Y(gross[lastDataIdx] || 0) - 9} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="9.5" fontWeight="700" fill="#C2780B">LN gộp</text>
+        )}
 
         {/* Hover crosshair + dots */}
         {activeIdx !== null && (
           <>
             <line x1={ax} y1={mT} x2={ax} y2={mT + pH} stroke="#005A2D" strokeWidth="1" strokeDasharray="3 4" opacity={0.45} />
-            <circle cx={ax} cy={ayGp} r="3.5" fill="#fff" stroke="#2563EB" strokeWidth="2" />
+            <circle cx={ax} cy={ayGp} r="3.5" fill="#fff" stroke="#C2780B" strokeWidth="2" />
             <circle cx={ax} cy={ay} r="4" fill="#fff" stroke="#005A2D" strokeWidth="2.6" />
           </>
         )}
@@ -203,13 +274,26 @@ export function DailyBarsChart({
             }}
             tabIndex={0}
             role="button"
-            aria-label={`Ngày ${d}: doanh thu (chưa VAT) ${fmtTip(revenue[i] || 0)}, lợi nhuận gộp ${fmtTip(gross[i] || 0)}`}
+            aria-label={`Ngày ${d}${dayHasData(i) ? `: doanh thu (chưa VAT) ${fmtTip(revenue[i] || 0)}, lợi nhuận gộp ${fmtTip(gross[i] || 0)}` : ': không có chuyến'}`}
           />
         ))}
       </svg>
 
       {/* HTML tooltip overlay — same conventions as RevenueTrendChart */}
-      {activeIdx !== null && (
+      {activeIdx !== null && (() => {
+        const hasDay = dayHasData(activeIdx);
+        const dayRev = revenue[activeIdx] || 0;
+        const dayGross = gross[activeIdx] || 0;
+        const marginPct = dayRev > 0 ? (dayGross / dayRev) * 100 : null;
+        let prevIdx: number | null = null;
+        for (let i = activeIdx - 1; i >= 0; i--) {
+          if (dayHasData(i)) { prevIdx = i; break; }
+        }
+        const prevRev = prevIdx != null ? (revenue[prevIdx] || 0) : null;
+        const dayDelta = prevRev != null && prevRev > 0 && dayRev > 0
+          ? ((dayRev - prevRev) / prevRev) * 100
+          : null;
+        return (
         <div
           data-testid="daily-bars-tooltip"
           style={{
@@ -229,29 +313,53 @@ export function DailyBarsChart({
           }}
         >
           <div style={{ textAlign: 'center', fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', fontWeight: 600, color: '#56655C', marginBottom: '8px' }}>
-            Ngày {labels[activeIdx]}
+            Ngày {labels[activeIdx]}{activeIdx === todayIdx ? ' · Hôm nay' : ''}
           </div>
           <div style={{ height: 1, background: '#EEF1EF', margin: '0 -14px 8px -14px' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
-              Doanh thu (chưa VAT)
+          {!hasDay ? (
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#8A988F', textAlign: 'center', padding: '2px 0' }}>
+              Không có chuyến
             </div>
-            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
-              {fmtTip(revenue[activeIdx] || 0)}
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />
-              LN gộp
-            </div>
-            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#2563EB', whiteSpace: 'nowrap' }}>
-              {fmtTip(gross[activeIdx] || 0)}
-            </div>
-          </div>
+          ) : (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
+                  Doanh thu (chưa VAT)
+                </div>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
+                  {fmtTip(dayRev)}
+                  {dayDelta != null && (
+                    <span style={{ fontSize: '10.5px', fontWeight: 500, color: dayDelta >= 0 ? '#0B8745' : '#C7372F', marginLeft: 6 }}>
+                      {dayDelta >= 0 ? '▲' : '▼'} {Math.abs(dayDelta).toFixed(0)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C2780B' }} />
+                  LN gộp
+                </div>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#C2780B', whiteSpace: 'nowrap' }}>
+                  {fmtTip(dayGross)}
+                </div>
+              </div>
+              {marginPct != null && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center' }}>
+                  <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#8A988F', whiteSpace: 'nowrap' }}>
+                    Biên LN gộp
+                  </div>
+                  <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', fontWeight: 600, color: '#56655C', whiteSpace: 'nowrap' }}>
+                    {marginPct.toFixed(1)}%
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

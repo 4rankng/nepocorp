@@ -66,7 +66,7 @@ export function FinanceChartsRow({
           </div>
           <div className="wf-legend">
             <span className="li"><span className="sw" style={{ background: 'var(--wf-green)' }} />Doanh thu (chưa VAT)</span>
-            <span className="li"><span className="sw" style={{ background: 'var(--wf-blue)' }} />Lợi nhuận gộp</span>
+            <span className="li"><span className="sw" style={{ background: 'var(--wf-amber)' }} />Lợi nhuận gộp</span>
           </div>
           <div className="body">
             {yearlyLoading ? (

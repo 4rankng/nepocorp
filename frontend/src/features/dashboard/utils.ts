@@ -26,6 +26,9 @@ export interface DailySeriesPoint {
   /** Raw VND, not yet scaled to millions. */
   revenue: number;
   gross: number;
+  /** False on window days with no trips — the chart gaps them instead of
+   *  plotting a misleading 0 (NEPO-26). */
+  hasData: boolean;
 }
 
 interface DailyTripLike {
@@ -84,6 +87,7 @@ export function buildDailySeries(trips: readonly DailyTripLike[]): DailySeriesPo
       day: Number(dateKey.slice(8, 10)),
       revenue: point?.revenue ?? 0,
       gross: point?.gross ?? 0,
+      hasData: point != null,
     });
   }
   return series;
