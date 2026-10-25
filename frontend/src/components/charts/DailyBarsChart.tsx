@@ -25,6 +25,10 @@ export interface DailyBarsChartProps {
   formatY?: (v: number) => string;
   /** Formatter for tooltip values; receives values in millions */
   formatTooltip?: (v: number) => string;
+  /** Max grid steps above zero — gridlines = maxTicks + 1 including 0.
+   *  Default 4 (the historical ¼ ladder); the dashboard hero passes 3 for
+   *  the consultant's 3–4-tick y-axis (NEPO-25). */
+  maxTicks?: number;
   /** Custom SVG dimensions — defaults to Dashboard standard 760×280 */
   width?: number;
   height?: number;
@@ -36,6 +40,7 @@ export function DailyBarsChart({
   gross,
   formatY,
   formatTooltip,
+  maxTicks,
   width: initialW = 760,
   height: initialH = 280,
 }: DailyBarsChartProps) {
@@ -66,11 +71,13 @@ export function DailyBarsChart({
   const mR = 18, mT = 14, mB = 30;
   const pW = W - mL - mR, pH = H - mT - mB;
 
-  // Auto-scale y-axis against the taller of the two series (same nice-step
-  // ladder as RevenueTrendChart so both hero views share a scale language).
+  // Auto-scale y-axis against the taller of the two series. The step ladder
+  // keeps tick values round; maxTicks caps the grid steps above zero (the
+  // NEPO-25 hero passes 3 → 4 gridlines incl. 0).
   const peak = Math.max(...revenue, ...gross, 1);
-  const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000];
-  const step = niceSteps.find(s => s * 4 >= peak) ?? 1000;
+  const span = Math.max(1, maxTicks ?? 4);
+  const niceSteps = [1, 2, 3, 5, 10, 15, 25, 30, 50, 75, 100, 150, 250, 300, 500, 750, 1000];
+  const step = niceSteps.find(s => s * span >= peak) ?? 1000;
   const yMax = Math.ceil(peak / step) * step || step;
 
   const n = revenue.length;
@@ -85,7 +92,7 @@ export function DailyBarsChart({
     .map((v, i) => (i ? 'L' : 'M') + lineX(i).toFixed(1) + ' ' + Y(v).toFixed(1))
     .join(' ');
 
-  const gridValues = [0, yMax / 4, yMax / 2, (3 * yMax) / 4, yMax];
+  const gridValues = Array.from({ length: Math.round(yMax / step) + 1 }, (_, i) => i * step);
 
   const ax = activeIdx !== null ? lineX(activeIdx) : 0;
   const ay = activeIdx !== null ? Y(revenue[activeIdx] || 0) : 0;

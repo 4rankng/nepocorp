@@ -20,6 +20,10 @@ export interface RevenueTrendChartProps {
   formatY?: (v: number) => string;
   /** Formatter for tooltip values; receives values in millions */
   formatTooltip?: (v: number) => string;
+  /** Max grid steps above zero — gridlines = maxTicks + 1 including 0.
+   *  Default 4 (the historical ¼ ladder); the dashboard hero passes 3 for
+   *  the consultant's 3–4-tick y-axis (NEPO-25). */
+  maxTicks?: number;
   /** Optional: which month index is "current" — highlights that label bold */
   currentIdx?: number;
   /** Chart title shown in the header (outside this component) */
@@ -35,6 +39,7 @@ export function RevenueTrendChart({
   gross,
   formatY,
   formatTooltip,
+  maxTicks,
   currentIdx,
   title,
   width: initialW = 760,
@@ -72,10 +77,12 @@ export function RevenueTrendChart({
   const mR = 18, mT = 14, mB = 30;
   const pW = W - mL - mR, pH = H - mT - mB;
 
-  // Auto-scale y-axis: pick a nice step size that fits the data
+  // Auto-scale y-axis: pick a nice step size that fits the data. maxTicks
+  // caps the grid steps above zero (NEPO-25 hero passes 3 → 4 gridlines).
   const peak = Math.max(...revenue, ...gross, 1);
-  const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 250, 500, 1000];
-  const step = niceSteps.find(s => s * 4 >= peak) ?? 1000;
+  const span = Math.max(1, maxTicks ?? 4);
+  const niceSteps = [1, 2, 3, 5, 10, 15, 25, 30, 50, 75, 100, 150, 250, 300, 500, 750, 1000];
+  const step = niceSteps.find(s => s * span >= peak) ?? 1000;
   const yMax = Math.ceil(peak / step) * step || step;
 
   const X = (i: number) => mL + pW * (i / Math.max(1, revenue.length - 1));
@@ -87,7 +94,7 @@ export function RevenueTrendChart({
   const areaPath = (arr: number[]) =>
     path(arr) + ` L ${X(arr.length - 1)} ${Y(0)} L ${X(0)} ${Y(0)} Z`;
 
-  const gridValues = [0, yMax / 4, yMax / 2, (3 * yMax) / 4, yMax];
+  const gridValues = Array.from({ length: Math.round(yMax / step) + 1 }, (_, i) => i * step);
 
   const ax = activeIdx !== null ? X(activeIdx) : 0;
   const ay = activeIdx !== null ? Y(revenue[activeIdx] || 0) : 0;

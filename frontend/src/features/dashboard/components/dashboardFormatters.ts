@@ -2,9 +2,6 @@
 // `dashboard-presenters.tsx` so that module exports only components (React Fast
 // Refresh).
 
-import type { DashboardDecisionKind, DashboardDecisionSeverity } from '@tingting/shared';
-import type { AssetIconName } from '../../../components/AssetIcon';
-
 export const greeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return 'Chào buổi sáng';
@@ -19,18 +16,7 @@ export const runningSum = (values: number[]): number[] => {
   return values.map((value) => (total += value));
 };
 
-const DECISION_ICONS: Record<DashboardDecisionKind, AssetIconName> = {
-  receivables: 'receivables', dispatch: 'dispatch', renewal: 'schedule', fuel: 'fuel',
-  'trip-lock': 'checklist', 'trip-data': 'document', 'profit-close': 'profit', 'all-clear': 'paid',
-};
-
-export function decisionIcon(kind: DashboardDecisionKind): AssetIconName {
-  return DECISION_ICONS[kind] ?? 'alert';
-}
-
-export function severityLabel(severity: DashboardDecisionSeverity): string {
-  if (severity === 'critical') return 'Gấp';
-  if (severity === 'warning') return 'Cần xử lý';
-  if (severity === 'success') return 'Ổn';
-  return 'Theo dõi';
-}
+/** Compact millions formatter for the hero chart's y-axis and the inline KPI
+ *  cluster (NEPO-25 verdict §a: "format 'tr' gọn"). Receives values already
+ *  plotted in millions: 226 → "226tr", 0 → "0tr". Tooltips keep full VND. */
+export const fmtMillionsTr = (valueMillions: number): string => `${Math.round(valueMillions)}tr`;

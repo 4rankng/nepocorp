@@ -3,21 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { Activity, AlertTriangle, Download, Truck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import type { DashboardDecisionItem, Role } from '@tingting/shared';
-import { isFinancialRole, ROLE_LABELS } from '@tingting/shared';
-import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
+import { isFinancialRole, ROLE_LABELS } from '@tingting/shared';import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { Banner } from '../components/shared/Banner';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
 import { styles, fmtMoM, buildDailySeries } from '../features/dashboard/utils';
 import { useMonth } from '../hooks/useMonth';
 import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget';
-import { ApprovalQueueCard } from '../features/dashboard/components/ApprovalQueueCard';
-import { useApprovalQueue, canSeeApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
+import { useApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
 import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
 import './DashboardPage.css';
 import { type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
 import { greeting, runningSum } from '../features/dashboard/components/dashboardFormatters';
 import { DashboardKpiRow } from '../features/dashboard/components/DashboardKpiRow';
 import { AttentionBoard } from '../features/dashboard/components/AttentionBoard';
+import { mergeAttentionRows } from '../features/dashboard/components/attentionRows';
 import {
   CostCompositionCard,
   FleetStatusCard,
@@ -30,19 +29,21 @@ import { VehicleScheduleBanner } from '../features/fleet/schedules/VehicleSchedu
 import { useActiveVehicleSchedules } from '../hooks/useVehicleSchedules';
 
 /**
- * Dashboard — NEPO-15 overhaul (24/10 consult: deepseek UX verdict + Untitled
- * UI dashboard conventions).
+ * Dashboard — NEPO-25 overhaul (25/10 consult verdict: deepseek px spec +
+ * Untitled UI data-dense conventions; supersedes the NEPO-15 bento).
  *
- * Layout (12-col bento, single column below 1100px):
+ * Layout:
  *   • Page head (greeting + summary + 2 actions)
- *   • 5 KPI cells in one strip (revenue / total cost / gross / net / debt)
- *     with mom delta pills
- *   • Bento grid:
- *       hero  → Doanh thu & LN gộp (8×2; default = daily bars, "Cộng dồn"/
- *               "Tháng" keep the cumulative line views)
- *       rail  → Cần duyệt (4) + Việc cần xử lý (4) — actions above the fold
- *       row   → Fleet + Cơ cấu chi phí + Lợi nhuận theo xe (4/4/4)
- *       row   → Top tuyến (6) + Hoạt động gần đây (6, single column)
+ *   • KPI strip full-width on top (revenue / cost / gross / net / debt)
+ *   • Hero row (12-col, ≥1280):
+ *       hero  → Doanh thu & LN gộp, span 8 — FIXED 280px chart body
+ *               (240px below 1280), inline header KPIs (Tổng tháng ·
+ *               TB/ngày · Đỉnh), segmented view tabs 32px
+ *       rail  → "Việc cần xử lý" span 4 — ONE merged list (decision board
+ *               + approval queue), rows 44–48, sorted severity → time
+ *       @1024–1279 both stack full-width; the list goes 2-col >5 items
+ *   • Row of thirds: Fleet + Cơ cấu chi phí + Lợi nhuận theo xe
+ *   • Bottom row: Top tuyến (6) + Hoạt động gần đây (6, single column)
  *
  * Styles live in DashboardPage.css under .dash-wf scope to avoid clashing
  * with the legacy widgets.
@@ -82,7 +83,6 @@ export default function DashboardPage() {
   // Animation hook — must be after loading is defined
   const { rootRef } = useDashboardAnimations(!loading);
 
-  const showApprovalQueue = canSeeApprovalQueue(user?.role);
   const { data: approvalQueue, isLoading: approvalQueueLoading } = useApprovalQueue(user?.role, user?.userId);
 
   // ── Derived values (non-hook computations) ──────────────────────────────
@@ -123,6 +123,19 @@ export default function DashboardPage() {
       gross: series.map((point) => point.gross / 1_000_000),
     };
   }, [allTrips]);
+
+  // Inline header KPIs for the hero chart (NEPO-25 verdict §b): the month
+  // the chart plots, summarised as Tổng tháng · TB/ngày · Đỉnh. Computed
+  // from the same plotted series so header and bars can never disagree.
+  const chartStats = useMemo(() => {
+    const rev = dailyChartData.revenue;
+    const total = rev.reduce((sum, v) => sum + v, 0);
+    return {
+      totalM: total,
+      avgM: rev.length > 0 ? total / rev.length : 0,
+      peakM: rev.length > 0 ? Math.max(...rev) : 0,
+    };
+  }, [dailyChartData]);
 
   const { chartMonths, chartRevenue, chartGross } = useMemo(() => {
     if (chartView === 'month') {
@@ -264,7 +277,17 @@ export default function DashboardPage() {
     () => [...attention].sort((a, b) => b.priority - a.priority),
     [attention],
   );
-  const visibleAttention = showAllAttention ? orderedAttention : orderedAttention.slice(0, 4);
+
+  // NEPO-25: the approval queue merges into the same "Việc cần xử lý" rail —
+  // two action surfaces for pending work read as duplication (verdict §d).
+  const approvalRows = useMemo(
+    () => (approvalQueue?.items ?? []).filter(item => item.type !== 'debtOffsets'),
+    [approvalQueue],
+  );
+  const mergedAttention = useMemo(
+    () => mergeAttentionRows(orderedAttention, approvalRows),
+    [orderedAttention, approvalRows],
+  );
 
   // ── Loading state (must be AFTER all hooks) ────────────────────────────
   if (loading) {
@@ -407,7 +430,7 @@ export default function DashboardPage() {
           )
         )}
 
-        {/* Hero 1 — Chart (8 cols × 2 rows) */}
+        {/* Hero 1 — Chart (8 cols @≥1280; fixed-height body per NEPO-25 §a) */}
         <RevenueChartCard
           dailyLabels={dailyChartData.labels}
           dailyRevenue={dailyChartData.revenue}
@@ -419,26 +442,21 @@ export default function DashboardPage() {
           onChartViewChange={setChartView}
           currentMonth={currentMonth}
           currentYear={currentYear}
+          monthTotalM={chartStats.totalM}
+          dayAvgM={chartStats.avgM}
+          dayPeakM={chartStats.peakM}
           onNavigate={navigate}
         />
 
-        {/* Action rail — approvals first (NEPO-15 verdict 5: pending actions
-            belong above the fold, not in a bottom band), then the decision
-            board. Both 4 cols, stacked beside the 2-row hero. */}
-        {showApprovalQueue && (
-          <div className="wf-bento-third wf-rail">
-            <ApprovalQueueCard
-              data={approvalQueue}
-              loading={approvalQueueLoading}
-              navigate={navigate}
-            />
-          </div>
-        )}
-
+        {/* Action rail (NEPO-25 §c/§d): ONE "Việc cần xử lý" list — decision
+            board + approval queue merged, sorted severity → time, rows
+            44–48px. 4 cols beside the hero @≥1280; full-width below the
+            chart @1024–1279 (2-column list when >5 items). */}
         <AttentionBoard
-          orderedAttention={orderedAttention}
-          visibleAttention={visibleAttention}
-          showAllAttention={showAllAttention}
+          rows={mergedAttention}
+          approvalCount={approvalRows.length}
+          loadingApprovals={approvalQueueLoading}
+          showAll={showAllAttention}
           onToggleShowAll={() => setShowAllAttention(value => !value)}
           onNavigate={navigate}
         />
