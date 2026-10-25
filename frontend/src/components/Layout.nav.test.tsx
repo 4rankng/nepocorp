@@ -13,9 +13,9 @@ describe('nav labels — Bảng số liệu rename (NEPO-3)', () => {
   for (const { role, label } of officeRoles) {
     it(`${label} nav shows the item as "Bảng số liệu" under the unchanged key`, () => {
       const items = getNavItems(role);
-      const item = items.find((i) => i.key === 'bang-ke-hoach');
+      const item = items.find((i) => i.key === 'ledger');
       expect(item?.label).toBe('Bảng số liệu');
-      expect(item?.path).toBe('/bang-ke-hoach');
+      expect(item?.path).toBe('/ledger');
     });
 
     it(`${label} nav carries no stale "Bảng kế hoạch" label`, () => {

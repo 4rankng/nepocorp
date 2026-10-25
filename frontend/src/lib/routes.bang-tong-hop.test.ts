@@ -8,13 +8,13 @@ import { titleForPath } from './routes';
  * untouched /trips entry.
  */
 describe('page title — Bảng số liệu (NEPO-3)', () => {
-  it('titleForPath resolves /bang-ke-hoach to the new name', () => {
-    expect(titleForPath('/bang-ke-hoach')).toBe('Bảng số liệu');
+  it('titleForPath resolves /ledger to the new name', () => {
+    expect(titleForPath('/ledger')).toBe('Bảng số liệu');
   });
 
   it('catalog entry keeps the path but renames title + description', () => {
     expect(PAGE_CATALOG.bangKeHoach.title).toBe('Bảng số liệu');
-    expect(PAGE_CATALOG.bangKeHoach.path).toBe('/bang-ke-hoach');
+    expect(PAGE_CATALOG.bangKeHoach.path).toBe('/ledger');
     expect(PAGE_CATALOG.bangKeHoach.agent?.description).toContain('Bảng số liệu');
     expect(PAGE_CATALOG.bangKeHoach.agent?.description).not.toContain('Bảng kế hoạch');
   });

@@ -139,7 +139,8 @@ function AppRoutes() {
           <Route path="/trips/new" element={adminOnly(page(<TripCreatePage />))} />
           <Route path="/trips/:id" element={adminOnly(page(<TripDetailPage />))} />
           <Route path="/trips/:id/edit" element={adminOnly(page(<TripEditPage />))} />
-          <Route path="/bang-ke-hoach" element={officeStaffOnly(page(<BangKeHoachPage />))} />
+          <Route path="/ledger" element={officeStaffOnly(page(<BangKeHoachPage />))} />
+          <Route path="/bang-ke-hoach" element={<Navigate to="/ledger" replace />} />
           <Route path="/finance" element={adminOnly(page(<FinancePage />))} />
           <Route path="/profit" element={adminOnly(page(<ProfitPage />))} />
           <Route path="/debt" element={adminOnly(page(<DebtListPage />))} />

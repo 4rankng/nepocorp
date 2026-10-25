@@ -76,7 +76,7 @@ export const PAGE_CATALOG = {
   },
   bangKeHoach: {
     title: 'Bảng số liệu',
-    path: '/bang-ke-hoach',
+    path: '/ledger',
     section: 'operations',
     agent: {
       description: 'Bảng số liệu — bảng thu chi hợp nhất một lệnh một dòng: kế hoạch, doanh thu, tạm ứng/hoàn ứng, chi phí, kết quả; sửa trực tiếp từng ô theo nhóm quyền.',

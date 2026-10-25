@@ -62,7 +62,7 @@ export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?:
         // Pete 24/10: kế toán không cần thấy Điều vận — chỉ ẩn nav, MANAGER/ADMIN giữ nguyên.
         ...(role === 'ACCOUNTANT' ? [] : [{ key: 'dispatch', label: 'Điều vận', path: routes.dispatch, icon: Compass, section: 'operations' as const, count: dispatchCount }]),
         { key: 'trips', label: 'Kế hoạch vận chuyển', path: routes.trips, icon: Truck, section: 'operations' },
-        { key: 'bang-ke-hoach', label: 'Bảng số liệu', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
+        { key: 'ledger', label: 'Bảng số liệu', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
 
         { key: 'salary', label: 'Lương & Chấm công', path: routes.salary, icon: CalendarDays, section: 'hr' },
         { key: 'penalties', label: 'Kỷ luật', path: routes.penalties, icon: AlertTriangle, section: 'hr', count: penaltiesCount },
