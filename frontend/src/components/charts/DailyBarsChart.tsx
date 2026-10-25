@@ -174,7 +174,7 @@ export function DailyBarsChart({
         {gridValues.map((v, i) => (
           <g key={i}>
             <line x1={mL} y1={Y(v)} x2={W - mR} y2={Y(v)} stroke="#EEF1EF" strokeWidth="1" />
-            <text x={mL - 10} y={Y(v) + 3.5} textAnchor="end" fontFamily="JetBrains Mono, monospace" fill="#56655C">
+            <text x={mL - 10} y={Y(v) + 3.5} textAnchor="end" fill="#56655C">
               <tspan fontSize={W < 420 ? '9' : '10'}>{fmtY(v)}</tspan>
             </text>
           </g>
@@ -183,7 +183,7 @@ export function DailyBarsChart({
         {/* X-axis day labels (thinned on long months) */}
         {labels.map((d, i) => (
           (i % labelStep === 0 || i === n - 1) ? (
-            <text key={i} x={lineX(i)} y={H - 10} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="11"
+            <text key={i} x={lineX(i)} y={H - 10} textAnchor="middle" fontSize="11"
                   fill={i === activeIdx ? '#005A2D' : '#8A988F'}
                   fontWeight={i === activeIdx ? '700' : '400'}>
               {d}
@@ -216,7 +216,7 @@ export function DailyBarsChart({
         {monthAvg > 0 && (
           <g>
             <line x1={mL} y1={Y(monthAvg)} x2={W - mR} y2={Y(monthAvg)} stroke="#8A988F" strokeWidth="1" strokeDasharray="2 4" opacity={0.7} />
-            <text x={W - mR} y={Y(monthAvg) - 4} textAnchor="end" fontFamily="JetBrains Mono, monospace" fontSize="9" fill="#8A988F">TB/ngày</text>
+            <text x={W - mR} y={Y(monthAvg) - 4} textAnchor="end" fontSize="9" fill="#8A988F">TB/ngày</text>
           </g>
         )}
 
@@ -224,7 +224,7 @@ export function DailyBarsChart({
         {todayIdx != null && todayIdx >= 0 && todayIdx < n && (
           <g>
             <line x1={lineX(todayIdx)} y1={mT} x2={lineX(todayIdx)} y2={mT + pH} stroke="#56655C" strokeWidth="1" strokeDasharray="2 3" opacity={0.5} />
-            <text x={lineX(todayIdx)} y={mT + 9} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="9" fill="#56655C">Hôm nay</text>
+            <text x={lineX(todayIdx)} y={mT + 9} textAnchor="middle" fontSize="9" fill="#56655C">Hôm nay</text>
           </g>
         )}
 
@@ -241,7 +241,7 @@ export function DailyBarsChart({
         {/* Direct end-of-line label — legend becomes reinforcement, not the
             only key (consult NEPO-26) */}
         {lastDataIdx >= 0 && (
-          <text x={lineX(lastDataIdx)} y={Y(gross[lastDataIdx] || 0) - 9} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="9.5" fontWeight="700" fill="#C2780B">LN gộp</text>
+          <text x={lineX(lastDataIdx)} y={Y(gross[lastDataIdx] || 0) - 9} textAnchor="middle" fontSize="9.5" fontWeight="700" fill="#C2780B">LN gộp</text>
         )}
 
         {/* Hover crosshair + dots — dots only where the day has figures;
@@ -318,22 +318,22 @@ export function DailyBarsChart({
             zIndex: 10,
           }}
         >
-          <div style={{ textAlign: 'center', fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', fontWeight: 600, color: '#56655C', marginBottom: '8px' }}>
+          <div style={{ textAlign: 'center', fontSize: '12px', fontWeight: 600, color: '#56655C', marginBottom: '8px' }}>
             Ngày {labels[activeIdx]}{activeIdx === todayIdx ? ' · Hôm nay' : ''}
           </div>
           <div style={{ height: 1, background: '#EEF1EF', margin: '0 -14px 8px -14px' }} />
           {!hasDay ? (
-            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#8A988F', textAlign: 'center', padding: '2px 0' }}>
+            <div style={{ fontSize: '12px', color: '#8A988F', textAlign: 'center', padding: '2px 0' }}>
               Không có số liệu
             </div>
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
                   Doanh thu (chưa VAT)
                 </div>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
                   {fmtTip(dayRev)}
                   {dayDelta != null && (
                     <span style={{ fontSize: '10.5px', fontWeight: 500, color: dayDelta >= 0 ? '#0B8745' : '#C7372F', marginLeft: 6 }}>
@@ -343,20 +343,20 @@ export function DailyBarsChart({
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C2780B' }} />
                   LN gộp
                 </div>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12.5px', fontWeight: 700, color: '#C2780B', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#C2780B', whiteSpace: 'nowrap' }}>
                   {fmtTip(dayGross)}
                 </div>
               </div>
               {marginPct != null && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center' }}>
-                  <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: '#8A988F', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '12px', color: '#8A988F', whiteSpace: 'nowrap' }}>
                     Biên LN gộp
                   </div>
-                  <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', fontWeight: 600, color: '#56655C', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#56655C', whiteSpace: 'nowrap' }}>
                     {marginPct.toFixed(1)}%
                   </div>
                 </div>
