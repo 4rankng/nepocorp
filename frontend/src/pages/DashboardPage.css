@@ -1294,11 +1294,13 @@
   font-size: var(--fs-xs);
   color: var(--wf-green-700);
   background: var(--wf-green-soft);
-  padding: 2px 9px;
+  /* Standard 20px count chip — same footprint as other header badges. */
+  height: 20px;
+  line-height: 20px;
+  padding: 0 8px;
   border-radius: 999px;
-  min-width: 24px;
+  min-width: 20px;
   text-align: center;
-  line-height: 1.6;
 }
 .dash-wf .approval-queue__head-actions {
   display: flex;
@@ -1391,7 +1393,7 @@
 .dash-wf .approval-queue__row {
   display: grid;
   /* icon | title/subtitle | amount | quick-approve | chevron */
-  grid-template-columns: 28px minmax(0, 1fr) auto auto 14px;
+  grid-template-columns: 28px minmax(0, 1fr) auto auto 16px;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -1403,10 +1405,13 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background 120ms ease, box-shadow 120ms ease;
 }
+/* Hover/selection highlight — light Untitled UI tint + 2px left accent,
+   no metric changes (row size stays identical when highlighted). */
 .dash-wf .approval-queue__row:hover {
-  background: var(--wf-bg);
+  background: #F9FAFB;
+  box-shadow: inset 2px 0 0 var(--wf-green);
 }
 .dash-wf .approval-queue__row:focus-visible {
   outline: 2px solid var(--wf-green);
@@ -1452,6 +1457,8 @@
   overflow: visible;
   overflow-wrap: anywhere;
 }
+/* Compact title (amount-prefix stripped) is a mobile-only variant. */
+.dash-wf .approval-queue__t--compact { display: none; }
 .dash-wf .approval-queue__s {
   font-size: var(--fs-xs);
   color: var(--wf-ink-3);
@@ -1496,30 +1503,39 @@
 }
 
 /* Quick-approve tick button — sits between the amount and the chevron.
-   Small circular icon button that does NOT trigger row navigation
-   (the row's onClick is stopped via e.stopPropagation in the handler). */
+   Standard 40×40 ghost icon-button (icon 20px); NOT bigger. Hit area is
+   extended to 44px via ::after without growing the visual. Does NOT trigger
+   row navigation (the row's onClick is stopped via e.stopPropagation). */
 .dash-wf .approval-queue__quick {
   grid-column: 4;
-  width: 45px;
-  height: 45px;
-  border-radius: 8px;
-  border: 1px solid var(--wf-border-2);
-  background: var(--surface);
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
   color: var(--wf-ink-3);
   display: grid;
   place-items: center;
   cursor: pointer;
   flex: 0 0 auto;
   padding: 0;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 80ms ease;
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+.dash-wf .approval-queue__quick::after {
+  content: '';
+  position: absolute;
+  inset: -2px;   /* 40px visual → 44px hit area */
+  border-radius: 12px;
 }
 .dash-wf .approval-queue__quick:hover {
-  background: var(--wf-green);
-  color: var(--fg-on-brand);
-  border-color: var(--wf-green);
+  background: var(--wf-green-soft);
+  color: var(--wf-green-700);
 }
 .dash-wf .approval-queue__quick:active {
-  background: var(--wf-green-700);
+  background: var(--wf-green-soft);
+  color: var(--wf-green);
+  box-shadow: inset 0 0 0 1px var(--wf-green);
 }
 .dash-wf .approval-queue__quick:focus-visible {
   outline: 2px solid var(--wf-green);
@@ -1529,19 +1545,56 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+/* Spec icons: 20px wallet (leading) + 20px tick — beats the dashboard-wide
+   16px svg safety net above, scoped to this card only. Chevron keeps 16px. */
+.dash-wf .approval-queue__ic svg,
+.dash-wf .approval-queue__quick svg {
+  width: 20px !important;
+  height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+}
 .dash-wf .approval-queue__quick svg.spin {
   animation: wf-spin 0.8s linear infinite;
 }
 @container approval-queue (max-width: 520px) {
+  /* Compact single-row list (NEPO-26): [icon] [title/sub] [amount] [tick] [chevron],
+     64px rows with hairline dividers — the tick never gets its own row. */
   .dash-wf .approval-queue__row {
-    grid-template-columns: 28px minmax(0, 1fr) auto 14px;
-    gap: 8px;
+    grid-template-columns: 28px minmax(0, 1fr) auto auto 16px;
+    gap: 6px;
+    padding: 12px 8px;
+    min-height: 64px;
+    border-radius: 0;
   }
-  .dash-wf .approval-queue__ic { grid-area: 1 / 1; }
-  .dash-wf .approval-queue__tx { grid-area: 1 / 2 / 2 / 4; }
-  .dash-wf .approval-queue__caret { grid-area: 1 / 4; }
-  .dash-wf .approval-queue__amt { grid-area: 2 / 2; }
-  .dash-wf .approval-queue__quick { grid-area: 2 / 3 / 3 / 5; }
+  .dash-wf .approval-queue__row + .approval-queue__row {
+    border-top: 1px solid var(--wf-border);
+  }
+  /* The amount column already shows the figure — swap to the prefix-stripped
+     title and drop the type tag (the colored wallet icon carries the type). */
+  .dash-wf .approval-queue__t--full { display: none; }
+  .dash-wf .approval-queue__t--compact {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dash-wf .approval-queue__tag { display: none; }
+  .dash-wf .approval-queue__s {
+    font-size: 12px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dash-wf .approval-queue__amt {
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .dash-wf .approval-queue__amt i { font-size: 12px; }
 }
 @keyframes wf-spin {
   to { transform: rotate(360deg); }

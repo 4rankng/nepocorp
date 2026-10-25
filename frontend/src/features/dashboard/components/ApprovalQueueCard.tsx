@@ -16,10 +16,10 @@ const TYPE_LABEL: Partial<Record<ApprovalItemType, string>> = {
 };
 
 const TYPE_ICON: Partial<Record<ApprovalItemType, React.ReactNode>> = {
-  ancillaryFees: <Receipt size={14} strokeWidth={2.2} />,
-  advances: <Wallet size={14} strokeWidth={2.2} />,
-  advanceSettlementsCheck: <FileCheck2 size={14} strokeWidth={2.2} />,
-  advanceSettlementsApprove: <CheckCircle2 size={14} strokeWidth={2.2} />,
+  ancillaryFees: <Receipt size={20} strokeWidth={2.2} />,
+  advances: <Wallet size={20} strokeWidth={2.2} />,
+  advanceSettlementsCheck: <FileCheck2 size={20} strokeWidth={2.2} />,
+  advanceSettlementsApprove: <CheckCircle2 size={20} strokeWidth={2.2} />,
 };
 
 const TYPE_ICON_CLASS: Partial<Record<ApprovalItemType, string>> = {
@@ -30,6 +30,18 @@ const TYPE_ICON_CLASS: Partial<Record<ApprovalItemType, string>> = {
 };
 
 const fmtVN = (n: number) => Math.round(n).toLocaleString('vi-VN');
+
+/**
+ * Mobile rows show the amount in a dedicated right column, so the
+ * "Tạm ứng 20.000.000 ₫ — " head of the title is redundant there. Strip it
+ * (best-effort: only when the title literally leads with `<anything>
+ * <formatted amount> ₫/đ — `) and keep the full title in the `title`
+ * tooltip + the row's aria-label. Desktop keeps the full string.
+ */
+function compactTitle(title: string, amount: number): string {
+  const fmt = fmtVN(amount).replace(/\./g, '\\.');
+  return title.replace(new RegExp(`^.{0,40}?${fmt}\\s*[₫đ]\\s*[—–-]\\s*`), '');
+}
 
 const GROUP_ORDER: ApprovalItemType[] = [
   'ancillaryFees',
@@ -233,7 +245,10 @@ function Row({
         {TYPE_ICON[item.type]}
       </span>
       <span className="approval-queue__tx">
-        <span className="approval-queue__t" title={item.title}>{item.title}</span>
+        <span className="approval-queue__t approval-queue__t--full" title={item.title}>{item.title}</span>
+        <span className="approval-queue__t approval-queue__t--compact" title={item.title}>
+          {compactTitle(item.title, item.amount)}
+        </span>
         <span className="approval-queue__s">
           {showTypeLabel && <span className="approval-queue__tag">{TYPE_LABEL[item.type]}</span>}
           <span>{item.subtitle}</span>
@@ -249,10 +264,10 @@ function Row({
           title={error ? `Lỗi: ${error}` : QUICK_ACTION_LABEL[item.type]}
           aria-label={QUICK_ACTION_LABEL[item.type]}
         >
-          {approving ? <Loader2 size={14} className="spin" /> : <Check size={14} strokeWidth={2.6} />}
+          {approving ? <Loader2 size={20} className="spin" /> : <Check size={20} strokeWidth={2.4} />}
         </button>
       )}
-      <ChevronRight size={14} strokeWidth={2.2} className="approval-queue__caret" />
+      <ChevronRight size={16} strokeWidth={2.2} className="approval-queue__caret" />
     </div>
   );
 }
