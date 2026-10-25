@@ -125,3 +125,33 @@ describe('Loại chi phí filter (listExpenses.vehicleComponent)', () => {
     }
   });
 });
+
+// NEPO-24: the toolbar search box ("Tìm NCC, mã phiếu…") rides the list query
+// as `search` — supplier-name substring (case-insensitive) or exact expense id
+// when the term is numeric.
+describe('listExpenses free-text search (NEPO-24)', () => {
+  test('matches a supplier-name substring case-insensitively', async () => {
+    const lower = await listExpenses(db, { search: `ncc ${SUFFIX}`, page: 1, pageSize: 100, ...WINDOW });
+    assert.equal(lower.total, 3, 'lowercase supplier fragment matches all three fixture rows');
+
+    const exact = await listExpenses(db, { search: SUFFIX, page: 1, pageSize: 100, ...WINDOW });
+    assert.equal(exact.total, 3);
+  });
+
+  test('matches an expense id when the term is numeric (mã phiếu)', async () => {
+    const page = await listExpenses(db, { search: String(companyExpense.id), page: 1, pageSize: 100, ...WINDOW });
+    const ids = page.items.map(e => e.id);
+    assert.ok(ids.includes(companyExpense.id), 'numeric term matches the expense with that id');
+  });
+
+  test('LIKE wildcards in the term are matched literally', async () => {
+    const page = await listExpenses(db, { search: '%', page: 1, pageSize: 100, ...WINDOW });
+    assert.equal(page.total, 0, 'a bare % must not match every row');
+  });
+
+  test('total stays consistent with the filtered items (count query joins suppliers)', async () => {
+    const page = await listExpenses(db, { search: SUFFIX, page: 1, pageSize: 2, ...WINDOW });
+    assert.equal(page.total, 3, 'count spans all matches, not the page');
+    assert.equal(page.items.length, 2, 'items respect pageSize');
+  });
+});

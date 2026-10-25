@@ -32,4 +32,13 @@ describe('buildExpenseListSearchParams', () => {
     const query = buildExpenseListSearchParams({ page: 1, pageSize: 20, vehicleComponent: undefined });
     expect(query.has('vehicleComponent')).toBe(false);
   });
+
+  /** NEPO-24: the "Tìm NCC, mã phiếu…" box rides the query string as `q`. */
+  it('sends the search text as q and omits it when empty', () => {
+    const query = buildExpenseListSearchParams({ page: 1, pageSize: 20, q: 'Sáng Bình' });
+    expect(query.get('q')).toBe('Sáng Bình');
+
+    const cleared = buildExpenseListSearchParams({ page: 1, pageSize: 20, q: undefined });
+    expect(cleared.has('q')).toBe(false);
+  });
 });

@@ -8,6 +8,8 @@ export interface ExpenseListQuery {
   vehicleComponent?: 'COMPANY' | 'TRUCK' | 'TRAILER';
   dateFrom?: string;
   dateTo?: string;
+  /** NEPO-24 free-text search: supplier name substring or expense id. */
+  q?: string;
 }
 
 /**
@@ -26,5 +28,6 @@ export function buildExpenseListSearchParams(params: ExpenseListQuery): URLSearc
   if (params.vehicleComponent) qs.set('vehicleComponent', params.vehicleComponent);
   if (params.dateFrom) qs.set('fromDate', params.dateFrom);
   if (params.dateTo) qs.set('toDate', params.dateTo);
+  if (params.q) qs.set('q', params.q);
   return qs;
 }

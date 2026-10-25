@@ -1,237 +1,361 @@
 /* ============================================================================
- * Expense List Page — Refined Design
- * Polished KPI cards, filter bar, and data table
+ * Expense List Page — NEPO-24 data-dense header
+ * Inline metric cluster beside the H1, 1-row toolbar (popover/sheet on small
+ * screens), active-filter chips, dense table. The 3 stat cards are gone —
+ * their figures live in the header metric (consult verdict 24/10).
  * ========================================================================== */
 
-/* ── KPI Cards ──────────────────────────────────────────────────────────── */
-
-.expense-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.expense-kpi-card {
-  --stat-rail: var(--accent);
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  /* NEPO-16 density tokens (data-dense law 27/9): 14/16px instead of the
-     old 20/24px — the cards used to push the table a full band down. */
-  padding: var(--kpi-pad-y) var(--kpi-pad-x);
-  overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.25s ease,
-              border-color 0.25s ease;
-}
-.expense-kpi-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: var(--status-strip-width);
-  height: var(--status-strip-height);
-  border-radius: var(--status-strip-radius);
-  background: var(--stat-rail);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.expense-kpi-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
-  border-color: var(--line-2);
-}
-
-/* Variant: total (default) */
-.expense-kpi-card--total {
-  --stat-rail: var(--ink-3);
-  background: var(--surface);
-}
-
-/* Variant: unpaid */
-.expense-kpi-card--unpaid {
-  --stat-rail: var(--warning);
-  background: var(--surface);
-  border-color: color-mix(in srgb, var(--warning) 25%, transparent);
-}
-
-/* Variant: paid */
-.expense-kpi-card--paid {
-  --stat-rail: var(--accent);
-  background: var(--surface);
-  border-color: rgba(0, 177, 79, 0.25);
-}
-
-.expense-kpi-label {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--ink-3);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 10px;
+/* ── Inline metric cluster (inside PageHeader `metrics`) ───────────────────
+   Verdict spec: label 11px uppercase muted, value 16px/600 tabular, sub 11px
+   fainter; cluster ~32px tall, 24px gaps, vertical hairline divider comes
+   from .page-header-metrics. Colors retokenized to the NEPO ramp (ADR 0043):
+   #667085→--ink-3 · #98A2B3→--ink-4 · #B54708-on-#FFFAEB→--warning-text on
+   --warning-soft. */
+.expense-metric {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 24px;
+  min-height: 32px;
 }
 
-.expense-kpi-label__icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-.expense-kpi-label__icon img {
-  width: 22px;
-  height: 22px;
+.expense-metric__item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
 }
 
-.expense-kpi-card--total .expense-kpi-label__icon {
-  background: var(--surface-3);
-  color: var(--ink-2);
+.expense-metric__label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-.expense-kpi-card--unpaid .expense-kpi-label__icon {
+.expense-metric__value {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.expense-metric__unit {
+  font-size: var(--fs-md);
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.expense-metric__sub {
+  font-size: var(--fs-xs);
+  color: var(--ink-4);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* "Chưa trả" chip — renders only while unpaidCount > 0 (hidden at 0). */
+.expense-metric__chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
   background: var(--warning-soft);
   color: var(--warning-text);
-}
-
-.expense-kpi-card--paid .expense-kpi-label__icon {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.expense-kpi-value {
-  font-family: var(--font-display);
-  font-size: var(--kpi-value-size);
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 1.35;
-  margin-bottom: 4px;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow-wrap: normal;
-}
-
-.expense-kpi-value-unit {
   font-size: var(--fs-md);
-  line-height: 1.35;
-  color: var(--ink-3);
   font-weight: 500;
-  margin-left: 3px;
+  white-space: nowrap;
 }
 
-.expense-kpi-meta {
-  font-size: var(--fs-xs);
-  line-height: 1.35;
-  color: var(--ink-3);
-  font-family: var(--font-body);
-  font-weight: 500;
+/* ── Toolbar — 1 hàng desktop, popover tablet, bottom sheet mobile ─────────
+   Verdict: row 44px, controls 40px, gap 8px: Search 280 · Hạng mục 160 ·
+   Xe 160 · Loại chi 160 · Khoảng ngày 220 · Bộ lọc 96. Mobile-first base
+   below; sizes widen at ≥641px. */
+.expense-toolbar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: 8px;
 }
 
-.expense-kpi-card--unpaid .expense-kpi-meta {
-  color: var(--warning-text);
-}
-
-.expense-kpi-card--paid .expense-kpi-meta {
-  color: var(--accent);
-}
-
-/* ── Filter Bar ─────────────────────────────────────────────────────────── */
-
-.expense-filter-bar {
+.expense-toolbar__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 100%;
+  height: 44px;
+  padding: 0 12px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  align-items: center;
-  gap: 12px;
-  transition: box-shadow 0.2s ease;
-}
-
-.expense-filter-bar:focus-within {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-
-.expense-filter-bar__select,
-.expense-filter-bar__date {
-  height: var(--control-h);
-  min-height: var(--control-h);
-  padding: 0 32px 0 12px;
-  background: var(--surface-2);
-  border: 1px solid transparent;
   border-radius: 10px;
+  color: var(--ink-3);
+}
+
+.expense-toolbar__search:focus-within {
+  border-color: var(--accent);
+}
+
+.expense-toolbar__search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
   font-size: var(--fs-md);
-  color: var(--ink);
   font-family: var(--font-body);
+  color: var(--ink);
+}
+.expense-toolbar__search input::placeholder { color: var(--ink-4); }
+.expense-toolbar__search input::-webkit-search-cancel-button { display: none; }
+
+.expense-toolbar__search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--ink-2);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+
+.expense-toolbar__select {
   appearance: none;
   -webkit-appearance: none;
+  height: 44px;
+  min-width: 0;
+  width: 100%;
+  padding: 0 32px 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: var(--fs-md);
+  font-family: var(--font-body);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238B919B' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 10px center;
   background-repeat: no-repeat;
   background-size: 16px 16px;
-  min-width: 0;
-  width: 100%;
 }
 
-.expense-filter-bar__select:hover,
-.expense-filter-bar__date:hover {
-  background: var(--surface);
-  border-color: var(--line-2);
-}
-
-.expense-filter-bar__select:focus,
-.expense-filter-bar__date:focus {
+.expense-toolbar__select:hover { border-color: var(--line-2); }
+.expense-toolbar__select:focus {
   outline: none;
   border-color: var(--accent);
-  background: var(--surface);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-.expense-filter-bar__date {
-  min-width: 140px;
-  padding-right: 12px;
-  background-image: none;
+.expense-toolbar__dates {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
 }
 
-.expense-filter-bar__divider {
-  display: none;
-  width: 1px;
-  height: 24px;
-  background: var(--line-2);
+.expense-toolbar__date {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--fs-md);
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+.expense-toolbar__dates-sep {
+  color: var(--ink-4);
   flex-shrink: 0;
 }
 
-.expense-filter-bar__reset {
+.expense-toolbar__more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 100%;
+  height: 44px;
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.expense-toolbar__more:hover { border-color: var(--line-2); }
+.expense-toolbar__more[aria-expanded='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.expense-toolbar__reset {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 36px;
+  height: 40px;
   padding: 0 14px;
   border-radius: 10px;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-md);
   font-weight: 600;
+  font-family: var(--font-body);
   color: var(--ink-3);
   background: transparent;
   border: 1px dashed var(--line-2);
   cursor: pointer;
-  transition: all 0.15s ease;
   white-space: nowrap;
 }
 
-.expense-filter-bar__reset:hover {
+.expense-toolbar__reset:hover {
   color: var(--danger);
   border-color: var(--danger);
   background: var(--danger-soft);
+}
+
+/* ── "Bộ lọc" popover (tablet) / bottom sheet (compact) ─────────────────── */
+
+.expense-toolbar__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: transparent;
+}
+
+.expense-toolbar__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 81;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.expense-toolbar__panel .expense-toolbar__select { width: 100%; }
+.expense-toolbar__panel .expense-toolbar__dates { width: 100%; }
+
+.expense-toolbar__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.expense-toolbar__panel-head button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+/* Bottom sheet on phones: full-width panel docked to the bottom edge. */
+.expense-toolbar__panel--sheet {
+  position: fixed;
+  top: auto;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  border-radius: 16px 16px 0 0;
+  border-bottom: none;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  max-height: 72vh;
+  overflow: auto;
+}
+
+.expense-toolbar__overlay {
+  /* dim only when the sheet is up (compact); the popover keeps a plain
+     click-catcher — set from the media query below. */
+}
+
+@media (max-width: 640px) {
+  .expense-toolbar__overlay { background: rgba(15, 23, 19, 0.4); }
+}
+
+/* ── Active-filter chips (below the toolbar, <1280 only) ────────────────── */
+
+.expense-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 8px;
+  scrollbar-width: thin;
+}
+
+.expense-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.expense-chip button {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 0;
+}
+
+.expense-chip--reset {
+  background: transparent;
+  border-style: dashed;
+  color: var(--ink-3);
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.expense-chip--reset:hover {
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 /* ── Data Table ─────────────────────────────────────────────────────────── */
@@ -254,9 +378,12 @@
   min-width: 860px;
 }
 
+/* NEPO-24 verdict: header band 40px, sticky under the app topbar. */
 .expense-table thead th {
   text-align: left;
-  padding: 12px 16px;
+  vertical-align: middle;
+  height: 40px;
+  padding: 0 16px;
   background: linear-gradient(180deg, var(--surface-2) 0%, rgba(247, 248, 250, 0.8) 100%);
   border-bottom: 1px solid var(--line);
   font-family: var(--font-body);
@@ -275,11 +402,11 @@
   text-align: right;
 }
 
+/* NEPO-24 verdict: 56px rows — the two-line date cell ("phát sinh" + "Nhập")
+   gets real breathing room instead of the 44px floor. */
 .expense-table tbody td {
-  /* NEPO-17 AC4: dense 44px row floor (token from Density.css) — height acts
-     as min-height on table cells, so two-line date cells still grow. */
-  height: var(--table-row-min-h);
-  padding: 9px 16px;
+  height: 56px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
   color: var(--ink);
@@ -293,12 +420,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Ngày phát sinh / ngày nhập ───────────────────────────────────────────
-   Both dates were inline-styled plain text — "phát sinh 3/10/2026" then
-   "nhập 6/10/2026" — lowercase sentence fragments with the SECONDARY line set
-   larger than the primary (--fs-body 12px vs the table's --fs-sm 11px) and
-   washed out at --ink-4. The column now reads as structured data: a prominent
-   tabular date, then a labelled "Nhập" line when the expense was backfilled. */
+/* ── Ngày phát sinh / ngày nhập ─────────────────────────────────────────── */
 .expense-date {
   position: relative;
   display: flex;
@@ -332,9 +454,7 @@
   letter-spacing: 0.06em;
 }
 
-/* ── Long text columns wrap; status + action stay pinned (kanban 20260921_9) ──
-   Supplier/category names used to stretch the table past its container and push
-   the status label and the chevron off the right edge. */
+/* ── Long text columns wrap; status + action stay pinned ────────────────── */
 .expense-table thead th:nth-child(2),
 .expense-table tbody td:nth-child(2),
 .expense-table thead th:nth-child(3),
@@ -405,12 +525,13 @@
   background: linear-gradient(90deg, rgba(0, 177, 79, 0.03) 0%, rgba(0, 177, 79, 0.015) 100%);
 }
 
-/* ── Amount Cell ────────────────────────────────────────────────────────── */
+/* ── Amount Cell — verdict: right-align 14/600 tabular ──────────────────── */
 
 .expense-amount {
   font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--fs-sm);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0;
   line-height: 1.35;
 }
@@ -420,23 +541,24 @@
 }
 
 .expense-amount--paid {
-  color: var(--accent);
+  color: var(--success);
 }
 
-/* ── Status Badge ───────────────────────────────────────────────────────── */
+/* ── Status Badge — verdict: 22px pill ──────────────────────────────────── */
 
 .expense-status {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  height: 22px;
+  padding: 0 10px;
   border-radius: 999px;
   font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
-  line-height: 1.35;
+  line-height: 1;
 }
 
 .expense-status--unpaid {
@@ -511,31 +633,85 @@
   color: var(--ink-3);
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────── */
+/* ── Header typography for this page (verdict: H1 24/32 desktop) ────────── */
 
-@media (max-width: 1023px) {
-  .expense-kpi-grid {
-    gap: 12px;
-  }
+.expense-list-page .page-title {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-bottom: 0;
+}
 
-  .expense-filter-bar {
-    padding: 12px;
-    gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* ── Compact header actions (≤640, verdict d): icon 40px + overflow ─────── */
 
-  .expense-filter-bar__select,
-  .expense-filter-bar__date {
-    min-width: 0;
-  }
+.expense-actions-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .expense-filter-bar__divider {
-    display: none;
-  }
+.expense-list-page .page-actions .expense-actions-compact .btn,
+.expense-list-page .expense-actions-compact .btn {
+  flex: 0 0 40px;
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 13px;
+}
 
-  .expense-filter-bar__reset {
-    justify-content: center;
-  }
+.expense-actions-compact__wrap {
+  position: relative;
+  display: flex;
+}
+
+.expense-actions-compact__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: transparent;
+}
+
+.expense-actions-compact__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 81;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.expense-actions-compact__menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: var(--fs-md);
+  font-family: var(--font-body);
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.expense-actions-compact__menu button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.expense-actions-compact__menu button:disabled {
+  color: var(--ink-4);
+  cursor: default;
 }
 
 /* ── Status Strip ──────────────────────────────────────────────────────── */
@@ -548,24 +724,143 @@
   position: relative;
 }
 
-/* ── Pass 15 mobile tweaks (2026-06-02) ──
-   The 3-select + date + reset filter bar was 150px tall on phone with
-   3 wrap rows of 36px controls. Tighten to ~110px by shrinking the
-   controls and padding. Page-scoped so it doesn't affect any other page
-   that reuses .expense-filter-bar styles. */
+/* ── Mobile card list (NEPO-24 d) ─────────────────────────────────────────
+   Card 12px padding, min-height 88px, gap 8px. Line 1: ngày + pill; line 2:
+   NCC 14/600; line 3: hạng mục · xe · bộ phận 12px muted; amount 16/600
+   right + chevron 16. */
+
+.expense-mcard {
+  padding: 12px;
+  min-height: 88px;
+  gap: 8px;
+}
+
+.expense-mcard__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.expense-mcard__date {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.expense-mcard__date-meta {
+  font-size: var(--fs-xs);
+  color: var(--ink-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expense-mcard__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.expense-mcard__lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expense-mcard__supplier {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expense-mcard__sub {
+  font-size: var(--fs-md);
+  color: var(--ink-3);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expense-mcard .expense-amount {
+  font-size: var(--fs-xl);
+  flex-shrink: 0;
+}
+
+.expense-mcard__chevron {
+  color: var(--ink-4);
+  flex-shrink: 0;
+}
+
+/* ── Toolbar at ≥641px: verdict sizes ───────────────────────────────────── */
+
+@media (min-width: 641px) {
+  .expense-toolbar__search {
+    flex: 0 0 280px;
+    height: 40px;
+  }
+
+  .expense-toolbar__select {
+    flex: 0 0 160px;
+    width: 160px;
+    height: 40px;
+  }
+
+  .expense-toolbar__dates {
+    flex: 0 0 220px;
+    width: 220px;
+    height: 40px;
+  }
+
+  .expense-toolbar__more {
+    flex: 0 0 auto;
+    height: 40px;
+    padding: 0 12px;
+  }
+
+  .expense-toolbar__reset {
+    height: 40px;
+    font-size: var(--fs-sm);
+  }
+
+  .expense-toolbar__panel .expense-toolbar__select,
+  .expense-toolbar__panel .expense-toolbar__dates {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+
+/* ── Compact header/toolbar (≤640): H1 20/28, chip wraps under metric ───── */
+
 @media (max-width: 640px) {
-  .expense-list-page .page-header {
-    margin-bottom: 12px;
-  }
-
   .expense-list-page .page-title {
-    font-size: var(--fs-2xl);
-    line-height: 1.35;
-    letter-spacing: 0;
+    font-size: 20px;
+    line-height: 28px;
   }
 
-  .expense-list-page .page-subtitle {
-    font-size: var(--fs-md);
+  .expense-metric {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .expense-toolbar {
+    margin-bottom: 4px;
+  }
+
+  .expense-chips {
+    margin-bottom: 8px;
   }
 
   .expense-list-page .page-actions,
@@ -594,196 +889,23 @@
     justify-content: center;
   }
 
-  .expense-list-page .expense-kpi-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .expense-list-page .expense-kpi-card {
-    min-height: 0;
-    padding: 12px 14px;
-    border-radius: 13px;
-  }
-
-  .expense-list-page .expense-kpi-card--total {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 14px 16px;
-  }
-
-  .expense-list-page .expense-kpi-label {
-    gap: 7px;
-    margin-bottom: 6px;
-    font-size: var(--fs-xs);
-    line-height: 1.35;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--ink-2);
-  }
-
-  .expense-list-page .expense-kpi-label__icon {
-    width: 26px;
-    height: 26px;
-  }
-
-  .expense-list-page .expense-kpi-value {
-    font-size: var(--fs-xl);
-    line-height: 1.35;
-    margin-bottom: 0;
-  }
-
-  .expense-list-page .expense-kpi-card:not(.expense-kpi-card--total) .expense-kpi-value {
-    font-size: var(--fs-3xl);
-  }
-
-  .expense-list-page .expense-kpi-value-unit {
-    font-size: var(--fs-sm);
-    line-height: 1.35;
-  }
-
-  .expense-list-page .expense-kpi-meta {
-    font-size: var(--fs-xs);
-    line-height: 1.35;
-    margin-top: 1px;
-  }
-
-  .expense-list-page .expense-filter-bar {
-    padding: 10px;
-    gap: 8px;
-    border-radius: 14px;
-    margin-bottom: 12px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .expense-list-page .expense-filter-bar__select,
-  .expense-list-page .expense-filter-bar__date {
-    min-height: 44px;
-    font-size: var(--fs-md);
-    padding: 0 28px 0 11px;
-    background-size: 14px 14px;
-    background-position: right 8px center;
-    border-radius: 10px;
-    border-color: rgba(16, 24, 20, 0.05);
-  }
-  .expense-list-page .expense-filter-bar__date {
-    padding-right: 10px;
-  }
-  .expense-list-page .expense-filter-bar__reset {
-    min-height: 44px;
-    padding: 0 11px;
-    font-size: var(--fs-xs);
-    grid-column: 1 / -1;
-  }
-
   .expense-list-page .mobile-table-wrap {
     padding: 0;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: var(--sh-sm);
   }
 
   .expense-list-page .m-card-list {
     gap: 0;
   }
 
-  .expense-list-page .m-card {
-    padding: 13px 14px 12px;
+  .expense-list-page .expense-mcard {
     border-bottom-color: var(--line);
   }
 
-  .expense-list-page .m-card__top {
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
-
-  .expense-list-page .m-card__title {
-    font-size: var(--fs-lg);
-    letter-spacing: 0;
-    line-height: 1.35;
-  }
-
-  .expense-list-page .m-card__meta {
-    margin-bottom: 8px;
-    font-size: var(--fs-xs);
-    line-height: 1.35;
-  }
-
-  .expense-list-page .expense-mobile-card__summary {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
-  }
-
-  .expense-list-page .expense-mobile-card__vehicle {
-    display: inline-flex;
-    align-items: flex-end;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 0;
-    color: var(--ink-2);
-    font-size: var(--fs-xs);
-    font-weight: 650;
-    text-align: right;
-  }
-
-  .expense-list-page .expense-mobile-card__component {
-    color: var(--ink);
-    font-family: var(--font-body);
-    font-size: var(--fs-xs);
-    line-height: 1.35;
-  }
-
-  .expense-list-page .expense-mobile-card__muted {
-    color: var(--ink-3);
-    font-size: var(--fs-xs);
-    font-weight: 600;
-  }
-
-  .expense-list-page .m-card__row {
-    display: grid;
-    grid-template-columns: 58px minmax(0, 1fr);
-    align-items: center;
-    margin-top: 4px;
-    gap: 8px;
-  }
-
-  .expense-list-page .m-card__row-label {
-    font-size: var(--fs-xs);
-  }
-
-  .expense-list-page .m-card__row-value {
-    justify-self: end;
-    text-align: right;
-    font-size: var(--fs-sm);
-  }
-
-  .expense-list-page .m-card__row-value.expense-amount {
-    font-size: var(--fs-lg);
-    line-height: 1.35;
-  }
-
-  .expense-list-page .expense-mobile-card__summary .expense-amount {
-    font-size: var(--fs-xl);
-    line-height: 1.35;
-  }
-
   .expense-list-page .expense-status {
-    padding: 5px 9px;
-    font-size: var(--fs-xs);
-    line-height: 1.35;
     letter-spacing: 0.035em;
-  }
-
-  .expense-list-page .expense-plate {
-    font-size: var(--fs-xs);
-    padding: 3px 8px;
   }
 }

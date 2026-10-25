@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, or, sql, desc, isNull, gte, lte } from 'drizzle-orm';
+import { eq, and, or, sql, desc, isNull, gte, lte, ilike } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -48,6 +48,11 @@ export interface ExpenseListFilters {
   vehicleComponent?: ExpenseVehicleComponent;
   fromDate?: string;
   toDate?: string;
+  /**
+   * Free-text search (NEPO-24): case-insensitive substring on the supplier
+   * name, or an exact expense id ("mã phiếu") when the term is numeric.
+   */
+  search?: string;
   page?: number;
   pageSize?: number;
 }
@@ -272,6 +277,20 @@ export async function listExpenses(dbOrTx: typeof db | Tx, filters: ExpenseListF
   if (filters.toDate) {
     conditions.push(lte(s.expenses.expenseDate, filters.toDate));
   }
+  // NEPO-24: "Tìm NCC, mã phiếu…" — supplier-name substring OR exact id when
+  // the term is a positive integer. LIKE wildcards in user input are escaped
+  // so "%"/"_" match literally. Both list queries below left-join suppliers,
+  // so referencing suppliers.name here is safe in each of them.
+  if (filters.search) {
+    const term = filters.search.trim();
+    const likeTerm = `%${term.replace(/[\\%_]/g, '\\$&')}%`;
+    const numericId = Number(term);
+    const searchFilter = or(
+      ilike(s.suppliers.name, likeTerm),
+      Number.isInteger(numericId) && numericId > 0 ? eq(s.expenses.id, numericId) : undefined,
+    );
+    if (searchFilter) conditions.push(searchFilter);
+  }
 
   const where = and(...conditions);
 
@@ -342,6 +361,10 @@ export async function listExpenses(dbOrTx: typeof db | Tx, filters: ExpenseListF
       .offset((page - 1) * pageSize),
     dbOrTx.select({ count: sql<number>`count(*)` })
       .from(s.expenses)
+      // NEPO-24: the search condition may reference suppliers.name, so the
+      // count query needs the same many-to-one left join. It cannot change
+      // the count (each expense matches at most one supplier row).
+      .leftJoin(s.suppliers, eq(s.expenses.supplierId, s.suppliers.id))
       .where(where),
   ]);
 

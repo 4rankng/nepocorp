@@ -156,9 +156,16 @@ interface PageHeaderProps {
    * on any page surface. Only use on light-background pages.
    */
   iconName?: AssetIconName;
+  /**
+   * Inline metric cluster rendered BESIDE the title (NEPO-24 pattern):
+   * replaces a stat-card row — the figures sit on the header line, behind a
+   * hairline divider, and wrap under the H1 on narrow screens. The cluster
+   * owns its own styling; PageHeader only positions it.
+   */
+  metrics?: React.ReactNode;
 }
 
-export function PageHeader({ title, description, action, onBack, iconName }: PageHeaderProps) {
+export function PageHeader({ title, description, action, onBack, iconName, metrics }: PageHeaderProps) {
   return (
     <div className="page-header">
       <div className="page-header-main" style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -181,6 +188,7 @@ export function PageHeader({ title, description, action, onBack, iconName }: Pag
           <h1 className="page-title">{title}</h1>
           {description && <p className="page-subtitle">{description}</p>}
         </div>
+        {metrics && <div className="page-header-metrics">{metrics}</div>}
       </div>
       {action && <div className="page-actions">{action}</div>}
     </div>

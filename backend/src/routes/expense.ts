@@ -59,6 +59,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
     vehicleComponent,
     fromDate: req.query.fromDate as string | undefined,
     toDate: req.query.toDate as string | undefined,
+    // NEPO-24 free-text search ("Tìm NCC, mã phiếu…"): trim + hard length cap.
+    search: typeof req.query.q === 'string' && req.query.q.trim() ? req.query.q.trim().slice(0, 100) : undefined,
     page,
     pageSize,
   };

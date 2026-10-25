@@ -119,6 +119,7 @@ export function useExpensesSummary(query: ExpenseListQuery) {
       vehicleComponent: query.vehicleComponent ?? null,
       dateFrom: query.dateFrom ?? null,
       dateTo: query.dateTo ?? null,
+      q: query.q ?? null,
     }),
     queryFn: async () => summarizeExpenses(await fetchAllFilteredExpenses(query)),
     staleTime: 30 * 1000,
