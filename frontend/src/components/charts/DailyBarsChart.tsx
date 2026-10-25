@@ -244,12 +244,17 @@ export function DailyBarsChart({
           <text x={lineX(lastDataIdx)} y={Y(gross[lastDataIdx] || 0) - 9} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="9.5" fontWeight="700" fill="#C2780B">LN gộp</text>
         )}
 
-        {/* Hover crosshair + dots */}
+        {/* Hover crosshair + dots — dots only where the day has figures;
+            a gap day would otherwise plot the GP dot below the axis */}
         {activeIdx !== null && (
           <>
             <line x1={ax} y1={mT} x2={ax} y2={mT + pH} stroke="#005A2D" strokeWidth="1" strokeDasharray="3 4" opacity={0.45} />
-            <circle cx={ax} cy={ayGp} r="3.5" fill="#fff" stroke="#C2780B" strokeWidth="2" />
-            <circle cx={ax} cy={ay} r="4" fill="#fff" stroke="#005A2D" strokeWidth="2.6" />
+            {dayHasData(activeIdx) && (
+              <>
+                <circle cx={ax} cy={ayGp} r="3.5" fill="#fff" stroke="#C2780B" strokeWidth="2" />
+                <circle cx={ax} cy={ay} r="4" fill="#fff" stroke="#005A2D" strokeWidth="2.6" />
+              </>
+            )}
           </>
         )}
 
