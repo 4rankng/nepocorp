@@ -380,6 +380,14 @@ export const qk = {
     detail: ['gps-settings'] as const,
   },
 
+  /* ── AI OCR usage (NEPO-27): admin allowance/price + dashboard status ── */
+
+  ocrUsage: {
+    all: ['ocrUsage'] as const,
+    settings: ['ocrUsage', 'settings'] as const,
+    status: ['ocrUsage', 'status'] as const,
+  },
+
   /* ── Trip-form catalogs (loaded on demand by the create/edit form) ── */
 
   tripForm: {

@@ -10,6 +10,7 @@ import { getUser } from '../middleware/auth';
 import { sniffImageType } from '../lib/format';
 import { saveTripPhoto } from './upload';
 import { extractContainerAndSeal } from '../services/ocr.service';
+import { recordOcrRequest } from '../services/ocr-usage.service';
 import { ApiError } from '../errors';
 
 // auth + Casbin ('ocr') applied at mount point in index.ts. Both routes below
@@ -171,6 +172,15 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
   }
 
   const result = await extractContainerAndSeal(ocrBuffer, type, ocrMime);
+
+  // Usage tracking (NEPO-27): count ONE AI OCR request per recognition call.
+  // `provider !== null` means at least one AI provider was actually attempted —
+  // the no-key "chưa cấu hình" path makes no AI call and costs nothing, so it
+  // is not counted. An internal failover (OpenRouter miss → Gemini retry) is
+  // one user-facing request, not two. recordOcrRequest never throws.
+  if (result.provider !== null) {
+    await recordOcrRequest();
+  }
 
   res.status(200).json({
     ok: result.success,

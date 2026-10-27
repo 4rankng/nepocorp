@@ -7,6 +7,7 @@ import {
   Loader2,
   MapPin,
   Save,
+  ScanLine,
   ShieldCheck,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -17,11 +18,13 @@ import {
   type AppSettings,
   type LlmProvider,
   type LlmSettingsUpdate,
+  type OcrUsageSettingsUpdate,
 } from '@tingting/shared';
 import { PageHeader, Panel } from '../../components/UI';
 import { useAppSettings, useSaveAppSettings } from '../../hooks/useAppSettings';
 import { useGpsSettings, useSaveGpsSettings } from '../../hooks/useGpsSettings';
 import { useLlmSettings, useSaveLlmSettings } from '../../hooks/useLlmSettings';
+import { useOcrUsageSettings, useSaveOcrUsageSettings } from '../../hooks/useOcrUsage';
 import { usePageAnimations } from '../../hooks/animations';
 import './config-page.css';
 
@@ -132,6 +135,8 @@ export default function AppSettingsConfigPage() {
   const saveLlmSettings = useSaveLlmSettings();
   const gpsSettings = useGpsSettings();
   const saveGpsSettings = useSaveGpsSettings();
+  const ocrUsageSettings = useOcrUsageSettings();
+  const saveOcrUsageSettings = useSaveOcrUsageSettings();
 
   const [features, setFeatures] = useState<AppSettings>({ botEnabled: false });
   const [provider, setProvider] = useState<LlmProvider>('minimax');
@@ -139,8 +144,13 @@ export default function AppSettingsConfigPage() {
   const [openrouterKey, setOpenrouterKey] = useState('');
   const [gpsUsername, setGpsUsername] = useState('');
   const [gpsPassword, setGpsPassword] = useState('');
+  // NEPO-27: OCR monthly allowance + overage price, kept as raw strings so the
+  // admin can clear a field while typing without the input snapping back.
+  const [ocrAllowance, setOcrAllowance] = useState('');
+  const [ocrPrice, setOcrPrice] = useState('');
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [gpsMessage, setGpsMessage] = useState<string | null>(null);
+  const [ocrMessage, setOcrMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (appSettings.data) setFeatures(appSettings.data);
@@ -153,6 +163,13 @@ export default function AppSettingsConfigPage() {
   useEffect(() => {
     if (gpsSettings.data) setGpsUsername(gpsSettings.data.username);
   }, [gpsSettings.data]);
+
+  useEffect(() => {
+    if (ocrUsageSettings.data) {
+      setOcrAllowance(String(ocrUsageSettings.data.monthlyAllowance));
+      setOcrPrice(String(ocrUsageSettings.data.overagePricePerCall));
+    }
+  }, [ocrUsageSettings.data]);
 
   const updateFeature = (key: keyof AppSettings) => {
     setFeatures((current) => ({ ...current, [key]: !current[key] }));
@@ -184,6 +201,31 @@ export default function AppSettingsConfigPage() {
       setGpsMessage('Đã lưu tài khoản định vị Bách Khoa.');
     } catch {
       setGpsMessage(null);
+    }
+  };
+
+  /** Whole, non-negative numbers only — the backend Zod schema re-validates. */
+  const parseOcrCount = (raw: string): number | null => {
+    const trimmed = raw.trim();
+    if (!/^\d+$/.test(trimmed)) return null;
+    return parseInt(trimmed, 10);
+  };
+
+  const ocrAllowanceValue = parseOcrCount(ocrAllowance);
+  const ocrPriceValue = parseOcrCount(ocrPrice);
+  const ocrInputsValid = ocrAllowanceValue !== null && ocrPriceValue !== null;
+
+  const saveOcrUsage = async () => {
+    setOcrMessage(null);
+    if (!ocrInputsValid) return;
+    try {
+      await saveOcrUsageSettings.mutateAsync({
+        monthlyAllowance: ocrAllowanceValue,
+        overagePricePerCall: ocrPriceValue,
+      } satisfies OcrUsageSettingsUpdate);
+      setOcrMessage('Đã lưu hạn mức OCR.');
+    } catch {
+      setOcrMessage(null);
     }
   };
 
@@ -367,6 +409,74 @@ export default function AppSettingsConfigPage() {
             {gpsSettings.error && (
               <span className="cfg-form-error" role="alert">
                 {gpsSettings.error instanceof Error ? gpsSettings.error.message : 'Không thể tải tài khoản định vị.'}
+              </span>
+            )}
+          </div>
+        </Panel>
+
+        <Panel
+          title="Chụp ảnh cont/seal (OCR)"
+          subtitle="Hạn mức request AI mỗi tháng và đơn giá tính trên phần vượt hạn mức"
+          action={<ScanLine size={18} className="cfg-panel-action-icon" />}
+        >
+          <div className="cfg-credentials-grid">
+            <div className="field">
+              <label htmlFor="ocr-monthly-allowance">Số request OCR mỗi tháng</label>
+              <input
+                id="ocr-monthly-allowance"
+                className="input"
+                value={ocrAllowance}
+                onChange={(event) => setOcrAllowance(event.target.value)}
+                placeholder="Ví dụ: 10000"
+                inputMode="numeric"
+                autoComplete="off"
+                disabled={ocrUsageSettings.isLoading || ocrUsageSettings.isError || saveOcrUsageSettings.isPending}
+              />
+              <p className="cfg-field-hint">Mỗi lần AI nhận dạng ảnh cont/seal tính 1 request. Bộ đếm tự về 0 vào đầu tháng.</p>
+            </div>
+            <div className="field">
+              <label htmlFor="ocr-overage-price">Đơn giá vượt hạn mức (₫ / request)</label>
+              <input
+                id="ocr-overage-price"
+                className="input"
+                value={ocrPrice}
+                onChange={(event) => setOcrPrice(event.target.value)}
+                placeholder="Ví dụ: 200"
+                inputMode="numeric"
+                autoComplete="off"
+                disabled={ocrUsageSettings.isLoading || ocrUsageSettings.isError || saveOcrUsageSettings.isPending}
+              />
+              <p className="cfg-field-hint">Áp dụng cho từng request vượt hạn mức tháng.</p>
+            </div>
+          </div>
+          <div className="cfg-form-actions">
+            <button
+              className="btn btn--primary"
+              disabled={
+                !ocrUsageSettings.data
+                || ocrUsageSettings.isError
+                || saveOcrUsageSettings.isPending
+                || !ocrInputsValid
+              }
+              onClick={saveOcrUsage}
+            >
+              {saveOcrUsageSettings.isPending ? <Loader2 size={15} className="spin" /> : <Save size={15} />}
+              {saveOcrUsageSettings.isPending ? 'Đang lưu…' : 'Lưu hạn mức OCR'}
+            </button>
+            {ocrMessage && <span className="cfg-form-success" role="status">{ocrMessage}</span>}
+            {!ocrInputsValid && (ocrAllowance.trim() !== '' || ocrPrice.trim() !== '') && (
+              <span className="cfg-form-error" role="alert">
+                Vui lòng nhập số nguyên không âm cho cả hai trường.
+              </span>
+            )}
+            {saveOcrUsageSettings.error && (
+              <span className="cfg-form-error" role="alert">
+                {saveOcrUsageSettings.error instanceof Error ? saveOcrUsageSettings.error.message : 'Không thể lưu hạn mức OCR.'}
+              </span>
+            )}
+            {ocrUsageSettings.error && (
+              <span className="cfg-form-error" role="alert">
+                {ocrUsageSettings.error instanceof Error ? ocrUsageSettings.error.message : 'Không thể tải hạn mức OCR.'}
               </span>
             )}
           </div>

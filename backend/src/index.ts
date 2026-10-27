@@ -30,6 +30,7 @@ import gpsSettingsRoutes from './routes/gps-settings';
 import adminChatbotMetricsRoutes from './routes/admin-chatbot-metrics';
 import llmSettingsRoutes from './routes/llm-settings';
 import { appSettingsRouter } from './routes/app-settings';
+import ocrUsageRoutes from './routes/ocr-usage';
 import faqAdminRoutes from './routes/faq-admin';
 import { uploadRouter, photosRouter } from './routes/upload';
 import ocrRoutes from './routes/ocr';
@@ -128,6 +129,10 @@ app.use('/api/admin/chatbot', authMiddleware, casbinAuthz('chatbot-metrics'), ad
 // belt-and-suspenders gate. MUST mount before the catch-all /api.
 app.use('/api/admin/llm-settings', authMiddleware, casbinAuthz('llm-settings'), requireRoles(Role.ADMIN), llmSettingsRoutes);
 app.use('/api/admin/app-settings', authMiddleware, requireRoles(Role.ADMIN), appSettingsRouter);
+// Admin AI OCR usage settings (NEPO-27): monthly allowance + overage price per
+// call. ADMIN-only via requireRoles (same gate as app-settings above). MUST
+// mount before the catch-all /api.
+app.use('/api/admin/ocr-usage', authMiddleware, requireRoles(Role.ADMIN), ocrUsageRoutes);
 // Admin FAQ knowledge base management (create/update/delete + auto-embed).
 // ADMIN-only: same gate pattern as llm-settings — the `faq-admin` Casbin
 // resource has no policy row, so only the ADMIN wildcard matches; requireRoles

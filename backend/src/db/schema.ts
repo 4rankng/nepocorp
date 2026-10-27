@@ -1041,6 +1041,17 @@ export const tripCodeCounters = pgTable('trip_code_counters', {
   counter: integer('counter').notNull(),
 });
 
+/**
+ * AI OCR request counters, one row per calendar month (NEPO-27). The 'YYYY-MM'
+ * key IS the monthly reset: a new month simply has no row until its first OCR
+ * request upserts it at 1. Rows of past months are kept as usage history.
+ */
+export const ocrUsageCounters = pgTable('ocr_usage_counters', {
+  yearMonth: varchar('year_month', { length: 7 }).primaryKey(),
+  requestCount: integer('request_count').notNull().default(0),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const tripPhotos = pgTable('trip_photos', {
   id: serial('id').primaryKey(),
   tripId: integer('trip_id').references(() => trips.id).notNull(),

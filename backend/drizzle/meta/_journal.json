@@ -834,6 +834,13 @@
       "when": 1792751170776,
       "tag": "0123_eager_songbird",
       "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "7",
+      "when": 1793119498137,
+      "tag": "0124_square_molten_man",
+      "breakpoints": true
     }
   ]
 }

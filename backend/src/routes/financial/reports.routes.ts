@@ -8,6 +8,7 @@ import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummar
 import { getFuelVarianceReport } from '../../services/pnl.service';
 import { getCustomerAgingList } from '../../services/receivables.service';
 import { getApprovalQueue } from '../../services/approval-queue.service';
+import { getOcrUsageStatus } from '../../services/ocr-usage.service';
 import { parsePagination } from '../utils/pagination';
 import { exportReceivablesAgingXlsx, attachmentDisposition } from '../../services/statement.service';
 import { formatLocalDate } from '../../lib/format';
@@ -31,6 +32,15 @@ router.get('/reports/dashboard', asyncHandler(async (req: Request, res: Response
 router.get('/dashboard/approval-queue', asyncHandler(async (req: Request, res: Response) => {
   const result = await getApprovalQueue(getUser(req).userId, getUser(req).role);
   res.json(result);
+}));
+
+// AI OCR usage this calendar month (NEPO-27) — feeds the dashboard widget.
+// Deliberately NOT part of getDashboardStats: that payload is cached per
+// salary-period, while the OCR counter is a live calendar-month figure whose
+// reset is the calendar month itself. Shares the dashboard's financial-read
+// gate via the mount.
+router.get('/reports/ocr-usage', asyncHandler(async (_req: Request, res: Response) => {
+  res.json(await getOcrUsageStatus());
 }));
 
 // ─── P&L report ──────────────────────────────────────────────────────────────

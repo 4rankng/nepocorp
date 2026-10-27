@@ -192,3 +192,17 @@ export type {
 // ─── Admin Bách Khoa GPS credentials ────────────────────────────────────────
 export { GPS_SETTINGS_PATHS, gpsSettingsUpdateSchema } from './schemas/gps-settings';
 export type { GpsSettingsResponse, GpsSettingsUpdate } from './schemas/gps-settings';
+
+// ─── AI OCR usage allowance + overage billing (NEPO-27) ─────────────────────
+export {
+  OCR_USAGE_DEFAULT_MONTHLY_ALLOWANCE,
+  OCR_USAGE_DEFAULT_OVERAGE_PRICE_PER_CALL,
+  OCR_USAGE_PATHS,
+  ocrUsageSettingsUpdateSchema,
+} from './schemas/ocr-usage';
+export type {
+  OcrUsageSettingsResponse,
+  OcrUsageSettingsUpdate,
+  OcrUsageStatus,
+} from './schemas/ocr-usage';
+export { computeOcrUsageStatus, ocrUsagePeriodKey } from './calculations/ocr-usage';

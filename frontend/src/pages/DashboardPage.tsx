@@ -2,14 +2,16 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, AlertTriangle, Download, Truck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import type { DashboardDecisionItem, Role } from '@tingting/shared';
-import { isFinancialRole, ROLE_LABELS } from '@tingting/shared';import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
+import type { DashboardDecisionItem } from '@tingting/shared';
+import { isFinancialRole, ROLE_LABELS, Role } from '@tingting/shared';import { SkeletonLine, SkeletonKPIs } from '../components/shared/Skeleton';
 import { Banner } from '../components/shared/Banner';
 import { useDashboardData } from '../features/dashboard/hooks/useDashboardData';
 import { styles, fmtMoM, buildDailySeries } from '../features/dashboard/utils';
 import { useMonth } from '../hooks/useMonth';
 import { AuditLogWidget } from '../features/dashboard/components/AuditLogWidget';
+import { OcrUsageCard } from '../features/dashboard/components/OcrUsageCard';
 import { useApprovalQueue } from '../features/dashboard/hooks/useApprovalQueue';
+import { useOcrUsageStatus } from '../hooks/useOcrUsage';
 import { useDashboardAnimations } from '../features/dashboard/hooks/useDashboardAnimations';
 import './DashboardPage.css';
 import { type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
@@ -84,6 +86,12 @@ export default function DashboardPage() {
   const { rootRef } = useDashboardAnimations(!loading);
 
   const { data: approvalQueue, isLoading: approvalQueueLoading } = useApprovalQueue(user?.role, user?.userId);
+
+  // NEPO-27: AI OCR usage this calendar month. Financial-read only (matches
+  // the /reports/ocr-usage gate) — DRIVER must not even fire the request.
+  const canSeeOcrUsage = isFinancialRole(user?.role);
+  const canManageOcrUsage = user?.role === Role.ADMIN;
+  const ocrUsage = useOcrUsageStatus({ enabled: canSeeOcrUsage });
 
   // ── Derived values (non-hook computations) ──────────────────────────────
   const d = derived ?? null;
@@ -416,7 +424,8 @@ export default function DashboardPage() {
            queue and the decision board sit above the fold instead of being
            buried in full-width bands at the bottom. Row of thirds: fleet,
            cost composition (promoted from ~2 viewports down), truck margins.
-           Bottom row: top routes beside a single-column audit feed.
+           Bottom row: top routes + OCR usage tile (NEPO-27, 6+6), then a
+           single-column audit feed.
            On mobile every tile drops to full width via the .wf-bento
            overrides in DashboardPage.css. */}
       <div className="wf-bento">
@@ -488,8 +497,22 @@ export default function DashboardPage() {
         {/* Lợi nhuận theo xe (4 cols) */}
         <ProfitByTruckCard trucks={topTrucks} currentMonth={currentMonth} currentYear={currentYear} />
 
-        {/* Top tuyến sinh lời (6 cols) — beside the activity feed */}
+        {/* Top tuyến sinh lời (6 cols) — beside the OCR usage tile */}
         <TopRoutesCard routes={topRoutes} currentMonth={currentMonth} currentYear={currentYear} onNavigate={navigate} />
+
+        {/* OCR usage (6 cols) — NEPO-27: this month's AI OCR requests vs the
+            configurable allowance, overage count + cost once exceeded. */}
+        {canSeeOcrUsage && (
+          <OcrUsageCard
+            status={ocrUsage.data ?? null}
+            loading={ocrUsage.isLoading}
+            isError={ocrUsage.isError}
+            onRetry={() => void ocrUsage.refetch()}
+            monthLabel={String(currentMonth).padStart(2, '0')}
+            canManage={canManageOcrUsage}
+            onNavigate={navigate}
+          />
+        )}
 
         {/* Hoạt động gần đây (6 cols, single column list) — only for roles
             allowed by casbin. recentAudit is empty for DRIVER so this is
