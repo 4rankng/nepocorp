@@ -1,0 +1,292 @@
+<!doctype html>
+<!--
+  NEPO-34 (id 633) — MOCKUP-FIRST · DESIGN LOCK artifact
+  Screen: "Nhật ký OCR" — admin log of AI OCR requests (bảng ocr_requests).
+
+  DESIGN LOCK (implementation must match this document):
+    1. Desktop (≥768px): dense table — Thời gian · Model · Thời lượng ·
+       Trạng thái · Người gọi · Phản hồi (expand). Expand shows the FULL
+       response JSON wrapped in a mono block + copy button (doctrine
+       No Truncation: wrap / expand — never ellipsis without a path to the
+       full value). Failed rows carry error_msg in the expanded panel.
+    2. Mobile (<768px): one card per request — same fields stacked, expand
+       in place. Breakpoint pinned at 768px for this page.
+    3. Status: 3x20px status strip (docs/design-guidelines.md § statusStrip)
+       + Vietnamese text label ("Thành công" / "Lỗi") — never colour alone.
+    4. Filters: status pills (Tất cả · Thành công · Lỗi, with counts),
+       model select, date range (từ ngày / đến ngày). Pagination: 20/page,
+       "Trang X/Y · N bản ghi".
+    5. Admin-only at three layers: App.tsx strictAdminOnly route guard,
+       ADMIN-only nav item, API 403 for non-ADMIN.
+    6. Data column values wrap (white-space: normal); only model chips and
+       the status label stay one line. No text-overflow: ellipsis anywhere.
+
+  Visual direction: NEPO dense-data shell (deep emerald #005A2D accent on
+  white surfaces over the #E3E8E5 canvas); var(--font-mono) for all data
+  values (timestamps, model ids, durations, JSON), var(--font-body) for
+  Vietnamese words. Reference consulted: UntitledUI application/table
+  (structure only — NEPO tokens govern).
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEPO-34 · Nhật ký OCR — Mockup (Design Lock)</title>
+<style>
+  :root {
+    --bg: #E3E8E5; --surface: #FFFFFF; --surface-2: #EDF1EE; --surface-3: #DCE3DF;
+    --ink: #0F1713; --ink-2: #2E3B34; --ink-3: #4A5750; --ink-4: #66756D;
+    --line: #C8D2CC; --line-2: #ADB9B3;
+    --accent: #10B956; --accent-2: #005A2D; --accent-soft: #D9F2E3; --accent-ink: #00361B;
+    --success: #0B8745; --error: #E32434; --error-soft: #FBE3E5; --warn: #C2780B;
+    --font-body: "Be Vietnam Pro", "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.45; padding: 24px; }
+  .mock-head { max-width: 1180px; margin: 0 auto 16px; }
+  .mock-head h1 { font-size: 20px; font-weight: 700; }
+  .mock-head p { color: var(--ink-3); font-size: 13px; margin-top: 4px; }
+  .mock-tag { display: inline-block; background: var(--accent-2); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .page { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+  /* KPI strip */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .kpi .k-label { font-size: 12px; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .kpi .k-value { font-family: var(--font-mono); font-size: 22px; font-weight: 700; margin-top: 6px; }
+  .kpi .k-meta { font-size: 12px; color: var(--ink-4); margin-top: 2px; }
+
+  /* Filters */
+  .filters { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+  .pill-row { display: flex; gap: 4px; }
+  .pill { border: none; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-3); padding: 7px 12px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+  .pill[aria-pressed="true"] { color: var(--accent-2); border-bottom-color: var(--accent-2); }
+  .pill .cnt { color: var(--ink-4); font-family: var(--font-mono); font-weight: 500; }
+  .field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); }
+  .field select, .field input { font: inherit; font-family: var(--font-body); font-size: 13px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); min-width: 0; }
+  .field label { font-family: var(--font-body); font-weight: 600; white-space: nowrap; }
+  .spacer { flex: 1; }
+  .btn { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); cursor: pointer; }
+
+  /* Panel + dense table */
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .panel-head { padding: 14px 16px 10px; }
+  .panel-head h2 { font-size: 15px; font-weight: 700; }
+  .panel-head p { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th { text-align: left; padding: 10px 12px; background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 11.5px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; font-family: var(--font-mono); font-size: 12.5px; white-space: normal; }
+  td.vn, th.vn { font-family: var(--font-body); }
+  tr.row-expand td { background: var(--surface-2); }
+  .cell-rel { position: relative; padding-left: 18px; }
+  .strip { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 20px; border-radius: 0 999px 999px 0; }
+  .strip--ok { background: var(--success); }
+  .strip--fail { background: var(--error); }
+  .status-line { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-body); font-weight: 600; font-size: 12.5px; }
+  .model-chip { display: inline-block; font-family: var(--font-mono); font-size: 11.5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+  .dur { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .exp-btn { font: inherit; font-family: var(--font-body); font-size: 12.5px; font-weight: 600; color: var(--accent-2); background: none; border: 1px solid var(--line-2); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+  .json-block { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-top: 10px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto; }
+  .err-block { background: var(--error-soft); border: 1px solid var(--error); border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; word-break: break-word; color: var(--ink); }
+  .expand-tools { display: flex; gap: 8px; margin-top: 10px; }
+  .sub-label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 10px; font-family: var(--font-body); }
+
+  /* Pagination */
+  .pager { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+  .pager .p-info { font-size: 12.5px; color: var(--ink-3); }
+  .pager .p-info b { font-family: var(--font-mono); color: var(--ink); }
+
+  /* Mobile cards — switch pinned at 768px (DESIGN LOCK item 2) */
+  .cards { display: none; }
+  @media (max-width: 767.98px) {
+    .desktop-only { display: none !important; }
+    .cards { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+    .card .c-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .card .c-time { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+    .card .c-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-top: 10px; }
+    .card .c-k { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .card .c-v { font-family: var(--font-mono); font-size: 12.5px; margin-top: 2px; white-space: normal; }
+    .card .c-v.vn { font-family: var(--font-body); }
+    .card .exp-btn { margin-top: 12px; width: 100%; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    body { padding: 12px; }
+    /* Filters stack: mỗi control một hàng, label phía trên, full width —
+       không cho control nào tràn ra mép thẻ. */
+    .filters { flex-direction: column; align-items: stretch; gap: 12px; }
+    .pill-row { overflow-x: auto; overflow-y: hidden; margin: 0 -4px; padding: 0 4px; }
+    .field { flex-direction: column; align-items: stretch; gap: 6px; }
+    .field select, .field input { width: 100%; }
+    .filters .spacer { display: none; }
+    .filters .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+  <header class="mock-head">
+    <span class="mock-tag">MOCKUP · DESIGN LOCK · NEPO-34 (id 633)</span>
+    <h1>Nhật ký OCR — log yêu cầu AI OCR (admin)</h1>
+    <p>Desktop: bảng dense · Mobile &lt;768px: card · Filter status/model/ngày · Phân trang 20/trang · Response expand không truncate.</p>
+  </header>
+
+  <div class="page">
+    <!-- KPI strip — fed by GET /api/admin/ocr-requests stats -->
+    <section class="kpi-grid">
+      <div class="kpi"><div class="k-label">Tổng yêu cầu</div><div class="k-value">1 284</div><div class="k-meta">30 ngày gần nhất</div></div>
+      <div class="kpi"><div class="k-label">Lỗi</div><div class="k-value" style="color:var(--error)">23</div><div class="k-meta">1,8% tổng yêu cầu</div></div>
+      <div class="kpi"><div class="k-label">Thời lượng TB</div><div class="k-value">2 410<span style="font-size:13px;color:var(--ink-4)"> ms</span></div><div class="k-meta">trung bình mỗi yêu cầu</div></div>
+      <div class="kpi"><div class="k-label">p95 thời lượng</div><div class="k-value">5 980<span style="font-size:13px;color:var(--ink-4)"> ms</span></div><div class="k-meta">5% yêu cầu chậm hơn mức này</div></div>
+    </section>
+
+    <!-- Filters -->
+    <section class="filters">
+      <div class="pill-row" role="group" aria-label="Lọc trạng thái">
+        <button class="pill" aria-pressed="true">Tất cả <span class="cnt">1284</span></button>
+        <button class="pill" aria-pressed="false">Thành công <span class="cnt">1261</span></button>
+        <button class="pill" aria-pressed="false">Lỗi <span class="cnt">23</span></button>
+      </div>
+      <div class="field">
+        <label for="f-model">Model</label>
+        <select id="f-model">
+          <option>Tất cả model</option>
+          <option>gemini-2.5-flash</option>
+          <option>gemini-2.0-flash</option>
+          <option>gpt-4o-mini</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-from">Từ ngày</label>
+        <input id="f-from" type="date" value="2026-10-01">
+      </div>
+      <div class="field">
+        <label for="f-to">Đến ngày</label>
+        <input id="f-to" type="date" value="2026-10-28">
+      </div>
+      <div class="spacer"></div>
+      <button class="btn">Đặt lại</button>
+    </section>
+
+    <!-- Desktop dense table -->
+    <section class="panel desktop-only">
+      <div class="panel-head">
+        <h2>Yêu cầu OCR gần đây</h2>
+        <p>Mỗi dòng là một lần AI OCR chạy — bấm “Phản hồi” để xem toàn bộ kết quả.</p>
+      </div>
+      <table>
+        <colgroup>
+          <col style="width:15%"><col style="width:15%"><col style="width:10%"><col style="width:13%"><col style="width:17%"><col style="width:30%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Thời gian</th>
+            <th>Model</th>
+            <th>Thời lượng</th>
+            <th class="vn">Trạng thái</th>
+            <th class="vn">Người gọi</th>
+            <th class="vn">Phản hồi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>28/10/2026 14:32:07</td>
+            <td><span class="model-chip">gemini-2.5-flash</span></td>
+            <td class="dur">2 410 ms</td>
+            <td class="cell-rel"><span class="strip strip--ok"></span><span class="status-line">Thành công</span></td>
+            <td class="vn">Lê Văn Tài</td>
+            <td><button class="exp-btn">Phản hồi ▾</button></td>
+          </tr>
+          <tr class="row-expand">
+            <td colspan="6">
+              <div class="sub-label">Phản hồi đầy đủ — yêu cầu #5902</div>
+              <div class="json-block">{
+  "container": "CSNU3412879",
+  "seal": "VN8821",
+  "confidence": 0.97,
+  "raw_text": "CSNU 3412879 / SEAL VN8821"
+}</div>
+              <div class="expand-tools"><button class="btn">Sao chép JSON</button></div>
+            </td>
+          </tr>
+          <tr>
+            <td>28/10/2026 14:28:51</td>
+            <td><span class="model-chip">gemini-2.5-flash</span></td>
+            <td class="dur">1 240 ms</td>
+            <td class="cell-rel"><span class="strip strip--ok"></span><span class="status-line">Thành công</span></td>
+            <td class="vn">Trần Minh Quân</td>
+            <td><button class="exp-btn">Phản hồi ▾</button></td>
+          </tr>
+          <tr>
+            <td>28/10/2026 13:57:19</td>
+            <td><span class="model-chip">gemini-2.0-flash</span></td>
+            <td class="dur">8 003 ms</td>
+            <td class="cell-rel"><span class="strip strip--fail"></span><span class="status-line" style="color:var(--error)">Lỗi</span></td>
+            <td class="vn">Lê Văn Tài</td>
+            <td><button class="exp-btn">Phản hồi ▾</button></td>
+          </tr>
+          <tr class="row-expand">
+            <td colspan="6">
+              <div class="sub-label">Lý do lỗi — yêu cầu #5900</div>
+              <div class="err-block">504 Deadline Exceeded — upstream Gemini did not answer within 8000 ms</div>
+              <div class="sub-label">Phản hồi đầy đủ</div>
+              <div class="json-block">null</div>
+            </td>
+          </tr>
+          <tr>
+            <td>28/10/2026 11:04:44</td>
+            <td><span class="model-chip">gpt-4o-mini</span></td>
+            <td class="dur">3 776 ms</td>
+            <td class="cell-rel"><span class="strip strip--ok"></span><span class="status-line">Thành công</span></td>
+            <td class="vn">Phạm Thu Hà</td>
+            <td><button class="exp-btn">Phản hồi ▾</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pager">
+        <button class="btn">‹ Trước</button>
+        <button class="btn">Sau ›</button>
+        <div class="p-info">Trang <b>1/65</b> · <b>1 284</b> bản ghi</div>
+      </div>
+    </section>
+
+    <!-- Mobile cards (<768px) -->
+    <section class="panel cards">
+      <div class="panel-head">
+        <h2>Yêu cầu OCR gần đây</h2>
+        <p>Mỗi thẻ là một lần AI OCR chạy — bấm “Phản hồi” để xem toàn bộ kết quả.</p>
+      </div>
+      <div class="card">
+        <div class="c-top">
+          <span class="c-time">28/10/2026 14:32:07</span>
+          <span class="status-line"><span class="strip strip--ok" style="position:static;transform:none"></span>Thành công</span>
+        </div>
+        <div class="c-grid">
+          <div><div class="c-k">Model</div><div class="c-v">gemini-2.5-flash</div></div>
+          <div><div class="c-k">Thời lượng</div><div class="c-v">2 410 ms</div></div>
+          <div><div class="c-k">Người gọi</div><div class="c-v vn">Lê Văn Tài</div></div>
+        </div>
+        <button class="exp-btn">Phản hồi ▾</button>
+      </div>
+      <div class="card">
+        <div class="c-top">
+          <span class="c-time">28/10/2026 13:57:19</span>
+          <span class="status-line" style="color:var(--error)"><span class="strip strip--fail" style="position:static;transform:none"></span>Lỗi</span>
+        </div>
+        <div class="c-grid">
+          <div><div class="c-k">Model</div><div class="c-v">gemini-2.0-flash</div></div>
+          <div><div class="c-k">Thời lượng</div><div class="c-v">8 003 ms</div></div>
+          <div><div class="c-k">Người gọi</div><div class="c-v vn">Lê Văn Tài</div></div>
+        </div>
+        <div class="sub-label">Lý do lỗi</div>
+        <div class="err-block">504 Deadline Exceeded — upstream Gemini did not answer within 8000 ms</div>
+        <button class="exp-btn">Phản hồi ▾</button>
+      </div>
+      <div class="pager">
+        <button class="btn">‹ Trước</button>
+        <button class="btn">Sau ›</button>
+        <div class="p-info">Trang <b>1/65</b> · <b>1 284</b> bản ghi</div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

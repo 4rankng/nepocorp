@@ -201,6 +201,13 @@ export const PAGE_CATALOG = {
       aliases: ['chatbot monitoring', 'hieu nang bot', 'giam sat chatbot', 'bot performance'],
     },
   },
+  ocrRequests: {
+    title: 'Nhật ký OCR',
+    path: '/ocr-requests',
+    section: 'system',
+    // Deliberately no `agent` sub-object: ADMIN-only AI telemetry screen
+    // (NEPO-34), not agent-navigable.
+  },
   customers: {
     title: 'Khách hàng',
     path: '/customers',

@@ -1,4 +1,4 @@
-// Per-request log of the AI OCR pipeline (ticket NEPO-33).
+// Per-request log of the AI OCR pipeline (ticket NEPO-33, screen NEPO-34).
 //
 // The daily counter in `ocr-usage.service.ts` answers "how many requests";
 // this log answers "what did the AI answer, with which model, and how long did
@@ -14,8 +14,13 @@
 // Every write is wrapped so a logging failure only logs.
 import { db } from '../db';
 import * as s from '../db/schema';
-import { desc, sql } from 'drizzle-orm';
-import type { OcrRequestRow, OcrRequestStatus } from '@tingting/shared';
+import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
+import type {
+  OcrRequestCounts,
+  OcrRequestFilters,
+  OcrRequestRow,
+  OcrRequestStatus,
+} from '@tingting/shared';
 
 /** Outcome of one OCR request. */
 export type { OcrRequestStatus };
@@ -67,6 +72,23 @@ export async function recordOcrRequestLog(input: OcrRequestLogInput): Promise<vo
 export type OcrRequestListItem = OcrRequestRow;
 
 /**
+ * WHERE conditions for the NEPO-34 filters. Dates are local calendar days:
+ * `dateFrom` is inclusive, `dateTo` covers that whole day (same idiom as
+ * `advance.service.ts`). `withStatus` is false for the filter-pill counts,
+ * which must show what each status option would return.
+ */
+function buildConditions(filters: OcrRequestFilters | undefined, withStatus: boolean): SQL[] {
+  const conditions: SQL[] = [];
+  if (withStatus && filters?.status) conditions.push(eq(s.ocrRequests.status, filters.status));
+  if (filters?.model) conditions.push(eq(s.ocrRequests.model, filters.model));
+  if (filters?.dateFrom) conditions.push(sql`${s.ocrRequests.createdAt} >= ${filters.dateFrom}::date`);
+  if (filters?.dateTo) {
+    conditions.push(sql`${s.ocrRequests.createdAt} < (${filters.dateTo}::date + interval '1 day')`);
+  }
+  return conditions;
+}
+
+/**
  * The logged OCR requests, newest first.
  *
  * `limit` is clamped to 1..200 so a caller cannot ask for the whole table by
@@ -77,7 +99,9 @@ export type OcrRequestListItem = OcrRequestRow;
 export async function listOcrRequests(
   limit: number,
   offset: number,
+  filters?: OcrRequestFilters,
 ): Promise<OcrRequestListItem[]> {
+  const conditions = buildConditions(filters, true);
   const rows = await db
     .select({
       id: s.ocrRequests.id,
@@ -89,8 +113,13 @@ export async function listOcrRequests(
       response: s.ocrRequests.response,
       error_msg: s.ocrRequests.errorMsg,
       user_id: s.ocrRequests.userId,
+      // The screen shows people, not ids (design-guidelines § No Raw IDs):
+      // full name → username → email, null when the account is gone.
+      user_name: sql<string | null>`COALESCE(${s.users.fullName}, ${s.users.username}, ${s.users.email})`,
     })
     .from(s.ocrRequests)
+    .leftJoin(s.users, eq(s.ocrRequests.userId, s.users.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(s.ocrRequests.id))
     .limit(limit)
     .offset(offset);
@@ -105,12 +134,50 @@ export async function listOcrRequests(
   }));
 }
 
-/** How many OCR requests are logged in total — the pagination denominator. */
-export async function countOcrRequests(): Promise<number> {
+/** How many logged requests match the filters — the pagination denominator. */
+export async function countOcrRequests(filters?: OcrRequestFilters): Promise<number> {
+  const conditions = buildConditions(filters, true);
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(s.ocrRequests);
+    .from(s.ocrRequests)
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
   return row?.count ?? 0;
+}
+
+/**
+ * Counts per status for the filter pills. Scoped by model + date like the
+ * listing, but NOT by status — each pill shows what selecting it would return.
+ */
+export async function countOcrRequestsByStatus(
+  filters?: OcrRequestFilters,
+): Promise<OcrRequestCounts> {
+  const conditions = buildConditions(filters, false);
+  const rows = await db
+    .select({ status: s.ocrRequests.status, count: sql<number>`count(*)::int` })
+    .from(s.ocrRequests)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .groupBy(s.ocrRequests.status);
+
+  const counts: OcrRequestCounts = { all: 0, completed: 0, failed: 0 };
+  for (const row of rows) {
+    if (row.status === 'completed' || row.status === 'failed') counts[row.status] = row.count;
+    counts.all += row.count;
+  }
+  return counts;
+}
+
+/**
+ * Distinct model slugs seen in the log — the model filter's options.
+ * Ordered so the dropdown is stable between renders.
+ */
+export async function listOcrRequestModels(): Promise<string[]> {
+  const rows = await db
+    .select({ model: s.ocrRequests.model })
+    .from(s.ocrRequests)
+    .where(sql`${s.ocrRequests.model} is not null`)
+    .groupBy(s.ocrRequests.model)
+    .orderBy(s.ocrRequests.model);
+  return rows.map((r) => r.model).filter((m): m is string => m !== null);
 }
 
 /**

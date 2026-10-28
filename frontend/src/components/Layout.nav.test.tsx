@@ -42,4 +42,14 @@ describe('nav labels — Bảng số liệu rename (NEPO-3)', () => {
       expect(items.find((i) => i.key === 'users')?.label).toBe('Người dùng');
     }
   });
+
+  /** NEPO-34: "Nhật ký OCR" là admin-only — nav layer của hợp đồng 3 lớp. */
+  it('OCR log nav item appears for ADMIN only', () => {
+    const adminItem = getNavItems(Role.ADMIN).find((i) => i.key === 'ocr-requests');
+    expect(adminItem?.label).toBe('Nhật ký OCR');
+    expect(adminItem?.path).toBe('/ocr-requests');
+    for (const role of [Role.MANAGER, Role.ACCOUNTANT, Role.DRIVER, Role.FORWARDER]) {
+      expect(getNavItems(role).some((i) => i.key === 'ocr-requests')).toBe(false);
+    }
+  });
 });

@@ -6,7 +6,9 @@ import * as s from '../db/schema';
 import { Role } from '@tingting/shared';
 import {
   countOcrRequests,
+  countOcrRequestsByStatus,
   getOcrRequestStats,
+  listOcrRequestModels,
   listOcrRequests,
   recordOcrRequestLog,
 } from '../services/ocr-requests.service';
@@ -222,4 +224,97 @@ test('the stats report the count, the failures and the durations', async () => {
   assert.ok(stats.failed >= 1, 'the failed request above is counted');
   assert.ok(stats.avgDurationMs !== null && stats.avgDurationMs >= 0);
   assert.ok(stats.p95DurationMs !== null && stats.p95DurationMs >= 0);
+});
+
+// ─── NEPO-34 — the screen's filters, pill counts, model options, user names ──
+
+/** Seed three rows: model A on two days (completed + failed), model B on day 2. */
+async function seedFilterRows(): Promise<void> {
+  await recordOcrRequestLog({
+    createdAt: new Date('2026-09-15T08:00:00.000Z'),
+    updatedAt: new Date('2026-09-15T08:00:01.000Z'),
+    durationMs: 1000,
+    model: 'nepo34-model-a',
+    status: 'completed',
+    response: null,
+    errorMsg: null,
+    userId: callerId,
+  });
+  await recordOcrRequestLog({
+    createdAt: new Date('2026-09-15T09:00:00.000Z'),
+    updatedAt: new Date('2026-09-15T09:00:02.000Z'),
+    durationMs: 2000,
+    model: 'nepo34-model-a',
+    status: 'failed',
+    response: null,
+    errorMsg: 'seeded failure',
+    userId: callerId,
+  });
+  await recordOcrRequestLog({
+    createdAt: new Date('2026-09-16T08:00:00.000Z'),
+    updatedAt: new Date('2026-09-16T08:00:01.500Z'),
+    durationMs: 1500,
+    model: 'nepo34-model-b',
+    status: 'completed',
+    response: null,
+    errorMsg: null,
+    userId: callerId,
+  });
+}
+
+test('the listing filters by status, model and local calendar day (NEPO-34)', async () => {
+  await seedFilterRows();
+
+  const failedOnly = await listOcrRequests(200, 0, { model: 'nepo34-model-a', status: 'failed' });
+  assert.equal(failedOnly.length, 1, 'the status filter keeps only the failed row');
+  assert.equal(failedOnly[0].error_msg, 'seeded failure');
+
+  const modelB = await listOcrRequests(200, 0, { model: 'nepo34-model-b' });
+  assert.equal(modelB.length, 1, 'the model filter keeps only model B');
+  assert.equal(modelB[0].status, 'completed');
+
+  // dateTo is inclusive of that whole day: only the two 2026-09-15 rows.
+  const oneDay = await listOcrRequests(200, 0, {
+    model: 'nepo34-model-a',
+    dateFrom: '2026-09-15',
+    dateTo: '2026-09-15',
+  });
+  assert.equal(oneDay.length, 2, 'the day window keeps both rows of that day');
+
+  const twoDays = await listOcrRequests(200, 0, {
+    dateFrom: '2026-09-15',
+    dateTo: '2026-09-16',
+  });
+  assert.equal(twoDays.length, 3, 'widening dateTo by one day adds the next day');
+
+  assert.equal(await countOcrRequests({ model: 'nepo34-model-a' }), 2);
+  assert.equal(await countOcrRequests({ dateFrom: '2026-09-16', dateTo: '2026-09-16' }), 1);
+});
+
+test('the pill counts follow model+date scope but ignore the status filter (NEPO-34)', async () => {
+  const counts = await countOcrRequestsByStatus({ model: 'nepo34-model-a' });
+  assert.deepEqual(counts, { all: 2, completed: 1, failed: 1 });
+
+  // Passing a status must not narrow the pills — each pill shows its own count.
+  const withStatus = await countOcrRequestsByStatus({
+    model: 'nepo34-model-a',
+    status: 'failed',
+  });
+  assert.deepEqual(withStatus, { all: 2, completed: 1, failed: 1 });
+});
+
+test('the model options are the distinct slugs in the log (NEPO-34)', async () => {
+  const models = await listOcrRequestModels();
+  assert.ok(models.includes('nepo34-model-a'), 'seeded model A is offered');
+  assert.ok(models.includes('nepo34-model-b'), 'seeded model B is offered');
+  assert.equal(new Set(models).size, models.length, 'the options are distinct');
+});
+
+test('the listing resolves the caller display name instead of a raw id (NEPO-34)', async () => {
+  const rows = await listOcrRequests(200, 0, { model: 'nepo34-model-a' });
+  assert.equal(rows.length, 2);
+  for (const row of rows) {
+    assert.equal(row.user_name, `QA ${NS}`, 'the row carries the caller full name');
+    assert.equal(row.user_id, callerId);
+  }
 });

@@ -397,6 +397,15 @@ export const qk = {
     detail: ['ocrAiSettings', 'detail'] as const,
   },
 
+  /* ── AI OCR request log (NEPO-33/34): admin log screen with filters ───── */
+
+  ocrRequests: {
+    all: ['ocrRequests'] as const,
+    /** One filtered page — the filter values are part of the cache key. */
+    list: (filters: { status?: string; model?: string; dateFrom?: string; dateTo?: string }, page: number) =>
+      ['ocrRequests', 'list', filters.status ?? '', filters.model ?? '', filters.dateFrom ?? '', filters.dateTo ?? '', page] as const,
+  },
+
   /* ── Trip-form catalogs (loaded on demand by the create/edit form) ── */
 
   tripForm: {
