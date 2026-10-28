@@ -9,11 +9,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
-    // Process only the salary-attendance stylesheets so the CSS contract
-    // tests can read them via `?raw`. Every other .css id stays stubbed to
-    // an empty string (Vitest default) — cheaper and side-effect free.
+    // Process only the stylesheets the CSS contract tests read via `?raw`
+    // (salary-attendance, trip-list, DispatchPage). Every other .css id stays
+    // stubbed to an empty string (Vitest default) — cheaper and side-effect free.
     css: {
-      include: [/(salary-attendance|trip-list)\/[^?]+\.css(\?.*)?$/],
+      include: [/((salary-attendance|trip-list)\/[^?]+|pages\/DispatchPage)\.css(\?.*)?$/],
     },
   },
   resolve: {
