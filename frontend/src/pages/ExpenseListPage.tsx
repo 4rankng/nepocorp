@@ -661,8 +661,8 @@ export default function ExpenseListPage() {
                   </div>
                   <div className="expense-mcard__main">
                     <span className="expense-mcard__lines">
-                      <span className="expense-mcard__supplier">{e.supplier?.name || '—'}</span>
-                      <span className="expense-mcard__sub">{subParts.length > 0 ? subParts.join(' · ') : 'Không gắn xe'}</span>
+                      <span className="expense-mcard__supplier" title={e.supplier?.name || undefined}>{e.supplier?.name || '—'}</span>
+                      <span className="expense-mcard__sub" title={subParts.length > 0 ? subParts.join(' · ') : undefined}>{subParts.length > 0 ? subParts.join(' · ') : 'Không gắn xe'}</span>
                     </span>
                     <span className={`expense-amount expense-amount--${e.paymentStatus === 'PAID' ? 'paid' : 'unpaid'}`}>
                       {formatCurrency(e.amount)}

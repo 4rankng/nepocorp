@@ -311,7 +311,7 @@ export default function SalaryAttendancePage() {
                 >
                   <span className="driver-select-card__head">
                     {isSelected && <span className="driver-select-card__dot" aria-hidden />}
-                    <span className="driver-select-card__name">{d.name}</span>
+                    <span className="driver-select-card__name" title={d.name}>{d.name}</span>
                   </span>
                   {d.salary && (
                     <span
