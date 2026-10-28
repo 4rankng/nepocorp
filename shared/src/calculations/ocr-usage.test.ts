@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { computeOcrUsageStatus, ocrUsagePeriodKey } from './ocr-usage.ts';
+import { buildOcrUsageDailyOverage, computeOcrUsageStatus, ocrUsagePeriodKey } from './ocr-usage.ts';
 
 describe('computeOcrUsageStatus', () => {
   const settings = { monthlyAllowance: 10000, overagePricePerCall: 200 };
@@ -58,5 +58,58 @@ describe('ocrUsagePeriodKey', () => {
       ocrUsagePeriodKey(new Date(2026, 9, 31, 23, 59)),
       ocrUsagePeriodKey(new Date(2026, 10, 1, 0, 0)),
     );
+  });
+});
+
+describe('buildOcrUsageDailyOverage (NEPO-620)', () => {
+  test('below the allowance every day reports 0', () => {
+    const daily = [
+      { date: '2026-10-01', count: 4000 },
+      { date: '2026-10-02', count: 4000 },
+    ];
+    const over = buildOcrUsageDailyOverage(daily, 10000);
+    assert.deepStrictEqual(over.map(p => p.count), [0, 0]);
+  });
+
+  test('the day that crosses the allowance carries only its excess', () => {
+    // cum 4.000 → 8.000 → 10.050: the cap is crossed on day 3, which bills 50.
+    const daily = [
+      { date: '2026-10-01', count: 4000 },
+      { date: '2026-10-02', count: 4000 },
+      { date: '2026-10-03', count: 2050 },
+      { date: '2026-10-04', count: 300 },
+    ];
+    const over = buildOcrUsageDailyOverage(daily, 10000);
+    assert.deepStrictEqual(over.map(p => p.count), [0, 0, 50, 300]);
+    // date keys pass through untouched
+    assert.deepStrictEqual(over.map(p => p.date), daily.map(p => p.date));
+  });
+
+  test('the series sums to exactly the status snapshot overageCount', () => {
+    const settings = { monthlyAllowance: 10000, overagePricePerCall: 200 };
+    const daily = [
+      { date: '2026-10-01', count: 6000 },
+      { date: '2026-10-02', count: 3000 },
+      { date: '2026-10-03', count: 1500 },
+    ];
+    const used = daily.reduce((sum, p) => sum + p.count, 0);
+    const s = computeOcrUsageStatus(settings, used, '2026-10', {
+      elapsedDays: 3, daysInMonth: 31, daily,
+    });
+    const total = buildOcrUsageDailyOverage(daily, settings.monthlyAllowance)
+      .reduce((sum, p) => sum + p.count, 0);
+    assert.strictEqual(total, s.overageCount);
+    // …and its cost matches the tile figure the export must mirror.
+    assert.strictEqual(total * settings.overagePricePerCall, s.overageCost);
+  });
+
+  test('zero allowance: every request that day is overage', () => {
+    const daily = [
+      { date: '2026-10-01', count: 3 },
+      { date: '2026-10-02', count: 0 },
+      { date: '2026-10-03', count: 4 },
+    ];
+    const over = buildOcrUsageDailyOverage(daily, 0);
+    assert.deepStrictEqual(over.map(p => p.count), [3, 0, 4]);
   });
 });

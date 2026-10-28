@@ -213,6 +213,7 @@ export {
   ocrUsageDateKey,
   ocrUsageDaysInMonth,
   buildOcrUsageDailySeries,
+  buildOcrUsageDailyOverage,
 } from './calculations/ocr-usage';
 
 // ─── Admin AI OCR model settings (provider / API key / model) (NEPO-28) ─────

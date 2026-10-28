@@ -155,7 +155,7 @@ export async function downloadCSV(
   const titleCell = worksheet.getCell(1, 1);
   titleCell.value = title.toUpperCase();
   titleCell.font = { name: FONT_FAMILY, size: 14, bold: true, color: { argb: TITLE_FG } };
-  titleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1, wrapText: true };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_SOFT } };
   titleCell.border = { bottom: { style: 'thin', color: { argb: BRAND } } };
   worksheet.getRow(1).height = 26;
@@ -166,7 +166,7 @@ export async function downloadCSV(
   if (subtitle) {
     subtitleCell.value = subtitle;
     subtitleCell.font = { name: FONT_FAMILY, size: 10, color: { argb: META_FG }, italic: true };
-    subtitleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    subtitleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1, wrapText: true };
   }
   worksheet.getRow(2).height = 18;
 
@@ -175,7 +175,7 @@ export async function downloadCSV(
   const dateCell = worksheet.getCell(3, 1);
   dateCell.value = `Ngày xuất: ${dateStr}`;
   dateCell.font = { name: FONT_FAMILY, size: 10, color: { argb: META_FG } };
-  dateCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  dateCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1, wrapText: true };
   worksheet.getRow(3).height = 18;
 
   // Spacer row 4 stays blank (used as the freeze pane boundary)
@@ -308,6 +308,30 @@ export async function downloadCSV(
       col.width = Math.min(Math.max(Math.round(median) + WRAP_PAD, WRAP_FLOOR), WRAP_CAP);
     } else {
       col.width = Math.max(maxLen + NORMAL_PAD, minByType[type] ?? 12);
+    }
+  });
+
+  /* ─── Title band heights (NEPO-620: merged cells clip, never overflow) ── */
+  // Rows 1–3 are merged across every column, and a merged cell CLIPS long text
+  // at the merge boundary instead of overflowing into the next cell — a long
+  // subtitle on a narrow report (e.g. the 2-column OCR sheet) was cut mid-word.
+  // The band cells wrap now, but a merged row never auto-fits its height, so
+  // grow each band row from the final column widths above.
+  const totalWidth = worksheet.columns.reduce((sum, col) => sum + (col.width ?? 12), 0);
+  const bandPlan = [
+    { text: title.toUpperCase(), fontSize: 14, base: 26 },
+    { text: subtitle ?? '', fontSize: 10, base: 18 },
+    { text: `Ngày xuất: ${dateStr}`, fontSize: 10, base: 18 },
+  ];
+  bandPlan.forEach(({ text, fontSize, base }, i) => {
+    if (!text) return;
+    // The width unit is roughly one character at the body font size; scale for
+    // the band font and shave a few chars for the indent + estimate slop (a
+    // too-tall row is harmless, a too-short one reintroduces the clip).
+    const charsPerLine = Math.max(Math.round(((totalWidth - 3) * 10) / fontSize), 8);
+    const lines = Math.max(1, Math.ceil(text.length / charsPerLine));
+    if (lines > 1) {
+      worksheet.getRow(i + 1).height = Math.max(base, Math.ceil(lines * fontSize * 1.5));
     }
   });
 

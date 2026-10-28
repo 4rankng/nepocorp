@@ -59,3 +59,28 @@ describe('downloadCSV currency cells', () => {
     expect(sheet.getCell('B6').value).toBe('— ₫');
   });
 });
+
+describe('downloadCSV title band (NEPO-620)', () => {
+  beforeEach(() => {
+    vi.mocked(downloadBlob).mockClear();
+  });
+
+  it('grows and wraps the subtitle row instead of clipping it on a narrow sheet', async () => {
+    // The A2:B2 merge on this 2-column sheet is exactly the shape that used to
+    // clip: a merged cell does not overflow, so the subtitle was cut mid-word.
+    const subtitle =
+      'Tháng 10/2026 · Hạn mức 5.000 request · Trung bình 400 lượt/ngày · Phát sinh ngoài gói: 50 request × 200 ₫ = 10.000 ₫';
+    const sheet = await captureWorkbook([['Xăng', '100']], { subtitle });
+
+    expect(sheet.getCell('A2').value).toBe(subtitle);
+    expect(sheet.getCell('A2').alignment?.wrapText).toBe(true);
+    // A single-line height (18) is the bug — the wrapped text needs the row.
+    expect(sheet.getRow(2).height ?? 0).toBeGreaterThan(30);
+  });
+
+  it('keeps a subtitle that fits at its single-line height', async () => {
+    const sheet = await captureWorkbook([['Xăng', '100']], { subtitle: 'Tóm tắt nhanh' });
+    expect(sheet.getRow(2).height).toBe(18);
+    expect(sheet.getCell('A2').alignment?.wrapText).toBe(true);
+  });
+});
