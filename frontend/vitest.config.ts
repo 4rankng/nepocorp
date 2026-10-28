@@ -16,7 +16,7 @@ export default defineConfig({
     // other .css id stays stubbed to an empty string (Vitest default) —
     // cheaper and side-effect free.
     css: {
-      include: [/((salary-attendance|trip-list)\/[^?]+|pages\/(DispatchPage|OcrRequestsPage|DashboardPage|FinancePage|ExpenseListPage)|styles\/(tokens|responsive)|layout\/sidebar|shared\/ListFilterBar)\.css(\?.*)?$/],
+      include: [/((salary-attendance|trip-list)\/[^?]+|pages\/(DispatchPage|OcrRequestsPage|DashboardPage|FinancePage|ExpenseListPage)|styles\/(tokens|responsive|utilities)|layout\/sidebar|shared\/ListFilterBar)\.css(\?.*)?$/],
     },
   },
   resolve: {
