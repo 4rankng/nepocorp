@@ -31,10 +31,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>(null!);
 
+/**
+ * Decode a JWT payload segment (base64url) into a UTF-8 string.
+ *
+ * `atob` only knows STANDARD base64: it rejects the base64url alphabet's
+ * `-` and `_` outright. A JWT payload segment that contains either of them
+ * (which happens as soon as the payload holds a non-ASCII character — every
+ * Vietnamese name does) made `atob` throw, and the throw was swallowed by
+ * {@link isTokenExpired}'s catch — the app then treated a perfectly valid
+ * token as expired and logged the user out on every page reload.
+ *
+ * So: translate base64url back to standard base64, then decode the bytes as
+ * UTF-8 (plain `atob` gives Latin-1, which mangles the Vietnamese text).
+ */
+function decodeJwtSegment(segment: string): string {
+  const base64 = segment.replace(/-/g, '+').replace(/_/g, '/');
+  const binary = atob(base64);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
 /** Decode a JWT payload without a library; null if malformed or expired. */
 function isTokenExpired(token: string): boolean {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const payload = JSON.parse(decodeJwtSegment(token.split('.')[1])) as { exp?: number };
     return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
   } catch {
     return true;

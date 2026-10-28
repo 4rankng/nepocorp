@@ -1,5 +1,6 @@
 import { AlertTriangle, ScanLine } from 'lucide-react';
 import { SkeletonLine } from '../../../components/shared/Skeleton';
+import { OcrUsageChart } from '../../../components/charts/OcrUsageChart';
 import { formatCurrency, formatNumber } from '../../../lib/format';
 import type { OcrUsageStatus } from '@tingting/shared';
 
@@ -8,19 +9,32 @@ import type { OcrUsageStatus } from '@tingting/shared';
  * against the configurable allowance, what's left, and — once the allowance is
  * exceeded — the overage count costed at the configured per-call price.
  *
- * Layout mirrors FleetStatusCard (wf-bento-third, wf-card-h + wf-fstats idiom)
- * so the tile drops into the dashboard's row-of-thirds without new CSS.
+ * Layout (NEPO-28, owner spec): a four-metric row (used · projected month-end
+ * · daily average · overage cost), a 3px micro-meter carrying the allowance
+ * state, and the daily request chart underneath. The monthly allowance is
+ * deliberately NOT drawn as a line on the daily axis — a 10.000 cap on a
+ * 0–600 daily scale flattens every bar — so the meter above the chart is the
+ * only place the cap is expressed.
+ *
+ * The tile carries the `wf-ocr` scope, which gives it its own padding and a
+ * TWO-column stat grid (the fleet card's `wf-fstats` is a four-column grid
+ * sized for four stats). It sits beside "Top tuyến sinh lời" as the second
+ * half of a 6+6 row.
  */
 interface OcrUsageCardProps {
   status: OcrUsageStatus | null;
   loading: boolean;
   isError: boolean;
   onRetry: () => void;
-  /** 'T10' style label from the dashboard's month context. */
-  monthLabel: string;
   /** ADMIN-only affordance — the settings live on the app-settings page. */
   canManage: boolean;
   onNavigate: (path: string) => void;
+}
+
+/** '2026-10' → '10/2026' */
+function formatPeriod(period: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(period);
+  return m ? `${m[2]}/${m[1]}` : period;
 }
 
 export function OcrUsageCard({
@@ -28,17 +42,16 @@ export function OcrUsageCard({
   loading,
   isError,
   onRetry,
-  monthLabel,
   canManage,
   onNavigate,
 }: OcrUsageCardProps) {
   if (isError) {
     return (
-      <div className="d-card d-card-border bg-base-100 wf-card wf-bento-third" data-testid="ocr-usage-card-error">
+      <div className="d-card d-card-border bg-base-100 wf-card wf-ocr wf-bento-half" data-testid="ocr-usage-card-error">
         <div className="wf-card-h">
           <div>
             <h2 className="ttl">OCR — Chụp ảnh cont/seal</h2>
-            <div className="sub">Không tải được số request tháng {monthLabel}.</div>
+            <div className="sub">Không tải được số request tháng này.</div>
           </div>
         </div>
         <div className="body">
@@ -50,7 +63,7 @@ export function OcrUsageCard({
 
   if (loading || !status) {
     return (
-      <div className="d-card d-card-border bg-base-100 wf-card wf-bento-third" aria-busy="true">
+      <div className="d-card d-card-border bg-base-100 wf-card wf-ocr wf-bento-half" aria-busy="true">
         <div className="wf-card-h">
           <div>
             <h2 className="ttl">OCR — Chụp ảnh cont/seal</h2>
@@ -65,25 +78,32 @@ export function OcrUsageCard({
   }
 
   const over = status.overageCount > 0;
+  const ratio = status.monthlyAllowance > 0 ? status.used / status.monthlyAllowance : 0;
   const pct = status.monthlyAllowance > 0
-    ? Math.min(100, (status.used / status.monthlyAllowance) * 100)
+    ? Math.min(100, ratio * 100)
     : status.used > 0 ? 100 : 0;
+  // One decimal, vi-VN formatted — the raw ratio would leak float noise
+  // ("43.980000000000004%").
   const pctText = status.monthlyAllowance > 0
-    ? `${Math.round((status.used / status.monthlyAllowance) * 100)}%`
+    ? `${formatNumber(Math.round(ratio * 1000) / 10)}%`
     : '—';
+  // Status tone: green below 85%, blue 85–100%, amber past the cap. The house
+  // idiom encodes state through colour + words, never through a badge shape.
   const tone: 'ok' | 'high' | 'over' = over
     ? 'over'
-    : status.monthlyAllowance > 0 && (status.used / status.monthlyAllowance) > 0.85 ? 'high' : 'ok';
+    : status.monthlyAllowance > 0 && ratio > 0.85 ? 'high' : 'ok';
+  const projectedOver = status.projectedTotal > status.monthlyAllowance;
+  const projectedText = status.projectedTotal > 0 ? `~${formatNumber(status.projectedTotal)}` : '—';
 
   return (
-    <div className="d-card d-card-border bg-base-100 wf-card wf-bento-third" data-testid="ocr-usage-card">
+    <div className="d-card d-card-border bg-base-100 wf-card wf-ocr wf-bento-half" data-testid="ocr-usage-card">
       <div className="wf-card-h">
         <div>
           <h2 className="ttl">
             <ScanLine size={14} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: 6 }} />
             OCR — Chụp ảnh cont/seal
           </h2>
-          <div className="sub">Tháng {monthLabel} · counter tự reset đầu tháng</div>
+          <div className="sub">Tháng {formatPeriod(status.period)} · counter tự reset đầu tháng</div>
         </div>
         {canManage && (
           <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => onNavigate('/config/app-settings')}>
@@ -91,38 +111,76 @@ export function OcrUsageCard({
           </button>
         )}
       </div>
+
       <div className="body">
-        <div className="wf-fstats">
-          <div className="wf-fstat">
-            <div className="v">{formatNumber(status.used)}</div>
-            <div className="k">Đã dùng / {formatNumber(status.monthlyAllowance)}</div>
-          </div>
-          <div className="wf-fstat">
+        {/* Four metrics, none of them a repeat of what the chart already shows:
+            the chart carries the daily rhythm, the row carries the month. */}
+        <div className="wf-ocr-metrics">
+          <div className="wf-ocr-metric">
+            <div className="k">Đã dùng</div>
             <div className="v">
-              <span className="pip" style={{ background: over ? 'var(--wf-amber)' : 'var(--wf-green)' }} />
-              {formatNumber(status.remaining)}
+              {formatNumber(status.used)}
+              <span className="of"> / {formatNumber(status.monthlyAllowance)}</span>
             </div>
-            <div className="k">Còn lại</div>
+            <div className="s">Còn {formatNumber(status.remaining)} lượt</div>
+          </div>
+          <div className="wf-ocr-metric">
+            <div className="k">Dự báo tháng</div>
+            <div className={`v ${projectedOver ? 'v--over' : ''}`}>{projectedText}</div>
+            <div className="s">
+              {status.projectedTotal > 0
+                ? projectedOver ? 'Vượt hạn mức' : 'Trong hạn mức'
+                : 'Chưa có số liệu'}
+            </div>
+          </div>
+          <div className="wf-ocr-metric">
+            <div className="k">Trung bình</div>
+            <div className="v">{status.dailyAverage > 0 ? formatNumber(status.dailyAverage) : '—'}</div>
+            <div className="s">lượt / ngày</div>
+          </div>
+          <div className="wf-ocr-metric">
+            <div className="k">Phát sinh ngoài gói</div>
+            <div className={`v ${over ? 'v--over' : ''}`}>{formatCurrency(status.overageCost)}</div>
+            <div className="s">
+              {over
+                ? `${formatNumber(status.overageCount)} lượt · ${formatCurrency(status.overagePricePerCall)}/lượt`
+                : `${formatCurrency(status.overagePricePerCall)} / lượt`}
+            </div>
           </div>
         </div>
-        <div
-          className="wf-util"
-          title={`Đã dùng ${formatNumber(status.used)}/${formatNumber(status.monthlyAllowance)} request trong tháng`}
-        >
-          <span className="cap">Hạn mức tháng</span>
-          <progress
-            className={`d-progress track ${tone === 'over' ? 'd-progress-warning' : tone === 'high' ? 'd-progress-info' : 'd-progress-success'}`}
-            value={pct}
-            max={100}
-            aria-label="Tỷ lệ OCR request so với hạn mức tháng"
-          />
+
+        {/* The monthly cap: a 3px micro-meter + the state in words. */}
+        <div className="wf-ocr-meter">
+          <div className="wf-ocr-meter__track">
+            <span
+              className={`wf-ocr-meter__fill wf-ocr-meter__fill--${tone}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
           <span className={`pct pct--${tone}`}>{pctText}</span>
+          <span className={`wf-ocr-meter__state wf-ocr-meter__state--${tone}`}>
+            {over
+              ? `Vượt ${formatNumber(status.overageCount)} lượt`
+              : tone === 'high'
+                ? `Sắp chạm hạn mức (còn ${formatNumber(status.remaining)})`
+                : 'Đang trong hạn mức'}
+          </span>
           {over && (
             <span className="wf-util__flag wf-util__flag--over" data-testid="ocr-usage-overage">
               <AlertTriangle size={12} aria-hidden="true" />
-              Vượt hạn mức {formatNumber(status.overageCount)} request · {formatCurrency(status.overageCost)}
+              {formatNumber(status.overageCount)} request · {formatCurrency(status.overageCost)}
             </span>
           )}
+        </div>
+
+        <div className="wf-ocr-chart">
+          <OcrUsageChart
+            daily={status.daily}
+            period={status.period}
+            elapsedDays={status.elapsedDays}
+            daysInMonth={status.daysInMonth}
+            dailyAverage={status.dailyAverage}
+          />
         </div>
       </div>
     </div>

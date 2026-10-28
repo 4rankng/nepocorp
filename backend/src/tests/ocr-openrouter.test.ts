@@ -7,8 +7,14 @@
  * globalThis.fetch is mocked per-test and routed by URL so we can prove:
  *   - OpenRouter is tried FIRST and, on success, Gemini is never called.
  *   - an OpenRouter failure (HTTP 429) transparently fails over to Gemini.
- *   - the vision call targets Claude Haiku 5.5 with the type-specific prompt.
+ *   - the vision call targets the configured model with the type-specific prompt.
  *   - `think` reasoning and parts-array `content` are normalized before parsing.
+ *
+ * The API key + model are passed in explicitly (`OcrAiConfig`) rather than read
+ * from the environment: since NEPO-28 the model and key are ADMIN settings
+ * stored in the DB, so the transport takes them as an argument. Pinning them
+ * here keeps the suite hermetic — no env var and no database row can change
+ * what these tests exercise.
  *
  * Note: no before/after hooks — this Node/tsx ESM surface doesn't expose
  * `afterAll`. Config keys are pinned at module top-level (each test file runs
@@ -17,7 +23,11 @@
  */
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { callOpenRouterVision, extractContainerAndSeal } from '../services/ocr.service';
+import {
+  callOpenRouterVision,
+  extractContainerAndSeal,
+  type OcrAiConfig,
+} from '../services/ocr.service';
 import { config } from '../config';
 
 const originalFetch = globalThis.fetch;
@@ -27,6 +37,10 @@ const originalFetch = globalThis.fetch;
 // process under `tsx --test`.
 config.openrouterApiKey = 'test-or-key';
 config.geminiApiKey = 'test-gemini-key';
+
+const MODEL = 'anthropic/claude-haiku-5.5';
+/** The OCR credentials every test runs with — pinned, not read from the DB. */
+const AI: OcrAiConfig = { apiKey: 'test-or-key', model: MODEL };
 
 // 1×1 PNG — a valid image so sharp's preprocessImage succeeds cleanly (the
 // mocked fetch ignores the bytes; we just want no preprocessing noise).
@@ -60,7 +74,7 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
       return res(orBody(JSON.stringify({ container_numbers: [VALID_CONTAINER] })));
     }) as unknown as typeof globalThis.fetch;
     try {
-      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg');
+      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.equal(r.provider, 'openrouter');
       assert.equal(r.model, 'anthropic/claude-haiku-5.5');
@@ -75,7 +89,7 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
       return res(orBody(`<think>reasoning about the image...</think>{"container_numbers":["${VALID_CONTAINER}"]}`));
     }) as unknown as typeof globalThis.fetch;
     try {
-      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg');
+      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.equal(r.text!.includes('<think>'), false);
       assert.deepEqual(JSON.parse(r.text!), { container_numbers: [VALID_CONTAINER] });
@@ -88,7 +102,7 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
     globalThis.fetch = (async () =>
       res(orBody([{ type: 'text', text: `{"container_numbers":["${VALID_CONTAINER}"]}` }]))) as unknown as typeof globalThis.fetch;
     try {
-      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg');
+      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.deepEqual(JSON.parse(r.text!), { container_numbers: [VALID_CONTAINER] });
     } finally {
@@ -99,7 +113,7 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
   test('callOpenRouterVision: HTTP 429 → failure "HTTP 429", no throw', async () => {
     globalThis.fetch = (async () => res({ error: 'rate limited' }, 429)) as unknown as typeof globalThis.fetch;
     try {
-      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg');
+      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg', AI);
       assert.equal(r.success, false);
       assert.equal(r.provider, 'openrouter');
       assert.equal(r.error, 'HTTP 429');
@@ -114,7 +128,8 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
     config.openrouterApiKey = '';
     globalThis.fetch = (async () => { calls++; return res(orBody('{}')); }) as unknown as typeof globalThis.fetch;
     try {
-      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg');
+      // An empty key in the ADMIN settings → no upstream call at all.
+      const r = await callOpenRouterVision('prompt', IMG, 'image/jpeg', { apiKey: '', model: MODEL });
       assert.equal(r.success, false);
       assert.equal(r.provider, 'openrouter');
       assert.match(r.error!, /OPENROUTER_API_KEY/);
@@ -138,7 +153,7 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
       return res(geminiBody(JSON.stringify({ container_numbers: ['TEMU0000000'] })));
     }) as unknown as typeof globalThis.fetch;
     try {
-      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
+      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.equal(r.provider, 'openrouter');
       assert.deepEqual(r.containerNumbers, [VALID_CONTAINER]);
@@ -158,7 +173,7 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
       return res(geminiBody(JSON.stringify({ container_numbers: [VALID_CONTAINER] })));
     }) as unknown as typeof globalThis.fetch;
     try {
-      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
+      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.equal(r.provider, 'gemini');
       assert.deepEqual(r.containerNumbers, [VALID_CONTAINER]);
@@ -172,7 +187,7 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
   test('extractContainerAndSeal: SEAL path returns the seal via OpenRouter', async () => {
     globalThis.fetch = (async () => res(orBody(JSON.stringify({ seal_number: 'VN123456' })))) as unknown as typeof globalThis.fetch;
     try {
-      const r = await extractContainerAndSeal(IMG, 'SEAL', 'image/jpeg');
+      const r = await extractContainerAndSeal(IMG, 'SEAL', 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.equal(r.provider, 'openrouter');
       assert.equal(r.sealNumber, 'VN123456');
@@ -193,7 +208,7 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
       return res(geminiBody(JSON.stringify({ container_numbers: ['TEMU0000000'] })));
     }) as unknown as typeof globalThis.fetch;
     try {
-      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
+      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.equal(r.provider, 'openrouter');
       assert.deepEqual(r.containerNumbers, [VALID_CONTAINER]);
@@ -210,7 +225,8 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
     config.geminiApiKey = '';
     globalThis.fetch = (async () => { calls++; return res({}); }) as unknown as typeof globalThis.fetch;
     try {
-      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
+      // Neither provider has a key → no upstream call, friendly error.
+      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', { apiKey: '', model: MODEL });
       assert.equal(r.success, false);
       assert.equal(r.provider, null);
       assert.match(r.error!, /chưa cấu hình/);
@@ -248,9 +264,23 @@ describe('OCR: Haiku 5.5 model + prompt contract', () => {
   test('vision calls target Claude Haiku 5.5 (anthropic/claude-haiku-5.5)', async () => {
     const captured = capture();
     try {
-      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
+      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.equal(captured[0].model, 'anthropic/claude-haiku-5.5');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('the ADMIN-configured model is the one the call targets (NEPO-28)', async () => {
+    const captured = capture();
+    try {
+      const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', {
+        apiKey: 'test-or-key',
+        model: 'google/gemini-3.5-flash',
+      });
+      assert.equal(r.success, true);
+      assert.equal(captured[0].model, 'google/gemini-3.5-flash');
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -259,7 +289,7 @@ describe('OCR: Haiku 5.5 model + prompt contract', () => {
   test('CONTAINER extraction sends the ISO 6346 prompt and the image payload', async () => {
     const captured = capture();
     try {
-      await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg');
+      await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', AI);
       const { text, image } = textAndImage(captured[0]);
       // The contract the recognition quality depends on: the 4+7 format rule,
       // the JSON output shape, and the ISO size/type + seal exclusions.
@@ -276,7 +306,7 @@ describe('OCR: Haiku 5.5 model + prompt contract', () => {
   test('SEAL extraction sends the seal prompt (never the container prompt)', async () => {
     const captured = capture();
     try {
-      await extractContainerAndSeal(IMG, 'SEAL', 'image/jpeg');
+      await extractContainerAndSeal(IMG, 'SEAL', 'image/jpeg', AI);
       const { text } = textAndImage(captured[0]);
       assert.match(text, /"seal_number"/);
       assert.match(text, /ignore ISO container numbers/);
