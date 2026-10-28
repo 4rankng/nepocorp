@@ -244,8 +244,9 @@
      touch-sized targets for the tablet/phone overrides below. */
   --topbar-h: 40px;
   /* Control height — sized against the dense 12px control type rather than a
-     fingertip. A 44px control around 12px text reads as a bloated widget in a
-     data workspace; touch surfaces get their size through the overrides below. */
+   * fingertip. A 44px control around 12px text reads as a bloated widget in a
+   * data workspace; touch surfaces get their size through the overrides below
+   * (44px tap floor ≤768px — shipmate-uiux · NEPO-36). */
   --control-h: 32px;
   /* Commit-surface height (bottom action bar, modal feet). Follows the control
      scale on desktop; phones override to 44px — the Shopee/Grab rule: only the
@@ -361,6 +362,7 @@
   /* --- Breakpoint tiers (use ONLY these values in @media) ---
    * 420px  — narrow phone
    * 640px  — phone
+   * 768px  — mobile doctrine edge (tap-target floor, form-font floor)
    * 1023px — tablet
    * 1100px — small desktop
    * No other breakpoint values without updating this list. --- */
@@ -407,7 +409,8 @@
 
 /* Dense phone scale (kanban 20260924_1): controls follow MooMoo/Shopee/Grab
    density — 36px is exactly 3× --fs-control (12px). Commit surfaces (bottom
-   action bar, modal feet) keep --cta-h 44px: big ONLY where the thumb lands. */
+   action bar, modal feet) keep --cta-h 44px: big ONLY where the thumb lands.
+   Superseded for ≤768px by the tap-target floor below (NEPO-36). */
 @media (max-width: 900px) {
   :root { --control-h: 36px; --cta-h: 44px; }
 }
@@ -416,6 +419,15 @@
  * (touch laptops, tablets in landscape) — width alone is the wrong signal. */
 @media (pointer: coarse) {
   :root { --control-h: 36px; --cta-h: 44px; }
+}
+
+/* Mobile doctrine (shipmate-uiux · NEPO-36 id 659): interactive controls need
+   a ≥44px hit area on phones/tablets. One token flip lifts every
+   var(--control-h)-derived control to 44px ≤768px; 769–900px keeps the 36px
+   comparison-workspace density. Placed after the blocks above so it wins at
+   ≤768px for either pointer. */
+@media (max-width: 768px) {
+  :root { --control-h: 44px; --cta-h: 44px; }
 }
 
 @theme inline {
