@@ -728,9 +728,9 @@
 }
 
 /* Safari zooms focused editable fields below 16px. Scope the exception to
-   FOCUS on iOS text entry only: at rest, inputs/textareas follow the token
-   scale like every other control (button-based selects and labels never
-   inflate). Size lives in --fs-ios-focus (tokens.css). */
+ * FOCUS on iOS text entry only: at rest, inputs/textareas follow the token
+ * scale like every other control (button-based selects and labels never
+ * inflate). Size lives in --fs-ios-focus (tokens.css). */
 @supports (-webkit-touch-callout: none) {
   @media (max-width: 640px) {
     #root input:not([type="checkbox"]):not([type="radio"]):focus,
@@ -743,5 +743,158 @@
     .drawer .drawer__body textarea.input:focus {
       font-size: var(--fs-ios-focus);
     }
+  }
+}
+
+/* ============================================================================
+ * MOBILE TAP DOCTRINE  ≤ 768px — ≥44px hit areas (shipmate-uiux · NEPO-36)
+ *
+ * Every interactive element keeps a ≥44×44 hit area on phones and tablets.
+ * Controls whose visual box cannot grow without breaking their container
+ * (map markers, drawn table checkboxes) expand the hit area with a transparent
+ * ::before overlay instead — the doctrine counts hit area, not paint.
+ * Desktop ≥769px is untouched. Chart data rects (role="button" bars in SVG
+ * charts) are exempt: bar spacing is essential to the chart (WCAG 2.5.8
+ * "essential" exception).
+ * ========================================================================== */
+@media (max-width: 768px) {
+
+  /* ── Interactive floor: ≥44px tall for every tappable control ── */
+  #root button,
+  #root a[href],
+  #root select,
+  #root textarea,
+  #root input:not([type="checkbox"]):not([type="radio"]):not(.ds-date-input__native),
+  #root [role="button"]:not(.leaflet-marker-icon),
+  .modal button,
+  .modal a[href],
+  .modal select,
+  .modal textarea,
+  .modal input:not([type="checkbox"]):not([type="radio"]),
+  .modal [role="button"],
+  .drawer button,
+  .drawer a[href],
+  .drawer select,
+  .drawer textarea,
+  .drawer input:not([type="checkbox"]):not([type="radio"]),
+  .drawer [role="button"] {
+    min-height: 44px;
+  }
+
+  /* Icon-only buttons (toolbar +/⋮, row actions) are narrower than they are
+     tall — floor the width too. */
+  #root button,
+  .modal button,
+  .drawer button {
+    min-width: 44px;
+  }
+
+  /* ── Topbar chrome derives from the bar (calc(--topbar-h) − 8px in
+   *    topbar.css): lift the bar so the derived controls land on 44px. ── */
+  :root { --topbar-h: 52px; }
+
+  /* ── Square icon controls: full 44×44 ── */
+  #root .wf-todo__tick,
+  #root .cfg-secret-input__toggle,
+  #root .swap-btn,
+  #root .page-btn,
+  #root .approval-queue__quick,
+  #root .topbar-date__nav,
+  #root .nepo-banner__close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* ── Leaflet map controls (global — page CSS is code-split and can miss
+   *    screens like /dispatch). #root prefix outranks leaflet.css. ── */
+  #root .leaflet-touch .leaflet-control-zoom a,
+  #root .leaflet-control-zoom a {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    font-size: 18px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Map markers are pin-shaped and anchored to their coordinates — growing
+     the div would shift the pin, so the hit area expands invisibly. */
+  #root .leaflet-marker-icon.custom-map-marker::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+  }
+
+  /* ── Checkbox / radio: native glyphs cannot grow past ~22px without
+   *    looking broken, and <input> takes no pseudo-elements — so redraw the
+   *    control at 44×44 with a 22px glyph painted via background. Visually
+   *    hidden inputs (e.g. sr-only fuel-mode radios) keep their clip/opacity
+   *    and simply grow an invisible 44px hit box. ── */
+  #root input[type="checkbox"],
+  #root input[type="radio"],
+  .modal input[type="checkbox"],
+  .modal input[type="radio"],
+  .drawer input[type="checkbox"],
+  .drawer input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: transparent center / 22px 22px no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect x='1.25' y='1.25' width='19.5' height='19.5' rx='5' fill='%23fff' stroke='%2389978F' stroke-width='2.5'/%3E%3C/svg%3E");
+  }
+  #root input[type="radio"],
+  .modal input[type="radio"],
+  .drawer input[type="radio"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='9.25' fill='%23fff' stroke='%2389978F' stroke-width='2.5'/%3E%3C/svg%3E");
+  }
+  #root input[type="checkbox"]:checked,
+  .modal input[type="checkbox"]:checked,
+  .drawer input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect x='1.25' y='1.25' width='19.5' height='19.5' rx='5' fill='%23005A2D'/%3E%3Cpath d='M6 11.5l3.2 3.2L16 8' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  #root input[type="checkbox"]:indeterminate,
+  .modal input[type="checkbox"]:indeterminate,
+  .drawer input[type="checkbox"]:indeterminate {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Crect x='1.25' y='1.25' width='19.5' height='19.5' rx='5' fill='%23005A2D'/%3E%3Cpath d='M6.5 11h9' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+  #root input[type="radio"]:checked,
+  .modal input[type="radio"]:checked,
+  .drawer input[type="radio"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='9.25' fill='%23fff' stroke='%23005A2D' stroke-width='2.5'/%3E%3Ccircle cx='11' cy='11' r='5' fill='%23005A2D'/%3E%3C/svg%3E");
+  }
+  #root input[type="checkbox"]:disabled,
+  #root input[type="radio"]:disabled,
+  .modal input[type="checkbox"]:disabled,
+  .modal input[type="radio"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Drawn table-selection boxes (.checkbox spans) keep their 16px visual but
+     expand the hit area to 44×44. */
+  #root .checkbox {
+    position: relative;
+  }
+  #root .checkbox::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
   }
 }
