@@ -53,5 +53,14 @@ describe('OCR log screen CSS contracts (NEPO-34)', () => {
 
     const mobileDefault = rules.find((r) => r.selector === '.ocrlog-mobile');
     expect(mobileDefault?.body).toMatch(/display:\s*none/);
+
+    // Layout rules must not set `display` — only the switch pair above owns
+    // it, or a later rule silently overrides it at equal specificity (the bug
+    // the live smoke caught: cards showing under the table on desktop).
+    for (const { selector, body } of rules) {
+      if (/\b(ocrlog-cards|ocrlog-table-wrap)\b/.test(selector)) {
+        expect(body, `display bị set ngoài switch: ${selector}`).not.toMatch(/display\s*:/);
+      }
+    }
   });
 });
