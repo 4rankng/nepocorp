@@ -727,22 +727,28 @@
   }
 }
 
-/* Safari zooms focused editable fields below 16px. Scope the exception to
- * FOCUS on iOS text entry only: at rest, inputs/textareas follow the token
- * scale like every other control (button-based selects and labels never
- * inflate). Size lives in --fs-ios-focus (tokens.css). */
-@supports (-webkit-touch-callout: none) {
-  @media (max-width: 640px) {
-    #root input:not([type="checkbox"]):not([type="radio"]):focus,
-    .modal input:not([type="checkbox"]):not([type="radio"]):focus,
-    .drawer input:not([type="checkbox"]):not([type="radio"]):focus,
-    #root textarea:focus,
-    .modal textarea:focus,
-    .modal .modal__body textarea.input:focus,
-    .drawer textarea:focus,
-    .drawer .drawer__body textarea.input:focus {
-      font-size: var(--fs-ios-focus);
-    }
+/* ============================================================================
+ * MOBILE FORM FONTS  ≤ 768px — ≥16px editable text (NEPO-37 · id 660)
+ *
+ * iOS WebKit zooms the viewport when a focused field's font is <16px. The old
+ * fix inflated fields only WHILE focused (iOS-only) and still let the zoom
+ * fire on 11–12px search/filter/key inputs. Now input/select/textarea sit at
+ * 16px at rest ≤768px; labels/placeholders keep hierarchy through weight and
+ * colour instead of sub-16px type. Desktop ≥769px keeps the dense 12px
+ * control type. Drawn checkbox/radio and the clipped date-picker source
+ * carry no text and stay out.
+ * ========================================================================== */
+@media (max-width: 768px) {
+  #root input:not([type="checkbox"]):not([type="radio"]):not(.ds-date-input__native),
+  #root select,
+  #root textarea,
+  .modal input:not([type="checkbox"]):not([type="radio"]),
+  .modal select,
+  .modal textarea,
+  .drawer input:not([type="checkbox"]):not([type="radio"]),
+  .drawer select,
+  .drawer textarea {
+    font-size: var(--fs-ios-focus);
   }
 }
 

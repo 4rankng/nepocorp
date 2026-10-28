@@ -320,9 +320,10 @@
   --fs-section: var(--fs-lg);
   --fs-page-title: var(--fs-2xl);
 
-  /* iOS WebKit auto-zooms focused editable fields below 16px. Single source
-     for that exception; responsive.css applies it only WHILE FOCUSED so
-     at-rest text keeps the token scale. */
+  /* Form-font floor (NEPO-37): iOS WebKit auto-zooms focused editable fields
+     below 16px. responsive.css now applies this AT REST to input/select/
+     textarea ≤768px, so focus never fires the zoom; the old focus-only
+     exception is gone (at-rest 16px supersedes it). */
   --fs-ios-focus: 16px;
 
   --fw-light:    300;
