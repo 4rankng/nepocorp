@@ -40,7 +40,7 @@
 
   --color-info: #1E5BB8;
   --color-info-content: #FFFFFF;
-  --color-success: #0B8745;
+  --color-success: #0A6E3A;
   --color-success-content: #FFFFFF;
   --color-warning: #C2780B;
   --color-warning-content: #2A1B04;
@@ -85,7 +85,7 @@
    *   --line-3 (emphasis) .......................... 2.80
    *   --line-strong ................................ 3.65
    *   --control-border ............................. 3.05 (WCAG 1.4.11 non-text)
-   *   --ink-4 (placeholder, decorative glyph) ...... 4.85
+   *   --ink-4 (placeholder, decorative glyph) ...... 5.85
    *
    * Never lighten a rung without re-measuring; the ramp is monotonic
    * surface < surface-2 < surface-3 < border-1 < line < line-2 < line-3. */
@@ -99,7 +99,7 @@
   --ink: #0F1713;
   --ink-2: #2E3B34;
   --ink-3: #4A5750;
-  --ink-4: #66756D;
+  --ink-4: #5A6862;
 
   --line: #C8D2CC;
   --line-2: #ADB9B3;
@@ -151,9 +151,11 @@
        --warning-text  any text or glyph                     (13:1 on white)
      --success doubles as TEXT (amounts, valid states) and as a button FILL
      with white text, so it must clear 4.5:1 in both directions; #00B14F was
-     2.84:1 and unreadable. --accent stays the bright brand signal because it is
-     only ever a graphic (dots, bars, rings). */
-  --success: #0B8745;
+     2.84:1 and #0B8745 still failed on soft tints (3.89 on --success-soft,
+     NEPO-38) — #0A6E3A clears ≥5.3:1 on every light surface of the app.
+     --accent stays the bright brand signal because it is only ever a graphic
+     (dots, bars, rings). */
+  --success: #0A6E3A;
   --success-soft: #D9F2E3;
   --success-text: #004D22;
   --warning: #C2780B;
