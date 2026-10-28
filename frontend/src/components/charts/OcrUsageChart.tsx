@@ -93,12 +93,17 @@ export function OcrUsageChart({
   const barX = (i: number) => mL + slot * i + (slot - barW) / 2;
 
   const counts = daily.map((d) => d.count);
-  const peak = Math.max(...counts, 1);
+  const total = counts.reduce((sum, n) => sum + n, 0);
+  const peak = Math.max(...counts, 0);
+  const hasData = peak > 0;
+  // An empty month gets a flat 0 baseline — a 0–1 axis would be noise.
   const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 150, 200, 250, 300, 500, 750, 1000];
-  const step = niceSteps.find((s) => s * 3 >= peak) ?? 1000;
-  const yMax = Math.ceil(peak / step) * step || step;
-  const Y = (v: number) => mT + pH * (1 - v / yMax);
-  const gridValues = Array.from({ length: Math.round(yMax / step) + 1 }, (_, i) => i * step);
+  const step = hasData ? (niceSteps.find((s) => s * 3 >= peak) ?? 1000) : 1;
+  const yMax = hasData ? Math.ceil(peak / step) * step || step : 0;
+  const Y = (v: number) => (yMax > 0 ? mT + pH * (1 - v / yMax) : mT + pH);
+  const gridValues = hasData
+    ? Array.from({ length: Math.round(yMax / step) + 1 }, (_, i) => i * step)
+    : [0];
 
   /** day index (0-based) → measured count, or null when the day is in the future. */
   const countAt = (i: number): number | null => {
@@ -119,7 +124,9 @@ export function OcrUsageChart({
   };
 
   const chartTitle = 'Số request OCR theo ngày';
-  const chartDescription = `Trong tháng, ${daily.length} ngày đã ghi nhận, tổng ${counts.reduce((s, n2) => s + n2, 0)} lượt.`;
+  const chartDescription = hasData
+    ? `Trong tháng, ${daily.length} ngày đã ghi nhận, tổng ${total} lượt.`
+    : 'Chưa có request OCR nào trong tháng.';
   const tooltipWidth = Math.min(210, Math.max(0, W - 16));
   const tooltipLeft = activeIdx !== null
     ? Math.min(Math.max(mL + slot * activeIdx + slot / 2, tooltipWidth / 2 + 8), W - tooltipWidth / 2 - 8)
@@ -229,6 +236,20 @@ export function OcrUsageChart({
             </text>
           ) : null
         ))}
+
+        {/* No requests yet this month — say so instead of drawing an axis
+            around nothing. The day cadence stays visible underneath. */}
+        {!hasData && (
+          <text
+            x={mL + pW / 2}
+            y={mT + pH / 2}
+            textAnchor="middle"
+            fontSize="11"
+            fill={MUTED}
+          >
+            Chưa có request OCR nào trong tháng
+          </text>
+        )}
 
         {/* Hover crosshair */}
         {activeIdx !== null && (

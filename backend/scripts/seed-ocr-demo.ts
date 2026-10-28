@@ -13,7 +13,7 @@
  * NOTE: the backend test suite owns the current month's counter rows and wipes
  * them on every run — re-run this script afterwards to repopulate the chart.
  */
-import { eq, like } from 'drizzle-orm';
+import { like } from 'drizzle-orm';
 import { db, client } from '../src/db';
 import * as s from '../src/db/schema';
 import { ocrUsageDateKey, ocrUsageDaysInMonth, ocrUsagePeriodKey } from '@tingting/shared';

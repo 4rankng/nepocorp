@@ -13,7 +13,7 @@
 // admin save — they are defaults, not hard-coded limits.
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
 import {
   OCR_USAGE_DEFAULT_MONTHLY_ALLOWANCE,
   OCR_USAGE_DEFAULT_OVERAGE_PRICE_PER_CALL,

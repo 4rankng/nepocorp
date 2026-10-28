@@ -146,4 +146,23 @@ describe('OcrUsageCard (NEPO-28) — metric row + chart', () => {
     // 31 days of the month → 31 hit areas (the whole cadence, measured or not).
     expect(container.querySelectorAll('[role="button"]').length).toBe(31);
   });
+
+  it('says so when the month has no requests yet (no empty 0–1 axis)', () => {
+    const empty: OcrUsageStatus = {
+      ...BASE,
+      used: 0,
+      remaining: 10000,
+      dailyAverage: 0,
+      projectedTotal: 0,
+      daily: BASE.daily.map((d) => ({ ...d, count: 0 })),
+    };
+    const { container } = render(<OcrUsageCard {...baseProps} status={empty} />);
+    expect(container.textContent).toContain('Chưa có request OCR nào trong tháng');
+    // The y-axis must not invent a "1" gridline around an empty month.
+    // (The y labels sit at x = mL - 6; the day labels sit under the axis.)
+    const yLabels = Array.from(container.querySelectorAll('svg text'))
+      .filter((t) => t.getAttribute('x') === '24')
+      .map((t) => t.textContent);
+    expect(yLabels).toEqual(['0']);
+  });
 });
