@@ -1,9 +1,10 @@
 /**
- * API shapes for the AI OCR request log (ticket NEPO-33).
+ * API shapes for the AI OCR request log (ticket NEPO-33, screen NEPO-34).
  *
  * The log answers "what did the AI answer, with which model, how long did it
  * take" — the three questions the daily usage counter cannot answer.
  */
+import { z } from 'zod';
 
 /** Outcome of one logged OCR request. */
 export type OcrRequestStatus = 'completed' | 'failed';
@@ -26,6 +27,8 @@ export interface OcrRequestRow {
   error_msg: string | null;
   /** The caller, or null when the account was deleted. */
   user_id: number | null;
+  /** Caller display name (full name → username → email), or null when the account is gone. */
+  user_name: string | null;
 }
 
 /** Aggregate timings over the log. */
@@ -38,12 +41,42 @@ export interface OcrRequestStats {
   p95DurationMs: number | null;
 }
 
+/** Row counts per status — the filter pills' denominators. */
+export interface OcrRequestCounts {
+  all: number;
+  completed: number;
+  failed: number;
+}
+
+/**
+ * List query filters (NEPO-34). Dates are local calendar days ('YYYY-MM-DD'):
+ * `dateFrom` is inclusive, `dateTo` is inclusive of that whole day.
+ */
+export const ocrRequestListQuerySchema = z.object({
+  status: z.enum(['completed', 'failed']).optional(),
+  model: z.string().trim().min(1).max(200).optional(),
+  dateFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD')
+    .optional(),
+  dateTo: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD')
+    .optional(),
+});
+
+export type OcrRequestFilters = z.infer<typeof ocrRequestListQuerySchema>;
+
 /** GET /api/admin/ocr-requests — a page of logged requests + the aggregates. */
 export interface OcrRequestListResponse {
   rows: OcrRequestRow[];
-  /** Total number of logged requests — the pagination denominator. */
+  /** Total number of logged requests matching the filters — the pagination denominator. */
   total: number;
   limit: number;
   offset: number;
   stats: OcrRequestStats;
+  /** Counts per status (scoped by model + date filters, not by status) — the filter pills. */
+  counts: OcrRequestCounts;
+  /** Distinct model slugs in the log — the model filter's options. */
+  models: string[];
 }

@@ -10,10 +10,11 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
     // Process only the stylesheets the CSS contract tests read via `?raw`
-    // (salary-attendance, trip-list, DispatchPage). Every other .css id stays
-    // stubbed to an empty string (Vitest default) — cheaper and side-effect free.
+    // (salary-attendance, trip-list, DispatchPage, OcrRequestsPage). Every
+    // other .css id stays stubbed to an empty string (Vitest default) —
+    // cheaper and side-effect free.
     css: {
-      include: [/((salary-attendance|trip-list)\/[^?]+|pages\/DispatchPage)\.css(\?.*)?$/],
+      include: [/((salary-attendance|trip-list)\/[^?]+|pages\/(DispatchPage|OcrRequestsPage))\.css(\?.*)?$/],
     },
   },
   resolve: {

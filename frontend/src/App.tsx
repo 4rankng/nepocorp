@@ -73,6 +73,7 @@ const TirePositionsConfigPage = lazyPage(() => import('./pages/config/TirePositi
 const DebitNoteTemplatesConfigPage = lazyPage(() => import('./pages/config/DebitNoteTemplatesConfigPage'));
 const DebitNoteTemplateEditorPage = lazyPage(() => import('./pages/config/DebitNoteTemplateEditorPage'));
 const ChatbotMonitoringPage = lazyPage(() => import('./pages/ChatbotMonitoringPage'));
+const OcrRequestsPage = lazyPage(() => import('./pages/OcrRequestsPage'));
 
 function PageLoader() {
   return (
@@ -197,6 +198,7 @@ function AppRoutes() {
           <Route path="/salary" element={adminOnly(page(<SalaryAttendancePage />))} />
           <Route path="/users" element={officeStaffOnly(page(<UsersPage />))} />
           <Route path="/chatbot-monitoring" element={strictAdminOnly(page(<ChatbotMonitoringPage />))} />
+          <Route path="/ocr-requests" element={strictAdminOnly(page(<OcrRequestsPage />))} />
           <Route path="/audit-logs" element={managerOrAdminOnly(page(<AuditLogPage />))} />
           <Route path="/audit-log" element={<Navigate to="/audit-logs" replace />} />
           <Route path="/admin/audit-logs" element={<Navigate to="/audit-logs" replace />} />

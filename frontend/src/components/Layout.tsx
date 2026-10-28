@@ -27,6 +27,7 @@ import {
   Phone,
   ClipboardCheck,
   Activity,
+  FileSearch,
   SlidersHorizontal,
   X,
 } from 'lucide-react';
@@ -88,6 +89,7 @@ export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?:
         ...(role === 'ADMIN' ? [
           { key: 'app-settings', label: 'Cài đặt ứng dụng', path: '/config/app-settings', icon: SlidersHorizontal, section: 'system' as const },
           { key: 'chatbot-monitoring', label: 'Giám sát Chatbot', path: routes.chatbotMonitoring, icon: Activity, section: 'system' as const },
+          { key: 'ocr-requests', label: 'Nhật ký OCR', path: routes.ocrRequests, icon: FileSearch, section: 'system' as const },
         ] : []),
         ...(role === 'ADMIN' || role === 'MANAGER' ? [
           { key: 'audit-logs', label: 'Nhật ký người dùng', path: routes.auditLogs, icon: ScrollText, section: 'system' as const },
