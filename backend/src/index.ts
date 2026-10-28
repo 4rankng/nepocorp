@@ -32,6 +32,7 @@ import llmSettingsRoutes from './routes/llm-settings';
 import { appSettingsRouter } from './routes/app-settings';
 import ocrUsageRoutes from './routes/ocr-usage';
 import ocrAiSettingsRoutes from './routes/ocr-ai-settings';
+import ocrRequestsRoutes from './routes/ocr-requests';
 import faqAdminRoutes from './routes/faq-admin';
 import { uploadRouter, photosRouter } from './routes/upload';
 import ocrRoutes from './routes/ocr';
@@ -138,6 +139,11 @@ app.use('/api/admin/ocr-usage', authMiddleware, requireRoles(Role.ADMIN), ocrUsa
 // slug, plus a live connection probe. ADMIN-only via requireRoles (same gate as
 // app-settings above). MUST mount before the catch-all /api.
 app.use('/api/admin/ocr-ai-settings', authMiddleware, requireRoles(Role.ADMIN), ocrAiSettingsRoutes);
+// AI OCR request log (NEPO-33): one row per recognised photo — the answer, the
+// model and how long it took. Read-only, and open to the same roles that see
+// the OCR usage tile (ADMIN/MANAGER/ACCOUNTANT); DRIVER is excluded. MUST
+// mount before the catch-all /api.
+app.use('/api/admin/ocr-requests', authMiddleware, requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), ocrRequestsRoutes);
 // Admin FAQ knowledge base management (create/update/delete + auto-embed).
 // ADMIN-only: same gate pattern as llm-settings — the `faq-admin` Casbin
 // resource has no policy row, so only the ADMIN wildcard matches; requireRoles
