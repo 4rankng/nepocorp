@@ -31,6 +31,7 @@ import adminChatbotMetricsRoutes from './routes/admin-chatbot-metrics';
 import llmSettingsRoutes from './routes/llm-settings';
 import { appSettingsRouter } from './routes/app-settings';
 import ocrUsageRoutes from './routes/ocr-usage';
+import ocrAiSettingsRoutes from './routes/ocr-ai-settings';
 import faqAdminRoutes from './routes/faq-admin';
 import { uploadRouter, photosRouter } from './routes/upload';
 import ocrRoutes from './routes/ocr';
@@ -133,6 +134,10 @@ app.use('/api/admin/app-settings', authMiddleware, requireRoles(Role.ADMIN), app
 // call. ADMIN-only via requireRoles (same gate as app-settings above). MUST
 // mount before the catch-all /api.
 app.use('/api/admin/ocr-usage', authMiddleware, requireRoles(Role.ADMIN), ocrUsageRoutes);
+// Admin AI OCR model settings (NEPO-28): provider + OpenRouter API key + model
+// slug, plus a live connection probe. ADMIN-only via requireRoles (same gate as
+// app-settings above). MUST mount before the catch-all /api.
+app.use('/api/admin/ocr-ai-settings', authMiddleware, requireRoles(Role.ADMIN), ocrAiSettingsRoutes);
 // Admin FAQ knowledge base management (create/update/delete + auto-embed).
 // ADMIN-only: same gate pattern as llm-settings — the `faq-admin` Casbin
 // resource has no policy row, so only the ADMIN wildcard matches; requireRoles

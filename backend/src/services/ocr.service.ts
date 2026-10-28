@@ -2,17 +2,16 @@
  * OCR service for extracting container & seal numbers from photos.
  *
  * Providers are tried in order, each gated by its API key being set:
- *   1. OpenRouter (Anthropic Claude Haiku 5.5) — primary (callOpenRouterVision)
- *   2. Gemini                              — fallback (callGeminiVision)
+ *   1. OpenRouter — primary (callOpenRouterVision)
+ *   2. Gemini     — fallback (callGeminiVision)
  * The first provider to return a type-valid result wins; on any error/empty/
  * type-miss the request transparently falls through. With only a Gemini key
  * configured this behaves exactly like the previous Gemini-only build.
  *
- * The primary model is Claude Haiku 5.5 (`anthropic/claude-haiku-5.5`) called
- * through the OpenRouter Chat Completions transport — the same API shape the
- * previous Qwen3-VL build used, so no new secrets or clients are needed (prod
- * only carries OPENROUTER_API_KEY). The model is the code constant `OCR_MODEL`
- * below — deliberately not env-configurable.
+ * The OpenRouter key + model come from the ADMIN settings
+ * (services/ocr/settings.ts — encrypted key + model slug, NEPO-28), falling
+ * back to the env `OPENROUTER_API_KEY` and the default model
+ * (`anthropic/claude-haiku-5.5`) when the admin has not configured anything.
  * The earlier Qwen3-VL-32B slug stopped recognizing numbers reliably on
  * container/seal photos (empty extractions, seal numbers never returned);
  * Haiku 5.5 restored extraction quality.
@@ -37,6 +36,7 @@
 import sharp from 'sharp';
 import { config } from '../config';
 import { validateCheckDigit, suggestCorrections } from '@tingting/shared';
+import { getOcrAiSettings } from './ocr/settings';
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta';
 
@@ -55,15 +55,49 @@ const MAX_DETECT = 10;
 const CONTAINER_RE = /^[A-Z]{4}\d{7}$/;
 const CONTAINER_RE_G = /[A-Z]{4}\d{7}/g;
 
-// OpenRouter vision transport — endpoint AND model are hardcoded constants,
-// NOT env vars (fixed OpenAI-compatible endpoint; mirrors the MiniMax LLM
-// pattern, services/llm/models.ts). Only the API key
-// (config.openrouterApiKey) is required.
+// OpenRouter vision transport — endpoint AND model come from the admin
+// settings (services/ocr/settings.ts), falling back to the env key and the
+// default model. Only the endpoint itself is a constant (fixed
+// OpenAI-compatible endpoint; mirrors the MiniMax LLM pattern,
+// services/llm/models.ts).
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-// Anthropic Claude Haiku 5.5, verified against the OpenRouter model list —
-// the best number-recognition model measured on container/seal photos. A
-// model swap is a code change here, not a config change (owner's call).
+// Anthropic Claude Haiku 5.5 — the default vision model, verified against the
+// OpenRouter model list as the best number-recognition model measured on
+// container/seal photos. The ADMIN can pick another model in Cài đặt ứng dụng;
+// this constant is only the fallback.
 const OCR_MODEL = 'anthropic/claude-haiku-5.5';
+
+/**
+ * The credentials + model one OCR call runs with.
+ *
+ * Injected into the vision calls so the transport has no hidden global state:
+ * the admin settings service resolves it (DB → env fallback) and the tests
+ * pass a pinned value.
+ */
+export interface OcrAiConfig {
+  /** OpenRouter API key. '' means OCR is not configured. */
+  apiKey: string;
+  /** OpenRouter model slug, e.g. 'anthropic/claude-haiku-5.5'. */
+  model: string;
+}
+
+/**
+ * Resolve the effective OCR AI config from the admin settings, with the env
+ * key + default model as the fallback. A settings-store failure must never
+ * break OCR, so it degrades to the env configuration instead of throwing.
+ */
+export async function resolveOcrAiConfig(): Promise<OcrAiConfig> {
+  try {
+    const settings = await getOcrAiSettings();
+    return {
+      apiKey: settings.apiKey || config.openrouterApiKey,
+      model: settings.model || OCR_MODEL,
+    };
+  } catch (error) {
+    console.error('[ocr] failed to load AI settings, falling back to env:', error);
+    return { apiKey: config.openrouterApiKey, model: OCR_MODEL };
+  }
+}
 
 // OpenRouter (OpenAI-compatible) call budget. Reasoning models can wrap
 // chain-of-thought in `think…` blocks; strip both closed blocks and an
@@ -298,13 +332,20 @@ function extractContentText(content: unknown): string {
  * non-2xx the status is returned as `HTTP <status>` (with a server-side log of
  * the upstream body) so a 429/401/404 is distinguishable. A 60s AbortController
  * guards against hangs; on abort the error names the timeout.
+ *
+ * `ai` carries the API key + model. When omitted it is resolved from the
+ * admin settings (DB → env fallback); callers that already resolved it pass
+ * it in so one OCR request never resolves the settings twice.
  */
 export async function callOpenRouterVision(
   prompt: string,
   imageBuffer: Buffer,
   mimeType: string,
+  ai?: OcrAiConfig,
 ): Promise<VisionResult> {
-  if (!config.openrouterApiKey) {
+  const resolved = ai ?? (await resolveOcrAiConfig());
+
+  if (!resolved.apiKey) {
     return {
       success: false,
       text: null,
@@ -314,9 +355,10 @@ export async function callOpenRouterVision(
     };
   }
 
+  const model = resolved.model || OCR_MODEL;
   const dataUri = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
   const payload = {
-    model: OCR_MODEL,
+    model,
     temperature: 0,
     // Parity with Gemini (maxOutputTokens 4096). The completion budget INCLUDES
     // any <think> reasoning tokens; 2048 can truncate the answer mid-JSON when
@@ -339,7 +381,7 @@ export async function callOpenRouterVision(
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${config.openrouterApiKey}`,
+        Authorization: `Bearer ${resolved.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
@@ -354,7 +396,7 @@ export async function callOpenRouterVision(
         text: null,
         error: `HTTP ${response.status}`,
         provider: 'openrouter',
-        model: OCR_MODEL,
+        model,
       };
     }
 
@@ -367,7 +409,7 @@ export async function callOpenRouterVision(
         text: null,
         error: 'Empty OpenRouter response',
         provider: 'openrouter',
-        model: result.model ?? OCR_MODEL,
+        model: result.model ?? model,
       };
     }
     return {
@@ -375,7 +417,7 @@ export async function callOpenRouterVision(
       text,
       error: null,
       provider: 'openrouter',
-      model: result.model ?? OCR_MODEL,
+      model: result.model ?? model,
     };
   } catch (e) {
     const msg = e instanceof Error
@@ -386,7 +428,7 @@ export async function callOpenRouterVision(
       text: null,
       error: msg,
       provider: 'openrouter',
-      model: OCR_MODEL,
+      model,
     };
   } finally {
     clearTimeout(timer);
@@ -491,12 +533,13 @@ export interface ExtractResult {
 
 /**
  * Ordered OCR providers, each enabled by its API key being non-empty.
- * OpenRouter (Claude Haiku 5.5) is tried first whenever its key is set; Gemini
- * is the fallback. No enable booleans — key presence is the switch.
+ * OpenRouter is tried first whenever its key is set (the admin-saved key, or
+ * the env one); Gemini is the fallback. No enable booleans — key presence is
+ * the switch.
  */
-function orderedProviders(): VisionProvider[] {
+function orderedProviders(openrouterKey: string): VisionProvider[] {
   const list: VisionProvider[] = [];
-  if (config.openrouterApiKey) list.push('openrouter');
+  if (openrouterKey) list.push('openrouter');
   if (config.geminiApiKey) list.push('gemini');
   return list;
 }
@@ -512,8 +555,9 @@ async function callProvider(
   responseSchema: Record<string, unknown> | undefined,
   imageBuffer: Buffer,
   mimeType: string,
+  ai: OcrAiConfig,
 ): Promise<VisionResult> {
-  if (name === 'openrouter') return callOpenRouterVision(prompt, imageBuffer, mimeType);
+  if (name === 'openrouter') return callOpenRouterVision(prompt, imageBuffer, mimeType, ai);
   return callGeminiVision(prompt, imageBuffer, mimeType, responseSchema);
 }
 
@@ -531,7 +575,10 @@ export async function extractContainerAndSeal(
   imageBuffer: Buffer,
   type: 'CONTAINER' | 'SEAL' = 'CONTAINER',
   mimeType = 'image/jpeg',
+  ai?: OcrAiConfig,
 ): Promise<ExtractResult> {
+  const resolvedAi = ai ?? (await resolveOcrAiConfig());
+
   let buffer = imageBuffer;
   let mime = mimeType;
   try {
@@ -545,7 +592,7 @@ export async function extractContainerAndSeal(
   const prompt = type === 'SEAL' ? SEAL_PROMPT : MULTI_CONTAINER_PROMPT;
   const schema = type === 'SEAL' ? SEAL_SCHEMA : CONTAINER_SCHEMA;
 
-  const providers = orderedProviders();
+  const providers = orderedProviders(resolvedAi.apiKey);
   if (providers.length === 0) {
     return {
       success: false,
@@ -566,7 +613,7 @@ export async function extractContainerAndSeal(
   let lastError: string | null = null;
 
   for (const name of providers) {
-    const result = await callProvider(name, prompt, schema, buffer, mime);
+    const result = await callProvider(name, prompt, schema, buffer, mime, resolvedAi);
 
     if (!result.success || !result.text) {
       lastProvider = name;

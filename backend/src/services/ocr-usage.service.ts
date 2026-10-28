@@ -1,9 +1,10 @@
-// AI OCR usage tracking (ticket NEPO-27) — monthly request counter plus the
-// ADMIN-configurable allowance / overage price settings.
+// AI OCR usage tracking (ticket NEPO-27, daily series NEPO-28) — request
+// counter plus the ADMIN-configurable allowance / overage price settings.
 //
 // Storage mirrors services/llm/settings.ts:
 //   - the counter lives in its own table (ocr_usage_counters, one row per
-//     'YYYY-MM' — the row key IS the monthly reset, no cron job);
+//     calendar DAY — the monthly total is the SUM of the month's rows, so a
+//     new month resets implicitly with no cron job);
 //   - the two settings live as app_settings rows under the `ocr_usage.*`
 //     prefix, cached in memory and invalidated after an admin save.
 //
@@ -16,7 +17,10 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import {
   OCR_USAGE_DEFAULT_MONTHLY_ALLOWANCE,
   OCR_USAGE_DEFAULT_OVERAGE_PRICE_PER_CALL,
+  buildOcrUsageDailySeries,
   computeOcrUsageStatus,
+  ocrUsageDateKey,
+  ocrUsageDaysInMonth,
   ocrUsagePeriodKey,
   type OcrUsageSettingsResponse,
   type OcrUsageStatus,
@@ -90,7 +94,7 @@ export async function saveOcrUsageSettings(
 }
 
 /**
- * Count ONE AI image OCR request against the current calendar month.
+ * Count ONE AI image OCR request against the current calendar day.
  *
  * Called once per recognition request from the OCR route (internal provider
  * fallback — OpenRouter miss → Gemini retry — is one user-facing request, not
@@ -98,36 +102,52 @@ export async function saveOcrUsageSettings(
  * standing in front of; it only logs.
  */
 export async function recordOcrRequest(): Promise<void> {
-  const yearMonth = ocrUsagePeriodKey();
+  const usageDate = ocrUsageDateKey();
   try {
     await db
       .insert(s.ocrUsageCounters)
-      .values({ yearMonth, requestCount: 1 })
+      .values({ usageDate, requestCount: 1 })
       .onConflictDoUpdate({
-        target: s.ocrUsageCounters.yearMonth,
+        target: s.ocrUsageCounters.usageDate,
         set: {
           requestCount: sql`${s.ocrUsageCounters.requestCount} + 1`,
           updatedAt: new Date(),
         },
       });
   } catch (error) {
-    console.error(`[ocr-usage] failed to increment ${yearMonth}:`, error);
+    console.error(`[ocr-usage] failed to increment ${usageDate}:`, error);
   }
 }
 
 /**
  * Dashboard snapshot for the current calendar month: used vs allowance,
- * remaining, and the overage count/cost once the allowance is exceeded.
+ * remaining, the overage count/cost once the allowance is exceeded, and the
+ * daily series + run-rate figures the chart needs (NEPO-28).
  */
 export async function getOcrUsageStatus(): Promise<OcrUsageStatus> {
   const period = ocrUsagePeriodKey();
+  const daysInMonth = ocrUsageDaysInMonth(period);
+  const today = new Date();
+  const elapsedDays = Math.min(daysInMonth, Math.max(1, today.getDate()));
+
   const [settings, rows] = await Promise.all([
     getOcrUsageSettings(),
     db
-      .select({ requestCount: s.ocrUsageCounters.requestCount })
+      .select({ usageDate: s.ocrUsageCounters.usageDate, requestCount: s.ocrUsageCounters.requestCount })
       .from(s.ocrUsageCounters)
-      .where(eq(s.ocrUsageCounters.yearMonth, period))
-      .limit(1),
+      .where(sql`${s.ocrUsageCounters.usageDate} LIKE ${`${period}-%`}`),
   ]);
-  return computeOcrUsageStatus(settings, rows[0]?.requestCount ?? 0, period);
+
+  const counts = new Map<string, number>();
+  let used = 0;
+  for (const row of rows) {
+    counts.set(row.usageDate, row.requestCount);
+    used += row.requestCount;
+  }
+
+  return computeOcrUsageStatus(settings, used, period, {
+    elapsedDays,
+    daysInMonth,
+    daily: buildOcrUsageDailySeries(period, counts, elapsedDays),
+  });
 }

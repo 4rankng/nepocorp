@@ -204,5 +204,28 @@ export type {
   OcrUsageSettingsResponse,
   OcrUsageSettingsUpdate,
   OcrUsageStatus,
+  OcrUsageDailyPoint,
 } from './schemas/ocr-usage';
-export { computeOcrUsageStatus, ocrUsagePeriodKey } from './calculations/ocr-usage';
+export {
+  computeOcrUsageStatus,
+  ocrUsagePeriodKey,
+  ocrUsageDateKey,
+  ocrUsageDaysInMonth,
+  buildOcrUsageDailySeries,
+} from './calculations/ocr-usage';
+
+// ─── Admin AI OCR model settings (provider / API key / model) (NEPO-28) ─────
+export {
+  OCR_AI_PROVIDERS,
+  OCR_AI_PROVIDER_LABELS,
+  OCR_AI_MODELS,
+  OCR_AI_DEFAULT_MODEL,
+  OCR_AI_SETTINGS_PATHS,
+  ocrAiSettingsUpdateSchema,
+} from './schemas/ocr-ai-settings';
+export type {
+  OcrAiProvider,
+  OcrAiSettingsResponse,
+  OcrAiSettingsUpdate,
+  OcrAiTestResponse,
+} from './schemas/ocr-ai-settings';

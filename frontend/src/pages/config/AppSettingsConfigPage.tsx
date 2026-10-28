@@ -5,25 +5,37 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  Lock,
   MapPin,
+  Plug,
   Save,
   ScanLine,
   ShieldCheck,
+  Trash2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   LLM_PROVIDERS,
   LLM_PROVIDER_LABELS,
   LLM_PROVIDER_MODELS,
+  OCR_AI_DEFAULT_MODEL,
+  OCR_AI_MODELS,
+  OCR_AI_PROVIDER_LABELS,
   type AppSettings,
   type LlmProvider,
   type LlmSettingsUpdate,
+  type OcrAiSettingsUpdate,
   type OcrUsageSettingsUpdate,
 } from '@tingting/shared';
 import { PageHeader, Panel } from '../../components/UI';
 import { useAppSettings, useSaveAppSettings } from '../../hooks/useAppSettings';
 import { useGpsSettings, useSaveGpsSettings } from '../../hooks/useGpsSettings';
 import { useLlmSettings, useSaveLlmSettings } from '../../hooks/useLlmSettings';
+import {
+  useOcrAiSettings,
+  useSaveOcrAiSettings,
+  useTestOcrAiConnection,
+} from '../../hooks/useOcrAiSettings';
 import { useOcrUsageSettings, useSaveOcrUsageSettings } from '../../hooks/useOcrUsage';
 import { usePageAnimations } from '../../hooks/animations';
 import './config-page.css';
@@ -137,6 +149,9 @@ export default function AppSettingsConfigPage() {
   const saveGpsSettings = useSaveGpsSettings();
   const ocrUsageSettings = useOcrUsageSettings();
   const saveOcrUsageSettings = useSaveOcrUsageSettings();
+  const ocrAiSettings = useOcrAiSettings();
+  const saveOcrAiSettings = useSaveOcrAiSettings();
+  const testOcrAiConnection = useTestOcrAiConnection();
 
   const [features, setFeatures] = useState<AppSettings>({ botEnabled: false });
   const [provider, setProvider] = useState<LlmProvider>('minimax');
@@ -148,9 +163,16 @@ export default function AppSettingsConfigPage() {
   // admin can clear a field while typing without the input snapping back.
   const [ocrAllowance, setOcrAllowance] = useState('');
   const [ocrPrice, setOcrPrice] = useState('');
+  // NEPO-28: OCR AI provider/key/model. `ocrModelChoice` is the dropdown value
+  // ('' = "khác", the slug then comes from the free-text field).
+  const [ocrAiKey, setOcrAiKey] = useState('');
+  const [ocrModelChoice, setOcrModelChoice] = useState('');
+  const [ocrModelCustom, setOcrModelCustom] = useState('');
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [gpsMessage, setGpsMessage] = useState<string | null>(null);
   const [ocrMessage, setOcrMessage] = useState<string | null>(null);
+  const [ocrAiMessage, setOcrAiMessage] = useState<string | null>(null);
+  const [ocrAiTest, setOcrAiTest] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
     if (appSettings.data) setFeatures(appSettings.data);
@@ -170,6 +192,20 @@ export default function AppSettingsConfigPage() {
       setOcrPrice(String(ocrUsageSettings.data.overagePricePerCall));
     }
   }, [ocrUsageSettings.data]);
+
+  // NEPO-28: the stored model lands in the dropdown when it is one of the
+  // curated ones, otherwise it goes into the free-text field.
+  useEffect(() => {
+    if (!ocrAiSettings.data) return;
+    const model = ocrAiSettings.data.model;
+    if (OCR_AI_MODELS.includes(model)) {
+      setOcrModelChoice(model);
+      setOcrModelCustom('');
+    } else {
+      setOcrModelChoice('');
+      setOcrModelCustom(model);
+    }
+  }, [ocrAiSettings.data]);
 
   const updateFeature = (key: keyof AppSettings) => {
     setFeatures((current) => ({ ...current, [key]: !current[key] }));
@@ -226,6 +262,71 @@ export default function AppSettingsConfigPage() {
       setOcrMessage('Đã lưu hạn mức OCR.');
     } catch {
       setOcrMessage(null);
+    }
+  };
+
+  // ── NEPO-28: AI OCR provider / API key / model ──────────────────────────
+  // The effective model is the dropdown choice; picking "khác" moves the slug
+  // into the free-text field so a model released after the curated list is
+  // still selectable.
+  const ocrModel = (ocrModelChoice || ocrModelCustom).trim();
+  const ocrAiKeySet = !!ocrAiSettings.data?.apiKeySet;
+  const ocrAiKeyReady = ocrAiKeySet || ocrAiKey.trim() !== '';
+  const ocrAiReady = ocrModel !== '' && ocrAiKeyReady;
+  const ocrAiModelValid = /^[\w.-]+\/[\w.:-]+$/.test(ocrModel);
+
+  const saveOcrAi = async () => {
+    setOcrAiMessage(null);
+    if (!ocrAiReady || !ocrAiModelValid) return;
+    const payload: OcrAiSettingsUpdate = {
+      provider: 'openrouter',
+      model: ocrModel,
+      ...(ocrAiKey.trim() ? { apiKey: ocrAiKey.trim() } : {}),
+    };
+    try {
+      await saveOcrAiSettings.mutateAsync(payload);
+      setOcrAiKey('');
+      setOcrAiMessage('Đã lưu cấu hình AI OCR.');
+    } catch {
+      setOcrAiMessage(null);
+    }
+  };
+
+  /** Probe the model with the values on screen — saved or freshly typed. */
+  const testOcrAi = async () => {
+    setOcrAiTest(null);
+    try {
+      const result = await testOcrAiConnection.mutateAsync({
+        model: ocrModel,
+        ...(ocrAiKey.trim() ? { apiKey: ocrAiKey.trim() } : {}),
+      });
+      setOcrAiTest({ ok: result.ok, message: result.message });
+    } catch (error) {
+      setOcrAiTest({
+        ok: false,
+        message: error instanceof Error ? error.message : 'Không kiểm tra được kết nối.',
+      });
+    }
+  };
+
+  /**
+   * Drop the stored key. A mistyped key that is only replaceable would stay
+   * broken forever (every OCR call would 401); clearing it falls back to the
+   * environment key, if the deployment has one.
+   */
+  const clearOcrAi = async () => {
+    setOcrAiMessage(null);
+    setOcrAiTest(null);
+    try {
+      await saveOcrAiSettings.mutateAsync({
+        provider: 'openrouter',
+        model: ocrModel || OCR_AI_DEFAULT_MODEL,
+        clearApiKey: true,
+      });
+      setOcrAiKey('');
+      setOcrAiMessage('Đã xoá API key OCR.');
+    } catch {
+      setOcrAiMessage(null);
     }
   };
 
@@ -409,6 +510,138 @@ export default function AppSettingsConfigPage() {
             {gpsSettings.error && (
               <span className="cfg-form-error" role="alert">
                 {gpsSettings.error instanceof Error ? gpsSettings.error.message : 'Không thể tải tài khoản định vị.'}
+              </span>
+            )}
+          </div>
+        </Panel>
+
+        <Panel
+          title="AI OCR"
+          subtitle="Model đọc ảnh cont/seal và API key dùng để gọi nhà cung cấp"
+          action={<Plug size={18} className="cfg-panel-action-icon" />}
+        >
+          <div className="cfg-security-note">
+            <ShieldCheck size={16} aria-hidden="true" />
+            <span>API key được mã hóa khi lưu. Giá trị đầy đủ không bao giờ gửi lại trình duyệt.</span>
+          </div>
+          <fieldset className="cfg-section cfg-provider-fieldset">
+            <legend className="cfg-section__heading">Nhà cung cấp</legend>
+            <div className="cfg-provider-grid">
+              <div className="cfg-provider-option is-selected cfg-provider-option--locked">
+                <span>
+                  <strong>{OCR_AI_PROVIDER_LABELS.openrouter}</strong>
+                  <small>Nhận dạng ảnh cont/seal chỉ chạy qua OpenRouter.</small>
+                </span>
+                <Lock size={14} aria-hidden="true" className="cfg-provider-option__lock" />
+              </div>
+            </div>
+          </fieldset>
+          <div className="cfg-credentials-grid">
+            <SecretField
+              id="ocr-ai-openrouter-key"
+              label="OpenRouter API key (OCR)"
+              value={ocrAiKey}
+              onChange={setOcrAiKey}
+              saved={ocrAiKeySet}
+              maskedPreview={ocrAiSettings.data?.apiKeyMasked ?? ''}
+              placeholder="Nhập OpenRouter API key"
+              disabled={ocrAiSettings.isLoading || ocrAiSettings.isError || saveOcrAiSettings.isPending}
+            />
+            <div className="field">
+              <label htmlFor="ocr-ai-model">Model nhận dạng ảnh</label>
+              <select
+                id="ocr-ai-model"
+                className="input"
+                value={ocrModelChoice}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setOcrModelChoice(next);
+                  if (next !== '' && ocrModelCustom.trim() !== '' && next !== ocrModelCustom.trim()) {
+                    setOcrModelCustom('');
+                  }
+                }}
+                disabled={ocrAiSettings.isLoading || ocrAiSettings.isError || saveOcrAiSettings.isPending}
+              >
+                <option value="">Khác (nhập tay)…</option>
+                {OCR_AI_MODELS.map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+              </select>
+              <p className="cfg-field-hint">
+                Model phải nhận ảnh. Mặc định dùng <code>{OCR_AI_DEFAULT_MODEL}</code>.
+              </p>
+            </div>
+          </div>
+          {ocrModelChoice === '' && (
+            <div className="field cfg-ocr-ai-custom-model">
+              <label htmlFor="ocr-ai-model-custom">Tên model (vendor/model)</label>
+              <input
+                id="ocr-ai-model-custom"
+                className="input"
+                value={ocrModelCustom}
+                onChange={(event) => setOcrModelCustom(event.target.value)}
+                placeholder="anthropic/claude-haiku-5.5"
+                autoComplete="off"
+                spellCheck={false}
+                disabled={ocrAiSettings.isLoading || ocrAiSettings.isError || saveOcrAiSettings.isPending}
+              />
+              <p className="cfg-field-hint">
+                {ocrModel.trim() === ''
+                  ? 'Chưa chọn model — nhập tên model để có thể lưu và kiểm tra kết nối.'
+                  : `Model sẽ dùng: ${ocrModel}`}
+              </p>
+            </div>
+          )}
+          <div className="cfg-form-actions">
+            <button
+              className="btn btn--primary"
+              disabled={
+                !ocrAiSettings.data
+                || ocrAiSettings.isError
+                || saveOcrAiSettings.isPending
+                || !ocrAiReady
+                || !ocrAiModelValid
+              }
+              onClick={saveOcrAi}
+            >
+              {saveOcrAiSettings.isPending ? <Loader2 size={15} className="spin" /> : <Save size={15} />}
+              {saveOcrAiSettings.isPending ? 'Đang lưu…' : 'Lưu cấu hình AI OCR'}
+            </button>
+            <button
+              className="btn"
+              disabled={testOcrAiConnection.isPending || !ocrModel || !ocrAiModelValid || !ocrAiKeyReady}
+              onClick={testOcrAi}
+            >
+              {testOcrAiConnection.isPending ? <Loader2 size={15} className="spin" /> : <Plug size={15} />}
+              {testOcrAiConnection.isPending ? 'Đang kiểm tra…' : 'Kiểm tra kết nối'}
+            </button>
+            {ocrAiKeySet && (
+              <button
+                className="btn"
+                disabled={saveOcrAiSettings.isPending}
+                onClick={clearOcrAi}
+              >
+                {saveOcrAiSettings.isPending ? <Loader2 size={15} className="spin" /> : <Trash2 size={15} />}
+                Xoá khoá
+              </button>
+            )}
+            {ocrAiMessage && <span className="cfg-form-success" role="status">{ocrAiMessage}</span>}
+            {ocrAiTest && (
+              <span
+                role="status"
+                className={ocrAiTest.ok ? 'cfg-form-success' : 'cfg-form-error'}
+              >
+                {ocrAiTest.message}
+              </span>
+            )}
+            {saveOcrAiSettings.error && (
+              <span className="cfg-form-error" role="alert">
+                {saveOcrAiSettings.error instanceof Error ? saveOcrAiSettings.error.message : 'Không thể lưu cấu hình AI OCR.'}
+              </span>
+            )}
+            {ocrAiSettings.error && (
+              <span className="cfg-form-error" role="alert">
+                {ocrAiSettings.error instanceof Error ? ocrAiSettings.error.message : 'Không thể tải cấu hình AI OCR.'}
               </span>
             )}
           </div>

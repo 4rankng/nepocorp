@@ -1011,6 +1011,28 @@
   margin-top: 18px;
 }
 
+/* A provider that cannot be changed (OCR runs on OpenRouter only) — the row
+   reads as a fact, not as a radio the admin can pick. */
+.cfg-provider-option--locked {
+  cursor: default;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cfg-provider-option--locked:hover strong {
+  color: var(--ink);
+}
+
+.cfg-provider-option__lock {
+  flex: 0 0 auto;
+  color: var(--ink-3);
+}
+
+/* Free-text model field — sits under the dropdown when "khác" is picked. */
+.cfg-ocr-ai-custom-model {
+  margin-top: 14px;
+}
+
 .cfg-secret-field > label {
   display: flex !important;
   align-items: center;

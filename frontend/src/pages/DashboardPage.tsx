@@ -501,14 +501,16 @@ export default function DashboardPage() {
         <TopRoutesCard routes={topRoutes} currentMonth={currentMonth} currentYear={currentYear} onNavigate={navigate} />
 
         {/* OCR usage (6 cols) — NEPO-27: this month's AI OCR requests vs the
-            configurable allowance, overage count + cost once exceeded. */}
+            configurable allowance, overage count + cost once exceeded.
+            NEPO-28: the tile labels itself with the period the DATA covers
+            (status.period), not the dashboard's browsable month context —
+            the counter always reports the real calendar month. */}
         {canSeeOcrUsage && (
           <OcrUsageCard
             status={ocrUsage.data ?? null}
             loading={ocrUsage.isLoading}
             isError={ocrUsage.isError}
             onRetry={() => void ocrUsage.refetch()}
-            monthLabel={String(currentMonth).padStart(2, '0')}
             canManage={canManageOcrUsage}
             onNavigate={navigate}
           />

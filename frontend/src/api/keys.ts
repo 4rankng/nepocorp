@@ -388,6 +388,13 @@ export const qk = {
     status: ['ocrUsage', 'status'] as const,
   },
 
+  /* ── AI OCR model settings (NEPO-28): provider + API key + model ───────── */
+
+  ocrAiSettings: {
+    all: ['ocrAiSettings'] as const,
+    detail: ['ocrAiSettings', 'detail'] as const,
+  },
+
   /* ── Trip-form catalogs (loaded on demand by the create/edit form) ── */
 
   tripForm: {
