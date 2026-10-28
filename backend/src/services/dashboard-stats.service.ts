@@ -77,6 +77,10 @@ export async function getDashboardStats(month?: number, year?: number) {
         isNull(s.trips.deletedAt),
         eq(s.trips.status, TripStatus.CREATED),
       )),
+      // Missing-financials month window (NEPO-31): the salary leg counts a
+      // trip as wage-covered when driverSalary > 0 OR chấm công records its
+      // days (driver_work_days TRIP_DAY) — real wage data lives there. Keep in
+      // step with `hasTripWageData` in frontend/src/features/trips/tripHelpers.ts.
       db.select({ count: sql<number>`count(*)` }).from(s.trips).where(and(
         isNull(s.trips.deletedAt),
         gte(s.trips.departureDate, monthStart),
@@ -88,7 +92,12 @@ export async function getDashboardStats(month?: number, year?: number) {
             THEN coalesce(${s.trips.externalFreightCost}, 0) <= 0
             ELSE coalesce(${s.trips.fuelLiters}, 0) <= 0
               OR coalesce(${s.trips.totalRoadAllowance}, 0) <= 0
-              OR coalesce(${s.trips.driverSalary}, 0) <= 0
+              OR (coalesce(${s.trips.driverSalary}, 0) <= 0
+                AND NOT EXISTS (
+                  SELECT 1 FROM driver_work_days
+                  WHERE driver_work_days.trip_id = ${s.trips.id}
+                    AND driver_work_days.status = 'TRIP_DAY'
+                ))
           END
         )`,
       )),

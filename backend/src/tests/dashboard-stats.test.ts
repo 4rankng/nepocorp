@@ -113,6 +113,20 @@ test('dashboard financial warnings use subcontracted freight instead of company 
   assert.equal(await missingCount(), baseline + 1, 'external freight is required for its warning');
   await db.update(s.trips).set({ driverSalary: '0' }).where(eq(s.trips.id, created[1].id));
   assert.equal(await missingCount(), baseline + 2, 'the existing own-truck completeness checks remain active');
+  // NEPO-31: chấm công (driver_work_days TRIP_DAY) is real wage data — a trip
+  // it covers must not be counted as missing "Lương chuyến". Keep in step with
+  // `hasTripWageData` in frontend/src/features/trips/tripHelpers.ts.
+  const [driver] = await db.insert(s.drivers).values({ name: `DASH fin driver ${suffix}` }).returning();
+  try {
+    const [workDay] = await db.insert(s.driverWorkDays).values({
+      driverId: driver.id, tripId: created[1].id, date: start, status: 'TRIP_DAY',
+    }).returning({ id: s.driverWorkDays.id });
+    assert.equal(await missingCount(), baseline + 1, 'chấm công coverage counts as real wage data');
+    await db.delete(s.driverWorkDays).where(eq(s.driverWorkDays.id, workDay.id));
+    assert.equal(await missingCount(), baseline + 2, 'without any wage data the salary flag stays');
+  } finally {
+    await db.delete(s.drivers).where(eq(s.drivers.id, driver.id));
+  }
   await db.update(s.trips).set({ deletedAt: new Date() }).where(inArray(s.trips.id, ids.trips));
   assert.equal(await missingCount(), baseline, 'deleted trips do not contribute warnings');
 });

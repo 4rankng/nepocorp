@@ -333,6 +333,10 @@ export interface Trip {
   revenueCombine: string | null;
   customerCommission: string | null;
   tripWageDays: number | null;
+  /** Days already recorded as chấm công (driver_work_days TRIP_DAY) for this
+   *  trip (NEPO-31). Real wage coverage: the missing-figures check treats the
+   *  trip as having salary data when this is > 0 even if `driverSalary` is 0. */
+  attendanceDayCount?: number;
   twoPointDeliveryBonus: string;
   vehicleShiftAllowance: string;
   grossProfit: string | null;
