@@ -504,9 +504,10 @@
 
 .dispatch-page .orders-head {
   display: grid;
-  /* date / route / customer / vehicle&driver / action — audit Gemini vòng 9:
-     ngày 1 dòng 140px, route:khách:xe ≈ 1.16:1:0.97 theo px 430/380/370. */
-  grid-template-columns: 36px 140px minmax(0, 1.16fr) minmax(0, 1fr) minmax(0, 0.97fr) 164px;
+  /* date / route / customer / vehicle&driver / action — NEPO-32 rebalance:
+     route:khách:xe = 1.25:1.15:1 (wrap full nên tên dài tự xuống dòng);
+     thao tác co 164→148px (Khởi hành + Đổi xe vừa đủ) để không ép cột khác. */
+  grid-template-columns: 36px 140px minmax(0, 1.25fr) minmax(0, 1.15fr) minmax(0, 1fr) 148px;
   padding: 7px 12px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
@@ -523,7 +524,7 @@
   position: relative;
   display: grid;
   /* Keep in sync with .orders-head. */
-  grid-template-columns: 36px 140px minmax(0, 1.16fr) minmax(0, 1fr) minmax(0, 0.97fr) 164px;
+  grid-template-columns: 36px 140px minmax(0, 1.25fr) minmax(0, 1.15fr) minmax(0, 1fr) 148px;
   padding: 8px 12px;
   gap: 12px;
   align-items: center;
@@ -566,23 +567,22 @@
   display: flex; align-items: center; gap: 8px;
   font-weight: 600; font-size: var(--fs-sm);
   min-width: 0;
-  white-space: nowrap;
+  /* NEPO-32 no-truncate: wrap trọn tuyến, không ellipsis. */
+  flex-wrap: wrap;
 }
 .dispatch-page .o-route .from,
 .dispatch-page .o-route .to {
   font-size: var(--fs-sm); font-weight: 600;
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
-.dispatch-page .o-route .from { flex-shrink: 1; min-width: 0; }
-.dispatch-page .o-route .to { flex-shrink: 0; max-width: 100%; }
+.dispatch-page .o-route .from { flex: 0 1 auto; min-width: 0; }
+.dispatch-page .o-route .to { flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .dispatch-page .o-route .arr { color: var(--ink-3); opacity: 0.6; flex-shrink: 0; display: inline-flex; }
 .dispatch-page .o-route .single {
   font-size: var(--fs-sm); font-weight: 600;
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .dispatch-page .o-customer { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -598,13 +598,13 @@
 .dispatch-page .o-customer .info {
   display: flex; align-items: baseline; gap: 6px;
   min-width: 0;
-  white-space: nowrap;
+  /* NEPO-32 no-truncate: wrap trọn tên khách hàng, không ellipsis. */
+  flex-wrap: wrap;
 }
 .dispatch-page .o-customer .name {
   font-weight: 600; font-size: var(--fs-xs);
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   line-height: 1.35;
 }
 .dispatch-page .o-customer .meta {
@@ -619,8 +619,7 @@
   min-width: 0;
 }
 
-/* Single line: [plate-chip] driver-name (audit Gemini vòng 9 — cột ~370px đủ
-   chỗ; driver ellipsis thay vì clip như lần single-row cũ ở cột 1fr hẹp). */
+/* [plate-pill 1 dòng] driver-name wrap trọn (NEPO-32 no-truncate). */
 .dispatch-page .assign-card {
   display: flex;
   align-items: center; gap: 8px;
@@ -637,19 +636,18 @@
   padding: 2px 8px; border-radius: 6px;
   letter-spacing: 0.04em;
   max-width: 100%;
+  /* Pill luôn 1 dòng — riêng pill được nowrap. */
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .dispatch-page .assign-card .ai {
   font-size: var(--fs-xs); line-height: 1.35;
   min-width: 0; max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 .dispatch-page .assign-card .dn {
   font-weight: 600;
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .dispatch-page .assign-card .lb {
   font-size: var(--fs-xs); letter-spacing: 0.8px;
