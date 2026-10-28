@@ -40,7 +40,7 @@ test('validation errors retain the field path and details for form feedback', ()
   if (parsed.success) return;
   assert.deepEqual(handle(parsed.error), {
     statusCode: 400,
-    body: { error: 'Vui lòng nhập tên (name)', details: parsed.error.errors },
+    body: { error: 'Vui lòng nhập tên (name)', details: parsed.error.issues },
   });
 });
 

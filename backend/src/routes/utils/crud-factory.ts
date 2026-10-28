@@ -9,8 +9,9 @@ import { Router } from 'express';
 import { db } from '../../db';
 import { eq, isNull, sql, and } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn, PgTable } from 'drizzle-orm/pg-core';
-import type { AnyZodObject, output } from 'zod';
 import type { Request, Response } from 'express';
+import type { ZodObject, ZodRawShape, output } from 'zod';
+import { partialUpdateSchema } from '@tingting/shared';
 import { cacheInvalidate } from '../../lib/redis';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { parsePagination } from './pagination';
@@ -65,11 +66,11 @@ function apiErrorFromUniqueConstraint(err: unknown): ApiError | null {
 
 export function createCrudRouter<
   TTable extends PgTable,
-  TCreate extends AnyZodObject,
+  TShape extends ZodRawShape,
 >(
   table: TTable,
-  createSchema: TCreate,
-  options: CrudRouterOptions<TTable['$inferSelect'], output<TCreate>> = {}
+  createSchema: ZodObject<TShape>,
+  options: CrudRouterOptions<TTable['$inferSelect'], output<ZodObject<TShape>>> = {}
 ) {
   const {
     searchableField,
@@ -149,7 +150,9 @@ export function createCrudRouter<
 
   sub.put('/:id', asyncHandler(async (req: Request, res: Response) => {
     const id = parseInt(req.params.id as string);
-    let data = createSchema.partial().parse(req.body) as Partial<output<TCreate>>;
+    // PATCH-safe: strip ZodDefault so a bare PUT can't reset stored columns to
+    // create-time defaults (Zod v4 applies defaults inside .partial()).
+    let data = partialUpdateSchema(createSchema).parse(req.body) as Partial<output<ZodObject<TShape>>>;
     if (beforeUpdate) {
       data = (await beforeUpdate(id, data, req)) as typeof data;
     }

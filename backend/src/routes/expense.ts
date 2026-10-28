@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { expenseSchema } from '@tingting/shared';
+import { expenseSchema, partialUpdateSchema } from '@tingting/shared';
 import { db } from '../db';
 import { registerAuditEvent } from '../services/audit-registry';
 import { AuditEvent } from '../services/audit-types';
@@ -91,7 +91,9 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
-  const validatedData = expenseSchema.partial().parse(req.body);
+  // PATCH-safe: strip ZodDefault (vehicleComponent default) — Zod v4 applies
+  // defaults inside .partial(), which would reset the stored column on a bare PUT.
+  const validatedData = partialUpdateSchema(expenseSchema).parse(req.body);
   const userId = req.user?.userId;
   const { amount, ...rest } = validatedData;
   const serviceData: Partial<ExpenseUpdateInput> = {

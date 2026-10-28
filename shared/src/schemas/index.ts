@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { partialUpdateSchema } from './partial-update';
 import {
   FuelMode, LoadingType, Role, TripStatus,
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus,
@@ -24,11 +25,15 @@ export * from './llm-settings';
 // automatic embedding regeneration on save. Backs the chatbot fast lane.
 export * from './faq';
 
+// Reusable PATCH helper — strips ZodDefault inside .partial() (Zod v4 applies
+// defaults there; see ./partial-update.ts). Kept beside the schemas that wire it.
+export { partialUpdateSchema } from './partial-update';
+
 // Reusable numeric transform helpers to prevent string concatenation bugs and parse PG numeric types
 export const numericMoney = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
   if (isNaN(num)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Giá trị tiền tệ không hợp lệ' });
+    ctx.addIssue({ code: 'custom', message: 'Giá trị tiền tệ không hợp lệ' });
     return z.NEVER;
   }
   return num;
@@ -37,7 +42,7 @@ export const numericMoney = z.union([z.number(), z.string()]).transform((val, ct
 export const numericDecimal = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
   if (isNaN(num)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Giá trị số không hợp lệ' });
+    ctx.addIssue({ code: 'custom', message: 'Giá trị số không hợp lệ' });
     return z.NEVER;
   }
   return num;
@@ -46,7 +51,7 @@ export const numericDecimal = z.union([z.number(), z.string()]).transform((val, 
 const positiveNumeric = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
   if (isNaN(num) || num <= 0) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Phải là số dương' });
+    ctx.addIssue({ code: 'custom', message: 'Phải là số dương' });
     return z.NEVER;
   }
   return num;
@@ -55,7 +60,7 @@ const positiveNumeric = z.union([z.number(), z.string()]).transform((val, ctx) =
 const nonNegNumeric = z.union([z.number(), z.string()]).transform((val, ctx) => {
   const num = Number(val);
   if (isNaN(num) || num < 0) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Phải là số không âm' });
+    ctx.addIssue({ code: 'custom', message: 'Phải là số không âm' });
     return z.NEVER;
   }
   return num;
@@ -100,21 +105,21 @@ export const tripFuelAllocationSchema = z.object({
 }).superRefine((allocation, ctx) => {
   if (Math.abs(allocation.liters * 100 - Math.round(allocation.liters * 100)) > 1e-8) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['liters'],
       message: 'Số lít chỉ được có tối đa 2 chữ số thập phân',
     });
   }
   if (allocation.paymentMethod === 'CREDIT' && allocation.supplierId == null) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['supplierId'],
       message: 'Nhà cung cấp nhiên liệu là bắt buộc khi ghi công nợ',
     });
   }
   if (allocation.paymentMethod === 'CASH' && allocation.supplierId != null) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['supplierId'],
       message: 'Điểm đổ dầu tiền mặt không gắn với công nợ nhà cung cấp',
     });
@@ -247,7 +252,7 @@ export const updateTripFiguresSchema = z.object({
   if (data.fuelSupplementLiters && data.fuelSupplementLiters > 0) {
     if (!data.fuelSupplementReason || data.fuelSupplementReason.trim() === '') {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'Lý do cấp dầu bổ sung là bắt buộc khi số lít dầu bổ sung lớn hơn 0',
         path: ['fuelSupplementReason'],
       });
@@ -260,21 +265,21 @@ export const updateTripFiguresSchema = z.object({
   if (data.revenue !== undefined &&
       (data.revenueEmptyReturn !== undefined || data.revenueCombine !== undefined)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Gửi `revenue` HOẶC splits (revenueEmptyReturn/revenueCombine), không gửi cả hai.',
       path: ['revenue'],
     });
   }
   if (data.carrierType === 'EXTERNAL' && data.fuelSupplierId != null) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Chuyến xe ngoài không ghi công nợ nhiên liệu của công ty',
       path: ['fuelSupplierId'],
     });
   }
   if (data.carrierType === 'EXTERNAL' && (data.fuelAllocations?.length ?? 0) > 0) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Chuyến xe ngoài không có phân bổ nhiên liệu của công ty',
       path: ['fuelAllocations'],
     });
@@ -337,7 +342,7 @@ export const ledgerPlanLegSchema = z.object({
     if (leg.km === undefined) missing.push('số km');
     if (missing.length > 0) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: `Chặng mới cần đầy đủ: ${missing.join(', ')}`,
         path: ['legs'],
       });
@@ -381,12 +386,12 @@ export const updateLedgerMoneySchema = z.object({
   externalFreightCost: z.number().positive().nullable().optional(),
 }).superRefine((data, ctx) => {
   if (Object.values(data).every((v) => v === undefined)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Cần ít nhất một trường để cập nhật' });
+    ctx.addIssue({ code: 'custom', message: 'Cần ít nhất một trường để cập nhật' });
   }
   if (data.revenue !== undefined &&
       (data.revenueEmptyReturn !== undefined || data.revenueCombine !== undefined)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       message: 'Gửi `revenue` HOẶC splits (revenueEmptyReturn/revenueCombine), không gửi cả hai.',
       path: ['revenue'],
     });
@@ -479,7 +484,7 @@ export const billingDocumentLineSchema = z.object({
   description: z.string().min(1),
   routeName: z.string().nullable().optional(),
   containerNumbers: z.array(z.string()).nullable().optional(),
-  renderData: z.record(z.unknown()).nullable().optional(),
+  renderData: z.record(z.string(), z.unknown()).nullable().optional(),
   baseAmount: nonNegNumeric,
   amountOverride: nonNegNumeric.nullable().optional(),
   excluded: z.boolean().optional(),
@@ -497,14 +502,14 @@ function validateBillingDocumentScope(
 ) {
   if (value.type === 'DEBIT_NOTE' && value.entityType !== 'CUSTOMER') {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['entityType'],
       message: 'Giấy báo nợ chỉ áp dụng cho khách hàng',
     });
   }
   if (value.rangeFrom > value.rangeTo) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['rangeTo'],
       message: 'Đến ngày phải bằng hoặc sau từ ngày',
     });
@@ -1015,7 +1020,7 @@ const vehicleScheduleMutationSchema = z.object({
 export const createVehicleScheduleSchema = vehicleScheduleMutationSchema.superRefine((data, ctx) => {
   if (new Date(data.remindAt).getTime() > new Date(data.dueAt).getTime()) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['remindAt'],
       message: 'Thời gian nhắc không được sau hạn xử lý',
     });
@@ -1025,7 +1030,7 @@ export const createVehicleScheduleSchema = vehicleScheduleMutationSchema.superRe
 export const updateVehicleScheduleSchema = vehicleScheduleMutationSchema.partial().superRefine((data, ctx) => {
   if (data.remindAt && data.dueAt && new Date(data.remindAt).getTime() > new Date(data.dueAt).getTime()) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['remindAt'],
       message: 'Thời gian nhắc không được sau hạn xử lý',
     });
@@ -1040,7 +1045,7 @@ export const vehicleScheduleListQuerySchema = z.object({
 }).superRefine((data, ctx) => {
   if (data.status && !data.history) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['status'],
       message: 'Chỉ được lọc trạng thái khi đang xem lịch sử',
     });
@@ -1310,10 +1315,9 @@ export type TripExpenseInput = z.infer<typeof tripExpenseSchema>;
  * Nullable database fields accept an explicit null so PATCH/PUT callers can
  * clear an existing value; undefined continues to mean "leave unchanged".
  */
-export const tripExpensePatchSchema = baseTripExpenseSchema
-  .omit({ tripId: true })
-  .partial()
-  .extend({
+export const tripExpensePatchSchema = partialUpdateSchema(
+  baseTripExpenseSchema.omit({ tripId: true }),
+).extend({
     supplierId: z.number().int().positive().nullable().optional(),
     invoiceNumber: z.string().max(50).nullable().optional(),
     invoiceDate: z.string().nullable().optional(),
