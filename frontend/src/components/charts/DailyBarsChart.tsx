@@ -335,7 +335,7 @@ export function DailyBarsChart({
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
                   {fmtTip(dayRev)}
                   {dayDelta != null && (
-                    <span style={{ fontSize: '10.5px', fontWeight: 500, color: dayDelta >= 0 ? '#0B8745' : '#C7372F', marginLeft: 6 }}>
+                    <span style={{ fontSize: '10.5px', fontWeight: 500, color: dayDelta >= 0 ? '#0A6E3A' : '#BC3229', marginLeft: 6 }}>
                       {dayDelta >= 0 ? '▲' : '▼'} {Math.abs(dayDelta).toFixed(0)}%
                     </span>
                   )}

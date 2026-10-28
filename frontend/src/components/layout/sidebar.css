@@ -245,7 +245,9 @@
 .nav-item svg { width: 16px; height: 16px; stroke-width: 1.8; flex-shrink: 0; }
 .nav-item__badge {
   background: var(--surface);
-  color: var(--accent);
+  /* Text on a white pill — --accent (2.59:1) is graphics-only per tokens.css;
+     --success clears AA on light surfaces (NEPO-38). */
+  color: var(--success);
   min-width: 20px;
   height: 18px;
   border-radius: 999px;

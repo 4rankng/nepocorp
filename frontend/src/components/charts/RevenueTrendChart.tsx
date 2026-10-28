@@ -241,7 +241,7 @@ export function RevenueTrendChart({
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C2780B', flex: '0 0 auto' }} />
               LN gộp
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#C2780B', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#4B2800', whiteSpace: 'nowrap' }}>
               {fmtTip(gross[activeIdx] || 0)}
             </div>
           </div>
