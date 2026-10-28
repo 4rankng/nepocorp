@@ -1027,7 +1027,10 @@ export const createVehicleScheduleSchema = vehicleScheduleMutationSchema.superRe
   }
 });
 
-export const updateVehicleScheduleSchema = vehicleScheduleMutationSchema.partial().superRefine((data, ctx) => {
+// PATCH shape — partialUpdateSchema instead of bare `.partial()` so a future
+// create-time default on the mutation schema can never reset a stored column
+// on a sparse update (Zod v4 applies defaults inside .partial()).
+export const updateVehicleScheduleSchema = partialUpdateSchema(vehicleScheduleMutationSchema).superRefine((data, ctx) => {
   if (data.remindAt && data.dueAt && new Date(data.remindAt).getTime() > new Date(data.dueAt).getTime()) {
     ctx.addIssue({
       code: 'custom',
