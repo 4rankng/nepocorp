@@ -165,4 +165,23 @@ describe('OcrUsageCard (NEPO-28) — metric row + chart', () => {
       .map((t) => t.textContent);
     expect(yLabels).toEqual(['0']);
   });
+
+  it('offers the report export to everyone who sees the tile', () => {
+    render(<OcrUsageCard {...baseProps} />);
+    expect(screen.getByText('Xuất báo cáo')).toBeTruthy();
+  });
+
+  it('labels the tile with the month the data covers (any month)', () => {
+    const past: OcrUsageStatus = {
+      ...BASE,
+      period: '2026-09',
+      elapsedDays: 30,
+      daysInMonth: 30,
+      daily: [],
+      dailyAverage: 100,
+      projectedTotal: 3000,
+    };
+    render(<OcrUsageCard {...baseProps} status={past} />);
+    expect(screen.getByText('Tháng 09/2026 · counter tự reset đầu tháng')).toBeTruthy();
+  });
 });

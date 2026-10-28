@@ -24,13 +24,16 @@ export function useSaveOcrUsageSettings() {
   });
 }
 
-/** Financial roles — current-month usage snapshot for the dashboard widget.
- *  `enabled: false` skips the request entirely (e.g. DRIVER has no
- *  financial-read, so the dashboard gate decides whether to even ask). */
-export function useOcrUsageStatus(options?: { enabled?: boolean }) {
+/** Financial roles — usage snapshot for a calendar month, for the dashboard
+ *  widget. `enabled: false` skips the request entirely (e.g. DRIVER has no
+ *  financial-read, so the dashboard gate decides whether to even ask).
+ *  `month` is 'YYYY-MM'; omit it for the current calendar month. */
+export function useOcrUsageStatus(options?: { enabled?: boolean; month?: string }) {
   return useQuery({
-    queryKey: qk.ocrUsage.status,
-    queryFn: () => ocrUsageClient.getStatus(),
+    // The month is part of the key — switching months must not show the
+    // previous month's figures while the new ones are in flight.
+    queryKey: qk.ocrUsage.statusForMonth(options?.month ?? 'current'),
+    queryFn: () => ocrUsageClient.getStatus(options?.month),
     staleTime: 30_000,
     enabled: options?.enabled ?? true,
   });

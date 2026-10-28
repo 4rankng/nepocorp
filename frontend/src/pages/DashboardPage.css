@@ -716,6 +716,13 @@
 .dash-wf .wf-ocr-meter__state--over { color: var(--wf-amber); }
 
 .dash-wf .wf-ocr-chart { min-width: 0; }
+/* Header actions — the report export + the ADMIN settings shortcut. */
+.dash-wf .wf-ocr-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
 /* The dashboard icon reset (`.dash-wf svg { width: 16px !important }` in
    FinancePage.css) shrinks every SVG to a 16px icon glyph — the chart SVG
    has to opt out of it, exactly like the hero chart's `.wf-chart .body svg`. */

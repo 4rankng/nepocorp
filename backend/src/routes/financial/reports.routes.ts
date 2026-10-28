@@ -34,13 +34,21 @@ router.get('/dashboard/approval-queue', asyncHandler(async (req: Request, res: R
   res.json(result);
 }));
 
-// AI OCR usage this calendar month (NEPO-27) — feeds the dashboard widget.
+// AI OCR usage for a calendar month (NEPO-27) — feeds the dashboard widget.
 // Deliberately NOT part of getDashboardStats: that payload is cached per
 // salary-period, while the OCR counter is a live calendar-month figure whose
 // reset is the calendar month itself. Shares the dashboard's financial-read
 // gate via the mount.
-router.get('/reports/ocr-usage', asyncHandler(async (_req: Request, res: Response) => {
-  res.json(await getOcrUsageStatus());
+//
+// `?month=YYYY-MM` selects the month (default: the current calendar month).
+// The daily rows are kept as history, so the tile can follow the dashboard's
+// month picker instead of always showing the current month.
+router.get('/reports/ocr-usage', asyncHandler(async (req: Request, res: Response) => {
+  const raw = typeof req.query.month === 'string' ? req.query.month.trim() : '';
+  if (raw !== '' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(raw)) {
+    return res.status(400).json({ error: 'Tháng không hợp lệ (month=YYYY-MM)' });
+  }
+  res.json(await getOcrUsageStatus(raw === '' ? undefined : raw));
 }));
 
 // ─── P&L report ──────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
-import { AlertTriangle, ScanLine } from 'lucide-react';
+import { AlertTriangle, Download, ScanLine } from 'lucide-react';
 import { SkeletonLine } from '../../../components/shared/Skeleton';
 import { OcrUsageChart } from '../../../components/charts/OcrUsageChart';
+import { downloadCSV } from '../../../lib/csv';
 import { formatCurrency, formatNumber } from '../../../lib/format';
 import type { OcrUsageStatus } from '@tingting/shared';
 
@@ -35,6 +36,12 @@ interface OcrUsageCardProps {
 function formatPeriod(period: string): string {
   const m = /^(\d{4})-(\d{2})$/.exec(period);
   return m ? `${m[2]}/${m[1]}` : period;
+}
+
+/** '2026-10-07' → '07/10/2026' */
+function formatDay(date: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : date;
 }
 
 export function OcrUsageCard({
@@ -95,6 +102,31 @@ export function OcrUsageCard({
   const projectedOver = status.projectedTotal > status.monthlyAllowance;
   const projectedText = status.projectedTotal > 0 ? `~${formatNumber(status.projectedTotal)}` : '—';
 
+  /**
+   * Export the month's daily usage as a spreadsheet — one row per day of the
+   * month (including the days without scans, so the total reconciles) plus a
+   * totals row. Same house export as the other reports (branded title band).
+   */
+  const exportReport = async () => {
+    const rows: (string | number)[][] = [];
+    for (let day = 1; day <= status.daysInMonth; day++) {
+      const date = `${status.period}-${String(day).padStart(2, '0')}`;
+      const count = status.daily.find(point => point.date === date)?.count ?? 0;
+      rows.push([formatDay(date), count]);
+    }
+    await downloadCSV(
+      `bao-cao-ocr-${status.period}.csv`,
+      ['Ngày', 'Số request OCR'],
+      rows,
+      {
+        title: 'BÁO CÁO AI OCR',
+        subtitle: `Tháng ${formatPeriod(status.period)} · Hạn mức ${formatNumber(status.monthlyAllowance)} request · Trung bình ${formatNumber(status.dailyAverage)} lượt/ngày`,
+        columnTypes: ['date', 'number'],
+        totalsColumns: [1],
+      },
+    );
+  };
+
   return (
     <div className="d-card d-card-border bg-base-100 wf-card wf-ocr wf-bento-half" data-testid="ocr-usage-card">
       <div className="wf-card-h">
@@ -105,11 +137,21 @@ export function OcrUsageCard({
           </h2>
           <div className="sub">Tháng {formatPeriod(status.period)} · counter tự reset đầu tháng</div>
         </div>
-        {canManage && (
-          <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => onNavigate('/config/app-settings')}>
-            Cài đặt
+        <div className="wf-ocr-actions">
+          <button
+            className="d-btn d-btn-link d-btn-sm wf-link"
+            onClick={() => void exportReport()}
+            title="Xuất báo cáo request OCR theo ngày"
+          >
+            <Download size={13} aria-hidden="true" />
+            Xuất báo cáo
           </button>
-        )}
+          {canManage && (
+            <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => onNavigate('/config/app-settings')}>
+              Cài đặt
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="body">

@@ -120,15 +120,33 @@ export async function recordOcrRequest(): Promise<void> {
 }
 
 /**
- * Dashboard snapshot for the current calendar month: used vs allowance,
- * remaining, the overage count/cost once the allowance is exceeded, and the
- * daily series + run-rate figures the chart needs (NEPO-28).
+ * The period context of a calendar month: how many days have passed and how
+ * many the month has.
+ *
+ * - a PAST month is complete → every day is elapsed;
+ * - the CURRENT month → up to today;
+ * - a FUTURE month → nothing has elapsed yet (the series is empty).
  */
-export async function getOcrUsageStatus(): Promise<OcrUsageStatus> {
-  const period = ocrUsagePeriodKey();
+function periodContext(period: string): { elapsedDays: number; daysInMonth: number } {
   const daysInMonth = ocrUsageDaysInMonth(period);
-  const today = new Date();
-  const elapsedDays = Math.min(daysInMonth, Math.max(1, today.getDate()));
+  const now = new Date();
+  const currentPeriod = ocrUsagePeriodKey(now);
+  if (period > currentPeriod) return { elapsedDays: 0, daysInMonth };
+  if (period < currentPeriod) return { elapsedDays: daysInMonth, daysInMonth };
+  return { elapsedDays: Math.min(daysInMonth, Math.max(1, now.getDate())), daysInMonth };
+}
+
+/**
+ * Dashboard snapshot for a calendar month: used vs allowance, remaining, the
+ * overage count/cost once the allowance is exceeded, and the daily series +
+ * run-rate figures the chart needs (NEPO-28).
+ *
+ * `period` defaults to the current calendar month. Any past month can be
+ * asked for — the daily rows are kept as history, so the tile can follow the
+ * dashboard's month picker.
+ */
+export async function getOcrUsageStatus(period: string = ocrUsagePeriodKey()): Promise<OcrUsageStatus> {
+  const { elapsedDays, daysInMonth } = periodContext(period);
 
   const [settings, rows] = await Promise.all([
     getOcrUsageSettings(),

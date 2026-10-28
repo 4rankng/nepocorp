@@ -80,7 +80,6 @@ export function DailyBarsChart({
 
   const W = dimensions.width;
   const H = dimensions.height;
-  const chartTitleId = useId();
   const chartDescriptionId = useId();
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const activeIdx = hoverIdx;
@@ -146,7 +145,7 @@ export function DailyBarsChart({
   const chartDescription = labels.length > 0
     ? `${labels.length} ngày. Ngày ${labels[lastIndex]}: doanh thu (chưa VAT) ${fmtTip(revenue[lastIndex] || 0)}, lợi nhuận gộp ${fmtTip(gross[lastIndex] || 0)}.`
     : 'Chưa có dữ liệu theo ngày.';
-  const tooltipWidth = Math.min(250, Math.max(0, W - 16));
+  const tooltipWidth = Math.min(320, Math.max(0, W - 16));
   const tooltipLeft = Math.min(
     Math.max(ax, tooltipWidth / 2 + 8),
     W - tooltipWidth / 2 - 8,
@@ -162,12 +161,12 @@ export function DailyBarsChart({
     >
       <svg
         role="img"
-        aria-labelledby={`${chartTitleId} ${chartDescriptionId}`}
+        aria-label={chartTitle}
+        aria-describedby={chartDescriptionId}
         viewBox={`0 0 ${W} ${H}`}
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: 'block', width: '100%', height: '100%', overflow: 'visible', flex: 1 }}
       >
-        <title id={chartTitleId}>{chartTitle}</title>
         <desc id={chartDescriptionId}>{chartDescription}</desc>
 
         {/* Y-axis grid lines + labels */}
@@ -329,8 +328,8 @@ export function DailyBarsChart({
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'normal' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D', flex: '0 0 auto' }} />
                   Doanh thu (chưa VAT)
                 </div>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
@@ -343,8 +342,8 @@ export function DailyBarsChart({
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C2780B' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'normal' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C2780B', flex: '0 0 auto' }} />
                   LN gộp
                 </div>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#C2780B', whiteSpace: 'nowrap' }}>

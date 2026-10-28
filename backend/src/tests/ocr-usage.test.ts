@@ -179,3 +179,42 @@ test('saved settings persist across a cache invalidation (fresh read path)', asy
     .where(inArray(s.appSettings.key, SETTINGS_KEYS));
   assert.strictEqual(rows.length, 2, 'both settings rows must be persisted');
 });
+
+test('a PAST month can be asked for — the daily rows are kept as history', async () => {
+  // Seed a previous month, then read it back.
+  const past = '2026-08';
+  const pastDay = `${past}-15`;
+  await db.insert(s.ocrUsageCounters)
+    .values({ usageDate: pastDay, requestCount: 42 })
+    .onConflictDoUpdate({
+      target: s.ocrUsageCounters.usageDate,
+      set: { requestCount: 42 },
+    });
+
+  const status = await getOcrUsageStatus(past);
+  assert.strictEqual(status.period, past);
+  assert.strictEqual(status.used, 42);
+  // A completed month: every day has elapsed.
+  assert.strictEqual(status.elapsedDays, 31);
+  assert.strictEqual(status.daysInMonth, 31);
+  assert.strictEqual(status.daily.length, 31, 'the series covers the whole month');
+  assert.strictEqual(status.daily[14].count, 42, 'the seeded day carries the count');
+  assert.strictEqual(status.daily[0].count, 0, 'the other days are measured zeros');
+  // The current month is untouched by the past-month read.
+  const now = await getOcrUsageStatus();
+  assert.strictEqual(now.period, PERIOD);
+  assert.strictEqual(now.used, 6);
+
+  await db.delete(s.ocrUsageCounters).where(eq(s.ocrUsageCounters.usageDate, pastDay));
+});
+
+test('a FUTURE month has nothing elapsed yet', async () => {
+  const future = '2099-12';
+  const status = await getOcrUsageStatus(future);
+  assert.strictEqual(status.period, future);
+  assert.strictEqual(status.elapsedDays, 0);
+  assert.strictEqual(status.used, 0);
+  assert.strictEqual(status.daily.length, 0);
+  assert.strictEqual(status.dailyAverage, 0);
+  assert.strictEqual(status.projectedTotal, 0);
+});
