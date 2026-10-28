@@ -121,6 +121,15 @@
   font-size: var(--fs-xs); letter-spacing: 0.8px;
   color: var(--ink-3); text-transform: uppercase; font-weight: 600;
 }
+/* NEPO-40 (id 663): nhãn grid truncate CÓ CHỦ ĐÍCH 1 dòng + title ≤1023px —
+   card nửa bề rộng @768 từng wrap 2–3 dòng ngắt quãng. */
+@media (max-width: 1023px) {
+  .trip-list-page .trip-mcard__meta .lab {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
 .trip-list-page .trip-mcard__meta .val {
   font-family: var(--font-mono);
   font-size: var(--fs-sm); font-weight: 600; color: var(--ink);
