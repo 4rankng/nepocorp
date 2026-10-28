@@ -12,8 +12,7 @@
 //
 // ⚠️ Depends on the MiniMax spike (R1): tool-calling + JSON-mode shape. The
 // client is written to the OpenAI-compatible surface; verify before enabling.
-import { zodToJsonSchema } from 'zod-to-json-schema';
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 import { jsonrepair } from 'jsonrepair';
 import { randomUUID } from 'crypto';
 import { performance } from 'node:perf_hooks';
@@ -154,7 +153,10 @@ function toolsToMiniMax(tools: AgentToolDef[]): MiniMaxTool[] {
     function: {
       name: t.name,
       description: t.description,
-      parameters: zodToJsonSchema(t.params, { name: t.name }) as Record<string, unknown>,
+      // zod v4 ships a native JSON-Schema converter (replaces zod-to-json-schema).
+      // Default io:'output' renders post-transform shapes, matching the old
+      // zodToJsonSchema output (tools use z.preprocess on inputs).
+      parameters: z.toJSONSchema(t.params) as Record<string, unknown>,
     },
   }));
 }

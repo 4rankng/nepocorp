@@ -23,6 +23,7 @@
  * a 1536-float vector per row). Embedding status is surfaced separately.
  */
 import { z } from 'zod';
+import { partialUpdateSchema } from './partial-update';
 
 /** Admin FAQ entry as returned by the API (no `embedding` column).
  *  `hasEmbedding` is a computed boolean (`embedding IS NOT NULL`) so the UI
@@ -55,8 +56,10 @@ export const faqEntryCreateSchema = z.object({
 });
 export type FaqEntryCreate = z.infer<typeof faqEntryCreateSchema>;
 
-/** PUT /api/admin/faq-entries/:id — partial update. */
-export const faqEntryUpdateSchema = faqEntryCreateSchema.partial();
+/** PUT /api/admin/faq-entries/:id — partial update. partialUpdateSchema instead
+ *  of .partial(): Zod v4 applies field defaults inside .partial(), which would
+ *  reset variants/isActive/sortOrder on a bare PATCH. */
+export const faqEntryUpdateSchema = partialUpdateSchema(faqEntryCreateSchema);
 export type FaqEntryUpdate = z.infer<typeof faqEntryUpdateSchema>;
 
 /** Embedding outcome for a create/update. Surfaced so the admin UI can warn

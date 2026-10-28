@@ -19,7 +19,7 @@ import { toProvenance } from '../../metrics/metric-types';
 const semanticEntitySchema = z.enum(SEMANTIC_ENTITIES);
 const semanticEntityInputSchema = z.preprocess(normalizeSemanticEntityInput, semanticEntitySchema);
 const filterValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]).optional();
-const filtersSchema = z.record(filterValueSchema).optional();
+const filtersSchema = z.record(z.string(), filterValueSchema).optional();
 
 const ENTITY_ALIASES: Record<string, z.infer<typeof semanticEntitySchema>> = {
   trip: 'trips',
