@@ -173,11 +173,15 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
 
   const result = await extractContainerAndSeal(ocrBuffer, type, ocrMime);
 
-  // Usage tracking (NEPO-27): count ONE AI OCR request per recognition call.
-  // `provider !== null` means at least one AI provider was actually attempted —
-  // the no-key "chưa cấu hình" path makes no AI call and costs nothing, so it
-  // is not counted. An internal failover (OpenRouter miss → Gemini retry) is
-  // one user-facing request, not two. recordOcrRequest never throws.
+  // Usage tracking (NEPO-27): count ONE AI OCR request per recognition call,
+  // for EVERY role that calls OCR (ADMIN/MANAGER/ACCOUNTANT/DRIVER all pass
+  // through this handler via the casbin 'ocr' mount — there is no role filter
+  // on counting; the financial-role check on the dashboard tile only gates who
+  // SEES the usage figures). `provider !== null` means at least one AI provider
+  // was actually attempted — the no-key "chưa cấu hình" path makes no AI call
+  // and costs nothing, so it is not counted. An internal failover (OpenRouter
+  // miss → Gemini retry) is one user-facing request, not two.
+  // recordOcrRequest never throws.
   if (result.provider !== null) {
     await recordOcrRequest();
   }
