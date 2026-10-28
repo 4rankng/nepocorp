@@ -115,3 +115,32 @@ export function buildOcrUsageDailySeries(
   }
   return series;
 }
+
+/**
+ * Attribute the month's overage to the days that generated it (NEPO-620).
+ * `count` in each returned point is the number of OVERAGE requests that day —
+ * costed at `overagePricePerCall` by the caller.
+ *
+ * Overage starts at the first request past `monthlyAllowance` and lands on the
+ * day that request happened: day k carries
+ *
+ *   max(0, cum_k − allowance) − max(0, cum_{k−1} − allowance)
+ *
+ * so the series always sums to exactly `overageCount`
+ * (used − allowance, floored at 0) — the daily report and the monthly tile
+ * can never disagree. Days within the allowance report 0.
+ */
+export function buildOcrUsageDailyOverage(
+  daily: OcrUsageDailyPoint[],
+  monthlyAllowance: number,
+): OcrUsageDailyPoint[] {
+  let cumulative = 0;
+  let overSoFar = 0;
+  return daily.map(({ date, count }) => {
+    cumulative += Math.max(0, Math.floor(count));
+    const overNow = Math.max(0, cumulative - monthlyAllowance);
+    const dayOverage = overNow - overSoFar;
+    overSoFar = overNow;
+    return { date, count: dayOverage };
+  });
+}

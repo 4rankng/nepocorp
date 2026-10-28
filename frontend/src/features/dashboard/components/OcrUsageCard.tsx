@@ -3,6 +3,7 @@ import { SkeletonLine } from '../../../components/shared/Skeleton';
 import { OcrUsageChart } from '../../../components/charts/OcrUsageChart';
 import { downloadCSV } from '../../../lib/csv';
 import { formatCurrency, formatNumber } from '../../../lib/format';
+import { buildOcrUsageDailyOverage } from '@tingting/shared';
 import type { OcrUsageStatus } from '@tingting/shared';
 
 /**
@@ -105,24 +106,36 @@ export function OcrUsageCard({
   /**
    * Export the month's daily usage as a spreadsheet — one row per day of the
    * month (including the days without scans, so the total reconciles) plus a
-   * totals row. Same house export as the other reports (branded title band).
+   * totals row. NEPO-620: the third column carries the tile's "Phát sinh
+   * ngoài gói" figure per day (overage requests × price), and the subtitle
+   * spells out the overage whenever there is one. Same house export as the
+   * other reports (branded title band).
    */
   const exportReport = async () => {
+    const overageByDate: Record<string, number> = {};
+    for (const point of buildOcrUsageDailyOverage(status.daily, status.monthlyAllowance)) {
+      overageByDate[point.date] = point.count;
+    }
     const rows: (string | number)[][] = [];
     for (let day = 1; day <= status.daysInMonth; day++) {
       const date = `${status.period}-${String(day).padStart(2, '0')}`;
       const count = status.daily.find(point => point.date === date)?.count ?? 0;
-      rows.push([formatDay(date), count]);
+      const dayOverage = (overageByDate[date] ?? 0) * status.overagePricePerCall;
+      rows.push([formatDay(date), count, dayOverage]);
     }
     await downloadCSV(
       `bao-cao-ocr-${status.period}.csv`,
-      ['Ngày', 'Số request OCR'],
+      ['Ngày', 'Số request OCR', 'Phát sinh ngoài gói'],
       rows,
       {
         title: 'BÁO CÁO AI OCR',
-        subtitle: `Tháng ${formatPeriod(status.period)} · Hạn mức ${formatNumber(status.monthlyAllowance)} request · Trung bình ${formatNumber(status.dailyAverage)} lượt/ngày`,
-        columnTypes: ['date', 'number'],
-        totalsColumns: [1],
+        subtitle:
+          `Tháng ${formatPeriod(status.period)} · Hạn mức ${formatNumber(status.monthlyAllowance)} request · Trung bình ${formatNumber(status.dailyAverage)} lượt/ngày` +
+          (over
+            ? ` · Phát sinh ngoài gói: ${formatNumber(status.overageCount)} request × ${formatCurrency(status.overagePricePerCall)} = ${formatCurrency(status.overageCost)}`
+            : ''),
+        columnTypes: ['date', 'number', 'currency'],
+        totalsColumns: [1, 2],
       },
     );
   };

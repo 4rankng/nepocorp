@@ -7,10 +7,16 @@
 // 5. NEPO-28: the tile labels itself with the period the DATA covers, and the
 //    four metric cells carry the month view (used · projected · average ·
 //    overage cost) without repeating the daily chart.
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OcrUsageCard } from './OcrUsageCard';
+import { downloadCSV } from '../../../lib/csv';
+import { formatCurrency, formatNumber } from '../../../lib/format';
 import type { OcrUsageStatus } from '@tingting/shared';
+
+// The export builds a real workbook and triggers a download — the contract
+// under test is what it hands the shared export (NEPO-620), not the download.
+vi.mock('../../../lib/csv', () => ({ downloadCSV: vi.fn() }));
 
 // The chart sizes itself from its container — jsdom has no ResizeObserver.
 // Same stub the sibling chart tests use (RevenueTrendChart.test.tsx).
@@ -183,5 +189,67 @@ describe('OcrUsageCard (NEPO-28) — metric row + chart', () => {
     };
     render(<OcrUsageCard {...baseProps} status={past} />);
     expect(screen.getByText('Tháng 09/2026 · counter tự reset đầu tháng')).toBeTruthy();
+  });
+});
+
+describe('OcrUsageCard (NEPO-620) — export contract', () => {
+  // A three-day month that crosses the 10.000 cap on day 3: cum 4.000 → 8.000
+  // → 10.050, so exactly 50 requests bill at 200 ₫ each, all on day 3.
+  const OVER: OcrUsageStatus = {
+    period: '2026-10',
+    monthlyAllowance: 10000,
+    overagePricePerCall: 200,
+    used: 10050,
+    remaining: 0,
+    overageCount: 50,
+    overageCost: 10000,
+    elapsedDays: 3,
+    daysInMonth: 3,
+    daily: [
+      { date: '2026-10-01', count: 4000 },
+      { date: '2026-10-02', count: 4000 },
+      { date: '2026-10-03', count: 2050 },
+    ],
+    dailyAverage: 3350,
+    projectedTotal: 10050,
+  };
+
+  beforeEach(() => {
+    vi.mocked(downloadCSV).mockReset();
+    vi.mocked(downloadCSV).mockResolvedValue(undefined);
+  });
+
+  const exportAndGetCall = async (status: OcrUsageStatus) => {
+    render(<OcrUsageCard {...baseProps} status={status} />);
+    fireEvent.click(screen.getByText('Xuất báo cáo'));
+    await waitFor(() => expect(downloadCSV).toHaveBeenCalled());
+    return vi.mocked(downloadCSV).mock.calls[0];
+  };
+
+  it('adds the per-day overage column, totalling like the tile', async () => {
+    const [, headers, rows, options] = await exportAndGetCall(OVER);
+    expect(headers).toEqual(['Ngày', 'Số request OCR', 'Phát sinh ngoài gói']);
+    // Only the day that crosses the allowance bills — its 50 excess requests
+    // at 200 ₫. Days within the allowance bill 0.
+    expect(rows).toEqual([
+      ['01/10/2026', 4000, 0],
+      ['02/10/2026', 4000, 0],
+      ['03/10/2026', 2050, 10000],
+    ]);
+    expect(options?.columnTypes).toEqual(['date', 'number', 'currency']);
+    expect(options?.totalsColumns).toEqual([1, 2]);
+  });
+
+  it('spells the overage out in the subtitle when there is one', async () => {
+    const [, , , options] = await exportAndGetCall(OVER);
+    expect(options?.subtitle).toContain(
+      `Phát sinh ngoài gói: ${formatNumber(50)} request × ${formatCurrency(200)} = ${formatCurrency(10000)}`,
+    );
+  });
+
+  it('does not mention overage in the subtitle when there is none', async () => {
+    const [, , rows, options] = await exportAndGetCall(BASE);
+    expect(options?.subtitle).not.toContain('Phát sinh ngoài gói:');
+    expect(rows.every((r) => r[2] === 0)).toBe(true);
   });
 });
