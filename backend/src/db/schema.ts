@@ -1056,6 +1056,43 @@ export const ocrUsageCounters = pgTable('ocr_usage_counters', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+/**
+ * Per-request log of the AI OCR pipeline (ticket NEPO-33).
+ *
+ * The daily counter above answers "how many"; this table answers "what and
+ * how long" — one row per recognised photo holding the OCR answer, the model
+ * that produced it and how long the call took.
+ *
+ * The row is written ONCE, when the response is ready: `created_at` is the
+ * REQUEST start (passed in explicitly, not the insert time) and `updated_at`
+ * the RESPONSE time, so the gap between the two is the user-perceived latency
+ * even when the process dies mid-call. `duration_ms` carries the same span as
+ * a number, measured with performance.now() so a clock adjustment cannot
+ * distort it.
+ */
+export const ocrRequests = pgTable('ocr_requests', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  durationMs: integer('duration_ms').notNull(),
+  model: varchar('model', { length: 160 }),
+  // VARCHAR + CHECK rather than a pgEnum: only this codebase writes the value
+  // and the set is two literals, so a pgEnum would buy nothing and would make
+  // any future value change an enum-migration (same call as capTableHistory).
+  status: varchar('status', { length: 16 }).notNull(),
+  // The OCR answer as JSON text — the API response body verbatim, so it is read
+  // as-is and never re-shaped. TEXT, not jsonb: nothing queries inside it.
+  response: text('response'),
+  // Why the request failed, when it did. Null on success.
+  errorMsg: text('error_msg'),
+  // The caller. ON DELETE SET NULL: deleting an account must not delete the
+  // record that the money was spent on.
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+}, (table) => [
+  check('ocr_requests_status_check', sql`${table.status} in ('completed','failed')`),
+  index('ocr_requests_created_at_idx').on(table.createdAt),
+]);
+
 export const tripPhotos = pgTable('trip_photos', {
   id: serial('id').primaryKey(),
   tripId: integer('trip_id').references(() => trips.id).notNull(),

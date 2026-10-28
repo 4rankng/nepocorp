@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import type { Request, Response } from 'express';
+import { performance } from 'node:perf_hooks';
 import { eq, and } from 'drizzle-orm';
 import { Role } from '@tingting/shared';
 import { db } from '../db';
@@ -11,6 +12,10 @@ import { sniffImageType } from '../lib/format';
 import { saveTripPhoto } from './upload';
 import { extractContainerAndSeal } from '../services/ocr.service';
 import { recordOcrRequest } from '../services/ocr-usage.service';
+import {
+  recordOcrRequestLog,
+  type OcrRequestStatus,
+} from '../services/ocr-requests.service';
 import { ApiError } from '../errors';
 
 // auth + Casbin ('ocr') applied at mount point in index.ts. Both routes below
@@ -138,64 +143,122 @@ export async function persistOcrPhoto({
  * them through the existing container flow after visual confirmation.
  */
 router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
-  const file = req.file;
-  const type = req.body.type as 'CONTAINER' | 'SEAL';
+  // Per-request log (NEPO-33). The request start is stamped before any work so
+  // `created_at` is the real request time, and `duration_ms` covers the whole
+  // handler — image preprocess + AI call + provider failover.
+  const requestStartedAt = new Date();
+  const startedAtMs = performance.now();
+  const callerId = req.user?.userId ?? null;
 
-  if (!file) throw new ApiError(400, 'Không có file tải lên');
-  if (type !== 'CONTAINER' && type !== 'SEAL') {
-    throw new ApiError(400, 'Loại ảnh không hợp lệ (CONTAINER hoặc SEAL)');
+  // What the log row will say. The defaults describe a request that never
+  // produced an answer; the try block replaces them with the real outcome.
+  let outcome: {
+    model: string | null;
+    status: OcrRequestStatus;
+    response: string | null;
+    errorMsg: string | null;
+  } = {
+    model: null,
+    status: 'failed',
+    response: null,
+    errorMsg: 'Yêu cầu không hoàn tất',
+  };
+
+  try {
+    const file = req.file;
+    const type = req.body.type as 'CONTAINER' | 'SEAL';
+
+    if (!file) throw new ApiError(400, 'Không có file tải lên');
+    if (type !== 'CONTAINER' && type !== 'SEAL') {
+      throw new ApiError(400, 'Loại ảnh không hợp lệ (CONTAINER hoặc SEAL)');
+    }
+
+    const user = getUser(req);
+    const tripId = parseIdParam(req.body.trip_id, 'trip_id');
+    const containerId = parseIdParam(req.body.container_id, 'container_id');
+
+    // container_id only makes sense with a trip to link it to.
+    if (containerId !== null && tripId === null) {
+      throw new ApiError(400, 'container_id yêu cầu trip_id');
+    }
+
+    let photoUrl: string | undefined;
+    let storageKey: string | undefined;
+    let ocrBuffer = file.buffer;
+    let ocrMime = sniffImageType(file.buffer) ?? 'image/jpeg';
+
+    if (tripId !== null) {
+      // Persist (OCR pipeline) + enforce ownership/container-link, then reuse the
+      // processed buffer for recognition. persistOcrPhoto throws ApiError on
+      // authz/validation failure → asyncHandler → globalErrorHandler.
+      const saved = await persistOcrPhoto({ file, type, tripId, containerId, user });
+      photoUrl = saved.photoUrl;
+      storageKey = saved.storageKey;
+      ocrBuffer = saved.buffer;
+      ocrMime = saved.mimeType;
+    }
+
+    const result = await extractContainerAndSeal(ocrBuffer, type, ocrMime);
+
+    // Usage tracking (NEPO-27): count ONE AI OCR request per recognition call,
+    // for EVERY role that calls OCR (ADMIN/MANAGER/ACCOUNTANT/DRIVER all pass
+    // through this handler via the casbin 'ocr' mount — there is no role filter
+    // on counting; the financial-role check on the dashboard tile only gates who
+    // SEES the usage figures). `provider !== null` means at least one AI provider
+    // was actually attempted — the no-key "chưa cấu hình" path makes no AI call
+    // and costs nothing, so it is not counted. An internal failover (OpenRouter
+    // miss → Gemini retry) is one user-facing request, not two.
+    // recordOcrRequest never throws.
+    if (result.provider !== null) {
+      await recordOcrRequest();
+    }
+
+    outcome = {
+      model: result.model,
+      status: result.success ? 'completed' : 'failed',
+      response: JSON.stringify({
+        ok: result.success,
+        containerNumbers: result.containerNumbers,
+        sealNumber: result.sealNumber,
+        checkDigitWarnings: result.checkDigitWarnings,
+        provider: result.provider,
+        error: result.error,
+      }),
+      errorMsg: result.success ? null : result.error,
+    };
+
+    res.status(200).json({
+      ok: result.success,
+      containerNumbers: result.containerNumbers,
+      sealNumber: result.sealNumber,
+      checkDigitWarnings: result.checkDigitWarnings,
+      photoUrl,
+      storageKey,
+      model: result.model,
+      error: result.error,
+    });
+  } catch (error) {
+    // A thrown ApiError (no file, bad type, no ownership) is a failed request
+    // too: it gets a log row with the reason, then the error propagates to the
+    // global error handler unchanged.
+    outcome = {
+      ...outcome,
+      status: 'failed',
+      errorMsg: error instanceof Error ? error.message : String(error),
+    };
+    throw error;
+  } finally {
+    // Written once, at the end, so every outcome leaves exactly one row.
+    // recordOcrRequestLog never throws — a logging failure must not change the
+    // OCR response.
+    await recordOcrRequestLog({
+      createdAt: requestStartedAt,
+      updatedAt: new Date(),
+      durationMs: Math.round(performance.now() - startedAtMs),
+      userId: callerId,
+      ...outcome,
+    });
   }
-
-  const user = getUser(req);
-  const tripId = parseIdParam(req.body.trip_id, 'trip_id');
-  const containerId = parseIdParam(req.body.container_id, 'container_id');
-
-  // container_id only makes sense with a trip to link it to.
-  if (containerId !== null && tripId === null) {
-    throw new ApiError(400, 'container_id yêu cầu trip_id');
-  }
-
-  let photoUrl: string | undefined;
-  let storageKey: string | undefined;
-  let ocrBuffer = file.buffer;
-  let ocrMime = sniffImageType(file.buffer) ?? 'image/jpeg';
-
-  if (tripId !== null) {
-    // Persist (OCR pipeline) + enforce ownership/container-link, then reuse the
-    // processed buffer for recognition. persistOcrPhoto throws ApiError on
-    // authz/validation failure → asyncHandler → globalErrorHandler.
-    const saved = await persistOcrPhoto({ file, type, tripId, containerId, user });
-    photoUrl = saved.photoUrl;
-    storageKey = saved.storageKey;
-    ocrBuffer = saved.buffer;
-    ocrMime = saved.mimeType;
-  }
-
-  const result = await extractContainerAndSeal(ocrBuffer, type, ocrMime);
-
-  // Usage tracking (NEPO-27): count ONE AI OCR request per recognition call,
-  // for EVERY role that calls OCR (ADMIN/MANAGER/ACCOUNTANT/DRIVER all pass
-  // through this handler via the casbin 'ocr' mount — there is no role filter
-  // on counting; the financial-role check on the dashboard tile only gates who
-  // SEES the usage figures). `provider !== null` means at least one AI provider
-  // was actually attempted — the no-key "chưa cấu hình" path makes no AI call
-  // and costs nothing, so it is not counted. An internal failover (OpenRouter
-  // miss → Gemini retry) is one user-facing request, not two.
-  // recordOcrRequest never throws.
-  if (result.provider !== null) {
-    await recordOcrRequest();
-  }
-
-  res.status(200).json({
-    ok: result.success,
-    containerNumbers: result.containerNumbers,
-    sealNumber: result.sealNumber,
-    checkDigitWarnings: result.checkDigitWarnings,
-    photoUrl,
-    storageKey,
-    model: result.model,
-    error: result.error,
-  });
 }));
 
 /**

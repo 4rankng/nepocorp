@@ -231,3 +231,11 @@ export type {
   OcrAiSettingsUpdate,
   OcrAiTestResponse,
 } from './schemas/ocr-ai-settings';
+
+// ─── AI OCR request log (response / model / duration) (NEPO-33) ───────────────
+export type {
+  OcrRequestRow,
+  OcrRequestStats,
+  OcrRequestListResponse,
+  OcrRequestStatus,
+} from './schemas/ocr-requests';
