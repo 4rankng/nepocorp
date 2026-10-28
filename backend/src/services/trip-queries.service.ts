@@ -219,6 +219,12 @@ export async function getTrips(filters: TripListFilters) {
     roadAllowanceOverride: s.trips.roadAllowanceOverride,
     customerCommission: s.trips.customerCommission,
     tripWageDays: s.trips.tripWageDays,
+    // Chấm công coverage (NEPO-31): real wage data lives in driver_work_days
+    // (TRIP_DAY rows auto-recorded per trip day). The missing-figures check
+    // treats it as salary data even when driverSalary is 0 — keep in step with
+    // `hasTripWageData` in frontend/src/features/trips/tripHelpers.ts and the
+    // missing-financials SQL in dashboard-stats.service.ts.
+    attendanceDayCount: sql<number>`(select count(*)::int from driver_work_days where trip_id = ${s.trips.id} and status = 'TRIP_DAY')`,
     notes: s.trips.notes,
     twoPointDeliveryBonus: s.trips.twoPointDeliveryBonus,
     vehicleShiftAllowance: s.trips.vehicleShiftAllowance,
@@ -475,6 +481,12 @@ export async function getTripById(id: number) {
     externalDriverPhone: s.trips.externalDriverPhone,
     customerCommission: s.trips.customerCommission,
     tripWageDays: s.trips.tripWageDays,
+    // Chấm công coverage (NEPO-31): real wage data lives in driver_work_days
+    // (TRIP_DAY rows auto-recorded per trip day). The missing-figures check
+    // treats it as salary data even when driverSalary is 0 — keep in step with
+    // `hasTripWageData` in frontend/src/features/trips/tripHelpers.ts and the
+    // missing-financials SQL in dashboard-stats.service.ts.
+    attendanceDayCount: sql<number>`(select count(*)::int from driver_work_days where trip_id = ${s.trips.id} and status = 'TRIP_DAY')`,
     createdAt: s.trips.createdAt, updatedAt: s.trips.updatedAt, deletedAt: s.trips.deletedAt,
     ...TRIP_RELATION_FIELDS,
   }).from(s.trips))

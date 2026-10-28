@@ -277,6 +277,12 @@ export function isTripToday(departureDate: string | null | undefined, now: Date 
  * hired as a single freight cost, so it has no company fuel, no road allowance
  * and no trip salary to ask for. `getDataCompleteness` reads the same fields —
  * keep the two in step.
+ *
+ * "Lương chuyến" only fires when the trip has NO real wage data anywhere
+ * (NEPO-31): the per-trip `driverSalary` figure is a cost allocation that is
+ * auto-filled and often legitimately 0 while the actual wage record lives in
+ * chấm công (`driver_work_days` TRIP_DAY rows, counted as `attendanceDayCount`).
+ * Either source satisfies the check — see `hasTripWageData`.
  */
 export function getMissingPlanFields(trip: TripDetail): string[] {
   if (trip.status === TripStatus.CANCELED) return [];
@@ -306,9 +312,20 @@ export function getMissingPlanFields(trip: TripDetail): string[] {
   if (trip.carrierType !== 'EXTERNAL') {
     if (!Number(trip.fuelLiters ?? 0)) missing.push('Dầu');
     if (!Number(trip.totalRoadAllowance ?? 0)) missing.push('Tiền đi đường');
-    if (!Number(trip.driverSalary ?? 0)) missing.push('Lương chuyến');
+    if (!hasTripWageData(trip)) missing.push('Lương chuyến');
   }
   return missing;
+}
+
+/**
+ * Whether the trip has real wage data (NEPO-31): an entered/derived
+ * `driverSalary`, or chấm công coverage for the trip (`attendanceDayCount`
+ * TRIP_DAY rows — the source the salary module computes "Lương chuyến" from).
+ * Flag "Thiếu tiền lương chuyến" only when BOTH are absent. Mirrored by the
+ * missing-financials SQL in `backend/src/services/dashboard-stats.service.ts`.
+ */
+export function hasTripWageData(trip: TripDetail): boolean {
+  return Number(trip.driverSalary ?? 0) > 0 || Number(trip.attendanceDayCount ?? 0) > 0;
 }
 
 /**
@@ -316,6 +333,7 @@ export function getMissingPlanFields(trip: TripDetail): string[] {
  *
  * Same carrier split as `getMissingPlanFields` — an external trip counts as
  * complete once it has revenue and the freight cost it was hired for.
+ * Salary counts as present via `hasTripWageData` (NEPO-31) — keep in step.
  */
 export function getDataCompleteness(trip: TripDetail): DataCompleteness {
   if (trip.status === TripStatus.CREATED || trip.status === TripStatus.CANCELED) return 'na';
@@ -325,7 +343,6 @@ export function getDataCompleteness(trip: TripDetail): DataCompleteness {
   }
   const fuel = Number(trip.fuelLiters ?? 0);
   const road = Number(trip.totalRoadAllowance ?? 0);
-  const salary = Number(trip.driverSalary ?? 0);
-  if (revenue > 0 && fuel > 0 && road > 0 && salary > 0) return 'complete';
+  if (revenue > 0 && fuel > 0 && road > 0 && hasTripWageData(trip)) return 'complete';
   return 'incomplete';
 }

@@ -11,6 +11,7 @@ import {
   getTripDisplayRevenue,
   getTripDisplayTotalCost,
   getTripRevenueBasis,
+  hasTripWageData,
   isTripToday,
 } from './tripHelpers';
 
@@ -101,6 +102,48 @@ describe('getMissingPlanFields (kanban 20260921_5)', () => {
     expect(getMissingPlanFields(own)).toEqual(['Dầu', 'Tiền đi đường', 'Lương chuyến']);
   });
 
+  it('does not ask for trip salary when chấm công already records the wage days (NEPO-31)', () => {
+    const own = {
+      status: TripStatus.COMPLETED,
+      carrierType: 'OWN',
+      customerId: 4,
+      routeId: 3,
+      departureDate: '2026-09-21',
+      truckId: 2,
+      driverId: 7,
+      revenue: '7560000',
+      fuelLiters: '120',
+      totalRoadAllowance: '2000000',
+      containers: [{ containerNumber: 'MSCU123', containerTypeCode: '40HC' }],
+      // The auto-filled allocation is legitimately 0 (no configured base
+      // salary) while the real wage days live in chấm công — not a data gap.
+      driverSalary: 0,
+      attendanceDayCount: 1,
+    } as unknown as TripDetail;
+
+    expect(getMissingPlanFields(own)).toEqual([]);
+  });
+
+  it('still demands trip salary when neither pay nor chấm công exists (NEPO-31)', () => {
+    const own = {
+      status: TripStatus.COMPLETED,
+      carrierType: 'OWN',
+      customerId: 4,
+      routeId: 3,
+      departureDate: '2026-09-21',
+      truckId: 2,
+      driverId: 7,
+      revenue: '7560000',
+      fuelLiters: '120',
+      totalRoadAllowance: '2000000',
+      containers: [{ containerNumber: 'MSCU123', containerTypeCode: '40HC' }],
+      driverSalary: 0,
+      attendanceDayCount: 0,
+    } as unknown as TripDetail;
+
+    expect(getMissingPlanFields(own)).toEqual(['Lương chuyến']);
+  });
+
   it('marks nothing on a canceled trip', () => {
     expect(getMissingPlanFields({ status: TripStatus.CANCELED } as TripDetail)).toEqual([]);
   });
@@ -137,6 +180,39 @@ describe('getDataCompleteness', () => {
       ...own,
       driverSalary: 0,
     } as unknown as TripDetail)).toBe('incomplete');
+  });
+
+  it('counts a chấm-công-covered trip complete without an entered salary (NEPO-31)', () => {
+    const own = {
+      status: TripStatus.COMPLETED,
+      carrierType: 'OWN',
+      revenue: '7560000',
+      fuelLiters: '120',
+      totalRoadAllowance: '2000000',
+      driverSalary: 0,
+      attendanceDayCount: 2,
+    } as unknown as TripDetail;
+
+    expect(getDataCompleteness(own)).toBe('complete');
+    // Wage days alone must not carry a trip that also owes the other figures.
+    expect(getDataCompleteness({
+      ...own,
+      totalRoadAllowance: 0,
+    } as unknown as TripDetail)).toBe('incomplete');
+    // Neither pay nor chấm công → the wage data is genuinely missing.
+    expect(getDataCompleteness({
+      ...own,
+      attendanceDayCount: 0,
+    } as unknown as TripDetail)).toBe('incomplete');
+  });
+});
+
+describe('hasTripWageData (NEPO-31)', () => {
+  it('accepts either the per-trip salary figure or chấm công coverage', () => {
+    expect(hasTripWageData({ driverSalary: '384615' } as unknown as TripDetail)).toBe(true);
+    expect(hasTripWageData({ driverSalary: 0, attendanceDayCount: 1 } as unknown as TripDetail)).toBe(true);
+    expect(hasTripWageData({ driverSalary: 0, attendanceDayCount: 0 } as unknown as TripDetail)).toBe(false);
+    expect(hasTripWageData({} as unknown as TripDetail)).toBe(false);
   });
 });
 
