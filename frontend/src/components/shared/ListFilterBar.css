@@ -45,6 +45,14 @@
   font-weight: 600;
 }
 .list-filter-option:focus-visible { outline-offset: -3px; }
+/* NEPO-40 (id 663): tab strip wrap xuống 2 dòng ≤1023px thay vì cắt chữ ở
+   mép phải (tab "Đã hủy" thành "Đã ỉ") — không còn nội dung ẩn sau mép cuộn. */
+@media (max-width: 1023px) {
+  .list-filter-options {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
 .list-filter-count { color: var(--ink-3); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
 .list-filter-option[aria-pressed="true"] .list-filter-count { color: inherit; }
 

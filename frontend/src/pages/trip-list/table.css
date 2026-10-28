@@ -406,6 +406,9 @@
   font-size: var(--fs-xs);
   color: var(--ink-2);
 }
+/* NEPO-40 (id 663): mỗi cụm thống kê ("49 chuyến", "· 29 chờ khóa") giữ
+   nguyên 1 dòng — khối chỉ wrap GIỮA các cụm, không wrap từng chữ. */
+.trip-list-page .thc-sub span { white-space: nowrap; }
 .trip-list-page .thc-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));

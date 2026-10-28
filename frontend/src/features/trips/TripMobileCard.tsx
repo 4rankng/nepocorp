@@ -146,13 +146,13 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
           )}
         </div>
         <div className="mm">
-          <span className="lab">Tổng tiền đi đường lái xe nhận</span>
+          <span className="lab" title="Tổng tiền đi đường lái xe nhận">Tổng tiền đi đường lái xe nhận</span>
           <span className={road > 0 ? 'val' : 'val empty'}>
             {road > 0 ? `${formatMoney(road)} ₫` : '—'}
           </span>
         </div>
         <div className="mm">
-          <span className="lab">Doanh thu (chưa VAT)</span>
+          <span className="lab" title="Doanh thu (chưa VAT)">Doanh thu (chưa VAT)</span>
           <span className={revenue > 0 ? 'val' : 'val empty'}>
             {revenue > 0 ? `${formatMoney(revenue)} ₫` : '—'}
           </span>
