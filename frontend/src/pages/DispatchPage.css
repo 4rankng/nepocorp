@@ -812,31 +812,42 @@ font-weight: 600;
     gap: 12px;
   }
   .dispatch-page .fleet-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 
-      "cust plate"
-      "driver driver"
-      "route route";
-    gap: 8px 16px;
-    padding: 16px;
+    /* NEPO-41 (id 664): card đội xe compact — flex thay cho grid-template-areas
+       để field rỗng bị ẩn thì card tự rút về 2 dòng (≤~72px khi thiếu dữ liệu),
+       hết khoảng trắng 60–80px/card. */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 12px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 12px;
-    align-items: center;
   }
   .dispatch-page .fleet-col-plate {
-    grid-area: plate;
-    justify-self: end;
+    order: 2;
+    margin-left: auto;
+    justify-self: unset;
   }
   .dispatch-page .fleet-driver {
-    grid-area: driver;
+    order: 3;
+    flex: 1 1 100%;
+    min-width: 0;
   }
   .dispatch-page .fleet-col-route {
-    grid-area: route;
+    order: 4;
+    flex: 1 1 100%;
   }
   .dispatch-page .fleet-col-cust {
-    grid-area: cust;
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  /* Field thiếu dữ liệu (chỉ render "—") bị ẩn trên card — "Khách: —" và
+     "Tuyến: —" từng là 2 dòng placeholder chiếm 60–80px/card. */
+  .dispatch-page .fleet-col-route:has(.fleet-dash),
+  .dispatch-page .fleet-col-cust:has(.fleet-dash) {
+    display: none;
   }
   .dispatch-page .fleet-route,
   .dispatch-page .fleet-cust,
@@ -955,6 +966,10 @@ font-weight: 600;
   align-items: center;
   gap: 14px;
   min-height: 40px;
+  /* NEPO-41 (id 664): wrap để "Tạo chuyến mới" tự xuống dòng trong padding
+     của hero thay vì tràn ra mép viewport @390 (nó cũng là nguồn overflow
+     +138px của section hero). */
+  flex-wrap: wrap;
 }
 .dispatch-page .hero--dispatch-compact .hero-h1 {
   margin: 0;
