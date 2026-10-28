@@ -386,6 +386,8 @@ export const qk = {
     all: ['ocrUsage'] as const,
     settings: ['ocrUsage', 'settings'] as const,
     status: ['ocrUsage', 'status'] as const,
+    /** Status for one calendar month ('YYYY-MM'); 'current' for the live month. */
+    statusForMonth: (month: string) => ['ocrUsage', 'status', month] as const,
   },
 
   /* ── AI OCR model settings (NEPO-28): provider + API key + model ───────── */

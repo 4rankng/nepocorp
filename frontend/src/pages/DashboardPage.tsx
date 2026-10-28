@@ -87,11 +87,16 @@ export default function DashboardPage() {
 
   const { data: approvalQueue, isLoading: approvalQueueLoading } = useApprovalQueue(user?.role, user?.userId);
 
-  // NEPO-27: AI OCR usage this calendar month. Financial-read only (matches
-  // the /reports/ocr-usage gate) — DRIVER must not even fire the request.
+  // NEPO-27: AI OCR usage for the browsed calendar month. Financial-read
+  // only (matches the /reports/ocr-usage gate) — DRIVER must not even fire
+  // the request. The month follows the dashboard's month picker, so the tile
+  // can show a past month instead of always the current one.
   const canSeeOcrUsage = isFinancialRole(user?.role);
   const canManageOcrUsage = user?.role === Role.ADMIN;
-  const ocrUsage = useOcrUsageStatus({ enabled: canSeeOcrUsage });
+  const ocrUsage = useOcrUsageStatus({
+    enabled: canSeeOcrUsage,
+    month: `${currentYear}-${String(currentMonth).padStart(2, '0')}`,
+  });
 
   // ── Derived values (non-hook computations) ──────────────────────────────
   const d = derived ?? null;

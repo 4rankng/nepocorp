@@ -639,9 +639,14 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--wf-ink-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Long labels WRAP instead of being cut ("PHÁT SINH NGOÀI GÓI" does not fit
+     one 140px column). The KPI row above does the same. The reserved two
+     lines keep the four values on one baseline. */
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  min-height: 2.5em;
 }
 .dash-wf .wf-ocr-metric .v {
   font-family: var(--font-mono);
@@ -711,6 +716,13 @@
 .dash-wf .wf-ocr-meter__state--over { color: var(--wf-amber); }
 
 .dash-wf .wf-ocr-chart { min-width: 0; }
+/* Header actions — the report export + the ADMIN settings shortcut. */
+.dash-wf .wf-ocr-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
 /* The dashboard icon reset (`.dash-wf svg { width: 16px !important }` in
    FinancePage.css) shrinks every SVG to a 16px icon glyph — the chart SVG
    has to opt out of it, exactly like the hero chart's `.wf-chart .body svg`. */

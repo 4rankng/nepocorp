@@ -79,7 +79,6 @@ export function OcrUsageChart({
 
   const W = width || 560;
   const H = initialH;
-  const chartTitleId = useId();
   const chartDescriptionId = useId();
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
@@ -143,12 +142,12 @@ export function OcrUsageChart({
     >
       <svg
         role="img"
-        aria-labelledby={`${chartTitleId} ${chartDescriptionId}`}
+        aria-label={chartTitle}
+        aria-describedby={chartDescriptionId}
         viewBox={`0 0 ${W} ${H}`}
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: 'block', width: '100%', height: '100%', overflow: 'visible' }}
       >
-        <title id={chartTitleId}>{chartTitle}</title>
         <desc id={chartDescriptionId}>{chartDescription}</desc>
 
         {/* Horizontal grid + y labels */}

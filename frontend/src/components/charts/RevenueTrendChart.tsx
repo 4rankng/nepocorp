@@ -68,7 +68,6 @@ export function RevenueTrendChart({
 
   const W = dimensions.width;
   const H = dimensions.height;
-  const chartTitleId = useId();
   const chartDescriptionId = useId();
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const activeIdx = hoverIdx;
@@ -108,7 +107,7 @@ export function RevenueTrendChart({
   const chartDescription = months.length > 0
     ? `${months.length} kỳ. Kỳ gần nhất ${months[lastIndex]}: doanh thu (chưa VAT) ${fmtTip(revenue[lastIndex] || 0)}, lợi nhuận gộp ${fmtTip(gross[lastIndex] || 0)}.`
     : 'Chưa có dữ liệu xu hướng.';
-  const tooltipWidth = Math.min(250, Math.max(0, W - 16));
+  const tooltipWidth = Math.min(320, Math.max(0, W - 16));
   const tooltipLeft = Math.min(
     Math.max(ax, tooltipWidth / 2 + 8),
     W - tooltipWidth / 2 - 8,
@@ -122,12 +121,12 @@ export function RevenueTrendChart({
     >
       <svg
         role="img"
-        aria-labelledby={`${chartTitleId} ${chartDescriptionId}`}
+        aria-label={chartTitle}
+        aria-describedby={chartDescriptionId}
         viewBox={`0 0 ${W} ${H}`}
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: 'block', width: '100%', height: '100%', overflow: 'visible', flex: 1 }}
       >
-        <title id={chartTitleId}>{chartTitle}</title>
         <desc id={chartDescriptionId}>{chartDescription}</desc>
 
         {/* Y-axis grid lines + labels */}
@@ -229,8 +228,8 @@ export function RevenueTrendChart({
           </div>
           <div style={{ height: 1, background: '#EEF1EF', margin: '0 -14px 8px -14px' }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'normal' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#005A2D', flex: '0 0 auto' }} />
               Doanh thu (chưa VAT)
             </div>
             <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#005A2D', whiteSpace: 'nowrap' }}>
@@ -238,8 +237,8 @@ export function RevenueTrendChart({
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', columnGap: '12px', alignItems: 'center', marginBottom: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'nowrap' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C2780B' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#56655C', whiteSpace: 'normal' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C2780B', flex: '0 0 auto' }} />
               LN gộp
             </div>
             <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#C2780B', whiteSpace: 'nowrap' }}>

@@ -64,8 +64,11 @@ describe('RevenueTrendChart money formatting', () => {
 
     const tooltip = screen.getByTestId('revenue-trend-tooltip');
     expect(tooltip.textContent).toContain('123.456.789 ₫');
-    expect(tooltip.style.width).toBe('250px');
-    expect(Number.parseFloat(tooltip.style.left)).toBeGreaterThanOrEqual(133);
-    expect(Number.parseFloat(tooltip.style.left)).toBeLessThanOrEqual(187);
+    // Wide enough for "Doanh thu (chưa VAT)" + the full VND figure to sit on
+    // one line each — the label used to overflow its grid track and paint over
+    // the value. Still capped to the chart width so it never leaves the card.
+    expect(tooltip.style.width).toBe('304px');
+    expect(Number.parseFloat(tooltip.style.left)).toBeGreaterThanOrEqual(160);
+    expect(Number.parseFloat(tooltip.style.left)).toBeLessThanOrEqual(160);
   });
 });
