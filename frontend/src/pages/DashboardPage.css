@@ -983,6 +983,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* NEPO-39 (id 662): no-truncate doctrine — số tiền nằm trong title/meta không
+   bao giờ bị ellipsis ≤1023px; wrap xuống dòng thay vì cắt (tiền > tên > meta).
+   Attr title trên 2 span giữ nguyên làm tooltip. */
+@media (max-width: 1023px) {
+  .dash-wf .wf-todo__t,
+  .dash-wf .wf-todo__m {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+}
 .dash-wf .wf-todo__chev { color: var(--wf-ink-3); flex: 0 0 auto; }
 .dash-wf .wf-todo__tick {
   width: 28px;

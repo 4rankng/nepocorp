@@ -10,12 +10,13 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
     // Process only the stylesheets the CSS contract tests read via `?raw`
-    // (salary-attendance, trip-list, DispatchPage, OcrRequestsPage, the global
-    // styles/tokens+responsive, and the contrast-pinned DashboardPage/
-    // FinancePage/sidebar). Every other .css id stays stubbed to an empty
-    // string (Vitest default) — cheaper and side-effect free.
+    // (salary-attendance, trip-list, DispatchPage, OcrRequestsPage,
+    // DashboardPage, FinancePage, ExpenseListPage, the global
+    // styles/tokens+responsive, and the contrast-pinned sidebar). Every
+    // other .css id stays stubbed to an empty string (Vitest default) —
+    // cheaper and side-effect free.
     css: {
-      include: [/((salary-attendance|trip-list)\/[^?]+|pages\/(DispatchPage|OcrRequestsPage|DashboardPage|FinancePage)|styles\/(tokens|responsive)|layout\/sidebar)\.css(\?.*)?$/],
+      include: [/((salary-attendance|trip-list)\/[^?]+|pages\/(DispatchPage|OcrRequestsPage|DashboardPage|FinancePage|ExpenseListPage)|styles\/(tokens|responsive)|layout\/sidebar)\.css(\?.*)?$/],
     },
   },
   resolve: {

@@ -780,18 +780,24 @@
   font-weight: 600;
   color: var(--ink);
   line-height: 1.35;
-  white-space: nowrap;
+  /* NEPO-39: tên NCC wrap tối đa 2 dòng, cắt có chủ đích + title xem đủ —
+     không cắt ngang tên (tiền > mã > tên > meta). */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .expense-mcard__sub {
   font-size: var(--fs-md);
   color: var(--ink-3);
   line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* NEPO-39: meta row xuống dòng thay vì cắt (mất loại xe). */
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
 .expense-mcard .expense-amount {

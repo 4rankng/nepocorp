@@ -100,6 +100,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* NEPO-39 (id 662): tên lái xe wrap tối đa 2 dòng ≤1023px + title xem đủ —
+   card 2 cột @390 từng cắt 50px tên "Trần Văn Minh Quang Bình Nguyên". */
+@media (max-width: 1023px) {
+  .driver-select-card__name {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+}
 
 .driver-select-card.is-active .driver-select-card__name {
   color: var(--accent-ink);
