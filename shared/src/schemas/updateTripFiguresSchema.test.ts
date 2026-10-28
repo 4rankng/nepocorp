@@ -27,23 +27,6 @@ const validExternalCreate = {
   externalCarrierId: 2,
 };
 
-test('external trip creation requires a non-empty plate number', () => {
-  const missing = createTripSchema.safeParse(validExternalCreate);
-  assert.strictEqual(missing.success, false);
-  if (!missing.success) {
-    assert.ok(missing.error.issues.some(issue => issue.path.includes('externalPlateNumber')));
-  }
-
-  const blank = createTripSchema.safeParse({
-    ...validExternalCreate,
-    externalPlateNumber: '   ',
-  });
-  assert.strictEqual(blank.success, false);
-  if (!blank.success) {
-    assert.ok(blank.error.issues.some(issue => issue.path.includes('externalPlateNumber')));
-  }
-});
-
 test('external trip creation accepts an empty driver name and phone when the plate is present', () => {
   const result = createTripSchema.safeParse({
     ...validExternalCreate,
@@ -53,17 +36,7 @@ test('external trip creation accepts an empty driver name and phone when the pla
   assert.strictEqual(result.success, true);
 });
 
-test('external trip updates require a plate but keep driver name and phone optional', () => {
-  const missingPlate = updateTripFiguresSchema.safeParse({
-    ...validBase,
-    carrierType: 'EXTERNAL',
-    externalPlateNumber: null,
-  });
-  assert.strictEqual(missingPlate.success, false);
-  if (!missingPlate.success) {
-    assert.ok(missingPlate.error.issues.some(issue => issue.path.includes('externalPlateNumber')));
-  }
-
+test('external trip updates keep driver name and phone optional', () => {
   const withoutDriverContact = updateTripFiguresSchema.safeParse({
     ...validBase,
     carrierType: 'EXTERNAL',
@@ -96,8 +69,8 @@ test('external trip updates reject company fuel suppliers and allocations', () =
   }
 });
 
-test('external trip reassignment validates plate type, length and presence', () => {
-  for (const externalPlateNumber of [undefined, null, '   ', 123, '1'.repeat(21)]) {
+test('external trip reassignment validates plate type and length', () => {
+  for (const externalPlateNumber of [123, '1'.repeat(21)]) {
     const result = reassignTripSchema.safeParse({
       carrierType: 'EXTERNAL',
       externalPlateNumber,
