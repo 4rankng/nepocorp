@@ -127,7 +127,7 @@ describe('OcrUsageCard (NEPO-28) — metric row + chart', () => {
     expect(screen.getByText('Đã dùng')).toBeTruthy();
     expect(screen.getByText('Dự báo tháng')).toBeTruthy();
     expect(screen.getByText('Trung bình')).toBeTruthy();
-    expect(screen.getByText('Phát sinh ngoài gói')).toBeTruthy();
+    expect(screen.getByText('Phát sinh')).toBeTruthy();
     expect(screen.getByText('~3.825')).toBeTruthy();
     expect(screen.getByText('123')).toBeTruthy();
     expect(screen.getByText('lượt / ngày')).toBeTruthy();
@@ -228,7 +228,7 @@ describe('OcrUsageCard (NEPO-620) — export contract', () => {
 
   it('adds the per-day overage column, totalling like the tile', async () => {
     const [, headers, rows, options] = await exportAndGetCall(OVER);
-    expect(headers).toEqual(['Ngày', 'Số request OCR', 'Phát sinh ngoài gói']);
+    expect(headers).toEqual(['Ngày', 'Số request OCR', 'Phát sinh']);
     // Only the day that crosses the allowance bills — its 50 excess requests
     // at 200 ₫. Days within the allowance bill 0.
     expect(rows).toEqual([
@@ -243,13 +243,13 @@ describe('OcrUsageCard (NEPO-620) — export contract', () => {
   it('spells the overage out in the subtitle when there is one', async () => {
     const [, , , options] = await exportAndGetCall(OVER);
     expect(options?.subtitle).toContain(
-      `Phát sinh ngoài gói: ${formatNumber(50)} request × ${formatCurrency(200)} = ${formatCurrency(10000)}`,
+      `Phát sinh: ${formatNumber(50)} request × ${formatCurrency(200)} = ${formatCurrency(10000)}`,
     );
   });
 
   it('does not mention overage in the subtitle when there is none', async () => {
     const [, , rows, options] = await exportAndGetCall(BASE);
-    expect(options?.subtitle).not.toContain('Phát sinh ngoài gói:');
+    expect(options?.subtitle).not.toContain('Phát sinh:');
     expect(rows.every((r) => r[2] === 0)).toBe(true);
   });
 });

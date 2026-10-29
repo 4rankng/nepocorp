@@ -69,7 +69,7 @@ describe('downloadCSV title band (NEPO-620)', () => {
     // The A2:B2 merge on this 2-column sheet is exactly the shape that used to
     // clip: a merged cell does not overflow, so the subtitle was cut mid-word.
     const subtitle =
-      'Tháng 10/2026 · Hạn mức 5.000 request · Trung bình 400 lượt/ngày · Phát sinh ngoài gói: 50 request × 200 ₫ = 10.000 ₫';
+      'Tháng 10/2026 · Hạn mức 5.000 request · Trung bình 400 lượt/ngày · Phát sinh: 50 request × 200 ₫ = 10.000 ₫';
     const sheet = await captureWorkbook([['Xăng', '100']], { subtitle });
 
     expect(sheet.getCell('A2').value).toBe(subtitle);

@@ -58,7 +58,7 @@ export function OcrUsageCard({
       <div className="d-card d-card-border bg-base-100 wf-card wf-ocr wf-bento-half" data-testid="ocr-usage-card-error">
         <div className="wf-card-h">
           <div>
-            <h2 className="ttl">OCR — Chụp ảnh cont/seal</h2>
+            <h2 className="ttl">OCR</h2>
             <div className="sub">Không tải được số request tháng này.</div>
           </div>
         </div>
@@ -74,7 +74,7 @@ export function OcrUsageCard({
       <div className="d-card d-card-border bg-base-100 wf-card wf-ocr wf-bento-half" aria-busy="true">
         <div className="wf-card-h">
           <div>
-            <h2 className="ttl">OCR — Chụp ảnh cont/seal</h2>
+            <h2 className="ttl">OCR</h2>
             <SkeletonLine width="160px" />
           </div>
         </div>
@@ -125,14 +125,14 @@ export function OcrUsageCard({
     }
     await downloadCSV(
       `bao-cao-ocr-${status.period}.csv`,
-      ['Ngày', 'Số request OCR', 'Phát sinh ngoài gói'],
+      ['Ngày', 'Số request OCR', 'Phát sinh'],
       rows,
       {
         title: 'BÁO CÁO AI OCR',
         subtitle:
           `Tháng ${formatPeriod(status.period)} · Hạn mức ${formatNumber(status.monthlyAllowance)} request · Trung bình ${formatNumber(status.dailyAverage)} lượt/ngày` +
           (over
-            ? ` · Phát sinh ngoài gói: ${formatNumber(status.overageCount)} request × ${formatCurrency(status.overagePricePerCall)} = ${formatCurrency(status.overageCost)}`
+            ? ` · Phát sinh: ${formatNumber(status.overageCount)} request × ${formatCurrency(status.overagePricePerCall)} = ${formatCurrency(status.overageCost)}`
             : ''),
         columnTypes: ['date', 'number', 'currency'],
         totalsColumns: [1, 2],
@@ -146,7 +146,7 @@ export function OcrUsageCard({
         <div>
           <h2 className="ttl">
             <ScanLine size={14} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: 6 }} />
-            OCR — Chụp ảnh cont/seal
+            OCR
           </h2>
           <div className="sub">Tháng {formatPeriod(status.period)} · counter tự reset đầu tháng</div>
         </div>
@@ -194,7 +194,7 @@ export function OcrUsageCard({
             <div className="s">lượt / ngày</div>
           </div>
           <div className="wf-ocr-metric">
-            <div className="k">Phát sinh ngoài gói</div>
+            <div className="k">Phát sinh</div>
             <div className={`v ${over ? 'v--over' : ''}`}>{formatCurrency(status.overageCost)}</div>
             <div className="s">
               {over
