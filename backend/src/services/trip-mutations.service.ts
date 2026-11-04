@@ -27,6 +27,7 @@ export function assertCustomerCommissionWithinRevenue(
 import { lockTripMutation, resolveTrailer } from './trip-shared';
 import type { Tx } from './trip-shared';
 import { LedgerService } from './ledger.service';
+import { ledgerInputsChanged } from './trip-ledger-inputs';
 
 // ─── B3 / D4: committed-legacy fuel freeze ──────────────────────────────────
 
@@ -1076,7 +1077,13 @@ export async function updateTripFigures(
         approvalStatus: fee.approvalStatus,
       }));
 
-      await LedgerService.postTripUnlock(tx, {
+      const lockFuelAllocations = fuelAllocations.map(allocation => ({
+        supplierId: allocation.supplierId,
+        liters: String(allocation.liters),
+        unitPrice: allocation.unitPrice != null ? String(allocation.unitPrice) : null,
+        paymentMethod: allocation.paymentMethod,
+      }));
+      const unlockSide = {
         id: trip.id,
         tripCode: trip.tripCode,
         customerId: trip.customerId,
@@ -1092,9 +1099,8 @@ export async function updateTripFigures(
         totalFuelCost: trip.totalFuelCost,
         fuelAllocations: existingFuelAllocations,
         ancillaryFees: mappedLedgerFees,
-      }, { strict: false });
-
-      await LedgerService.postTripLock(tx, {
+      };
+      const lockSide = {
         id: updated.id,
         tripCode: updated.tripCode,
         customerId: updated.customerId,
@@ -1108,14 +1114,19 @@ export async function updateTripFigures(
         fuelPriceApplied: updated.fuelPriceApplied,
         fuelActualUnitPrice: updated.fuelActualUnitPrice,
         totalFuelCost: updated.totalFuelCost,
-        fuelAllocations: fuelAllocations.map(allocation => ({
-          supplierId: allocation.supplierId,
-          liters: String(allocation.liters),
-          unitPrice: allocation.unitPrice != null ? String(allocation.unitPrice) : null,
-          paymentMethod: allocation.paymentMethod,
-        })),
+        fuelAllocations: lockFuelAllocations,
         ancillaryFees: mappedLedgerFees,
-      }, { strict: false });
+      };
+
+      // NEPO-43: saving a COMPLETED trip used to post the unlock/lock pair
+      // unconditionally. When nothing ledger-relevant changed, both rows net
+      // to 0 ₫ and only mint "Doanh thu chuyến X (Hoàn tác)" + "Doanh thu
+      // chuyến X" noise on the customer statement — skip the pair entirely.
+      if (ledgerInputsChanged(unlockSide, lockSide, existingFuelAllocations, lockFuelAllocations, mappedLedgerFees)) {
+        await LedgerService.postTripUnlock(tx, unlockSide, { strict: false });
+
+        await LedgerService.postTripLock(tx, lockSide, { strict: false });
+      }
     }
 
     // 7. Replace physical segments only when the caller supplied them. An

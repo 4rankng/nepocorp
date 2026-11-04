@@ -1,0 +1,42 @@
+{
+  "tripId": 296,
+  "payload": {
+    "fuelMode": "AUTO",
+    "fuelSupplementLiters": 11,
+    "tollsDiscount": 28921,
+    "tollsAddition": 1178921,
+    "tollsStations": 0,
+    "hasReturnCargo": false,
+    "driverSalary": 384615,
+    "revenueEmptyReturn": 6480000,
+    "revenueCombine": 0,
+    "tripWageDays": 1,
+    "departureDate": "2026-09-09",
+    "completedAt": "2026-09-10",
+    "customerId": 7,
+    "routeId": 12,
+    "fuelAllocations": [
+      {
+        "supplierId": 10,
+        "liters": 96,
+        "unitPrice": 27740,
+        "paymentMethod": "CREDIT"
+      },
+      {
+        "supplierId": null,
+        "liters": 11,
+        "unitPrice": 28480,
+        "paymentMethod": "CASH"
+      }
+    ],
+    "version": 8,
+    "fuelSupplementReason": "Bổ sung"
+  },
+  "rowsBefore": 16,
+  "rowsAfter": 16,
+  "newRows": [],
+  "newCustomerRows": 0,
+  "newUnlockReversalCustomer": 0,
+  "newTripRevenueCustomer": 0,
+  "tripVersionAfter": 9
+}

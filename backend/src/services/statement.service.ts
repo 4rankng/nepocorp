@@ -364,6 +364,45 @@ function computeAgingFor(
   };
 }
 
+/**
+ * Collapse legacy edit-cycle noise from the customer statement detail
+ * (NEPO-43). While a trip was COMPLETED, updateTripFigures posted an
+ * UNLOCK_REVERSAL + TRIP_REVENUE pair on every save, even when nothing
+ * ledger-relevant changed. Such a pair shares txnId (the trip), the amount
+ * (debit == credit) and the exact instant, nets to 0 ₫, and only clutters
+ * the chi tiết table — so both rows are hidden here. Aging, balances and
+ * period summary are computed upstream on the uncollapsed rows and stay
+ * untouched. A lone UNLOCK_REVERSAL (trip genuinely reopened) still shows,
+ * and only the UNLOCK_REVERSAL ↔ TRIP_REVENUE pairing collapses — payments,
+ * penalties, service fees etc. are never dropped.
+ */
+export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
+  // Bucket TRIP_REVENUE rows by trip|amount|instant so a reversal matches at
+  // most one revenue row (1:1): two same-instant reversals with a single
+  // revenue row collapse the pair and keep the lone reversal visible.
+  const revenueBuckets = new Map<string, number[]>();
+  rows.forEach((row, index) => {
+    if (row.txnType !== TxnType.TRIP_REVENUE || row.txnId == null || Number(row.debit ?? 0) <= 0) return;
+    const key = `${row.txnId}|${Number(row.debit)}|${new Date(row.timestamp).getTime()}`;
+    const bucket = revenueBuckets.get(key);
+    if (bucket) bucket.push(index);
+    else revenueBuckets.set(key, [index]);
+  });
+
+  const dropped = new Set<number>();
+  rows.forEach((row, index) => {
+    if (row.txnType !== TxnType.UNLOCK_REVERSAL || row.txnId == null || Number(row.credit ?? 0) <= 0) return;
+    const bucket = revenueBuckets.get(`${row.txnId}|${Number(row.credit)}|${new Date(row.timestamp).getTime()}`);
+    const revenueIndex = bucket?.shift();
+    if (revenueIndex === undefined) return;
+    dropped.add(index);
+    dropped.add(revenueIndex);
+  });
+
+  if (dropped.size === 0) return rows;
+  return rows.filter((_, index) => !dropped.has(index));
+}
+
 const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; max-width: 900px; margin: 24px auto; padding: 0 16px; }
   h1 { font-size: 18px; margin: 0 0 4px; }
   .meta { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
@@ -626,7 +665,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
 
   return {
     customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY', isCarrier: customer.isCarrier },
-    ledgerRows: enrichedLedgerRows,
+    ledgerRows: collapseEditCyclePairs(enrichedLedgerRows),
     totalOutstanding,
     currentTotalOutstanding,
     agingAsOfPeriodEnd,

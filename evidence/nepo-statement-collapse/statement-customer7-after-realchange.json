@@ -1,0 +1,242 @@
+{
+  "customer": {
+    "id": 7,
+    "name": "CÔNG TY TNHH PHÁT TRIỂN DỊCH VỤ VẬN TẢI NAM PHONG",
+    "contactInfo": null,
+    "debitNoteMode": "MONTHLY",
+    "isCarrier": true
+  },
+  "ledgerRows": [
+    {
+      "id": 7382,
+      "timestamp": "2026-11-04T09:20:36.790Z",
+      "txnType": "TRIP_REVENUE",
+      "txnId": 297,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "0",
+      "debit": "7000000",
+      "balance": "45340000",
+      "note": "Doanh thu chuyến TRP-202609-0021",
+      "createdAt": "2026-11-04T09:20:36.790Z",
+      "routeName": "Hải Phòng - KCN Quang Minh, Hà Nội",
+      "containerNumbers": [
+        "CXRU1369391"
+      ],
+      "tripId": 297,
+      "tripCode": "TRP-202609-0021",
+      "serviceFeeLabel": null
+    },
+    {
+      "id": 7379,
+      "timestamp": "2026-11-04T09:20:36.790Z",
+      "txnType": "UNLOCK_REVERSAL",
+      "txnId": 297,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "6480000",
+      "debit": "0",
+      "balance": "38340000",
+      "note": "Doanh thu chuyến TRP-202609-0021 (Hoàn tác)",
+      "createdAt": "2026-11-04T09:20:36.790Z",
+      "routeName": "Hải Phòng - KCN Quang Minh, Hà Nội",
+      "containerNumbers": [
+        "CXRU1369391"
+      ],
+      "tripId": 297,
+      "tripCode": "TRP-202609-0021",
+      "serviceFeeLabel": null
+    },
+    {
+      "id": 4327,
+      "timestamp": "2026-09-12T03:01:50.353Z",
+      "txnType": "TRIP_REVENUE",
+      "txnId": 307,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "0",
+      "debit": "6372000",
+      "balance": "44820000",
+      "note": "Doanh thu chuyến TRP-202609-0031",
+      "createdAt": "2026-09-12T03:01:50.353Z",
+      "routeName": "Hải Phòng - KCN Quế Võ, Bắc Ninh",
+      "containerNumbers": [
+        "OOCU5635622"
+      ],
+      "tripId": 307,
+      "tripCode": "TRP-202609-0031",
+      "serviceFeeLabel": null
+    },
+    {
+      "id": 4325,
+      "timestamp": "2026-09-12T02:59:15.533Z",
+      "txnType": "TRIP_REVENUE",
+      "txnId": 306,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "0",
+      "debit": "6372000",
+      "balance": "38448000",
+      "note": "Doanh thu chuyến TRP-202609-0030",
+      "createdAt": "2026-09-12T02:59:15.533Z",
+      "routeName": "Hải Phòng - KCN Quế Võ, Bắc Ninh",
+      "containerNumbers": [
+        "OOCU9096745"
+      ],
+      "tripId": 306,
+      "tripCode": "TRP-202609-0030",
+      "serviceFeeLabel": null
+    },
+    {
+      "id": 4237,
+      "timestamp": "2026-09-10T06:45:43.883Z",
+      "txnType": "TRIP_REVENUE",
+      "txnId": 296,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "0",
+      "debit": "6480000",
+      "balance": "32076000",
+      "note": "Doanh thu chuyến TRP-202609-0020",
+      "createdAt": "2026-09-10T06:45:43.883Z",
+      "routeName": "Hải Phòng - KCN Quang Minh, Hà Nội",
+      "containerNumbers": [
+        "EMCU5543409"
+      ],
+      "tripId": 296,
+      "tripCode": "TRP-202609-0020",
+      "serviceFeeLabel": null
+    },
+    {
+      "id": 4234,
+      "timestamp": "2026-09-10T06:45:39.297Z",
+      "txnType": "TRIP_REVENUE",
+      "txnId": 297,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "0",
+      "debit": "6480000",
+      "balance": "25596000",
+      "note": "Doanh thu chuyến TRP-202609-0021",
+      "createdAt": "2026-09-10T06:45:39.297Z",
+      "routeName": "Hải Phòng - KCN Quang Minh, Hà Nội",
+      "containerNumbers": [
+        "CXRU1369391"
+      ],
+      "tripId": 297,
+      "tripCode": "TRP-202609-0021",
+      "serviceFeeLabel": null
+    },
+    {
+      "id": 324,
+      "timestamp": "2026-06-17T00:00:00.000Z",
+      "txnType": "TRIP_REVENUE",
+      "txnId": 57,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "0",
+      "debit": "5724000",
+      "balance": "19116000",
+      "note": "Doanh thu chuyến TRP-202606-0054",
+      "createdAt": "2026-06-20T05:53:27.635Z",
+      "routeName": "Tân Vũ - Ngọc Hồi, Hà Nội",
+      "containerNumbers": [
+        "FFAU6576486"
+      ],
+      "tripId": 57,
+      "tripCode": "TRP-202606-0054",
+      "serviceFeeLabel": null
+    },
+    {
+      "id": 323,
+      "timestamp": "2026-06-04T10:15:59.865Z",
+      "txnType": "TRIP_REVENUE",
+      "txnId": 10,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "0",
+      "debit": "6696000",
+      "balance": "13392000",
+      "note": "Doanh thu chuyến TRP-202606-0007",
+      "createdAt": "2026-06-20T05:53:27.635Z",
+      "routeName": "Hải Phòng - KCN Quang Minh, Hà Nội",
+      "containerNumbers": [
+        "SEGU9402988"
+      ],
+      "tripId": 10,
+      "tripCode": "TRP-202606-0007",
+      "serviceFeeLabel": null
+    },
+    {
+      "id": 312,
+      "timestamp": "2026-06-12T08:57:05.714Z",
+      "txnType": "TRIP_REVENUE",
+      "txnId": 7,
+      "receiptId": null,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "credit": "0",
+      "debit": "6696000",
+      "balance": "6696000",
+      "note": "Doanh thu chuyến TRP-202606-0004",
+      "createdAt": "2026-06-20T05:53:27.635Z",
+      "routeName": "Hải Phòng - KCN Quang Minh, Hà Nội",
+      "containerNumbers": [
+        "OTPU6693515"
+      ],
+      "tripId": 7,
+      "tripCode": "TRP-202606-0004",
+      "serviceFeeLabel": null
+    }
+  ],
+  "totalOutstanding": 45340000,
+  "currentTotalOutstanding": 45340000,
+  "agingAsOfPeriodEnd": null,
+  "unpaidTrips": [
+    {
+      "tripId": 306,
+      "date": "2026-10-08",
+      "outstanding": 5940000,
+      "note": "Doanh thu chuyến TRP-202609-0030"
+    },
+    {
+      "tripId": 296,
+      "date": "2026-10-08",
+      "outstanding": 12960000,
+      "note": "Doanh thu chuyến TRP-202609-0020"
+    },
+    {
+      "tripId": 297,
+      "date": "2026-10-08",
+      "outstanding": 26440000,
+      "note": "Doanh thu chuyến TRP-202609-0021"
+    }
+  ],
+  "latestActivityDate": "2026-11-04",
+  "agingBuckets": [
+    {
+      "range": "0-30 ngày",
+      "amount": 45340000
+    },
+    {
+      "range": "31-60 ngày",
+      "amount": 0
+    },
+    {
+      "range": "61-90 ngày",
+      "amount": 0
+    },
+    {
+      "range": "Trên 90 ngày",
+      "amount": 0
+    }
+  ]
+}
