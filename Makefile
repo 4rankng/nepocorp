@@ -257,6 +257,8 @@ restore:
 	echo "🔑 Resetting all user passwords to admin123..." && \
 	HASH=$$(cd backend && node -e "console.log(require('bcryptjs').hashSync('admin123',10))") && \
 	docker exec tingting-db psql -U postgres -d tingting -c "UPDATE users SET password_hash = '$$HASH';" && \
+	echo "🧯 Bumping serials past prod ledger txn_id space (anti-collision for tests)..." && \
+	docker exec tingting-db psql -U postgres -d tingting -c "SELECT setval('advance_requests_id_seq', GREATEST((SELECT COALESCE(MAX(id),0) FROM advance_requests), (SELECT COALESCE(MAX(txn_id),0) FROM ledger WHERE txn_type='FORWARDER_ADVANCE' AND entity_type='FORWARDER')) + 100);" && \
 	echo "✅ Restore complete! All passwords reset to admin123"
 
 ## adminer: Open prod Adminer over a private SSH tunnel → http://localhost:8082 (Ctrl-C to close)
