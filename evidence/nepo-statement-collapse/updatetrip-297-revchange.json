@@ -1,0 +1,104 @@
+{
+  "tripId": 297,
+  "payload": {
+    "fuelMode": "AUTO",
+    "fuelSupplementLiters": 11,
+    "fuelSupplementReason": "Cấp bs hàng nặng",
+    "fuelActualUnitPrice": 27740,
+    "tollsDiscount": 28921,
+    "tollsAddition": 1178921,
+    "tollsStations": 0,
+    "hasReturnCargo": false,
+    "driverSalary": 384615,
+    "revenueEmptyReturn": 7000000,
+    "revenueCombine": 0,
+    "tripWageDays": 1,
+    "departureDate": "2026-09-09",
+    "completedAt": "2026-09-10",
+    "customerId": 7,
+    "routeId": 12,
+    "fuelAllocations": [
+      {
+        "supplierId": 10,
+        "liters": 96,
+        "unitPrice": 27740,
+        "paymentMethod": "CREDIT"
+      },
+      {
+        "supplierId": null,
+        "liters": 11,
+        "unitPrice": 28480,
+        "paymentMethod": "CASH"
+      }
+    ],
+    "version": 7
+  },
+  "rowsBefore": 16,
+  "rowsAfter": 22,
+  "newRows": [
+    {
+      "id": 7384,
+      "entityType": "VENDOR",
+      "entityId": 10,
+      "txnType": "FUEL_EXPENSE",
+      "debit": "0",
+      "credit": "2663040",
+      "timestamp": "2026-11-04T09:20:36.790Z",
+      "note": "Chi phí 96 lít dầu chuyến TRP-202609-0021"
+    },
+    {
+      "id": 7383,
+      "entityType": "DRIVER",
+      "entityId": 3,
+      "txnType": "DRIVER_SALARY",
+      "debit": "0",
+      "credit": "384615",
+      "timestamp": "2026-11-04T09:20:36.790Z",
+      "note": "Lương sản lượng chuyến TRP-202609-0021"
+    },
+    {
+      "id": 7382,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "txnType": "TRIP_REVENUE",
+      "debit": "7000000",
+      "credit": "0",
+      "timestamp": "2026-11-04T09:20:36.790Z",
+      "note": "Doanh thu chuyến TRP-202609-0021"
+    },
+    {
+      "id": 7381,
+      "entityType": "VENDOR",
+      "entityId": 10,
+      "txnType": "UNLOCK_REVERSAL",
+      "debit": "2663040",
+      "credit": "0",
+      "timestamp": "2026-11-04T09:20:36.790Z",
+      "note": "Chi phí 96 lít dầu chuyến TRP-202609-0021 (Hoàn tác)"
+    },
+    {
+      "id": 7380,
+      "entityType": "DRIVER",
+      "entityId": 3,
+      "txnType": "UNLOCK_REVERSAL",
+      "debit": "384615",
+      "credit": "0",
+      "timestamp": "2026-11-04T09:20:36.790Z",
+      "note": "Lương sản lượng chuyến TRP-202609-0021 (Hoàn tác)"
+    },
+    {
+      "id": 7379,
+      "entityType": "CUSTOMER",
+      "entityId": 7,
+      "txnType": "UNLOCK_REVERSAL",
+      "debit": "0",
+      "credit": "6480000",
+      "timestamp": "2026-11-04T09:20:36.790Z",
+      "note": "Doanh thu chuyến TRP-202609-0021 (Hoàn tác)"
+    }
+  ],
+  "newCustomerRows": 2,
+  "newUnlockReversalCustomer": 1,
+  "newTripRevenueCustomer": 1,
+  "tripVersionAfter": 8
+}
