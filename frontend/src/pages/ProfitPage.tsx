@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   TrendingUp,
   Users,
@@ -91,48 +91,48 @@ export default function ProfitPage() {
   // ~1.2s, so one look could read three different numbers (kanban 101026003200).
   const netProfit = report?.netProfit || 0;
 
-  const handlePreview = async () => {
+  // Toast identity churns whenever any toast appears or leaves the screen
+  // (Toast.tsx memoizes `toast` over the toast list), so it must never sit in
+  // an effect dep list — that refires the load and wipes the preview panel.
+  const showToastRef = useRef(showToast);
+  useEffect(() => {
+    showToastRef.current = showToast;
+  }, [showToast]);
+
+  // Latest-wins guard shared by the auto-load and the "Xem trước" button: a
+  // slow response for a previous selection or an earlier click must never
+  // overwrite the newest preview with stale data.
+  const previewSeqRef = useRef(0);
+
+  const loadPreview = useCallback(async (quarter: number, year: number) => {
+    const seq = ++previewSeqRef.current;
     setPreviewing(true);
     setPreview(null);
     try {
       const res = await api.post<DistributionResult>('/reports/distribute-profit/preview', {
-        quarter: selectedQuarter,
-        year: distQuarterYear,
+        quarter,
+        year,
       });
-      setPreview(res);
+      if (seq === previewSeqRef.current) setPreview(res);
     } catch (err) {
-      showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xem trước phân phối.' });
+      if (seq === previewSeqRef.current) {
+        showToastRef.current({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xem trước phân phối.' });
+      }
     } finally {
-      setPreviewing(false);
+      if (seq === previewSeqRef.current) setPreviewing(false);
     }
+  }, []);
+
+  const handlePreview = () => {
+    // A settled result panel hides the preview (`preview && !distResult`) —
+    // clear it so "Xem trước" always shows what it fetched.
+    setDistResult(null);
+    void loadPreview(selectedQuarter, distQuarterYear);
   };
 
   useEffect(() => {
-    let active = true;
-
-    async function loadQuarterPreview() {
-      setPreviewing(true);
-      setPreview(null);
-      try {
-        const res = await api.post<DistributionResult>('/reports/distribute-profit/preview', {
-          quarter: selectedQuarter,
-          year: distQuarterYear,
-        });
-        if (active) setPreview(res);
-      } catch (err) {
-        if (active) {
-          showToast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi xem trước phân phối.' });
-        }
-      } finally {
-        if (active) setPreviewing(false);
-      }
-    }
-
-    loadQuarterPreview();
-    return () => {
-      active = false;
-    };
-  }, [selectedQuarter, distQuarterYear, showToast]);
+    void loadPreview(selectedQuarter, distQuarterYear);
+  }, [selectedQuarter, distQuarterYear, loadPreview]);
 
   const handleDistributeProfit = async () => {
     if (!await confirm(`Xác nhận phân chia lợi nhuận cho Quý ${selectedQuarter}/${distQuarterYear}? Hành động này không thể hoàn tác.`)) {
@@ -351,7 +351,7 @@ export default function ProfitPage() {
                       className="input"
                       style={{ minWidth: 120, flex: '1 1 auto' }}
                       value={selectedQuarter}
-                      onChange={e => { setSelectedQuarter(Number(e.target.value)); setPreview(null); }}
+                      onChange={e => { setSelectedQuarter(Number(e.target.value)); setPreview(null); setDistResult(null); }}
                     >
                       {[1, 2, 3, 4].map(q => <option key={q} value={q}>Quý {q}</option>)}
                     </select>
@@ -361,7 +361,7 @@ export default function ProfitPage() {
                       className="input"
                       style={{ minWidth: 120, flex: '1 1 auto' }}
                       value={distQuarterYear}
-                      onChange={e => { setDistQuarterYear(Number(e.target.value)); setPreview(null); }}
+                      onChange={e => { setDistQuarterYear(Number(e.target.value)); setPreview(null); setDistResult(null); }}
                     >
                       {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>Năm {y}</option>)}
                     </select>
