@@ -114,9 +114,13 @@ async function collectTripRemainders(tx: Tx, customerId: number): Promise<TripRe
  * Result of a payment intake. `duplicate: true` means an identical payment was
  * already recorded and NOTHING was posted — the caller should surface the
  * friendly "bản ghi đã tồn tại" message instead of an error.
+ *
+ * `overpaid` (NEPO-45) is present only when the received total exceeded the
+ * trips' collectible sum; it is the VND posted as a customer-level advance
+ * credit (the running balance takes it and may go negative).
  */
 export type RecordPaymentResult =
-  | { duplicate: false }
+  | { duplicate: false; overpaid?: number }
   | { duplicate: true; existingId: number; receiptId: string | null };
 
 /**
@@ -147,8 +151,14 @@ export type RecordPaymentResult =
  * per-trip guard hard-failed on exactly that ("còn 0 ₫, nhập 18.720.720 ₫").
  * Only the requested TOTAL is honored here; it is reallocated oldest-first
  * over the ledger's own remaining balances, SKIPPING trips already fully
- * paid. The only rejection is a total that exceeds the sum of all remaining
- * balances, reported as that total — never as a per-trip figure.
+ * paid. Since NEPO-45 (kế toán báo 05/11/2026) a total beyond the collectible
+ * sum is NO LONGER rejected: the excess is money the customer really handed
+ * over and lands as ONE customer-level PAYMENT_RECEIVED credit with no trip
+ * (txnId null) — the running balance carries it and goes negative when
+ * payments exceed the whole AR position (the same ledger law behind NAM
+ * PHONG's historical negative balance). The advance row's note names the
+ * excess ("trả trước X ₫") so the ledger history reads clearly. Only
+ * non-positive amounts are refused (400).
  */
 export async function recordPayment(input: PaymentInput): Promise<RecordPaymentResult> {
   return db.transaction(async (tx) => {
@@ -163,16 +173,19 @@ export async function recordPayment(input: PaymentInput): Promise<RecordPaymentR
     const duplicate = await findDuplicatePayment(tx, input);
     if (duplicate) return duplicate;
 
+    // Amount sanity — the route schema already enforces positive amounts
+    // (Zod → 400); direct service callers get the same rule here.
+    for (const p of input.payments) {
+      if (!Number.isFinite(p.amount) || p.amount <= 0) {
+        throw new ApiError(400, 'Số tiền thanh toán phải là số dương');
+      }
+    }
+
     // Oldest-first collectible trips per the ledger itself. Fully-paid trips
     // are absent from this list — allocation skips them by construction.
     const collectible = await collectTripRemainders(tx, input.customerId);
 
     const requested = input.payments.reduce((sum, p) => sum + p.amount, 0);
-    const totalRemaining = collectible.reduce((sum, t) => sum + t.remaining, 0);
-    if (requested > totalRemaining + 1) {  // +1 to absorb rounding
-      throw new ApiError(422,
-        `Thanh toán vượt quá tổng số còn lại của các chuyến chưa thu (Tổng còn có thể thu: ${totalRemaining.toLocaleString('vi-VN')} ₫, nhập ${requested.toLocaleString('vi-VN')} ₫)`);
-    }
 
     // FIFO: oldest collectible trip first, skip fully-paid ones, absorb the
     // whole requested amount across as many trips as it takes.
@@ -193,7 +206,27 @@ export async function recordPayment(input: PaymentInput): Promise<RecordPaymentR
       });
       left -= apply;
     }
-    return { duplicate: false } as const;
+
+    // NEPO-45: a total beyond the trip collectible is posted as ONE
+    // customer-level advance credit — no trip (txnId null), so per-trip
+    // FIFO matching is untouched and the customer's running balance takes
+    // the excess (negative when payments exceed the whole AR position).
+    // Append-only preserved: corrections go through the delete/edit
+    // escape hatches as before.
+    if (left > 0) {
+      await LedgerService.postEntry(tx, {
+        txnType: TxnType.PAYMENT_RECEIVED,
+        receiptId: input.receiptId,
+        entityType: 'CUSTOMER',
+        entityId: input.customerId,
+        debit: 0,
+        credit: left,
+        note: `Thanh toán vượt dư nợ (trả trước ${Math.round(left).toLocaleString('vi-VN')} ₫)`,
+        timestamp: postedAt,
+      });
+      return { duplicate: false, overpaid: Math.round(left) };
+    }
+    return { duplicate: false };
   });
 }
 

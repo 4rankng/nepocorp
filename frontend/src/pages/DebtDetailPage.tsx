@@ -129,6 +129,9 @@ export default function DebtDetailPage() {
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState('');
+  // NEPO-45: money received beyond the outstanding debt is legal (tiền trả
+  // trước) but needs an explicit confirmation before it leaves the browser.
+  const [overpayConfirm, setOverpayConfirm] = useState<{ amount: number } | null>(null);
   const queryClient = useQueryClient();
   const { toast: showToast } = useToast();
   const { user } = useAuth();
@@ -291,6 +294,19 @@ export default function DebtDetailPage() {
 
   const totalOutstanding = profileStatement?.totalOutstanding ?? 0;
 
+  // NEPO-45: an overpaid customer's running balance goes negative while the
+  // aging buckets stay empty (FIFO aging drops the excess credit), so read
+  // the advance from the ledger rows' own running balance (latest row) and
+  // surface it separately — display only, the balance arithmetic stays on
+  // the original rows.
+  const advanceAmount = useMemo(() => {
+    const rows = profileStatement?.ledgerRows ?? [];
+    if (rows.length === 0) return 0;
+    const last = rows.reduce((a, b) => (b.id > a.id ? b : a));
+    const balance = parseFloat(last.balance);
+    return Number.isFinite(balance) && balance < 0 ? Math.round(-balance) : 0;
+  }, [profileStatement?.ledgerRows]);
+
   // ── Loading / Error ─────────────────────────────────────────────────────
 
   if (isProfileLoading && !profileStatement) {
@@ -371,58 +387,70 @@ export default function DebtDetailPage() {
     await refetch();
   };
 
-  const submitPayment = async () => {
-    // Double-submit guard — see payInFlightRef above.
-    if (payInFlightRef.current) return;
-    setPayError('');
-    const amount = parseFloat(payAmount.replace(/[.,\s]/g, ''));
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setPayError('Số tiền không hợp lệ.');
-      return;
+  /** One validated, allocated payment intake ready to POST. */
+  interface PaymentIntake {
+    amount: number;
+    payments: Array<{ tripId: number; amount: number }>;
+    /** Money received beyond the customer's whole outstanding debt (NEPO-45). */
+    overpay: number;
+  }
+
+  // Validate the form, then allocate the entered amount FIFO across the
+  // unpaid trips — in INTEGER VND. `t.outstanding` can carry a VAT vulgar
+  // fraction from the ledger sums; the old float subtraction left epsilon
+  // leftovers that false-triggered the over-total guard even when the
+  // entered amount exactly matched the outstanding total.
+  const buildPaymentIntake = (): PaymentIntake | { error: string } => {
+    const raw = parseFloat(payAmount.replace(/[.,\s]/g, ''));
+    if (!Number.isFinite(raw) || raw <= 0) {
+      return { error: 'Số tiền không hợp lệ.' };
     }
     if (!payReceipt.trim()) {
-      setPayError('Mã biên lai là bắt buộc.');
-      return;
+      return { error: 'Mã biên lai là bắt buộc.' };
     }
     const today = new Date().toISOString().slice(0, 10);
     if (!payDate) {
-      setPayError('Ngày nhận là bắt buộc.');
-      return;
+      return { error: 'Ngày nhận là bắt buộc.' };
     }
     if (payDate > today) {
-      setPayError('Ngày nhận không được lớn hơn ngày hôm nay.');
-      return;
+      return { error: 'Ngày nhận không được lớn hơn ngày hôm nay.' };
     }
     if (unpaidTrips.length === 0) {
-      setPayError('Khách hàng không có công nợ để thanh toán.');
-      return;
+      return { error: 'Khách hàng không có công nợ để thanh toán.' };
     }
-    // No silent client-side cap: the server is the authority on what is still
-    // collectible and rejects an over-total with the exact figure
-    // ("Tổng còn có thể thu: X ₫"), which the user needs to see. This split is
-    // only a preview — the server reallocates the total FIFO over its own
-    // per-trip remaining balances, skipping already-paid trips (NITODA fix).
+    const amount = Math.round(raw);
     let remaining = amount;
     const payments: Array<{ tripId: number; amount: number }> = [];
     for (const t of unpaidTrips) {
       if (remaining <= 0) break;
-      const apply = Math.min(t.outstanding, remaining);
+      const apply = Math.min(Math.round(t.outstanding), remaining);
+      if (apply <= 0) continue;
       payments.push({ tripId: t.tripId, amount: apply });
       remaining -= apply;
     }
+    // Money the trip allocation could not absorb travels with the request so
+    // the server sees the full received total; the server re-applies FIFO
+    // over its own ledger remainders and posts any true excess as advance
+    // credit (NEPO-45). Σ unpaidTrips can be < totalOutstanding when the
+    // balance holds rows that are not trip revenue — that part is neither
+    // an error nor necessarily advance.
     if (remaining > 0) {
-      // The aging preview could not absorb the amount — let the server say
-      // precisely how much is collectible instead of posting a short payment.
-      setPayError(`Số tiền vượt quá tổng công nợ còn lại (${money(totalOutstanding)}).`);
-      return;
+      payments.push({ tripId: unpaidTrips[unpaidTrips.length - 1].tripId, amount: remaining });
     }
+    const overpay = Math.max(0, amount - Math.round(totalOutstanding));
+    return { amount, payments, overpay };
+  };
+
+  const postPayment = async (intake: PaymentIntake) => {
+    // Double-submit guard — see payInFlightRef above.
+    if (payInFlightRef.current) return;
     payInFlightRef.current = true;
     setPaySubmitting(true);
     try {
-      const res = await api.post<{ ok: boolean; duplicate?: boolean; message?: string }>('/payments/receive', {
+      const res = await api.post<{ ok: boolean; duplicate?: boolean; message?: string; overpaid?: number }>('/payments/receive', {
         customerId: Number(id),
         receiptId: payReceipt.trim(),
-        payments,
+        payments: intake.payments,
         receivedDate: payDate,
       });
       await invalidatePaymentCaches();
@@ -431,6 +459,15 @@ export default function DebtDetailPage() {
         // The backend recognized a re-submission of an already-recorded
         // payment — nothing new was posted (kanban 141026163910).
         showToast({ kind: 'info', message: res.message || 'Bản ghi thanh toán đã tồn tại — không ghi nhận trùng lặp.' });
+      } else {
+        // NEPO-45: a received total beyond the debt posts the excess as tiền
+        // trả trước (customer balance goes negative) — say so in the toast.
+        showToast({
+          kind: 'success',
+          message: res?.overpaid
+            ? `Đã ghi nhận thanh toán ${money(intake.amount)} — phần vượt ${money(res.overpaid)} ghi làm tiền trả trước.`
+            : `Đã ghi nhận thanh toán ${money(intake.amount)}.`,
+        });
       }
     } catch (e: unknown) {
       setPayError((e as Error)?.message || 'Lỗi khi ghi nhận thanh toán.');
@@ -438,6 +475,31 @@ export default function DebtDetailPage() {
       payInFlightRef.current = false;
       setPaySubmitting(false);
     }
+  };
+
+  const submitPayment = async () => {
+    setPayError('');
+    const intake = buildPaymentIntake();
+    if ('error' in intake) {
+      setPayError(intake.error);
+      return;
+    }
+    if (intake.overpay > 0) {
+      // No hard block: confirm the overpay, then post the full received total.
+      setOverpayConfirm({ amount: intake.overpay });
+      return;
+    }
+    await postPayment(intake);
+  };
+
+  const confirmOverpayAndSubmit = async () => {
+    setOverpayConfirm(null);
+    const intake = buildPaymentIntake();
+    if ('error' in intake) {
+      setPayError(intake.error);
+      return;
+    }
+    await postPayment(intake);
   };
 
   const confirmDeletePayment = async () => {
@@ -531,6 +593,7 @@ export default function DebtDetailPage() {
       <DebtAccountStrip
         hasDebt={hasDebt}
         totalOutstanding={totalOutstanding}
+        advanceAmount={advanceAmount}
         unpaidTripCount={unpaidTrips.length}
         oldestUnpaidTripDate={oldestUnpaidTrip?.date ?? null}
         lastPayment={lastPayment}
@@ -541,6 +604,7 @@ export default function DebtDetailPage() {
       {/* ── Aging Summary ───────────────────────────────────────────────── */}
       <DebtAgingSummary
         hasDebt={hasDebt}
+        advanceAmount={advanceAmount}
         activeAgingIdx={activeAgingIdx}
         oldestOverdueIdx={oldestOverdueIdx}
         agingAmounts={agingAmounts}
@@ -766,6 +830,17 @@ export default function DebtDetailPage() {
         onDateChange={setPayDate}
         onSubmit={() => { void submitPayment(); }}
         onClose={() => setShowPay(false)}
+      />
+
+      {/* NEPO-45 — overpay confirmation: money beyond the debt is recorded
+          as tiền trả trước, but only after the accountant explicitly agrees. */}
+      <ConfirmDialog
+        isOpen={!!overpayConfirm}
+        message={`Nhận vượt dư nợ ${money(overpayConfirm?.amount ?? 0)} — phần vượt ghi làm tiền trả trước. Tiếp tục?`}
+        confirmLabel="Xác nhận"
+        cancelLabel="Hủy"
+        onConfirm={() => { void confirmOverpayAndSubmit(); }}
+        onCancel={() => setOverpayConfirm(null)}
       />
 
       {/* Delete-payment confirmation (kanban 141026163920) */}
