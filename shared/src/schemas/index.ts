@@ -685,7 +685,7 @@ export const loginSchema = z.object({
 
 export const createUserSchema = z.object({
   username: z.string().min(2).optional(),
-  email: z.string().email().optional(),
+  email: z.string().email('Email không hợp lệ').or(z.literal('')).optional(),
   fullName: fullNameField,
   phone: z.string().min(6).optional(),
   password: z.string().min(6),
@@ -870,8 +870,11 @@ export const companyInfoSchema = z.object({
   taxCode: z.string().trim().min(1, 'Mã số thuế là bắt buộc'),
   representative: z.string().trim().min(1, 'Người đại diện là bắt buộc'),
   representativeTitle: z.string().trim().min(1, 'Chức vụ là bắt buộc'),
-  bankAccount: z.string().trim().min(1, 'Số tài khoản là bắt buộc'),
-  bankName: z.string().trim().min(1, 'Ngân hàng là bắt buộc'),
+  // Contact + bank details are genuinely optional on real documents — a
+  // company may print invoices before opening a bank account or setting a
+  // public email. Empty is valid; the document templates render blanks.
+  bankAccount: z.string().trim().default(''),
+  bankName: z.string().trim().default(''),
   phone: z.string().trim().default(''),
   email: z.string().trim().default(''),
   logoStorageKey: z.string().nullable().optional(),
