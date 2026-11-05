@@ -3,6 +3,7 @@ import * as s from '../db/schema';
 import { eq, and, desc, like, count, sql } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import type { Tx } from './trip-shared';
+import { ledgerInputsChanged } from './trip-ledger-inputs';
 
 /** Common trip shape for ledger lock/unlock operations */
 interface TripLedgerParams {
@@ -593,6 +594,48 @@ export class LedgerService {
     }
 
     return skippedFeeIds;
+  }
+
+  /**
+   * The single sanctioned way to run an unlock→re-lock cycle on a saved trip
+   * (NEPO-43 r3). Compares the ledger-affecting inputs of the stored side
+   * (`before` — what postTripUnlock would reverse) and the updated side
+   * (`after` — what postTripLock would post) via the pure helper
+   * `ledgerInputsChanged`. When nothing changed, the pair would net to 0 ₫ on
+   * every affected ledger and only mint "…(Hoàn tác)" noise rows — so both
+   * postings are skipped and the marker 'unchanged' is returned.
+   *
+   * Every unlock-then-relock chain MUST go through this method: a raw
+   * postTripUnlock + postTripLock pair outside LedgerService is a regression
+   * (guarded by relock-call-site-inventory.test.ts). Unlock WITHOUT a same-
+   * transaction re-lock (status machine's reverseCompletedPostings on
+   * re-dispatch/cancel) stays a direct postTripUnlock call — the guard only
+   * applies to the paired cycle. Passing the same object as before/after is
+   * a safe no-op (nothing changed → skip).
+   *
+   * Returns 'relocked' when the reversal + fresh postings ran with the given
+   * opts (e.g. strict fee handling forwarded unchanged to both primitives).
+   */
+  static async relockTripIfChanged(
+    tx: Tx,
+    before: TripLedgerParams,
+    after: TripLedgerParams,
+    opts?: { strict?: boolean },
+  ): Promise<'unchanged' | 'relocked'> {
+    if (
+      !ledgerInputsChanged(
+        before,
+        after,
+        before.fuelAllocations ?? [],
+        after.fuelAllocations ?? [],
+        before.ancillaryFees ?? [],
+      )
+    ) {
+      return 'unchanged';
+    }
+    await this.postTripUnlock(tx, before, opts);
+    await this.postTripLock(tx, after, opts);
+    return 'relocked';
   }
 
   // ─── Read methods ────────────────────────────────────────────────────────────

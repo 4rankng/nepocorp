@@ -27,7 +27,6 @@ export function assertCustomerCommissionWithinRevenue(
 import { lockTripMutation, resolveTrailer } from './trip-shared';
 import type { Tx } from './trip-shared';
 import { LedgerService } from './ledger.service';
-import { ledgerInputsChanged } from './trip-ledger-inputs';
 
 // ─── B3 / D4: committed-legacy fuel freeze ──────────────────────────────────
 
@@ -1118,15 +1117,12 @@ export async function updateTripFigures(
         ancillaryFees: mappedLedgerFees,
       };
 
-      // NEPO-43: saving a COMPLETED trip used to post the unlock/lock pair
-      // unconditionally. When nothing ledger-relevant changed, both rows net
-      // to 0 ₫ and only mint "Doanh thu chuyến X (Hoàn tác)" + "Doanh thu
-      // chuyến X" noise on the customer statement — skip the pair entirely.
-      if (ledgerInputsChanged(unlockSide, lockSide, existingFuelAllocations, lockFuelAllocations, mappedLedgerFees)) {
-        await LedgerService.postTripUnlock(tx, unlockSide, { strict: false });
-
-        await LedgerService.postTripLock(tx, lockSide, { strict: false });
-      }
+      // NEPO-43 r3: the unlock→re-lock cycle runs only through the LedgerService
+      // choke point. Saving a COMPLETED trip with unchanged ledger-inputs must
+      // mint nothing: the pair would net to 0 ₫ and only add "Doanh thu chuyến
+      // X (Hoàn tác)" noise to the customer statement. The strict:false fee
+      // handling of both sides is preserved per site.
+      await LedgerService.relockTripIfChanged(tx, unlockSide, lockSide, { strict: false });
     }
 
     // 7. Replace physical segments only when the caller supplied them. An
