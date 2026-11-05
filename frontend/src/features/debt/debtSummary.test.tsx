@@ -27,6 +27,7 @@ describe('AR detail overdue status (kanban 101026203130)', () => {
     render(
       <DebtAgingSummary
         hasDebt
+        advanceAmount={0}
         activeAgingIdx={0}
         oldestOverdueIdx={1}
         agingAmounts={nitodaAging}
@@ -42,6 +43,7 @@ describe('AR detail overdue status (kanban 101026203130)', () => {
     render(
       <DebtAgingSummary
         hasDebt
+        advanceAmount={0}
         activeAgingIdx={0}
         oldestOverdueIdx={0}
         agingAmounts={[5_000_000, 0, 0, 0]}
@@ -50,6 +52,23 @@ describe('AR detail overdue status (kanban 101026203130)', () => {
     );
 
     expect(screen.getByText(/Toàn bộ công nợ đang trong hạn 30 ngày — cần theo dõi thu hồi/)).toBeTruthy();
+  });
+
+  it('reports advance money outside the aging buckets, never as a bucket (NEPO-45)', () => {
+    render(
+      <DebtAgingSummary
+        hasDebt={false}
+        advanceAmount={2_999_000}
+        activeAgingIdx={-1}
+        oldestOverdueIdx={-1}
+        agingAmounts={[0, 0, 0, 0]}
+        ledgerRowCount={3}
+      />,
+    );
+
+    expect(screen.getByText(/Đã trả trước 2\.999\.000 ₫ — không nằm trong nhóm tuổi nợ\./)).toBeTruthy();
+    // The excess must not be presented as aged debt — every bucket reads zero.
+    expect(screen.getAllByText('Không phát sinh').length).toBe(4);
   });
 
   it('names the badge like the list row does', () => {

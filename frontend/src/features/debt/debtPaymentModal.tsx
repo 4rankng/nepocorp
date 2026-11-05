@@ -87,7 +87,9 @@ export function DebtPaymentModal({
             type="number"
             value={payAmount}
             onChange={e => onAmountChange(e.target.value)}
-            placeholder="VD: 5000000"
+            // NEPO-45: entering more than the debt is allowed — the excess
+            // becomes tiền trả trước after a confirmation.
+            placeholder={`Còn nợ: ${formatCurrency(totalOutstanding)} (nhập quá → trả trước)`}
             autoFocus
           />
           <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>

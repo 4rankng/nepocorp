@@ -9,9 +9,9 @@
  * pin the fixed contract:
  *   1. fully-paid trips are skipped; the money flows to the next oldest
  *      collectible trip (even when the client's split points at the paid one);
- *   2. a total exceeding the SUM of all remaining balances is rejected with
- *      the TOTAL remaining in the message ("Tổng còn có thể thu"), never a
- *      per-trip figure;
+ *   2. a total exceeding the SUM of all remaining balances posts the excess
+ *      as a customer-level advance credit with a negative running balance
+ *      (NEPO-45);
  *   3. an exact-total payment is accepted and zeroes the customer out.
  *
  * Integration-tier: needs the local dev Postgres (docker, :5440) because the
@@ -169,62 +169,51 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
     });
 
     // 10M total, mis-aimed at the fully-paid oldest trip by the client split.
-    // Only 7M is still collectible (B's 2M remainder + C's 5M), so 10M must
-    // be rejected with the TOTAL in the message.
-    await assert.rejects(
-      recordPayment({
-        customerId,
-        receiptId: `PT-FIFO5-${suffix}`,
-        payments: [{ tripId: tripA, amount: 10_000_000 }],
-      }),
-      (error: unknown) =>
-        error instanceof Error
-        && 'statusCode' in error && (error as { statusCode: number }).statusCode === 422
-        && error.message.includes('Tổng còn có thể thu: 7.000.000 ₫'),
-    );
-
-    // The exact collectible total (7M) passes: B soaks its 2M remainder
-    // first (older revenue), C takes the remaining 5M, A stays skipped.
-    await recordPayment({
+    // Since NEPO-45 only 7M is still collectible (B's 2M remainder + C's 5M):
+    // those 7M land FIFO and the 3M excess posts as a customer-level advance
+    // credit — no rejection.
+    const result = await recordPayment({
       customerId,
-      receiptId: `PT-FIFO6-${suffix}`,
-      payments: [{ tripId: tripA, amount: 7_000_000 }],
+      receiptId: `PT-FIFO5-${suffix}`,
+      payments: [{ tripId: tripA, amount: 10_000_000 }],
     });
+    assert.deepEqual(result, { duplicate: false, overpaid: 3_000_000 });
+
+    // B soaks its 2M remainder first (older revenue), C takes the next 5M,
+    // A stays skipped, and the 3M excess is the trip-less advance row.
     const rows = await paymentRows(customerId);
     assert.deepEqual(
       rows.map(r => [r.txnId, Number(r.credit)]),
-      [[tripA, 10_000_000], [tripB, 3_000_000], [tripB, 2_000_000], [tripC, 5_000_000]],
-      'B receives its 2M remainder, C the rest; A gets nothing more',
+      [[tripA, 10_000_000], [tripB, 3_000_000], [tripB, 2_000_000], [tripC, 5_000_000], [null, 3_000_000]],
+      'B receives its 2M remainder, C the rest; the excess posts unallocated',
     );
-    assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), 0);
+    assert.ok(
+      rows[rows.length - 1].note?.includes('(trả trước 3.000.000 ₫)'),
+      `advance row names the excess, got: ${rows[rows.length - 1].note}`,
+    );
+    assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), -3_000_000);
   });
 
-  test('amount exceeding the sum of all remaining balances is rejected with the total, not a per-trip message', async () => {
+  test('amount exceeding the sum of all remaining balances posts the excess as advance credit (NEPO-45)', async () => {
     const suffix = testSuffix();
-    const { customerId, tripA } = await seedCustomerWithDebt(suffix, trackers);
+    const { customerId, tripA, tripB } = await seedCustomerWithDebt(suffix, trackers);
 
-    await assert.rejects(
-      recordPayment({
-        customerId,
-        receiptId: `PT-FIFO7-${suffix}`,
-        payments: [{ tripId: tripA, amount: 15_500_000 }],
-      }),
-      (error: unknown) => {
-        assert.ok(error instanceof Error && 'statusCode' in error);
-        assert.equal((error as { statusCode: number }).statusCode, 422);
-        assert.ok(
-          error.message.includes('Tổng còn có thể thu: 15.000.000 ₫'),
-          `message states the total remaining, got: ${error.message}`,
-        );
-        assert.ok(
-          !error.message.includes('còn 0 ₫'),
-          'no per-trip remaining figure in the message',
-        );
-        return true;
-      },
+    const result = await recordPayment({
+      customerId,
+      receiptId: `PT-FIFO7-${suffix}`,
+      payments: [{ tripId: tripA, amount: 15_500_000 }],
+    });
+    assert.deepEqual(result, { duplicate: false, overpaid: 500_000 });
+
+    // The full 15M debt is settled FIFO; the 500k excess is the advance row
+    // and the customer's running balance goes negative by exactly that much.
+    const rows = await paymentRows(customerId);
+    assert.deepEqual(
+      rows.map(r => [r.txnId, Number(r.credit)]),
+      [[tripA, 10_000_000], [tripB, 5_000_000], [null, 500_000]],
     );
-    // Nothing was posted — the rejection is atomic.
-    assert.equal((await paymentRows(customerId)).length, 0);
+    assert.ok(rows[rows.length - 1].note?.includes('(trả trước 500.000 ₫)'));
+    assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), -500_000);
   });
 
   test('exact-total payment is accepted and fully settles every trip', async () => {
@@ -249,17 +238,17 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
     );
     assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), 0);
 
-    // A second payment of any size now exceeds the (zero) total remaining.
-    await assert.rejects(
-      recordPayment({
-        customerId,
-        receiptId: `PT-FIFO9-${suffix}`,
-        payments: [{ tripId: tripA, amount: 1_000 }],
-      }),
-      (error: unknown) =>
-        error instanceof Error
-        && 'statusCode' in error && (error as { statusCode: number }).statusCode === 422
-        && error.message.includes('Tổng còn có thể thu: 0 ₫'),
-    );
+    // A second payment of any size now exceeds the (zero) total remaining —
+    // NEPO-45: it posts entirely as advance credit and the balance dips
+    // negative instead of being rejected.
+    const result = await recordPayment({
+      customerId,
+      receiptId: `PT-FIFO9-${suffix}`,
+      payments: [{ tripId: tripA, amount: 1_000 }],
+    });
+    assert.deepEqual(result, { duplicate: false, overpaid: 1_000 });
+    const overpayRows = await paymentRows(customerId);
+    assert.deepEqual(overpayRows[overpayRows.length - 1].txnId, null, 'advance row carries no trip');
+    assert.equal(await LedgerService.getBalance('CUSTOMER', customerId), -1_000);
   });
 });

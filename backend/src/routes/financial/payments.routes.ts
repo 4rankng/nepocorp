@@ -43,7 +43,10 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
     message: `Thanh toán từ khách hàng ID ${data.customerId} đã được ghi nhận`,
     relatedEntityType: 'payments',
   });
-  res.status(201).json({ ok: true });
+  // NEPO-45: overpay intake is legal — `overpaid` is the VND that landed as
+  // advance credit (customer balance pushed past zero); absent when the
+  // payment fit the outstanding debt.
+  res.status(201).json({ ok: true, ...(result.overpaid ? { overpaid: result.overpaid } : {}) });
 }));
 
 // ─── Delete a payment entry (kanban 141026163920) ────────────────────────────

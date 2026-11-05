@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { LedgerEntry } from '@tingting/shared';
 import { formatCurrency, formatDate } from '../../lib/format';
 import { money } from './debtUtils';
@@ -13,6 +13,8 @@ export const AGING_RANGES = [
 interface DebtAccountStripProps {
   hasDebt: boolean;
   totalOutstanding: number;
+  /** NEPO-45: money received beyond the debt (negative running balance). */
+  advanceAmount: number;
   unpaidTripCount: number;
   oldestUnpaidTripDate: string | null;
   lastPayment: LedgerEntry | null;
@@ -23,6 +25,7 @@ interface DebtAccountStripProps {
 export function DebtAccountStrip({
   hasDebt,
   totalOutstanding,
+  advanceAmount,
   unpaidTripCount,
   oldestUnpaidTripDate,
   lastPayment,
@@ -30,13 +33,16 @@ export function DebtAccountStrip({
   activeAgingAmount,
 }: DebtAccountStripProps) {
   const activeAgingRange = activeAgingIdx >= 0 ? AGING_RANGES[activeAgingIdx] : null;
+  // An overpaid customer owes 0 but sits on a negative balance — show the
+  // advance in the position card instead of implying an empty account.
+  const showAdvance = !hasDebt && advanceAmount > 0;
 
   return (
     <section className="dd-account-strip" aria-label="Tóm tắt công nợ">
       <article className={`dd-account-card${hasDebt ? ' dd-account-card--debt' : ' dd-account-card--clear'}`}>
-        <span>Dư nợ hiện tại</span>
-        <strong>{money(totalOutstanding)}</strong>
-        <small>{hasDebt ? 'Cần theo dõi thu hồi' : 'Đã tất toán'}</small>
+        <span>{showAdvance ? 'Đã trả trước' : 'Dư nợ hiện tại'}</span>
+        <strong>{showAdvance ? money(advanceAmount) : money(totalOutstanding)}</strong>
+        <small>{hasDebt ? 'Cần theo dõi thu hồi' : showAdvance ? 'Khách đã trả vượt dư nợ (tiền trả trước)' : 'Đã tất toán'}</small>
       </article>
       <article className="dd-account-card">
         <span>Chuyến chưa thu</span>
@@ -59,6 +65,8 @@ export function DebtAccountStrip({
 
 interface DebtAgingSummaryProps {
   hasDebt: boolean;
+  /** NEPO-45: money received beyond the debt — shown outside the buckets. */
+  advanceAmount: number;
   activeAgingIdx: number;
   /** Index of the OLDEST bucket carrying a balance; > 0 means overdue. */
   oldestOverdueIdx: number;
@@ -68,6 +76,7 @@ interface DebtAgingSummaryProps {
 
 export function DebtAgingSummary({
   hasDebt,
+  advanceAmount,
   activeAgingIdx,
   oldestOverdueIdx,
   agingAmounts,
@@ -92,6 +101,14 @@ export function DebtAgingSummary({
                 ? `Có công nợ quá hạn ${AGING_RANGES[oldestOverdueIdx].label.toLowerCase()} — cần ưu tiên thu hồi.`
                 : 'Toàn bộ công nợ đang trong hạn 30 ngày — cần theo dõi thu hồi.'
               }
+            </div>
+          )}
+          {advanceAmount > 0 && (
+            // NEPO-45: the excess credit is NOT debt — it must never land in
+            // the 0–30 bucket, so it is reported outside the aging grid.
+            <div className="dd-sum-note">
+              <CheckCircle2 size={17} style={{ color: 'var(--accent-2)', flexShrink: 0 }} />
+              Đã trả trước {formatCurrency(advanceAmount)} — không nằm trong nhóm tuổi nợ.
             </div>
           )}
         </div>
