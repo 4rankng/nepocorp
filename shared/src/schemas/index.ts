@@ -865,14 +865,14 @@ export const fuelPriceHistorySchema = z.object({
 });
 
 export const companyInfoSchema = z.object({
+  // Only the company name is compulsory — everything else may legitimately be
+  // unknown yet (fresh company, no bank account, no public email) and must
+  // not block saving. Document templates render blanks for empty values.
   name: z.string().trim().min(1, 'Tên công ty là bắt buộc'),
-  address: z.string().trim().min(1, 'Địa chỉ là bắt buộc'),
-  taxCode: z.string().trim().min(1, 'Mã số thuế là bắt buộc'),
-  representative: z.string().trim().min(1, 'Người đại diện là bắt buộc'),
-  representativeTitle: z.string().trim().min(1, 'Chức vụ là bắt buộc'),
-  // Contact + bank details are genuinely optional on real documents — a
-  // company may print invoices before opening a bank account or setting a
-  // public email. Empty is valid; the document templates render blanks.
+  address: z.string().trim().default(''),
+  taxCode: z.string().trim().default(''),
+  representative: z.string().trim().default(''),
+  representativeTitle: z.string().trim().default(''),
   bankAccount: z.string().trim().default(''),
   bankName: z.string().trim().default(''),
   phone: z.string().trim().default(''),

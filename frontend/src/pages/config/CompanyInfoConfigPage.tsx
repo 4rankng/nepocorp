@@ -93,14 +93,9 @@ export default function CompanyInfoConfigPage() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Only the legally-required profile fields gate the save. Email / phone /
-  // bank account / bank name are optional (companyInfoSchema) — demanding
-  // them blocked saving for companies that legitimately have none yet.
-  const canSave = useMemo(
-    () => (['name', 'address', 'taxCode', 'representative', 'representativeTitle'] as const)
-      .every((key) => form[key].trim().length > 0),
-    [form],
-  );
+  // Only the company name gates the save (companyInfoSchema); every other
+  // field is optional and saves as-is, blank included.
+  const canSave = useMemo(() => form.name.trim().length > 0, [form]);
 
   const updateField = (key: keyof CompanyInfoForm, value: string) => {
     setForm(current => ({ ...current, [key]: value }));
