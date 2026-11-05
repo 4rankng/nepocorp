@@ -28,25 +28,29 @@ export const OCR_AI_PROVIDER_LABELS: Record<OcrAiProvider, string> = {
 
 /**
  * Model used when the admin has not chosen one (and the boot fallback).
- * Claude Haiku 5.5 measured as the best number-recognition model on
- * container/seal photos — the earlier Qwen3-VL slug missed seal numbers.
+ * qwen/qwen3.7-flash — the primary of the OCR chain benchmarked on real
+ * container/seal photos in vantaiphucloc (backend/app/config.py
+ * OPENROUTER_MODELS, 27/10 bench: 3/3 reads, 7–12s, $0.03/1M in).
  */
-export const OCR_AI_DEFAULT_MODEL = 'anthropic/claude-haiku-5.5';
+export const OCR_AI_DEFAULT_MODEL = 'qwen/qwen3.7-flash';
 
 /**
- * Vision-capable OpenRouter models offered in the dropdown. Every slug here
- * was verified against `GET https://openrouter.ai/api/v1/models` to accept
- * `image` input.
- *
- * This is a convenience list, not a whitelist: the admin can type any slug,
- * so a model released after this list was written is still usable.
+ * Vision-capable OpenRouter models offered in the dropdown — the OCR chain
+ * tested on real container/seal photos in vantaiphucloc
+ * (backend/app/config.py), ordered primary → in-chain → fallback:
+ *   qwen3.7-flash (primary) → deepseek-v4.1-flash-1017 (2nd) →
+ *   dots-3-note-preview:free (free last resort) | fallbacks:
+ *   deepseek-v4.1-flash (Sep checkpoint — only model reading SEKU-type
+ *   photos) and z-ai/glm-4.5v.
+ * Benchmark notes live in vantaiphucloc backend/app/config.py (bench
+ * 17–27/10, 7-photo set incl. the SEKU5653845 hard case).
  */
 export const OCR_AI_MODELS: readonly string[] = [
-  'anthropic/claude-haiku-5.5',
-  'anthropic/claude-sonnet-5.5',
-  'google/gemini-3.5-flash',
-  'openai/gpt-4o-mini',
-  'qwen/qwen3-vl-30b-a3b-instruct',
+  'qwen/qwen3.7-flash',
+  'deepseek/deepseek-v4.1-flash-1017',
+  'deepseek/deepseek-v4.1-flash',
+  'z-ai/glm-4.5v',
+  'dots-studio/dots-3-note-preview:free',
 ];
 
 /** GET /api/admin/ocr-ai-settings — the key is never sent to the client. */

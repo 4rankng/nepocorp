@@ -26,21 +26,23 @@ import {
   saveOcrAiSettings,
 } from '../services/ocr/settings';
 import { callOpenRouterVision } from '../services/ocr.service';
+import { PROBE_IMAGE_BASE64 } from '../services/ocr/probe-image';
 
 const router = Router();
 
 /**
- * A 1×1 PNG. The probe is about the CONNECTION (key accepted, model alive,
- * image input accepted), not about recognition quality — a real container
- * photo would make the button slow and expensive for a connectivity check.
+ * A REAL container photo (TIIU6746012, from the vantaiphucloc OCR benchmark
+ * set) — the probe must exercise actual recognition, not just key/model
+ * acceptance: a 1×1 dummy PNG made every Claude probe fail with
+ * "Could not process image" even with a valid key. The model should read
+ * TIIU6746012 back.
  */
-const PROBE_IMAGE = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-  'base64',
-);
+const PROBE_IMAGE = Buffer.from(PROBE_IMAGE_BASE64, 'base64');
+const PROBE_IMAGE_MIME = 'image/jpeg';
+const PROBE_CONTAINER = 'TIIU6746012';
 
 const PROBE_PROMPT =
-  'Reply with the single word: OK';
+  'Đọc số container trong ảnh. Chỉ trả về đúng số container, không thêm gì khác.';
 
 /** GET /api/admin/ocr-ai-settings — the configured provider/model + masked key. */
 router.get('/', asyncHandler(async (_req: Request, res: Response) => {
@@ -86,18 +88,23 @@ router.post('/test', asyncHandler(async (req: Request, res: Response) => {
     return;
   }
 
-  const probe = await callOpenRouterVision(PROBE_PROMPT, PROBE_IMAGE, 'image/png', {
+  const probe = await callOpenRouterVision(PROBE_PROMPT, PROBE_IMAGE, PROBE_IMAGE_MIME, {
     apiKey: overrideKey,
     model: overrideModel,
   });
   const latencyMs = Date.now() - startedAt;
 
+  // A successful HTTP round-trip is only half the truth: report WHAT the
+  // model read on the known photo so the admin sees recognition quality too.
+  const read = (probe.text ?? '').toUpperCase();
   const result: OcrAiTestResponse = probe.success
     ? {
         ok: true,
         model: probe.model ?? overrideModel,
         latencyMs,
-        message: `Kết nối thành công — model phản hồi sau ${latencyMs} ms.`,
+        message: read.includes(PROBE_CONTAINER)
+          ? `Kết nối thành công — model đọc đúng ${PROBE_CONTAINER} sau ${latencyMs} ms.`
+          : `Kết nối thành công sau ${latencyMs} ms, nhưng model đọc được "${(probe.text ?? '').trim().slice(0, 60)}" (ảnh thật chứa ${PROBE_CONTAINER}) — cân nhắc đổi model.`,
       }
     : {
         ok: false,

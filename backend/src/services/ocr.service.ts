@@ -36,6 +36,7 @@
 import sharp from 'sharp';
 import { config } from '../config';
 import { validateCheckDigit, suggestCorrections } from '@tingting/shared';
+import { OCR_AI_DEFAULT_MODEL } from '@tingting/shared';
 import { getOcrAiSettings } from './ocr/settings';
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta';
@@ -61,11 +62,10 @@ const CONTAINER_RE_G = /[A-Z]{4}\d{7}/g;
 // OpenAI-compatible endpoint; mirrors the MiniMax LLM pattern,
 // services/llm/models.ts).
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-// Anthropic Claude Haiku 5.5 — the default vision model, verified against the
-// OpenRouter model list as the best number-recognition model measured on
-// container/seal photos. The ADMIN can pick another model in Cài đặt ứng dụng;
-// this constant is only the fallback.
-const OCR_MODEL = 'anthropic/claude-haiku-5.5';
+// Default vision model — the primary of the vantaiphucloc-benchmarked OCR
+// chain (qwen3.7-flash); single source in shared. The ADMIN can pick another
+// model in Cài đặt ứng dụng; this constant is only the fallback.
+const OCR_MODEL = OCR_AI_DEFAULT_MODEL;
 
 /**
  * The credentials + model one OCR call runs with.
