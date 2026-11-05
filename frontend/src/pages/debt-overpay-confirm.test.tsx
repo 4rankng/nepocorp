@@ -108,7 +108,7 @@ async function fillAndSubmit(amount: string) {
   fireEvent.change(screen.getByLabelText(/Số tiền nhận/), { target: { value: amount } });
   fireEvent.change(screen.getByLabelText(/Mã biên lai/), { target: { value: 'PT-20261105-01' } });
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Ghi nhận', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ghi nhận' }));
   });
 }
 
