@@ -1,7 +1,9 @@
 /**
- * Cover for the statement detail edit-cycle collapse (NEPO-43): legacy
- * UNLOCK_REVERSAL + TRIP_REVENUE pairs that share txnId, amount and instant
- * are hidden from the chi tiết table (net 0 ₫), while a genuinely lone
+ * Cover for the statement detail edit-cycle collapse (NEPO-43, generalized in
+ * NEPO-44): legacy UNLOCK_REVERSAL + original pairs that share entityType,
+ * txnId, mirrored amount (debit↔credit) and instant are hidden from the chi
+ * tiết table (net 0 ₫) — TRIP_REVENUE, EXTERNAL_CARRIER_COST, DRIVER_SALARY,
+ * fuel/VENDOR_EXPENSE, FORWARDER_ADVANCE alike — while a genuinely lone
  * UNLOCK_REVERSAL stays visible. Aging/balances are computed upstream and
  * untouched — this function only filters the display rows.
  */
@@ -78,7 +80,7 @@ describe('collapseEditCyclePairs', () => {
     assert.equal(collapseEditCyclePairs(rows).length, 2);
   });
 
-  it('collapses only UNLOCK_REVERSAL vs TRIP_REVENUE — other txn types untouched', () => {
+  it('collapses only UNLOCK_REVERSAL pairs — payments, penalties, odd-sign revenue untouched', () => {
     const rows = [
       row({ txnType: TxnType.PAYMENT_RECEIVED, credit: '6480000' }),
       row({ txnType: TxnType.PENALTY, debit: '500000' }),
@@ -121,5 +123,105 @@ describe('collapseEditCyclePairs', () => {
   it('returns the same array when nothing matches (no allocation churn)', () => {
     const rows = [revenue(), revenue({ txnId: 297 })];
     assert.equal(collapseEditCyclePairs(rows), rows);
+  });
+
+  // ── r2 (NEPO-44): generalized pairing — every entity the lock posts to ──
+
+  const carrierCost = (over: Partial<EnrichedLedgerRow> = {}) => row({
+    entityType: 'CARRIER',
+    entityId: 7,
+    txnType: TxnType.EXTERNAL_CARRIER_COST,
+    credit: '9288000',
+    note: 'Cước thuê ngoài chuyến TRP-202609-0053',
+    ...over,
+  });
+
+  const carrierReversal = (over: Partial<EnrichedLedgerRow> = {}) => row({
+    entityType: 'CARRIER',
+    entityId: 7,
+    txnType: TxnType.UNLOCK_REVERSAL,
+    debit: '9288000',
+    note: 'Cước thuê ngoài chuyến TRP-202609-0053 (Hoàn tác)',
+    ...over,
+  });
+
+  it('collapses an EXTERNAL_CARRIER_COST churn pair (payable-statement noise)', () => {
+    const instant = new Date('2026-09-21T10:36:10.000Z');
+    const rows = [carrierCost({ timestamp: instant }), carrierReversal({ timestamp: instant })];
+    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(net(rows), 0);
+  });
+
+  it('keeps the live cost and hides only the churn — prod carrier 21/9 shape (cước lặp 3 lần)', () => {
+    const rows = [
+      carrierCost({ timestamp: new Date('2026-09-21T10:35:22.000Z') }),
+      carrierReversal({ timestamp: new Date('2026-09-21T10:36:10.000Z') }),
+      carrierCost({ timestamp: new Date('2026-09-21T10:36:10.000Z') }),
+      carrierReversal({ timestamp: new Date('2026-09-21T10:36:22.000Z') }),
+      carrierCost({ timestamp: new Date('2026-09-21T10:36:22.000Z') }),
+    ];
+    const collapsed = collapseEditCyclePairs(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(collapsed[0].txnType, TxnType.EXTERNAL_CARRIER_COST);
+    assert.equal(collapsed[0].id, rows[0].id, 'the original live charge survives');
+    assert.equal(net(rows), net(collapsed), 'running net preserved');
+  });
+
+  it('collapses a DRIVER_SALARY churn pair', () => {
+    const instant = new Date('2026-09-21T10:36:10.000Z');
+    const rows = [
+      row({ entityType: 'DRIVER', entityId: 5, txnType: TxnType.DRIVER_SALARY, credit: '4500000', timestamp: instant }),
+      row({ entityType: 'DRIVER', entityId: 5, txnType: TxnType.UNLOCK_REVERSAL, debit: '4500000', timestamp: instant }),
+    ];
+    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(net(rows), 0);
+  });
+
+  it('collapses a VENDOR fuel-allocation churn pair', () => {
+    const instant = new Date('2026-09-21T10:36:10.000Z');
+    const rows = [
+      row({ entityType: 'VENDOR', entityId: 3, txnType: TxnType.FUEL_EXPENSE, credit: '1620000', timestamp: instant }),
+      row({ entityType: 'VENDOR', entityId: 3, txnType: TxnType.UNLOCK_REVERSAL, debit: '1620000', timestamp: instant }),
+    ];
+    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(net(rows), 0);
+  });
+
+  it('collapses a FORWARDER_ADVANCE churn pair', () => {
+    const instant = new Date('2026-09-21T10:36:10.000Z');
+    const rows = [
+      row({ entityType: 'FORWARDER', entityId: 6, txnType: TxnType.FORWARDER_ADVANCE, credit: '50000000', timestamp: instant }),
+      row({ entityType: 'FORWARDER', entityId: 6, txnType: TxnType.UNLOCK_REVERSAL, debit: '50000000', timestamp: instant }),
+    ];
+    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(net(rows), 0);
+  });
+
+  it('keeps a lone carrier reversal (genuine unlock — no same-instant repost)', () => {
+    const rows = [carrierCost(), carrierReversal({ timestamp: new Date('2026-09-22T08:00:00.000Z') })];
+    const collapsed = collapseEditCyclePairs(rows);
+    assert.equal(collapsed.length, 2);
+    assert.equal(collapsed[1].txnType, TxnType.UNLOCK_REVERSAL);
+  });
+
+  it('never cross-pairs ledgers: same txnId/amount/instant on a different entityType stays', () => {
+    const instant = new Date('2026-09-21T10:36:10.000Z');
+    const rows = [
+      carrierCost({ timestamp: instant }),
+      carrierReversal({ entityType: 'CUSTOMER', entityId: 7, timestamp: instant }),
+    ];
+    assert.equal(collapseEditCyclePairs(rows).length, 2);
+  });
+
+  it('pairs each row at most once, oldest-first, when identical pairs repeat at one instant', () => {
+    const instant = new Date('2026-09-21T10:36:10.000Z');
+    const rows = [
+      carrierCost({ timestamp: instant }),
+      carrierCost({ timestamp: instant }),
+      carrierReversal({ timestamp: instant }),
+      carrierReversal({ timestamp: instant }),
+    ];
+    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(net(rows), 0);
   });
 });
