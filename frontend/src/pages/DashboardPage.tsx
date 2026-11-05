@@ -456,6 +456,7 @@ export default function DashboardPage() {
 
         {/* Hero 1 — Chart (8 cols @≥1280; fixed-height body per NEPO-25 §a) */}
         <RevenueChartCard
+          loading={loading}
           dailyLabels={dailyChartData.labels}
           dailyRevenue={dailyChartData.revenue}
           dailyGross={dailyChartData.gross}

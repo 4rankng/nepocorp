@@ -29,6 +29,8 @@ export interface EmptyStateProps {
   preview?: EmptyStatePreview;
   /** Number of placeholder items. Defaults to 3 (cards) or 4 (rows/list). */
   previewCount?: number;
+  /** Tighter paddings + smaller illustration for small bento cards. */
+  compact?: boolean;
   className?: string;
 }
 
@@ -40,11 +42,12 @@ export function EmptyState({
   action,
   preview,
   previewCount,
+  compact,
   className,
 }: EmptyStateProps) {
   const showPreview = Boolean(preview);
   const count = previewCount ?? (preview === 'cards' ? 3 : 4);
-  const cls = ['ds-empty-state', showPreview ? `ds-empty-state--with-preview ds-empty-state--preview-${preview}` : '', className]
+  const cls = ['ds-empty-state', showPreview ? `ds-empty-state--with-preview ds-empty-state--preview-${preview}` : '', compact ? 'ds-empty-state--compact' : '', className]
     .filter(Boolean)
     .join(' ');
 

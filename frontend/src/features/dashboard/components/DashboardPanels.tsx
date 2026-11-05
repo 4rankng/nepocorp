@@ -37,6 +37,9 @@ export interface RouteProfitRow {
 export type ChartView = 'day' | 'cumulative' | 'month';
 
 interface RevenueChartCardProps {
+  /** True only while the dashboard stats query is in flight. An EMPTY month
+   *  after loading is a real "no trips yet" state, not a loading state. */
+  loading: boolean;
   /** Day labels for the daily-bars view */
   dailyLabels: string[];
   dailyRevenue: number[];
@@ -69,6 +72,7 @@ const CHART_VIEWS: Array<{ key: ChartView; label: string }> = [
 ];
 
 export function RevenueChartCard({
+  loading,
   dailyLabels, dailyRevenue, dailyGross, dailyHasData, todayIdx,
   chartMonths, chartRevenue, chartGross,
   chartView, onChartViewChange, currentMonth, currentYear,
@@ -141,16 +145,21 @@ export function RevenueChartCard({
           {(() => {
             const empty = isDaily ? barsEmpty : lineEmpty;
             const rawEmpty = isDaily ? dailyRevenue.length === 0 : chartRevenue.length === 0;
-            if (rawEmpty || empty) {
+            // Skeleton ONLY while the stats query is in flight. A finished
+            // query over an empty month is a legitimate "no trips yet" state —
+            // rendering the loading skeleton forever made fresh deployments
+            // read as perpetually loading.
+            if (loading || rawEmpty) {
               return (
                 <div style={{ padding: '24px 16px', flex: 1 }}>
                   <DsEmptyState
-                    title={rawEmpty ? 'Đang tải dữ liệu' : 'Chưa đủ dữ liệu lịch sử'}
-                    description={rawEmpty
+                    illustration="trips"
+                    title={loading ? 'Đang tải dữ liệu' : 'Chưa có dữ liệu trong kỳ'}
+                    description={loading
                       ? 'Đang thu thập số liệu doanh thu và lợi nhuận…'
-                      : 'Biểu đồ doanh thu & lợi nhuận gộp sẽ xuất hiện tại đây sau khi có chuyến đầu tiên trong kỳ.'}
-                    preview="rows"
-                    previewCount={rawEmpty ? 3 : 4}
+                      : 'Chưa có chuyến nào trong kỳ này — biểu đồ sẽ xuất hiện sau khi có chuyến đầu tiên.'}
+                    preview={loading ? 'rows' : undefined}
+                    previewCount={loading ? 3 : 4}
                   />
                 </div>
               );
@@ -180,13 +189,22 @@ export function FleetStatusCard({ fleet, onNavigate }: FleetStatusCardProps) {
           <button className="d-btn d-btn-link d-btn-sm wf-link" onClick={() => onNavigate('/fleet')}>Quản lý</button>
         </div>
         <div className="body">
+          {fleet.total === 0 && fleet.drivers === 0 ? (
+            <DsEmptyState
+              compact
+              illustration="fleet"
+              title="Chưa có đội xe"
+              description="Thêm đầu kéo và lái xe trong Quản lý đội xe để theo dõi trạng thái tại đây."
+            />
+          ) : (
           <div className="wf-fstats">
             <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-green-500)' }} />{fleet.ready}</div><div className="k">Sẵn sàng</div></div>
             <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-green)' }} />{fleet.inTransit}</div><div className="k">Đang chạy</div></div>
             <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-amber)' }} />{fleet.maintenance}</div><div className="k">Bảo dưỡng</div></div>
             <div className="wf-fstat"><div className="v"><span className="pip" style={{ background: 'var(--wf-ink-3)' }} />{fleet.idle}</div><div className="k">Ngừng</div></div>
           </div>
-          {fleet.utilization != null && (
+          )}
+          {fleet.utilization != null && fleet.total > 0 && (
             <div
               className="wf-util"
               title={`Đội xe nội bộ: ${fleet.internalInTransit}/${fleet.utilizable} (${Math.round(fleet.utilization)}%) · Thuê xe ngoài: ${fleet.externalInTransit} chuyến`}
@@ -232,7 +250,12 @@ export function CostCompositionCard({ items, total, currentMonth, currentYear }:
         </div>
         <div className="body">
           {items.length === 0 ? (
-            <div style={{ padding: 16, fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có chi phí ghi nhận trong tháng.</div>
+            <DsEmptyState
+              compact
+              illustration="finance"
+              title="Chưa có chi phí trong tháng"
+              description="Chi phí phát sinh sẽ xếp hạng tại đây khi được ghi nhận trong kỳ."
+            />
           ) : (
             <CostBreakdown items={items} total={total} />
           )}
@@ -258,7 +281,12 @@ export function ProfitByTruckCard({ trucks, currentMonth, currentYear }: ProfitB
           </div>
           <div className="wf-vlist">
             {trucks.length === 0 ? (
-              <div style={{ padding: '8px 0', fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu xe trong tháng.</div>
+              <DsEmptyState
+                compact
+                illustration="fleet"
+                title="Chưa có dữ liệu xe"
+                description="Biên gộp từng đầu kéo xuất hiện sau chuyến đầu tiên trong tháng."
+              />
             ) : trucks.map((t, i) => (
               <div key={i} className="wf-vrow">
                 <span className="plate" title={t.plate}>{t.plate}</span>
@@ -290,7 +318,12 @@ export function TopRoutesCard({ routes, currentMonth, currentYear, onNavigate }:
           </div>
           <div className="wf-rlist">
             {routes.length === 0 ? (
-              <div style={{ padding: 10, fontSize: 'var(--fs-body)', color: 'var(--wf-ink-3)' }}>Chưa có dữ liệu tuyến.</div>
+              <DsEmptyState
+                compact
+                illustration="trips"
+                title="Chưa có dữ liệu tuyến"
+                description="Tuyến sinh lời sẽ xếp hạng sau chuyến đầu tiên trong tháng."
+              />
             ) : routes.map((r, i) => (
               <div key={i} className="wf-rrow">
                 <span className="rk">{i + 1}</span>

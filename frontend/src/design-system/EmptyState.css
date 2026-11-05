@@ -48,6 +48,33 @@
   margin-top: 8px;
 }
 
+/* ─── Compact variant (small bento cards) ─────────────────────────────────
+ * Same language, quarter of the footprint: smaller illustration, tighter
+ * padding, no card-in-card shadow. */
+.ds-empty-state--compact {
+  padding: 12px 10px;
+  gap: 4px;
+  box-shadow: none;
+  background: transparent;
+}
+
+.ds-empty-state--compact .ds-empty-state__illustration {
+  width: 92px;
+  height: 76px;
+  opacity: 0.8;
+}
+
+.ds-empty-state--compact .ds-empty-state__title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.ds-empty-state--compact .ds-empty-state__description {
+  font-size: var(--fs-xs);
+  max-width: min(100%, 340px);
+  line-height: 1.4;
+}
+
 /* ─── Icon variant ──────────────────────────────────────────────────────── */
 .ds-empty-state__icon {
   width: 56px;
