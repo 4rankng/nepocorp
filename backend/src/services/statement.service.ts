@@ -365,38 +365,71 @@ function computeAgingFor(
 }
 
 /**
- * Collapse legacy edit-cycle noise from the customer statement detail
- * (NEPO-43). While a trip was COMPLETED, updateTripFigures posted an
- * UNLOCK_REVERSAL + TRIP_REVENUE pair on every save, even when nothing
- * ledger-relevant changed. Such a pair shares txnId (the trip), the amount
- * (debit == credit) and the exact instant, nets to 0 ₫, and only clutters
- * the chi tiết table — so both rows are hidden here. Aging, balances and
- * period summary are computed upstream on the uncollapsed rows and stay
- * untouched. A lone UNLOCK_REVERSAL (trip genuinely reopened) still shows,
- * and only the UNLOCK_REVERSAL ↔ TRIP_REVENUE pairing collapses — payments,
- * penalties, service fees etc. are never dropped.
+ * Collapse legacy edit-cycle noise from statement detail tables (NEPO-43, r2:
+ * every entity, every surface). While a trip was COMPLETED, updateTripFigures
+ * ran a full postTripUnlock + postTripLock cycle on every save even when
+ * nothing ledger-relevant changed. The UNLOCK_REVERSAL and the re-posted
+ * original land in the SAME transaction — identical instant, same entityType
+ * and txnId, mirrored amount (debit↔credit) — a net-0 pair that only clutters
+ * the chi tiết table, so both rows are hidden here.
+ *
+ * Matching is generic across every pair the lock can mint — CUSTOMER↔
+ * TRIP_REVENUE / SERVICE_FEE, CARRIER↔EXTERNAL_CARRIER_COST,
+ * DRIVER↔DRIVER_SALARY, VENDOR↔fuel (FUEL_EXPENSE / VENDOR_EXPENSE),
+ * FORWARDER↔FORWARDER_ADVANCE. A reversal with no same-instant match (a trip
+ * genuinely reopened or canceled) still shows, and payments, penalties etc.
+ * are never dropped. Aging, balances and period summary are computed upstream
+ * on the uncollapsed rows and stay untouched — this only filters display rows.
  */
 export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
-  // Bucket TRIP_REVENUE rows by trip|amount|instant so a reversal matches at
-  // most one revenue row (1:1): two same-instant reversals with a single
-  // revenue row collapse the pair and keep the lone reversal visible.
-  const revenueBuckets = new Map<string, number[]>();
+  // Bucket matchable original rows by entity|txn|side:amount|instant so a
+  // reversal matches at most one original row (1:1). entityType/entityId are
+  // part of the key: statement builders merge ledgers (e.g. the carrier
+  // payable merges historical CUSTOMER rows with CARRIER rows), and rows from
+  // different ledgers must never cross-pair.
+  const originalBuckets = new Map<string, number[]>();
+  const bucketKey = (row: EnrichedLedgerRow, side: 'd' | 'c', amount: number, instant: number) =>
+    `${row.entityType}|${row.entityId}|${row.txnId}|${side}${amount}|${instant}`;
+
   rows.forEach((row, index) => {
-    if (row.txnType !== TxnType.TRIP_REVENUE || row.txnId == null || Number(row.debit ?? 0) <= 0) return;
-    const key = `${row.txnId}|${Number(row.debit)}|${new Date(row.timestamp).getTime()}`;
-    const bucket = revenueBuckets.get(key);
-    if (bucket) bucket.push(index);
-    else revenueBuckets.set(key, [index]);
+    if (row.txnType === TxnType.UNLOCK_REVERSAL || row.txnId == null) return;
+    const debit = Number(row.debit ?? 0);
+    const credit = Number(row.credit ?? 0);
+    const instant = new Date(row.timestamp).getTime();
+    for (const side of ['d', 'c'] as const) {
+      const amount = side === 'd' ? debit : credit;
+      if (amount <= 0) continue;
+      const key = bucketKey(row, side, amount, instant);
+      const bucket = originalBuckets.get(key);
+      if (bucket) bucket.push(index);
+      else originalBuckets.set(key, [index]);
+    }
   });
+
+  // Pair oldest-first (ascending id) so N identical same-instant pairs collapse
+  // in posting order and a surplus original or reversal stays visible.
+  for (const bucket of originalBuckets.values()) {
+    bucket.sort((a, b) => rows[a].id - rows[b].id);
+  }
 
   const dropped = new Set<number>();
   rows.forEach((row, index) => {
-    if (row.txnType !== TxnType.UNLOCK_REVERSAL || row.txnId == null || Number(row.credit ?? 0) <= 0) return;
-    const bucket = revenueBuckets.get(`${row.txnId}|${Number(row.credit)}|${new Date(row.timestamp).getTime()}`);
-    const revenueIndex = bucket?.shift();
-    if (revenueIndex === undefined) return;
+    if (row.txnType !== TxnType.UNLOCK_REVERSAL || row.txnId == null) return;
+    const debit = Number(row.debit ?? 0);
+    const credit = Number(row.credit ?? 0);
+    const instant = new Date(row.timestamp).getTime();
+    // A reversal mirrors exactly one original side: its credit cancels an
+    // original debit, its debit cancels an original credit.
+    const key = debit > 0
+      ? bucketKey(row, 'c', debit, instant)
+      : credit > 0
+        ? bucketKey(row, 'd', credit, instant)
+        : null;
+    if (key === null) return;
+    const originalIndex = originalBuckets.get(key)?.shift();
+    if (originalIndex === undefined) return;
     dropped.add(index);
-    dropped.add(revenueIndex);
+    dropped.add(originalIndex);
   });
 
   if (dropped.size === 0) return rows;
@@ -845,7 +878,9 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
 
   return {
     supplier,
-    ledgerRows,
+    // Display rows only — totalOutstanding/currentTotalOutstanding/aging and
+    // periodSummary above are computed from the uncollapsed rows (r1 rule).
+    ledgerRows: collapseEditCyclePairs(ledgerRows),
     totalOutstanding,
     currentTotalOutstanding,
     agingAsOfPeriodEnd,
@@ -1509,7 +1544,9 @@ export async function getCarrierPayableStatement(
 
   return {
     supplier: carrier,
-    ledgerRows,
+    // Display rows only — totalOutstanding/agingBuckets/periodSummary are
+    // computed from the uncollapsed rows (r1 rule).
+    ledgerRows: collapseEditCyclePairs(ledgerRows),
     totalOutstanding,
     agingBuckets: [
       { range: '0-30 ngày', amount: aging.current },
