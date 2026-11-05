@@ -1,3 +1,8 @@
+-- pgvector ships in the pgvector/pgvector:pg16 image but still needs
+-- CREATE EXTENSION per database. 0104_faq_knowledge_base (orphaned from the
+-- journal) was the only migration creating it, so fresh databases never got it
+-- before this file — create it here, idempotently (no-op where it exists).
+CREATE EXTENSION IF NOT EXISTS vector;--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "knowledge_chunks" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"source_type" text NOT NULL,

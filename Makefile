@@ -1,9 +1,11 @@
 .PHONY: dev stop down setup seed migrate generate build e2etest clean logs \
         push push-backend push-frontend \
-        deploy deploy-backend deploy-frontend \
+        nepocorp nepocorp-backend nepocorp-frontend \
         demo demo-backend demo-frontend \
         prod-migrate prod-migrate-file \
-        backup restore adminer
+        backup restore adminer \
+        tenant-setup tenant-deploy tenant-backend tenant-frontend tenant-users \
+        haidang ankhanh namphong
 
 # ─── Ports ─────────────────────────────────────────────────────────────────────
 # PostgreSQL: 5440  |  Redis: 6390  |  Backend: 3090  |  Frontend: 7173
@@ -114,16 +116,16 @@ push-backend:
 push-frontend:
 	$(MAKE) -C frontend push
 
-## deploy: Pull & restart all services on droplet
-deploy: deploy-backend deploy-frontend
+## nepocorp: Push & deploy all services to production (nepo.tingtingsoft.vn)
+nepocorp: nepocorp-backend nepocorp-frontend
 
-## deploy-backend: Pull & restart backend on droplet + run migrations
-deploy-backend: push-backend
-	$(MAKE) -C backend deploy
+## nepocorp-backend: Push & deploy backend to production + run migrations
+nepocorp-backend: push-backend
+	$(MAKE) -C backend nepocorp-deploy
 
-## deploy-frontend: Pull & restart frontend on droplet
-deploy-frontend: push-frontend
-	$(MAKE) -C frontend deploy
+## nepocorp-frontend: Push & deploy frontend to production
+nepocorp-frontend: push-frontend
+	$(MAKE) -C frontend nepocorp-deploy
 
 # ─── Demo staging deploy (Docker Hub → demo.tingting.vip on the vantai droplet) ─
 # Second stack on the vantai box, next to the (silversea-bound) /opt/vantai
@@ -176,6 +178,94 @@ demo-frontend: push-frontend
 	@echo "Reclaiming disk (unused images older than 72h)..."
 	@ssh root@$(DEMO_SERVER) "docker image prune -af --filter 'until=72h' || true"
 	@echo "Demo frontend deployed! App: https://$(DEMO_SERVER)"
+
+# ─── Tenant deploys (Docker Hub → haidang / ankhanh / namphong droplets) ──────
+# Fresh single-tenant stacks, one per droplet: <tenant>.tingtingsoft.vn, data
+# under /opt/<tenant>. `make <tenant>` only deploys the latest pushed images —
+# run `make push` first when code changed. One-time per box:
+#   make tenant-setup TENANT=<tenant>
+#   make push && make <tenant>
+#   ssh root@<tenant>.tingtingsoft.vn 'certbot --nginx -d <tenant>.tingtingsoft.vn'
+#   make tenant-users TENANT=<tenant>       # first logins: admin/giamdoc/ketoan/laixe/giaonhan / Abc123
+
+TENANTS       := haidang ankhanh namphong
+TENANT        ?= haidang
+TENANT_SERVER := $(TENANT).tingtingsoft.vn
+TENANT_PATH   := /opt/$(TENANT)
+# Every remote compose call runs from the deploy dir so /opt/<tenant>/deploy/.env
+# (TENANT, DB_PASSWORD, …) is auto-loaded for ${TENANT} interpolation.
+TENANT_COMPOSE := --project-directory /opt/$(TENANT)/deploy -f docker-compose.tenant.yml
+
+## tenant-setup: One-time setup of the TENANT droplet (docker, nginx, .env, UFW)
+tenant-setup:
+	ssh root@$(TENANT_SERVER) 'TENANT=$(TENANT) bash -s' < deploy/setup-tenant-server.sh
+
+# Thin per-tenant wrappers; all logic lives in the tenant-* targets below.
+haidang ankhanh namphong: %:
+	$(MAKE) tenant-deploy TENANT=$@
+
+## tenant-deploy: Deploy latest pushed images to TENANT (default haidang) — no build/push, run `make push` first
+tenant-deploy: tenant-backend tenant-frontend
+
+## tenant-backend: Deploy backend to TENANT + ensure infra up + run migrations
+tenant-backend:
+	@echo "Deploying backend on $(TENANT) ($(TENANT_SERVER))..."
+	@scp -q deploy/docker-compose.tenant.yml root@$(TENANT_SERVER):$(TENANT_PATH)/deploy/docker-compose.tenant.yml
+	@echo "Starting infra (postgres, redis) if stopped..."
+	@ssh root@$(TENANT_SERVER) "cd $(TENANT_PATH)/deploy && docker compose $(TENANT_COMPOSE) up -d postgres redis"
+	@echo "Waiting for postgres to be healthy..."
+	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
+		if ssh root@$(TENANT_SERVER) "docker exec $(TENANT)-postgres-1 pg_isready -U nepocorp -d nepocorp" >/dev/null 2>&1; then \
+			break; \
+		fi; \
+		echo "  waiting... ($$i)"; \
+		sleep 2; \
+	done
+	@echo "Pulling latest backend image..."
+	@ssh root@$(TENANT_SERVER) "cd $(TENANT_PATH)/deploy && docker compose $(TENANT_COMPOSE) pull backend"
+	# Recreate retried: a concurrent deploy or an interrupted removal makes
+	# compose report "removal of container … is already in progress" (same as
+	# prod/demo stacks) — it clears once the other run finishes.
+	@ok=0; for i in 1 2 3 4 5; do \
+		if ssh root@$(TENANT_SERVER) "cd $(TENANT_PATH)/deploy && docker compose $(TENANT_COMPOSE) up -d --force-recreate --no-deps backend"; then ok=1; break; fi; \
+		echo "  backend recreate busy, retrying ($$i)..."; \
+		sleep 5; \
+	done; test $$ok -eq 1
+	@echo "Waiting for backend container to be ready..."
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		if ssh root@$(TENANT_SERVER) "docker exec $(TENANT)-backend-1 echo ok" >/dev/null 2>&1; then \
+			break; \
+		fi; \
+		echo "  waiting... ($$i)"; \
+		sleep 2; \
+	done
+	@echo "Running database migrations..."
+	@ssh root@$(TENANT_SERVER) "docker exec $(TENANT)-backend-1 npx drizzle-kit migrate"
+	@echo "Cleaning up unused images..."
+	@ssh root@$(TENANT_SERVER) "docker image prune -af --filter 'until=72h' || true"
+	@echo "Tenant backend deployed! API: https://$(TENANT_SERVER)/api/health"
+
+## tenant-frontend: Deploy frontend to TENANT
+tenant-frontend:
+	@echo "Deploying frontend on $(TENANT) ($(TENANT_SERVER))..."
+	@scp -q deploy/docker-compose.tenant.yml root@$(TENANT_SERVER):$(TENANT_PATH)/deploy/docker-compose.tenant.yml
+	@echo "Pulling latest frontend image..."
+	@ssh root@$(TENANT_SERVER) "cd $(TENANT_PATH)/deploy && docker compose $(TENANT_COMPOSE) pull frontend"
+	@ok=0; for i in 1 2 3 4 5; do \
+		if ssh root@$(TENANT_SERVER) "cd $(TENANT_PATH)/deploy && docker compose $(TENANT_COMPOSE) up -d --force-recreate --no-deps frontend"; then ok=1; break; fi; \
+		echo "  frontend recreate busy, retrying ($$i)..."; \
+		sleep 5; \
+	done; test $$ok -eq 1
+	@echo "Cleaning up unused images..."
+	@ssh root@$(TENANT_SERVER) "docker image prune -af --filter 'until=72h' || true"
+	@echo "Tenant frontend deployed! App: https://$(TENANT_SERVER)"
+
+ADMIN_PASS ?= Abc123
+
+## tenant-users: Create the initial users on TENANT (admin, giamdoc, ketoan, laixe, giaonhan — all Abc123) — idempotent
+tenant-users:
+	@cat scripts/create-first-users.js | ssh root@$(TENANT_SERVER) \
+		"docker exec -i -e ADMIN_PASS='$(ADMIN_PASS)' $(TENANT)-backend-1 node -"
 
 ## prod-migrate: Apply all Drizzle SQL migrations to production DB
 ## (skips *.revert.sql — dev-rollback pairs must never run against prod)
@@ -283,14 +373,13 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 	@echo ""
-	@echo "Production deploy (Docker Hub → droplet):"
-	@echo "  \033[36mpush          \033[0m Build & push all images to Docker Hub"
-	@echo "  \033[36mpush-backend  \033[0m Build & push backend image"
-	@echo "  \033[36mpush-frontend \033[0m Build & push frontend image"
-	@echo "  \033[36mdeploy        \033[0m Pull & restart all services on droplet"
-	@echo "  \033[36mdeploy-backend\033[0m Pull & restart backend + run migrations"
-	@echo "  \033[36mdeploy-frontend\033[0m Pull & restart frontend on droplet"
-	@echo "  \033[36mdeploy-infra  \033[0m Restart infra services (postgres, redis)"
+	@echo "Production deploy (Docker Hub → nepo.tingtingsoft.vn):"
+	@echo "  \033[36mpush            \033[0m Build & push all images to Docker Hub"
+	@echo "  \033[36mpush-backend    \033[0m Build & push backend image"
+	@echo "  \033[36mpush-frontend   \033[0m Build & push frontend image"
+	@echo "  \033[36mnepocorp        \033[0m Push & deploy all services to production"
+	@echo "  \033[36mnepocorp-backend\033[0m Push & deploy backend + run migrations"
+	@echo "  \033[36mnepocorp-frontend\033[0m Push & deploy frontend to production"
 	@echo ""
 	@echo "Demo staging deploy (Docker Hub → demo.tingting.vip, /opt/demo on the vantai droplet):"
 	@echo "  \033[36mdemo          \033[0m Build, push images & deploy all to demo staging"
@@ -301,3 +390,11 @@ help: ## Show this help
 	@echo "  \033[36mbackup        \033[0m Dump production DB → OneDrive"
 	@echo "  \033[36mrestore       \033[0m Restore latest backup to local dev DB"
 	@echo "  \033[36madminer       \033[0m Prod Adminer over private SSH tunnel → localhost:8082"
+	@echo ""
+	@echo "Tenant deploys (Docker Hub → haidang / ankhanh / namphong .tingtingsoft.vn):"
+	@echo "  \033[36mtenant-setup  \033[0m One-time droplet setup (TENANT=haidang|ankhanh|namphong)"
+	@echo "  \033[36mhaidang       \033[0m Deploy latest images to haidang.tingtingsoft.vn"
+	@echo "  \033[36mankhanh       \033[0m Deploy latest images to ankhanh.tingtingsoft.vn"
+	@echo "  \033[36mnamphong      \033[0m Deploy latest images to namphong.tingtingsoft.vn"
+	@echo "  \033[36mtenant-deploy \033[0m Deploy to TENANT (default haidang); run 'make push' first"
+	@echo "  \033[36mtenant-users  \033[0m Create initial users on TENANT (admin/giamdoc/ketoan/laixe/giaonhan / Abc123)"

@@ -2,7 +2,7 @@
 include ../backend/.env
 export
 
-.PHONY: push deploy
+.PHONY: push nepocorp-deploy
 
 IMAGE_NAME  := $(DOCKERHUB_USERNAME)/tingting-frontend
 GIT_SHA     := $(shell cd .. && git rev-parse --short HEAD)
@@ -29,8 +29,8 @@ push:
 		.
 	@echo "Push complete: $(IMAGE_NAME):latest ($(GIT_SHA))"
 
-## deploy: Pull & restart frontend on droplet
-deploy:
+## nepocorp-deploy: Pull & restart frontend on droplet
+nepocorp-deploy:
 	@echo "Deploying frontend on production..."
 	@echo "Pulling latest image..."
 	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml pull frontend"

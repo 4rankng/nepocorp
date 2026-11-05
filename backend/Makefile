@@ -2,7 +2,7 @@
 include .env
 export
 
-.PHONY: push deploy link-drivers link-drivers-apply
+.PHONY: push nepocorp-deploy link-drivers link-drivers-apply
 
 IMAGE_NAME  := $(DOCKERHUB_USERNAME)/tingting-backend
 GIT_SHA     := $(shell cd .. && git rev-parse --short HEAD)
@@ -30,8 +30,8 @@ push:
 		.
 	@echo "Push complete: $(IMAGE_NAME):latest ($(GIT_SHA))"
 
-## deploy: Pull & restart backend on droplet + run migrations
-deploy:
+## nepocorp-deploy: Pull & restart backend on droplet + run migrations
+nepocorp-deploy:
 	@echo "Deploying backend on production..."
 	@echo "Pulling latest image..."
 	ssh root@$(PROD_SERVER) "cd /opt/nepocorp && docker compose -f deploy/docker-compose.prod.yml pull backend"

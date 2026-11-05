@@ -13,7 +13,7 @@
 -- backfill script (db/backfill-faq-embeddings.ts) which calls OpenRouter's
 -- text-embedding-3-small. Until backfill runs, only the exact + rule stages
 -- match; the semantic stage abstains (NULL embeddings are filtered out).
-CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS vector;--> statement-breakpoint
 
 CREATE TABLE faq_entries (
   id                SERIAL PRIMARY KEY,
@@ -28,14 +28,14 @@ CREATE TABLE faq_entries (
   sort_order        INTEGER NOT NULL DEFAULT 0,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+);--> statement-breakpoint
 
 -- HNSW index for cosine similarity (text-embedding-3-small = 1536 dims, within
 -- the native HNSW 2000-dim cap so no halfvec cast needed). Partial: only active,
 -- embedded rows are indexed.
 CREATE INDEX faq_entries_embedding_idx
   ON faq_entries USING hnsw (embedding vector_cosine_ops)
-  WHERE embedding IS NOT NULL AND is_active = TRUE;
+  WHERE embedding IS NOT NULL AND is_active = TRUE;--> statement-breakpoint
 
 -- Seed comprehensive NEPO domain FAQs sourced from CONTEXT.md business rules.
 -- ~30 entries covering: penalties, trip lifecycle, fuel, road allowance, ledger,
