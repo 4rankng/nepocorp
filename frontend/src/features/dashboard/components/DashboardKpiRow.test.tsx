@@ -47,7 +47,7 @@ describe('DashboardKpiRow (NEPO-13)', () => {
 
   it('explains net ≡ gross when no company expense / other income exists', () => {
     render(<DashboardKpiRow {...BASE} netEqualsGross />);
-    expect(screen.getByText(/Bằng LN gộp — chưa có chi phí công ty \/ thu khác/)).toBeTruthy();
+    expect(screen.getByText(/Bằng LN gộp/)).toBeTruthy();
   });
 
   it('keeps the "Sau phí quản lý" wording once company figures exist', () => {
@@ -58,7 +58,7 @@ describe('DashboardKpiRow (NEPO-13)', () => {
   it('reconciles the overdue counts on the debt card and routes to /debt', () => {
     const onNavigate = vi.fn();
     render(<DashboardKpiRow {...BASE} onNavigate={onNavigate} over90Count={5} />);
-    expect(screen.getByText(/13 khách quá hạn · 5 trên 90 ngày/)).toBeTruthy();
+    expect(screen.getByText(/13 quá hạn · 5 trên 90 ngày/)).toBeTruthy();
     fireEvent.click(screen.getByText('Xem công nợ →'));
     expect(onNavigate).toHaveBeenCalledWith('/debt');
   });

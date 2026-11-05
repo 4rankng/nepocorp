@@ -21,7 +21,6 @@ import { columnClass, draftChanged, figuresPayloadFromDraft, invalidQuickField, 
 import { TripListHero } from './trip-list-hero';
 import { useTripListAnimations } from './use-trip-list-animations';
 import './TripListPage.css';
-import { resolveEmptyIllustration } from '../lib/emptyIllustrations';
 
 export default function TripListPage() {
   const rootRef = useTripListAnimations();
@@ -521,7 +520,12 @@ export default function TripListPage() {
                     </Alert>
                   </div>
                 )}
-                <EmptyState illustration="/assets/illustrations/empty-trips.svg" title="Không tìm thấy chuyến đi nào." />
+                <EmptyState
+                  className="trip-list-empty"
+                  illustration="trips"
+                  title="Chưa có chuyến trong kỳ"
+                  description="Bấm Thêm chuyến để tạo chuyến đầu tiên cho tháng này."
+                />
               </>
             ) : (
               tableInstance.getRowModel().rows.map((row) => (
@@ -550,10 +554,13 @@ export default function TripListPage() {
           {table.isLoading ? (
             <div className="table-empty">Đang tải…</div>
           ) : table.rows.length === 0 ? (
-            <div className="table-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 16px' }}>
-              <img src={resolveEmptyIllustration('empty-trips')} alt="" aria-hidden="true" style={{ width: 160, height: 132, objectFit: 'contain' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              Không tìm thấy chuyến đi nào.
-            </div>
+            <EmptyState
+              className="trip-list-empty"
+              compact
+              illustration="trips"
+              title="Chưa có chuyến trong kỳ"
+              description="Bấm Thêm chuyến để tạo chuyến đầu tiên cho tháng này."
+            />
           ) : (
             table.rows.map((trip) => {
               if (!quickEdit) {

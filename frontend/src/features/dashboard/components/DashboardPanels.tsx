@@ -153,6 +153,7 @@ export function RevenueChartCard({
               return (
                 <div style={{ padding: '24px 16px', flex: 1 }}>
                   <DsEmptyState
+                    compact
                     illustration="trips"
                     title={loading ? 'Đang tải dữ liệu' : 'Chưa có dữ liệu trong kỳ'}
                     description={loading

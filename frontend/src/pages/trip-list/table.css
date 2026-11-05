@@ -19,6 +19,9 @@
   scrollbar-color: var(--line-3) transparent;
   overscroll-behavior-x: contain;
 }
+/* The illustrated empty state must span the full table width so its content
+   actually centers — inside the scroll body it would otherwise hug the left. */
+.trip-list-page .table-scroll-body .ds-empty-state { width: 100%; }
 .trip-list-page .table-scroll-body::-webkit-scrollbar { width: 0; height: 6px; }
 .trip-list-page .table-scroll-body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
 .trip-list-page .table-scroll-body::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
