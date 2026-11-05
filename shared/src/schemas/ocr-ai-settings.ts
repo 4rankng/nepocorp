@@ -28,29 +28,23 @@ export const OCR_AI_PROVIDER_LABELS: Record<OcrAiProvider, string> = {
 
 /**
  * Model used when the admin has not chosen one (and the boot fallback).
- * qwen/qwen3.7-flash — the primary of the OCR chain benchmarked on real
- * container/seal photos in vantaiphucloc (backend/app/config.py
- * OPENROUTER_MODELS, 27/10 bench: 3/3 reads, 7–12s, $0.03/1M in).
+ * google/gemini-2.5-flash — 10/10 in the Oct 13 OCR shootout
+ * (vantaiphucloc) and that project's standing default (config.py
+ * OPENROUTER_MODEL).
  */
-export const OCR_AI_DEFAULT_MODEL = 'qwen/qwen3.7-flash';
+export const OCR_AI_DEFAULT_MODEL = 'google/gemini-2.5-flash';
 
 /**
- * Vision-capable OpenRouter models offered in the dropdown — the OCR chain
- * tested on real container/seal photos in vantaiphucloc
- * (backend/app/config.py), ordered primary → in-chain → fallback:
- *   qwen3.7-flash (primary) → deepseek-v4.1-flash-1017 (2nd) →
- *   dots-3-note-preview:free (free last resort) | fallbacks:
- *   deepseek-v4.1-flash (Sep checkpoint — only model reading SEKU-type
- *   photos) and z-ai/glm-4.5v.
- * Benchmark notes live in vantaiphucloc backend/app/config.py (bench
- * 17–27/10, 7-photo set incl. the SEKU5653845 hard case).
+ * Top-3 vision OCR models offered in the dropdown, all benchmarked on real
+ * container/seal photos in vantaiphucloc (backend/app/config.py):
+ *   1. google/gemini-2.5-flash — 10/10 OCR shootout, standing default
+ *   2. qwen/qwen3.7-flash — 27/10 bench 3/3, 7–12s, $0.03/1M in
+ *   3. deepseek/deepseek-v4.1-flash-1017 — 18/10 bench 6/7 exact, ~4s
  */
 export const OCR_AI_MODELS: readonly string[] = [
+  'google/gemini-2.5-flash',
   'qwen/qwen3.7-flash',
   'deepseek/deepseek-v4.1-flash-1017',
-  'deepseek/deepseek-v4.1-flash',
-  'z-ai/glm-4.5v',
-  'dots-studio/dots-3-note-preview:free',
 ];
 
 /** GET /api/admin/ocr-ai-settings — the key is never sent to the client. */
