@@ -1175,28 +1175,21 @@
     gap: 1px;
   }
 
-  .dash-wf .wf-kpi {
-    grid-column: auto;
-    padding: 14px;
-  }
-
-  .dash-wf .wf-kpi .val {
-    font-size: var(--fs-2xl);
-  }
+  /* Density holds at every width — no padding/value re-inflation here. */
 }
 
 @container (max-width: 1060px) {
-  .dash-wf .wf-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* The strip stays 5-across — collapsing to 2+2+1 doubled its height for
+     zero information gain. Cells just get tighter below. */
+  .dash-wf .wf-kpi {
+    padding: 8px 10px;
   }
 
-  .dash-wf .wf-kpi,
-  .dash-wf .wf-kpi:nth-child(4) {
-    grid-column: auto;
-  }
-
-  .dash-wf .wf-kpi:nth-child(5) {
-    grid-column: 1 / -1;
+  .dash-wf .wf-kpi .row1 .lbl {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 }
 

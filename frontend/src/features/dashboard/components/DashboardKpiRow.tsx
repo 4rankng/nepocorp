@@ -95,7 +95,7 @@ export function DashboardKpiRow({
         label="Tổng chi phí"
         delta={<DeltaPill mom={costsMoM} />}
         value={fmtVN(costs)}
-        description={<>{costRatio.toFixed(1)}% doanh thu (chưa VAT)</>}
+        description={<>{costRatio.toFixed(1)}% DT</>}
       />
       <DashboardStat
         tone="gross"
@@ -103,7 +103,7 @@ export function DashboardKpiRow({
         label="Lợi nhuận gộp"
         delta={<DeltaPill mom={grossMoM} />}
         value={fmtVN(grossProfit)}
-        description={<>Biên gộp · {grossMargin.toFixed(1)}% (trên DT chưa VAT)</>}
+        description={<>Biên gộp {grossMargin.toFixed(1)}%</>}
       />
       <DashboardStat
         tone="net"
@@ -112,7 +112,7 @@ export function DashboardKpiRow({
         delta={<DeltaPill mom={netMoM} />}
         value={fmtVN(netProfit)}
         description={netEqualsGross
-          ? <>Bằng LN gộp — chưa có chi phí công ty / thu khác · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/profit')}>Phân chia →</button></>
+          ? <>Bằng LN gộp · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/profit')}>Phân chia →</button></>
           : <>Sau phí quản lý · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/profit')}>Phân chia →</button></>}
       />
       <DashboardStat
@@ -120,7 +120,7 @@ export function DashboardKpiRow({
         icon={<AssetIcon name="receivables" size={15} />}
         label="Công nợ phải thu (gồm VAT)"
         value={fmtVN(totalOutstanding)}
-        description={<>{overdueCustomers} khách quá hạn · {over90Count} trên 90 ngày · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/debt')}>Xem công nợ →</button></>}
+        description={<>{overdueCustomers} quá hạn · {over90Count} trên 90 ngày · <button className="d-btn d-btn-link d-btn-xs wf-link" onClick={() => onNavigate('/debt')}>Xem công nợ →</button></>}
       />
     </div>
   );
