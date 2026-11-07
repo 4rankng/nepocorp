@@ -933,16 +933,6 @@ button.ledger-code__customer:hover { color: var(--accent-ink, var(--brand, #00B1
   .ledger-skeleton__row { animation: none; }
 }
 
-/* Toggle thu gọn band Chi phí (audit Gemini 23/10, vòng 4). */
-.ledger-views__cost-toggle {
-  border-left: 1px solid var(--line);
-  padding-left: 12px;
-  margin-left: 4px;
-  color: var(--fg-3);
-  font-weight: 600;
-}
-.ledger-views__cost-toggle.is-active { color: var(--accent-ink, var(--brand, #00B14F)); }
-
 /* Scroll progress 3px dưới toolbar (vòng 6): định vị trong 5187px cuộn ngang. */
 .ledger-progress {
   position: relative;
