@@ -96,10 +96,9 @@ export async function saveOcrUsageSettings(
 /**
  * Count ONE AI image OCR request against the current calendar day.
  *
- * Called once per recognition request from the OCR route (internal provider
- * fallback — OpenRouter miss → Gemini retry — is one user-facing request, not
- * two). Never throws: a counter hiccup must not fail an OCR the driver is
- * standing in front of; it only logs.
+ * Called once per recognition request from the OCR route. Never throws: a
+ * counter hiccup must not fail an OCR the driver is standing in front of; it
+ * only logs.
  */
 export async function recordOcrRequest(): Promise<void> {
   const usageDate = ocrUsageDateKey();

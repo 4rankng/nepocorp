@@ -1,12 +1,14 @@
 /**
- * OCR OpenRouter transport (Anthropic Claude Haiku 5.5) — provider ordering,
- * failover, the model/prompt contract, and the OpenRouter-specific parsing
- * edge cases (`think` stripping, parts-array content, HTTP error handling).
+ * OCR OpenRouter transport (Anthropic Claude Haiku 5.5) — the model/prompt
+ * contract, and the OpenRouter-specific parsing edge cases (`think` stripping,
+ * parts-array content, HTTP error handling).
  * Run with the project's tsx --test runner.
  *
- * globalThis.fetch is mocked per-test and routed by URL so we can prove:
- *   - OpenRouter is tried FIRST and, on success, Gemini is never called.
- *   - an OpenRouter failure (HTTP 429) transparently fails over to Gemini.
+ * globalThis.fetch is mocked per-test so we can prove:
+ *   - exactly ONE upstream call per request (OpenRouter is the only provider —
+ *     no fallback provider may mask a failure).
+ *   - an OpenRouter failure (HTTP 429) gets one same-model retry, then the
+ *     true upstream status surfaces (provider=openrouter, no masking).
  *   - the vision call targets the configured model with the type-specific prompt.
  *   - `think` reasoning and parts-array `content` are normalized before parsing.
  *
@@ -32,11 +34,9 @@ import { config } from '../config';
 
 const originalFetch = globalThis.fetch;
 
-// Pin both keys so orderedProviders() = [openrouter, gemini] regardless of the
-// local .env (hermetic). Restore is unnecessary: each test file runs in its own
-// process under `tsx --test`.
+// Pin the key regardless of the local .env (hermetic). Restore is unnecessary:
+// each test file runs in its own process under `tsx --test`.
 config.openrouterApiKey = 'test-or-key';
-config.geminiApiKey = 'test-gemini-key';
 
 const MODEL = 'anthropic/claude-haiku-5.5';
 /** The OCR credentials every test runs with — pinned, not read from the DB. */
@@ -64,7 +64,6 @@ function res(body: unknown, status = 200): Response {
 }
 
 const orBody = (content: unknown) => ({ choices: [{ message: { content } }], model: 'anthropic/claude-haiku-5.5' });
-const geminiBody = (text: string) => ({ candidates: [{ content: { parts: [{ text }] } }] });
 
 describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
   test('callOpenRouterVision: success → provider=openrouter + parsed JSON text', async () => {
@@ -140,45 +139,35 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
     }
   });
 
-  test('extractContainerAndSeal: OpenRouter succeeds first → Gemini NOT called', async () => {
-    const urls: string[] = [];
-    let geminiCalled = 0;
-    globalThis.fetch = (async (url: string | URL | Request) => {
-      const u = String(url);
-      urls.push(u);
-      if (u.includes('openrouter.ai')) {
-        return res(orBody(JSON.stringify({ container_numbers: [VALID_CONTAINER] })));
-      }
-      geminiCalled++;
-      return res(geminiBody(JSON.stringify({ container_numbers: ['TEMU0000000'] })));
+  test('extractContainerAndSeal: success → exactly ONE upstream call (no fallback provider)', async () => {
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls++;
+      return res(orBody(JSON.stringify({ container_numbers: [VALID_CONTAINER] })));
     }) as unknown as typeof globalThis.fetch;
     try {
       const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', AI);
       assert.equal(r.success, true);
       assert.equal(r.provider, 'openrouter');
       assert.deepEqual(r.containerNumbers, [VALID_CONTAINER]);
-      assert.equal(geminiCalled, 0, 'Gemini must not be called when OpenRouter succeeds');
-      assert.equal(urls.filter((u) => u.includes('openrouter.ai')).length, 1);
+      assert.equal(calls, 1, 'OpenRouter is the only provider — exactly one upstream call');
     } finally {
       globalThis.fetch = originalFetch;
     }
   });
 
-  test('extractContainerAndSeal: OpenRouter 429 → transparent failover to Gemini', async () => {
-    const urls: string[] = [];
-    globalThis.fetch = (async (url: string | URL | Request) => {
-      const u = String(url);
-      urls.push(u);
-      if (u.includes('openrouter.ai')) return res({ error: 'rate limited' }, 429);
-      return res(geminiBody(JSON.stringify({ container_numbers: [VALID_CONTAINER] })));
+  test('extractContainerAndSeal: OpenRouter 429 → one retry, then failed result carries the upstream status', async () => {
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls++;
+      return res({ error: 'rate limited' }, 429);
     }) as unknown as typeof globalThis.fetch;
     try {
       const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', AI);
-      assert.equal(r.success, true);
-      assert.equal(r.provider, 'gemini');
-      assert.deepEqual(r.containerNumbers, [VALID_CONTAINER]);
-      assert.ok(urls.some((u) => u.includes('openrouter.ai')), 'OpenRouter was tried first');
-      assert.ok(urls.some((u) => u.includes('generativelanguage')), 'Gemini was tried as fallback');
+      assert.equal(r.success, false);
+      assert.equal(r.provider, 'openrouter');
+      assert.equal(r.error, 'HTTP 429');
+      assert.equal(calls, 2, 'Exactly one bounded retry, same model, then the true error surfaces');
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -199,14 +188,9 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
   test('extractContainerAndSeal: wrong-key JSON (no schema) → regex net recovers the number', async () => {
     // OpenRouter sends NO response_format, so the model may emit valid JSON
     // under a different key. parseResponse must fall through to the regex net
-    // and recover the number rather than returning an empty miss that silently
-    // regresses every request to Gemini. Parity with vantaiphucloc ocr.py.
-    globalThis.fetch = (async (url: string | URL | Request) => {
-      const u = String(url);
-      if (u.includes('openrouter.ai')) return res(orBody('{"numbers":["ALLU5216535"]}'));
-      // Gemini canary — a different number; if reached, the assertion fails.
-      return res(geminiBody(JSON.stringify({ container_numbers: ['TEMU0000000'] })));
-    }) as unknown as typeof globalThis.fetch;
+    // and recover the number rather than returning an empty miss that would
+    // fail the request. Parity with vantaiphucloc ocr.py.
+    globalThis.fetch = (async () => res(orBody('{"numbers":["ALLU5216535"]}'))) as unknown as typeof globalThis.fetch;
     try {
       const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', AI);
       assert.equal(r.success, true);
@@ -217,15 +201,13 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
     }
   });
 
-  test('extractContainerAndSeal: no keys configured → friendly "chưa cấu hình" error', async () => {
+  test('extractContainerAndSeal: no key configured → friendly "chưa cấu hình" error', async () => {
     const savedOr = config.openrouterApiKey;
-    const savedG = config.geminiApiKey;
     let calls = 0;
     config.openrouterApiKey = '';
-    config.geminiApiKey = '';
     globalThis.fetch = (async () => { calls++; return res({}); }) as unknown as typeof globalThis.fetch;
     try {
-      // Neither provider has a key → no upstream call, friendly error.
+      // No key → no upstream call, friendly error, provider null (not counted).
       const r = await extractContainerAndSeal(IMG, 'CONTAINER', 'image/jpeg', { apiKey: '', model: MODEL });
       assert.equal(r.success, false);
       assert.equal(r.provider, null);
@@ -233,7 +215,6 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
       assert.equal(calls, 0);
     } finally {
       config.openrouterApiKey = savedOr;
-      config.geminiApiKey = savedG;
       globalThis.fetch = originalFetch;
     }
   });

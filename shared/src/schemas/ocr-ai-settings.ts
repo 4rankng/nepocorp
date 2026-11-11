@@ -15,8 +15,10 @@ import { z } from 'zod';
  *   - the model is picked from a curated list of vision-capable OpenRouter
  *     models, or typed by hand for anything the list does not carry yet.
  *
- * The provider is fixed to OpenRouter on purpose: Gemini stays a runtime
- * fallback for OCR, but the owner-facing provider choice is OpenRouter.
+ * The provider is fixed to OpenRouter on purpose: it is the only vision
+ * provider this product uses — the admin configures the key in Cài đặt ứng
+ * dụng and picks the model from the curated list (or types any OpenRouter
+ * slug).
  */
 export const OCR_AI_PROVIDERS = ['openrouter'] as const;
 export type OcrAiProvider = (typeof OCR_AI_PROVIDERS)[number];
@@ -28,20 +30,25 @@ export const OCR_AI_PROVIDER_LABELS: Record<OcrAiProvider, string> = {
 
 /**
  * Model used when the admin has not chosen one (and the boot fallback).
- * google/gemini-2.5-flash — 10/10 in the Oct 13 OCR shootout
- * (vantaiphucloc) and that project's standing default (config.py
- * OPENROUTER_MODEL).
+ * anthropic/claude-haiku-5.5 — the seal-proven model on production:
+ * ocr_requests shows the Haiku window (2026-10-29…11-05) completing 32/32
+ * including every seal read, while the google/gemini-2.5-flash window that
+ * followed (2026-11-05…) completed container reads but extracted zero seal
+ * numbers (17 failed reads that surfaced as HTTP 401 via the then-dead
+ * Gemini fallback). Fleet evidence beats the vantaiphucloc container
+ * shootout for this product's default.
  */
-export const OCR_AI_DEFAULT_MODEL = 'google/gemini-2.5-flash';
+export const OCR_AI_DEFAULT_MODEL = 'anthropic/claude-haiku-5.5';
 
 /**
- * Top-3 vision OCR models offered in the dropdown, all benchmarked on real
- * container/seal photos in vantaiphucloc (backend/app/config.py):
- *   1. google/gemini-2.5-flash — 10/10 OCR shootout, standing default
- *   2. qwen/qwen3.7-flash — 27/10 bench 3/3, 7–12s, $0.03/1M in
- *   3. deepseek/deepseek-v4.1-flash-1017 — 18/10 bench 6/7 exact, ~4s
+ * Vision OCR models offered in the dropdown, all OpenRouter slugs:
+ *   1. anthropic/claude-haiku-5.5 — seal-proven on nepocorp production (default)
+ *   2. google/gemini-2.5-flash — 10/10 OCR shootout (containers) in vantaiphucloc
+ *   3. qwen/qwen3.7-flash — 27/10 bench 3/3, 7–12s, $0.03/1M in
+ *   4. deepseek/deepseek-v4.1-flash-1017 — 18/10 bench 6/7 exact, ~4s
  */
 export const OCR_AI_MODELS: readonly string[] = [
+  'anthropic/claude-haiku-5.5',
   'google/gemini-2.5-flash',
   'qwen/qwen3.7-flash',
   'deepseek/deepseek-v4.1-flash-1017',

@@ -45,13 +45,10 @@ const configSchema = z.object({
   uploadDir: z.string().default('./uploads'),
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   googleMapsApiKey: z.string().default(''),
-  geminiApiKey: z.string().default(''),
-  // OpenRouter (OpenAI-compatible) — OCR provider transport. Optional; when
-  // the key is set, container/seal OCR tries OpenRouter first and falls back
-  // to Gemini on any error. Gated by key presence — no enable flag, per
-  // the project's no-feature-flags stance (see ocr-openrouter-qwen-migration.md).
-  // The base URL (https://openrouter.ai/api/v1) and the model
-  // (Anthropic Claude Haiku 5.5) are hardcoded constants in
+  // OpenRouter (OpenAI-compatible) — the ONLY OCR provider transport. The
+  // admin-saved key (app_settings, encrypted) wins; this env value is the
+  // boot fallback before an admin ever saves. The base URL
+  // (https://openrouter.ai/api/v1) and the default model are constants in
   // services/ocr.service.ts.
   openrouterApiKey: z.string().default(''),
   // Bách Khoa GPS provider (dvbk.vn) — live vehicle positions. Optional; when
@@ -132,7 +129,6 @@ const raw = {
   uploadDir: process.env.UPLOAD_DIR,
   nodeEnv: process.env.NODE_ENV,
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-  geminiApiKey: process.env.GEMINI_API_KEY,
   openrouterApiKey: process.env.OPENROUTER_API_KEY,
 
   bachKhoaApiUrl: process.env.BACH_KHOA_API_URL,
@@ -170,7 +166,6 @@ const withDefaults = {
   uploadDir: raw.uploadDir || './uploads',
   nodeEnv: raw.nodeEnv || 'development',
   googleMapsApiKey: raw.googleMapsApiKey || '',
-  geminiApiKey: raw.geminiApiKey || '',
   openrouterApiKey: raw.openrouterApiKey || '',
   bachKhoaApiUrl: raw.bachKhoaApiUrl || 'https://dvbk.vn/BachKhoaAPI/',
   bachKhoaUsername: raw.bachKhoaUsername || '',
@@ -220,7 +215,6 @@ export const config = result.success ? result.data : configSchema.parse({
   uploadDir: './uploads',
   nodeEnv: 'development',
   googleMapsApiKey: '',
-  geminiApiKey: '',
   openrouterApiKey: '',
   bachKhoaApiUrl: 'https://dvbk.vn/BachKhoaAPI/',
   bachKhoaUsername: '',

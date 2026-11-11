@@ -77,7 +77,7 @@ function parseIdParam(raw: unknown, label: string): number | null {
  *   - `POST /`            (capture): persist, THEN recognize via
  *     `extractContainerAndSeal`.
  *   - `POST /persist-only` (flush): persist ONLY — recognition already happened
- *     at capture, so the flush must NOT call Gemini again.
+ *     at capture, so the flush must NOT re-run recognition.
  *
  * Exported so the service-layer test (`ocr-persist.test.ts`) can exercise the
  * ownership + container-link + persist logic directly, in the repo's
@@ -206,8 +206,7 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
     // on counting; the financial-role check on the dashboard tile only gates who
     // SEES the usage figures). `provider !== null` means at least one AI provider
     // was actually attempted — the no-key "chưa cấu hình" path makes no AI call
-    // and costs nothing, so it is not counted. An internal failover (OpenRouter
-    // miss → Gemini retry) is one user-facing request, not two.
+    // and costs nothing, so it is not counted.
     // recordOcrRequest never throws.
     if (result.provider !== null) {
       await recordOcrRequest();
@@ -267,8 +266,8 @@ router.post('/', upload.single('file'), asyncHandler(async (req: Request, res: R
  *
  * The create-mode flow already recognized the number at capture (`POST /api/ocr`);
  * after `saveContainers` assigns ids, the buffered photo only needs to be
- * persisted + linked to its container. Re-running Gemini here was pure waste —
- * one redundant VLM call per buffered container/seal photo.
+ * persisted + linked to its container. Re-running recognition here was pure
+ * waste — one redundant VLM call per buffered container/seal photo.
  *
  * This handler STRUCTURALLY cannot recognize: there is no reference to
  * `extractContainerAndSeal` anywhere in it. That is deliberate — capture and
