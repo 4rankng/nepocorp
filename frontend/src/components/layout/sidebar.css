@@ -77,9 +77,9 @@
   color: var(--fg-on-brand);
   font-family: var(--font-display);
   font-size: var(--fs-sm);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.35;
-  letter-spacing: 0;
+  letter-spacing: -0.5px;
   white-space: nowrap;
 }
 .sidebar-brand-meta span {

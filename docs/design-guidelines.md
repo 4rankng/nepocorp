@@ -47,7 +47,7 @@ and deliberately prominent numeric metrics may use their own scale.
 
 ## Color System
 
-The TransTing brand palette centers on an emerald shell and primary actions, with a unified emerald-and-white route-T mark and signal green as an accent. Preserve the existing flat surfaces and semantic status colors; the rebrand is a token and identity shift, not a glossy visual overhaul.
+The TTransport brand palette centers on an emerald shell and primary actions, with a unified emerald-and-white route-T mark and signal green as an accent. Preserve the existing flat surfaces and semantic status colors; the rebrand is a token and identity shift, not a glossy visual overhaul.
 
 | Token | Color | Use |
 |-------|-------|-----|
@@ -57,7 +57,7 @@ The TransTing brand palette centers on an emerald shell and primary actions, wit
 | `--brand-2` / `--accent` | `#10B956` | Signal green secondary brand color |
 | `--success`, `--warning`, `--danger`, `--info` | Semantic palette | Status and validation feedback only |
 
-The checked-in ImageGen master at `frontend/assets-source/transting-logo-master.png`
+The checked-in ImageGen master at `frontend/assets-source/ttransport-logo-master.png`
 is the visual source for all raster sizes. Regenerate the app, PWA, favicon, and
 transparent sidebar assets with `pnpm --dir frontend run generate:brand`; the
 brand contract verifies dimensions, palette boundaries, transparency, and the

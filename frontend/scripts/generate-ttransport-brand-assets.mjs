@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const OUT = join(ROOT, 'public/assets');
-const SOURCE = join(ROOT, 'assets-source/transting-logo-master.png');
+const SOURCE = join(ROOT, 'assets-source/ttransport-logo-master.png');
 const EMERALD = '#005A2D';
 
 function render(args, outPath) {
@@ -23,7 +23,7 @@ await mkdir(OUT, { recursive: true });
 for (const size of [180, 192, 512, 1024]) {
   render(
     ['-filter', 'Lanczos', '-resize', `${size}x${size}`],
-    join(OUT, `transting-logo-${size}.png`),
+    join(OUT, `ttransport-logo-${size}.png`),
   );
 }
 
@@ -37,14 +37,14 @@ for (const size of [192, 512]) {
       '-background', EMERALD,
       '-extent', `${size}x${size}`,
     ],
-    join(OUT, `transting-logo-maskable-${size}.png`),
+    join(OUT, `ttransport-logo-maskable-${size}.png`),
   );
 }
 
 for (const size of [16, 32]) {
   render(
     ['-filter', 'Lanczos', '-resize', `${size}x${size}`],
-    join(OUT, `transting-favicon-${size}.png`),
+    join(OUT, `ttransport-favicon-${size}.png`),
   );
 }
 
@@ -60,8 +60,8 @@ for (const size of [192, 1024]) {
       '-background', 'none',
       '-extent', `${size}x${size}`,
     ],
-    join(OUT, `transting-sidebar-mark-${size}.png`),
+    join(OUT, `ttransport-sidebar-mark-${size}.png`),
   );
 }
 
-console.log(`Generated TransTing brand assets from ${SOURCE}`);
+console.log(`Generated TTransport brand assets from ${SOURCE}`);

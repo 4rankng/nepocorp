@@ -16,7 +16,7 @@ const sql = postgres(process.env.DATABASE_URL);
 
 const ACCOUNTS = [
   { username: 'admin',    fullName: 'Quản trị viên', role: 'ADMIN' },
-  { username: 'giamdoc',  fullName: 'Giám đốc',      role: 'ADMIN' },
+  { username: 'giamdoc',  fullName: 'Giám đốc',      role: 'MANAGER' },
   { username: 'ketoan',   fullName: 'Kế toán',       role: 'ACCOUNTANT' },
   { username: 'laixe',    fullName: 'Lái xe',        role: 'DRIVER' },
   { username: 'giaonhan', fullName: 'Giao nhận',     role: 'FORWARDER' },
@@ -32,6 +32,15 @@ const ACCOUNTS = [
       returning id`;
     console.log(rows.length ? `Created ${username} id=${rows[0].id} (${role})` : `${username} already exists`);
   }
+  // giamdoc was first seeded as ADMIN; it must be MANAGER — strict-admin
+  // surfaces (/config/app-settings, /users, chatbot monitoring) key off the
+  // role string. Repair an older tenant in case it was provisioned before
+  // this fix (insert above is a no-op once the row exists).
+  const demoted = await sql`
+    update users set role = 'MANAGER'
+    where username = 'giamdoc' and role = 'ADMIN' and deleted_at is null
+    returning id`;
+  if (demoted.length) console.log(`Demoted giamdoc id=${demoted[0].id} ADMIN → MANAGER`);
   const cleaned = await sql`
     update users set email = null, phone = null
     where username = any(${ACCOUNTS.map((a) => a.username)})

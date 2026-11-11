@@ -1,6 +1,6 @@
 {
-  "name": "TransTing",
-  "short_name": "TransTing",
+  "name": "TTransport",
+  "short_name": "TTransport",
   "description": "Vận tải thông minh. Doanh nghiệp vững mạnh.",
   "start_url": "/",
   "scope": "/",
@@ -12,30 +12,30 @@
   "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "/assets/transting-logo-180.png?v=4",
+      "src": "/assets/ttransport-logo-180.png?v=4",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/assets/transting-logo-192.png?v=4",
+      "src": "/assets/ttransport-logo-192.png?v=4",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/transting-logo-512.png?v=4",
+      "src": "/assets/ttransport-logo-512.png?v=4",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/transting-logo-maskable-192.png?v=2",
+      "src": "/assets/ttransport-logo-maskable-192.png?v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/assets/transting-logo-maskable-512.png?v=2",
+      "src": "/assets/ttransport-logo-maskable-512.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

@@ -1,4 +1,4 @@
-// TransTing service worker — powers Android installability + an offline app shell.
+// TTransport service worker — powers Android installability + an offline app shell.
 //
 // Strategy (keeps live data live, ships fresh UI fast):
 //   • HTML navigations        → network-first   (every deploy = newest shell; offline fallback)
@@ -43,7 +43,7 @@ self.addEventListener('push', (event) => {
   try { data = event.data.json(); }
   catch { data = { body: event.data.text() }; }
 
-  const title = data.title || 'TransTing';
+  const title = data.title || 'TTransport';
   const url = data.url || '/';
   const body = stripHtml(data.body);
   const type = data.type || 'SYSTEM_ANNOUNCEMENT';
@@ -56,8 +56,8 @@ self.addEventListener('push', (event) => {
         : 'Mở';
   const options = {
     body,
-    icon: data.icon || '/assets/transting-logo-192.png?v=4',
-    badge: '/assets/transting-sidebar-mark-192.png?v=4',
+    icon: data.icon || '/assets/ttransport-logo-192.png?v=4',
+    badge: '/assets/ttransport-sidebar-mark-192.png?v=4',
     tag: data.tag || 'tingting-notification',
     timestamp: Date.now(),
     data: { url },

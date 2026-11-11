@@ -415,7 +415,7 @@ export function renderFuelVoucherHtml(data: FuelVoucherData): string {
       </div>
     </div>
 
-    <div class="footer">In bởi TransTing &middot; Ngày in: ${today}</div>
+    <div class="footer">In bởi TTransport &middot; Ngày in: ${today}</div>
   </div>
 </body>
 </html>`;
@@ -640,7 +640,7 @@ export async function renderFuelVoucherXlsx(data: FuelVoucherData, writable: imp
   const footerRow = ws.getRow(row);
   footerRow.height = 14;
   ws.mergeCells(`A${row}:E${row}`);
-  footerRow.getCell(1).value = `In bởi TransTing — ${new Date().toLocaleDateString('vi-VN')}`;
+  footerRow.getCell(1).value = `In bởi TTransport — ${new Date().toLocaleDateString('vi-VN')}`;
   footerRow.getCell(1).font = { name: F, size: 8, italic: true, color: { argb: 'FF9CA3AF' } };
   footerRow.getCell(1).alignment = { horizontal: 'center' };
 

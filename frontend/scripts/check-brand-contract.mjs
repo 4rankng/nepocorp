@@ -30,7 +30,7 @@ const scopedRuntimeFiles = [
 
 for (const relativePath of scopedRuntimeFiles) {
   const source = await readFile(new URL(relativePath, import.meta.url), 'utf8');
-  if (/\bTingTing\b|NEPO Logistics/.test(source)) {
+  if (/\bTingTing\b|\bTransTing\b|NEPO Logistics/.test(source)) {
     failures.push(`${relativePath}: legacy user-facing product label`);
   }
 }
@@ -41,11 +41,11 @@ const buttonSource = await readFile(new URL('../src/components/Button.css', impo
 const dashboardSource = await readFile(new URL('../src/pages/DashboardPage.css', import.meta.url), 'utf8');
 const tableSource = await readFile(new URL('../src/components/Table.css', import.meta.url), 'utf8');
 for (const requiredCopy of [
-  "name: 'TransTing'",
+  "name: 'TTransport'",
   "tagline: 'Vận tải thông minh. Doanh nghiệp vững mạnh.'",
   "shellDescriptor: 'Quản lý vận tải và logistics'",
-  "logoPath: '/assets/transting-logo-192.png?v=4'",
-  "sidebarLogoPath: '/assets/transting-sidebar-mark-192.png?v=4'",
+  "logoPath: '/assets/ttransport-logo-192.png?v=4'",
+  "sidebarLogoPath: '/assets/ttransport-sidebar-mark-192.png?v=4'",
 ]) {
   if (!brandSource.includes(requiredCopy)) {
     failures.push(`src/brand.ts: missing ${requiredCopy}`);
@@ -99,7 +99,7 @@ const index = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const manifest = await readFile(new URL('../public/manifest.json', import.meta.url), 'utf8');
 const serviceWorker = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
 const faqMigration = await readFile(
-  new URL('../../backend/drizzle/0108_transting_product_identity.sql', import.meta.url),
+  new URL('../../backend/drizzle/0127_ttransport_product_identity.sql', import.meta.url),
   'utf8',
 );
 const migrationJournal = JSON.parse(await readFile(
@@ -107,24 +107,24 @@ const migrationJournal = JSON.parse(await readFile(
   'utf8',
 ));
 
-if (!index.includes('TransTing') || !index.includes('<title>TransTing</title>')) {
-  failures.push('index.html: missing TransTing browser title');
+if (!index.includes('TTransport') || !index.includes('<title>TTransport</title>')) {
+  failures.push('index.html: missing TTransport browser title');
 }
 for (const size of [16, 32]) {
-  if (!index.includes(`/assets/transting-favicon-${size}.png?v=5`)) {
+  if (!index.includes(`/assets/ttransport-favicon-${size}.png?v=5`)) {
     failures.push(`index.html: missing cache-busted ${size}px favicon`);
   }
   try {
-    await access(new URL(`../public/assets/transting-favicon-${size}.png`, import.meta.url));
+    await access(new URL(`../public/assets/ttransport-favicon-${size}.png`, import.meta.url));
   } catch {
-    failures.push(`public/assets/transting-favicon-${size}.png: missing tab asset`);
+    failures.push(`public/assets/ttransport-favicon-${size}.png: missing tab asset`);
   }
 }
 if (!index.includes('<meta name="theme-color" content="#005A2D"')) {
   failures.push('index.html: browser theme color is not emerald');
 }
-if (!manifest.includes('"short_name": "TransTing"')) {
-  failures.push('public/manifest.json: missing TransTing short name');
+if (!manifest.includes('"short_name": "TTransport"')) {
+  failures.push('public/manifest.json: missing TTransport short name');
 }
 if (!manifest.includes('"theme_color": "#005A2D"')) {
   failures.push('public/manifest.json: PWA theme color is not emerald');
@@ -140,19 +140,19 @@ for (const requiredPwaMetadata of [
     failures.push(`public/manifest.json: missing install metadata ${requiredPwaMetadata}`);
   }
 }
-if (!serviceWorker.includes("data.title || 'TransTing'")
-  || !serviceWorker.includes("icon: data.icon || '/assets/transting-logo-192.png?v=4'")
-  || !serviceWorker.includes("badge: '/assets/transting-sidebar-mark-192.png?v=4'")) {
-  failures.push('public/sw.js: notification identity is not TransTing');
+if (!serviceWorker.includes("data.title || 'TTransport'")
+  || !serviceWorker.includes("icon: data.icon || '/assets/ttransport-logo-192.png?v=4'")
+  || !serviceWorker.includes("badge: '/assets/ttransport-sidebar-mark-192.png?v=4'")) {
+  failures.push('public/sw.js: notification identity is not TTransport');
 }
-if (!faqMigration.includes(`replace("answer", 'TingTing', 'TransTing')`)
+if (!faqMigration.includes(`replace("answer", 'TransTing', 'TTransport')`)
   || !faqMigration.includes(`"updated_at" = now()`)
-  || !faqMigration.includes(`WHERE "answer" LIKE '%TingTing%'`)
+  || !faqMigration.includes(`WHERE "answer" LIKE '%TransTing%'`)
   || /"embedding"\s*=\s*NULL/i.test(faqMigration)) {
-  failures.push('backend FAQ migration: missing TingTing to TransTing copy update');
+  failures.push('backend FAQ migration: missing TransTing to TTransport copy update');
 }
 const faqMigrationJournalEntry = migrationJournal.entries?.find(
-  (entry) => entry.idx === 108 && entry.tag === '0108_transting_product_identity',
+  (entry) => entry.idx === 127 && entry.tag === '0127_ttransport_product_identity',
 );
 if (!faqMigrationJournalEntry) {
   failures.push('backend FAQ migration: journal registration is missing');
@@ -160,31 +160,31 @@ if (!faqMigrationJournalEntry) {
 
 for (const size of [180, 192, 512, 1024]) {
   try {
-    await access(new URL(`../public/assets/transting-logo-${size}.png`, import.meta.url));
+    await access(new URL(`../public/assets/ttransport-logo-${size}.png`, import.meta.url));
   } catch {
-    failures.push(`public/assets/transting-logo-${size}.png: missing PWA asset`);
+    failures.push(`public/assets/ttransport-logo-${size}.png: missing PWA asset`);
   }
 }
 
 for (const size of [192, 1024]) {
   try {
-    await access(new URL(`../public/assets/transting-sidebar-mark-${size}.png`, import.meta.url));
+    await access(new URL(`../public/assets/ttransport-sidebar-mark-${size}.png`, import.meta.url));
   } catch {
-    failures.push(`public/assets/transting-sidebar-mark-${size}.png: missing sidebar mark`);
+    failures.push(`public/assets/ttransport-sidebar-mark-${size}.png: missing sidebar mark`);
   }
 }
 
 for (const [relativePath, size] of [
-  ['../public/assets/transting-favicon-16.png', 16],
-  ['../public/assets/transting-favicon-32.png', 32],
-  ['../public/assets/transting-logo-180.png', 180],
-  ['../public/assets/transting-logo-192.png', 192],
-  ['../public/assets/transting-logo-512.png', 512],
-  ['../public/assets/transting-logo-1024.png', 1024],
-  ['../public/assets/transting-logo-maskable-192.png', 192],
-  ['../public/assets/transting-logo-maskable-512.png', 512],
-  ['../public/assets/transting-sidebar-mark-192.png', 192],
-  ['../public/assets/transting-sidebar-mark-1024.png', 1024],
+  ['../public/assets/ttransport-favicon-16.png', 16],
+  ['../public/assets/ttransport-favicon-32.png', 32],
+  ['../public/assets/ttransport-logo-180.png', 180],
+  ['../public/assets/ttransport-logo-192.png', 192],
+  ['../public/assets/ttransport-logo-512.png', 512],
+  ['../public/assets/ttransport-logo-1024.png', 1024],
+  ['../public/assets/ttransport-logo-maskable-192.png', 192],
+  ['../public/assets/ttransport-logo-maskable-512.png', 512],
+  ['../public/assets/ttransport-sidebar-mark-192.png', 192],
+  ['../public/assets/ttransport-sidebar-mark-1024.png', 1024],
 ]) {
   const geometry = magick(relativePath, ['-format', '%wx%h', 'info:']);
   if (geometry && geometry !== `${size}x${size}`) {
@@ -193,23 +193,23 @@ for (const [relativePath, size] of [
 }
 
 for (const size of [192, 512]) {
-  if (!manifest.includes(`/assets/transting-logo-maskable-${size}.png?v=2`)) {
+  if (!manifest.includes(`/assets/ttransport-logo-maskable-${size}.png?v=2`)) {
     failures.push(`public/manifest.json: missing ${size}px maskable icon`);
   }
 }
-if (!index.includes('/assets/transting-logo-180.png?v=4')
+if (!index.includes('/assets/ttransport-logo-180.png?v=4')
   || !index.includes('rel="apple-touch-icon"')) {
   failures.push('index.html: missing cache-busted Apple touch icon');
 }
 
 for (const size of [192, 512]) {
   const geometry = magick(
-    `../public/assets/transting-logo-maskable-${size}.png`,
+    `../public/assets/ttransport-logo-maskable-${size}.png`,
     ['-fuzz', '8%', '-fill', 'black', '+opaque', 'white', '-format', '%@', 'info:'],
   );
   const match = geometry.match(/^(\d+)x(\d+)\+(\d+)\+(\d+)$/);
   if (!match) {
-    failures.push(`transting-logo-maskable-${size}.png: cannot measure white mark safe zone`);
+    failures.push(`ttransport-logo-maskable-${size}.png: cannot measure white mark safe zone`);
     continue;
   }
   const [, width, height, x, y] = match.map(Number);
@@ -217,62 +217,62 @@ for (const size of [192, 512]) {
   if (x < safeInset || y < safeInset
     || x + width > size - safeInset
     || y + height > size - safeInset) {
-    failures.push(`transting-logo-maskable-${size}.png: route-T exceeds launcher safe zone (${geometry})`);
+    failures.push(`ttransport-logo-maskable-${size}.png: route-T exceeds launcher safe zone (${geometry})`);
   }
 }
 
 const appCorner = magick(
-  '../public/assets/transting-logo-192.png',
+  '../public/assets/ttransport-logo-192.png',
   ['-format', '%[pixel:p{0,0}]', 'info:'],
 );
 if (appCorner && appCorner !== 'srgb(0,90,45)') {
-  failures.push('transting-logo-192.png: app tile corner is not opaque emerald');
+  failures.push('ttransport-logo-192.png: app tile corner is not opaque emerald');
 }
 
 const appLowerWhite = Number(magick(
-  '../public/assets/transting-logo-192.png',
+  '../public/assets/ttransport-logo-192.png',
   ['-crop', '192x96+0+96', '-colorspace', 'Gray', '-threshold', '90%', '-format', '%[fx:mean]', 'info:'],
 ));
 if (!Number.isFinite(appLowerWhite) || appLowerWhite < 0.1) {
-  failures.push('transting-logo-192.png: route-T stem is missing from the lower half');
+  failures.push('ttransport-logo-192.png: route-T stem is missing from the lower half');
 }
 
 const faviconLowerWhite = Number(magick(
-  '../public/assets/transting-favicon-16.png',
+  '../public/assets/ttransport-favicon-16.png',
   ['-crop', '16x8+0+8', '-colorspace', 'Gray', '-threshold', '90%', '-format', '%[fx:mean]', 'info:'],
 ));
 if (!Number.isFinite(faviconLowerWhite) || faviconLowerWhite < 0.05) {
-  failures.push('transting-favicon-16.png: route-T is not legible in the lower half');
+  failures.push('ttransport-favicon-16.png: route-T is not legible in the lower half');
 }
 
 const appleCorner = magick(
-  '../public/assets/transting-logo-180.png',
+  '../public/assets/ttransport-logo-180.png',
   ['-format', '%[pixel:p{0,0}]', 'info:'],
 );
 if (appleCorner && appleCorner !== 'srgb(0,90,45)') {
-  failures.push('transting-logo-180.png: Apple touch icon corner is not opaque emerald');
+  failures.push('ttransport-logo-180.png: Apple touch icon corner is not opaque emerald');
 }
 
 const sidebarCorner = magick(
-  '../public/assets/transting-sidebar-mark-192.png',
+  '../public/assets/ttransport-sidebar-mark-192.png',
   ['-format', '%[pixel:p{0,0}]', 'info:'],
 );
 if (sidebarCorner && sidebarCorner !== 'graya(0,0)') {
-  failures.push('transting-sidebar-mark-192.png: sidebar mark corner is not transparent');
+  failures.push('ttransport-sidebar-mark-192.png: sidebar mark corner is not transparent');
 }
 
 const sidebarLowerAlpha = Number(magick(
-  '../public/assets/transting-sidebar-mark-192.png',
+  '../public/assets/ttransport-sidebar-mark-192.png',
   ['-crop', '192x96+0+96', '-channel', 'A', '-separate', '-format', '%[fx:mean]', 'info:'],
 ));
 if (!Number.isFinite(sidebarLowerAlpha) || sidebarLowerAlpha < 0.1) {
-  failures.push('transting-sidebar-mark-192.png: transparent route-T stem is missing');
+  failures.push('ttransport-sidebar-mark-192.png: transparent route-T stem is missing');
 }
 
 if (failures.length > 0) {
-  console.error('TransTing brand contract failed:');
+  console.error('TTransport brand contract failed:');
   for (const failure of failures) console.error(`- ${failure}`);
   process.exitCode = 1;
 } else {
-  console.log('TransTing brand contract passed.');
+  console.log('TTransport brand contract passed.');
 }

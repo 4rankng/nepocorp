@@ -12,7 +12,7 @@
   logs: false;
 }
 
-/* TransTing brand theme — tokens mirror the hand-crafted design system in :root
+/* TTransport brand theme — tokens mirror the hand-crafted design system in :root
    below, so daisyUI components and the existing custom CSS share the same
    deep-emerald primary, signal-green accent, and soft neutral surfaces. */
 @plugin "daisyui/theme" {
@@ -60,7 +60,7 @@
 }
 
 /* ============================================================================
- * TransTing -- Wireframe Design System
+ * TTransport -- Wireframe Design System
  * Be Vietnam Pro (Vietnamese-aware text/UI) + JetBrains Mono (numerics).
  * Deep emerald shell and primary actions, signal-green accent.
  * ========================================================================== */
