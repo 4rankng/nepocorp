@@ -96,7 +96,12 @@ router.post('/test', asyncHandler(async (req: Request, res: Response) => {
 
   // A successful HTTP round-trip is only half the truth: report WHAT the
   // model read on the known photo so the admin sees recognition quality too.
-  const read = (probe.text ?? '').toUpperCase();
+  // Comparison is separator-tolerant: grouped printing like "TIIU 674601 2"
+  // is a CORRECT read (the prompt allows separators), not a reason to change
+  // the model. The nag shows the raw text so the admin still sees exactly
+  // what the model printed.
+  const readRaw = (probe.text ?? '').toUpperCase();
+  const read = readRaw.replace(/[\s-]/g, '');
   const result: OcrAiTestResponse = probe.success
     ? {
         ok: true,
@@ -104,7 +109,7 @@ router.post('/test', asyncHandler(async (req: Request, res: Response) => {
         latencyMs,
         message: read.includes(PROBE_CONTAINER)
           ? `Kết nối thành công — model đọc đúng ${PROBE_CONTAINER} sau ${latencyMs} ms.`
-          : `Kết nối thành công sau ${latencyMs} ms, nhưng model đọc được "${(probe.text ?? '').trim().slice(0, 60)}" (ảnh thật chứa ${PROBE_CONTAINER}) — cân nhắc đổi model.`,
+          : `Kết nối thành công sau ${latencyMs} ms, nhưng model đọc được "${readRaw.trim().slice(0, 60)}" (ảnh thật chứa ${PROBE_CONTAINER}) — cân nhắc đổi model.`,
       }
     : {
         ok: false,

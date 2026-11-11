@@ -168,6 +168,8 @@ export default function AppSettingsConfigPage() {
   const [ocrAiKey, setOcrAiKey] = useState('');
   const [ocrModelChoice, setOcrModelChoice] = useState('');
   const [ocrModelCustom, setOcrModelCustom] = useState('');
+  const [ocrFallbackChoice, setOcrFallbackChoice] = useState('');
+  const [ocrFallbackCustom, setOcrFallbackCustom] = useState('');
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [gpsMessage, setGpsMessage] = useState<string | null>(null);
   const [ocrMessage, setOcrMessage] = useState<string | null>(null);
@@ -194,7 +196,8 @@ export default function AppSettingsConfigPage() {
   }, [ocrUsageSettings.data]);
 
   // NEPO-28: the stored model lands in the dropdown when it is one of the
-  // curated ones, otherwise it goes into the free-text field.
+  // curated ones, otherwise it goes into the free-text field. The fallback
+  // model follows the same pattern ('' = no fallback).
   useEffect(() => {
     if (!ocrAiSettings.data) return;
     const model = ocrAiSettings.data.model;
@@ -204,6 +207,17 @@ export default function AppSettingsConfigPage() {
     } else {
       setOcrModelChoice('');
       setOcrModelCustom(model);
+    }
+    const fb = ocrAiSettings.data.modelFallback ?? '';
+    if (fb === '') {
+      setOcrFallbackChoice('');
+      setOcrFallbackCustom('');
+    } else if (OCR_AI_MODELS.includes(fb)) {
+      setOcrFallbackChoice(fb);
+      setOcrFallbackCustom('');
+    } else {
+      setOcrFallbackChoice('__custom__');
+      setOcrFallbackCustom(fb);
     }
   }, [ocrAiSettings.data]);
 
@@ -270,17 +284,20 @@ export default function AppSettingsConfigPage() {
   // into the free-text field so a model released after the curated list is
   // still selectable.
   const ocrModel = (ocrModelChoice || ocrModelCustom).trim();
+  const ocrModelFallback = (ocrFallbackChoice === '__custom__' ? ocrFallbackCustom : ocrFallbackChoice).trim();
   const ocrAiKeySet = !!ocrAiSettings.data?.apiKeySet;
   const ocrAiKeyReady = ocrAiKeySet || ocrAiKey.trim() !== '';
   const ocrAiReady = ocrModel !== '' && ocrAiKeyReady;
   const ocrAiModelValid = /^[\w.-]+\/[\w.:-]+$/.test(ocrModel);
+  const ocrAiFallbackValid = ocrModelFallback === '' || /^[\w.-]+\/[\w.:-]+$/.test(ocrModelFallback);
 
   const saveOcrAi = async () => {
     setOcrAiMessage(null);
-    if (!ocrAiReady || !ocrAiModelValid) return;
+    if (!ocrAiReady || !ocrAiModelValid || !ocrAiFallbackValid) return;
     const payload: OcrAiSettingsUpdate = {
       provider: 'openrouter',
       model: ocrModel,
+      modelFallback: ocrModelFallback,
       ...(ocrAiKey.trim() ? { apiKey: ocrAiKey.trim() } : {}),
     };
     try {
@@ -321,6 +338,7 @@ export default function AppSettingsConfigPage() {
       await saveOcrAiSettings.mutateAsync({
         provider: 'openrouter',
         model: ocrModel || OCR_AI_DEFAULT_MODEL,
+        modelFallback: ocrModelFallback,
         clearApiKey: true,
       });
       setOcrAiKey('');
@@ -571,7 +589,52 @@ export default function AppSettingsConfigPage() {
                 Model phải nhận ảnh. Mặc định dùng <code>{OCR_AI_DEFAULT_MODEL}</code>.
               </p>
             </div>
+            <div className="field">
+              <label htmlFor="ocr-ai-model-fallback">Model dự phòng</label>
+              <select
+                id="ocr-ai-model-fallback"
+                className="input"
+                value={ocrFallbackChoice}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setOcrFallbackChoice(next);
+                  if (next !== '' && ocrFallbackCustom.trim() !== '' && next !== ocrFallbackCustom.trim()) {
+                    setOcrFallbackCustom('');
+                  }
+                }}
+                disabled={ocrAiSettings.isLoading || ocrAiSettings.isError || saveOcrAiSettings.isPending}
+              >
+                <option value="">Không dùng dự phòng</option>
+                <option value="__custom__">Khác (nhập tay)…</option>
+                {OCR_AI_MODELS.map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+              </select>
+              <p className="cfg-field-hint">
+                Được thử khi model chính không đọc được số. Để trống nếu không dùng.
+              </p>
+            </div>
           </div>
+          {ocrFallbackChoice === '__custom__' && (
+            <div className="field cfg-ocr-ai-custom-model">
+              <label htmlFor="ocr-ai-model-fallback-custom">Tên model dự phòng (vendor/model)</label>
+              <input
+                id="ocr-ai-model-fallback-custom"
+                className="input"
+                value={ocrFallbackCustom}
+                onChange={(event) => setOcrFallbackCustom(event.target.value)}
+                placeholder="google/gemini-2.5-flash"
+                autoComplete="off"
+                spellCheck={false}
+                disabled={ocrAiSettings.isLoading || ocrAiSettings.isError || saveOcrAiSettings.isPending}
+              />
+              <p className="cfg-field-hint">
+                {ocrModelFallback.trim() === ''
+                  ? 'Chưa chọn model dự phòng.'
+                  : `Model dự phòng sẽ dùng: ${ocrModelFallback}`}
+              </p>
+            </div>
+          )}
           {ocrModelChoice === '' && (
             <div className="field cfg-ocr-ai-custom-model">
               <label htmlFor="ocr-ai-model-custom">Tên model (vendor/model)</label>

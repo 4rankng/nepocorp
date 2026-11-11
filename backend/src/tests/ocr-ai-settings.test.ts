@@ -25,7 +25,7 @@ import {
  *     the response only carries a masked preview + an `apiKeySet` boolean;
  *   - clearing the key wipes the stored value and falls back to the env key.
  */
-const SETTINGS_KEYS = ['ocr_ai.provider', 'ocr_ai.openrouter_api_key', 'ocr_ai.model'];
+const SETTINGS_KEYS = ['ocr_ai.provider', 'ocr_ai.openrouter_api_key', 'ocr_ai.model', 'ocr_ai.model_fallback'];
 
 async function cleanup(): Promise<void> {
   await db.delete(s.appSettings).where(inArray(s.appSettings.key, SETTINGS_KEYS));
@@ -61,12 +61,37 @@ test('the admin provider / key / model become the runtime settings', async () =>
   assert.strictEqual(settings.model, 'google/gemini-3.5-flash');
 });
 
+test('the admin fallback model persists and a save without it keeps the stored one', async () => {
+  await saveOcrAiSettings({
+    provider: 'openrouter',
+    model: 'deepseek/deepseek-v4.1-flash-1017',
+    modelFallback: 'google/gemini-2.5-flash',
+  });
+  let settings = await getOcrAiSettings();
+  assert.strictEqual(settings.model, 'deepseek/deepseek-v4.1-flash-1017');
+  assert.strictEqual(settings.modelFallback, 'google/gemini-2.5-flash');
+
+  // A save that omits modelFallback (older client) keeps the stored fallback.
+  await saveOcrAiSettings({ provider: 'openrouter', model: 'google/gemini-3.5-flash' });
+  settings = await getOcrAiSettings();
+  assert.strictEqual(settings.modelFallback, 'google/gemini-2.5-flash');
+
+  // '' explicitly clears the fallback (restore the model the later tests pin).
+  await saveOcrAiSettings({
+    provider: 'openrouter',
+    model: 'google/gemini-3.5-flash',
+    modelFallback: '',
+  });
+  settings = await getOcrAiSettings();
+  assert.strictEqual(settings.modelFallback, '');
+});
+
 test('the API key is encrypted at rest and masked in the response', async () => {
   const rows = await db
     .select()
     .from(s.appSettings)
     .where(inArray(s.appSettings.key, SETTINGS_KEYS));
-  assert.strictEqual(rows.length, 3, 'all three settings rows must be persisted');
+  assert.strictEqual(rows.length, 4, 'all four settings rows must be persisted');
 
   const stored = rows.find((r) => r.key === 'ocr_ai.openrouter_api_key');
   assert.ok(stored, 'the API key row must exist');

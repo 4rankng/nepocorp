@@ -69,8 +69,10 @@ const OCR_MODEL = OCR_AI_DEFAULT_MODEL;
 export interface OcrAiConfig {
   /** OpenRouter API key. '' means OCR is not configured. */
   apiKey: string;
-  /** OpenRouter model slug, e.g. 'anthropic/claude-haiku-5.5'. */
+  /** OpenRouter model slug tried first, e.g. 'anthropic/claude-haiku-5.5'. */
   model: string;
+  /** Optional second model tried when the primary yields no valid read. */
+  modelFallback?: string;
 }
 
 /**
@@ -84,6 +86,7 @@ export async function resolveOcrAiConfig(): Promise<OcrAiConfig> {
     return {
       apiKey: settings.apiKey || config.openrouterApiKey,
       model: settings.model || OCR_MODEL,
+      modelFallback: settings.modelFallback || '',
     };
   } catch (error) {
     console.error('[ocr] failed to load AI settings, falling back to env:', error);
@@ -348,7 +351,7 @@ function parseResponse(text: string | null): ParsedResponse {
   const tolerantMatches = text
     .replace(/[`"'\n\r]/g, '')
     .toUpperCase()
-    .match(/[A-Z]{4}[ -]?\d[ -]?\d[ -]?\d[ -]?\d[ -]?\d[ -]?\d[ -]?\d[ -]?\d/g) ?? [];
+    .match(/[A-Z]{4}(?:[ -]?\d){7}/g) ?? [];
   if (tolerantMatches.length === 0 && text.replace(/[`"'\n\r\s-]/g, '').toUpperCase().trim() === 'NONE') {
     return { containerNumbers: [], sealNumber: null };
   }
@@ -435,35 +438,51 @@ export async function extractContainerAndSeal(
     };
   }
 
-  // OpenRouter is the only provider. VLM extraction on hard photos (worn,
-  // low-contrast etching) is per-attempt flaky — production showed the same
-  // seal read on one attempt and missed on the next — so one bounded
-  // same-model retry replaces the removed fallback provider: an upstream
-  // error still surfaces as-is, but a flaky no-parse gets a second chance.
-  let result: VisionResult | null = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    result = await callOpenRouterVision(prompt, buffer, mime, resolvedAi);
-    if (result.success && result.text) {
-      const parsed = parseResponse(result.text);
-      const typeValid = type === 'SEAL'
-        ? parsed.sealNumber !== null
-        : parsed.containerNumbers.some(n => CONTAINER_RE.test(n));
-      if (typeValid) break;
+  // OpenRouter is the only provider. Model chain: the admin's primary model
+  // first, then the configured fallback (deepseek → gemini-2.5-flash in
+  // production). Within each model, one bounded same-model retry covers the
+  // per-attempt flakiness of worn, low-contrast seals (production showed the
+  // same seal miss once and read on the next attempt). An upstream error on
+  // the last attempt surfaces as-is — never masked.
+  const models = [resolvedAi.model, resolvedAi.modelFallback]
+    .filter((m): m is string => typeof m === 'string' && m.trim() !== '');
+
+  let last: VisionResult | null = null;
+  let parsed: ParsedResponse | null = null;
+  let winningModel: string | null = null;
+
+  outer:
+  for (const model of models) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const r = await callOpenRouterVision(prompt, buffer, mime, { ...resolvedAi, model });
+      last = r;
+      if (r.success && r.text) {
+        const p = parseResponse(r.text);
+        const typeValid = type === 'SEAL'
+          ? p.sealNumber !== null
+          : p.containerNumbers.some(n => CONTAINER_RE.test(n));
+        if (typeValid) {
+          parsed = p;
+          winningModel = r.model;
+          break outer;
+        }
+      }
     }
   }
-  if (!result || !result.success || !result.text) {
+
+  if (!parsed) {
     return {
       success: false,
       containerNumbers: [],
       sealNumber: null,
       checkDigitWarnings: [],
-      error: result?.error ?? 'Request failed',
+      error: last?.error ?? 'Request failed',
       provider: 'openrouter',
-      model: result?.model ?? null,
+      model: last?.model ?? null,
     };
   }
 
-  const parsed = parseResponse(result.text);
+  const resultModel = winningModel;
 
   if (type === 'SEAL') {
     // SEAL succeeds only when a seal number was extracted; a container-style
@@ -476,7 +495,7 @@ export async function extractContainerAndSeal(
         checkDigitWarnings: [],
         error: null,
         provider: 'openrouter',
-        model: result.model,
+        model: resultModel,
       };
     }
     return {
@@ -486,7 +505,7 @@ export async function extractContainerAndSeal(
       checkDigitWarnings: [],
       error: 'Không nhận dạng được số seal',
       provider: 'openrouter',
-      model: result.model,
+      model: resultModel,
     };
   }
 
@@ -503,7 +522,7 @@ export async function extractContainerAndSeal(
       checkDigitWarnings: [],
       error: 'Không nhận dạng được số cont',
       provider: 'openrouter',
-      model: result.model,
+      model: resultModel,
     };
   }
 
@@ -515,6 +534,6 @@ export async function extractContainerAndSeal(
     checkDigitWarnings: warnings,
     error: null,
     provider: 'openrouter',
-    model: result.model,
+    model: resultModel,
   };
 }

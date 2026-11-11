@@ -30,6 +30,7 @@ import {
 const KEY_PROVIDER = 'ocr_ai.provider';
 const KEY_API_KEY = 'ocr_ai.openrouter_api_key';
 const KEY_MODEL = 'ocr_ai.model';
+const KEY_MODEL_FALLBACK = 'ocr_ai.model_fallback';
 
 export interface OcrAiSettings {
   provider: OcrAiProvider;
@@ -44,6 +45,8 @@ export interface OcrAiSettings {
   storedApiKey: string;
   /** Model slug used for OCR calls. */
   model: string;
+  /** Optional second model tried when the primary yields no valid read. '' = none. */
+  modelFallback: string;
 }
 
 let cached: OcrAiSettings | null = null;
@@ -53,7 +56,7 @@ async function loadSettings(): Promise<OcrAiSettings> {
   const rows = await db
     .select()
     .from(s.appSettings)
-    .where(inArray(s.appSettings.key, [KEY_PROVIDER, KEY_API_KEY, KEY_MODEL]));
+    .where(inArray(s.appSettings.key, [KEY_PROVIDER, KEY_API_KEY, KEY_MODEL, KEY_MODEL_FALLBACK]));
 
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
 
@@ -74,7 +77,10 @@ async function loadSettings(): Promise<OcrAiSettings> {
   const dbModel = byKey.get(KEY_MODEL);
   const model = dbModel && dbModel.trim() !== '' ? dbModel.trim() : OCR_AI_DEFAULT_MODEL;
 
-  return { provider, apiKey, storedApiKey: storedKey, model };
+  const dbModelFallback = byKey.get(KEY_MODEL_FALLBACK);
+  const modelFallback = dbModelFallback ? dbModelFallback.trim() : '';
+
+  return { provider, apiKey, storedApiKey: storedKey, model, modelFallback };
 }
 
 /** Get the current OCR AI settings (cached after the first load). */
@@ -96,6 +102,7 @@ export async function getOcrAiSettingsResponse(): Promise<OcrAiSettingsResponse>
     apiKeySet: !!settings.apiKey,
     apiKeyMasked: maskKey(settings.apiKey),
     model: settings.model,
+    modelFallback: settings.modelFallback,
     models: [...OCR_AI_MODELS],
     defaultModel: OCR_AI_DEFAULT_MODEL,
   };
@@ -114,6 +121,7 @@ export async function saveOcrAiSettings(next: {
   apiKey?: string;
   clearApiKey?: boolean;
   model: string;
+  modelFallback?: string;
 }): Promise<OcrAiSettingsResponse> {
   const current = await getOcrAiSettings();
 
@@ -123,9 +131,12 @@ export async function saveOcrAiSettings(next: {
       ? next.apiKey.trim()
       : current.storedApiKey;
 
+  const finalFallback = next.modelFallback !== undefined ? next.modelFallback.trim() : current.modelFallback;
+
   const rows = [
     { key: KEY_PROVIDER, value: next.provider },
     { key: KEY_MODEL, value: next.model.trim() },
+    { key: KEY_MODEL_FALLBACK, value: finalFallback },
     { key: KEY_API_KEY, value: encryptSecret(finalKey) },
   ];
 

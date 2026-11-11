@@ -61,8 +61,10 @@ export interface OcrAiSettingsResponse {
   apiKeySet: boolean;
   /** Masked preview (last 4 chars) or '' when unset. */
   apiKeyMasked: string;
-  /** The model slug OCR calls. */
+  /** The model slug OCR calls first. */
   model: string;
+  /** Optional second model tried when the primary yields no valid read. '' = none. */
+  modelFallback: string;
   /** Curated model list for the dropdown. */
   models: string[];
   /** The fallback model used when nothing is configured. */
@@ -82,6 +84,16 @@ export const ocrAiSettingsUpdateSchema = z.object({
     .min(1, 'Chọn hoặc nhập model')
     .max(120, 'Tên model quá dài')
     .regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9._:-]+$/i, 'Model phải có dạng vendor/model'),
+  /** Optional second model tried when the primary yields no valid read; '' clears. */
+  modelFallback: z
+    .string()
+    .trim()
+    .max(120, 'Tên model quá dài')
+    .refine(
+      (v) => v === '' || /^[a-z0-9][a-z0-9._-]*\/[a-z0-9._:-]+$/i.test(v),
+      'Model phải có dạng vendor/model',
+    )
+    .optional(),
 });
 export type OcrAiSettingsUpdate = z.infer<typeof ocrAiSettingsUpdateSchema>;
 

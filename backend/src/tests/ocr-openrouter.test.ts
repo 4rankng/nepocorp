@@ -201,6 +201,58 @@ describe('OCR: OpenRouter transport (Claude Haiku 5.5)', () => {
     }
   });
 
+  test('extractContainerAndSeal: SEAL miss on primary → fallback model answers', async () => {
+    let calls = 0;
+    const models: (string | undefined)[] = [];
+    globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+      calls++;
+      const body = JSON.parse(String(init?.body)) as { model?: string };
+      models.push(body.model);
+      // Primary: valid JSON but no seal (the hard-photo flake). Fallback: seal.
+      // The response echoes the requested model — OpenRouter does the same.
+      return res({
+        choices: [{ message: { content: JSON.stringify({ seal_number: calls < 3 ? null : 'VN123456' }) } }],
+        model: body.model,
+      });
+    }) as unknown as typeof globalThis.fetch;
+    try {
+      const r = await extractContainerAndSeal(IMG, 'SEAL', 'image/jpeg', {
+        apiKey: 'test-or-key',
+        model: MODEL,
+        modelFallback: 'google/gemini-2.5-flash',
+      });
+      assert.equal(r.success, true);
+      assert.equal(r.provider, 'openrouter');
+      assert.equal(r.sealNumber, 'VN123456');
+      assert.equal(r.model, 'google/gemini-2.5-flash');
+      assert.equal(calls, 3, '2 attempts on the primary, then the fallback answers on its first try');
+      assert.deepEqual(models, [MODEL, MODEL, 'google/gemini-2.5-flash']);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('extractContainerAndSeal: both models fail → the true upstream error surfaces', async () => {
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls++;
+      return res({ error: 'rate limited' }, 429);
+    }) as unknown as typeof globalThis.fetch;
+    try {
+      const r = await extractContainerAndSeal(IMG, 'SEAL', 'image/jpeg', {
+        apiKey: 'test-or-key',
+        model: MODEL,
+        modelFallback: 'google/gemini-2.5-flash',
+      });
+      assert.equal(r.success, false);
+      assert.equal(r.provider, 'openrouter');
+      assert.equal(r.error, 'HTTP 429');
+      assert.equal(calls, 4, '2 attempts per model in the chain');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   test('extractContainerAndSeal: no key configured → friendly "chưa cấu hình" error', async () => {
     const savedOr = config.openrouterApiKey;
     let calls = 0;
