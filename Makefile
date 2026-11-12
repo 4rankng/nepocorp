@@ -322,6 +322,9 @@ backup:
 	echo "📊 Size: $$(du -h "$$BACKUP_DIR/$$BACKUP_FILE_GZ" | cut -f1)"
 
 ## restore: Restore latest backup from OneDrive to local dev DB
+# The CREATE ROLE `|| true` below is parenthesized: bare mid-&&-chain, it
+# swallows ANY upstream failure (e.g. compose conflict) and runs the restore
+# body with unset vars (`/bin/sh: : No such file or directory`).
 restore:
 	@echo "🐳 Starting DB container..." && \
 	docker compose -f docker-compose.dev.yml up -d --wait db 2>/dev/null || \
@@ -340,7 +343,7 @@ restore:
 	docker exec tingting-db psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'tingting' AND pid <> pg_backend_pid();" && \
 	docker exec tingting-db psql -U postgres -c "DROP DATABASE IF EXISTS tingting;" && \
 	docker exec tingting-db psql -U postgres -c "CREATE DATABASE tingting;" && \
-	docker exec tingting-db psql -U postgres -c "CREATE ROLE nepocorp WITH LOGIN PASSWORD 'nepocorp';" 2>/dev/null || true && \
+	(docker exec tingting-db psql -U postgres -c "CREATE ROLE nepocorp WITH LOGIN PASSWORD 'nepocorp';" 2>/dev/null || true) && \
 	echo "📥 Restoring backup into local database..." && \
 	docker exec -i tingting-db psql -U postgres -d tingting < "$$SQL_FILE" && \
 	rm -f "$$SQL_FILE" && \

@@ -227,6 +227,7 @@
   border: 1px dashed var(--line-2);
   cursor: pointer;
   white-space: nowrap;
+  justify-self: end;
 }
 
 .expense-toolbar__reset:hover {
@@ -894,6 +895,7 @@
     min-width: 0;
     justify-content: center;
   }
+
 
   .expense-list-page .mobile-table-wrap {
     padding: 0;
