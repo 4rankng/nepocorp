@@ -106,7 +106,10 @@ export default function DebtDetailPage() {
 
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>('all');
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() =>
-    isCreatingBillingDocument ? 'debit-note' : 'ledger',
+    // Land on the sổ chi tiết (Sao kê): the user's primary question is "KH đã
+    // trả bao nhiêu, trả thế nào" — lump payments folded per receipt with the
+    // running balance. Per-entry detail stays one click away on Chi tiết công nợ.
+    isCreatingBillingDocument ? 'debit-note' : 'soke',
   );
   const isPeriodDirty = period.mode !== appliedPeriod.mode
     || period.month !== appliedPeriod.month

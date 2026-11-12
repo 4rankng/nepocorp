@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -87,6 +87,42 @@ const periodStatement: CustomerStatement = {
     dateFrom: '2026-08-01',
     dateTo: '2026-08-31',
   },
+  statementLines: [
+    {
+      id: 101,
+      kind: 'transaction',
+      month: '2026-08',
+      postedDate: '2026-08-05',
+      docDate: '2026-08-05',
+      docNo: 'TRIP-0805',
+      description: 'Cước chuyến tháng 8',
+      debit: 12_000_000,
+      credit: 0,
+      balance: 12_000_000,
+      txnType: TxnType.TRIP_REVENUE,
+      tripId: 1,
+    },
+    {
+      id: 102,
+      kind: 'payment',
+      month: '2026-08',
+      postedDate: '2026-08-20',
+      docDate: null,
+      docNo: 'PT-0001',
+      description: 'KH trả 5.000.000 ₫ ngày 20/08',
+      debit: 0,
+      credit: 5_000_000,
+      balance: 7_000_000,
+      txnType: TxnType.PAYMENT_RECEIVED,
+      tripId: null,
+    },
+  ],
+  statementTotals: {
+    openingBalance: 5_000_000,
+    debitTotal: 12_000_000,
+    creditTotal: 5_000_000,
+    closingBalance: 12_000_000,
+  },
 };
 
 function deferred<T>() {
@@ -142,12 +178,19 @@ describe('debt detail period and tab state are stable across reloads (kanban 091
     mount();
     await screen.findByRole('heading', { name: 'Chi tiết & chứng từ công nợ' });
 
-    expect(screen.getByText('Đang tải giao dịch…')).toBeTruthy();
-    expect(screen.queryByText('Không có giao dịch')).toBeNull();
+    // Default tab is the sổ (Sao kê): while the period statement is in flight
+    // it must read as loading — never as an empty sổ.
+    expect(screen.getByText('Đang tải sổ chi tiết…')).toBeTruthy();
+    expect(screen.queryByText('Không có giao dịch trong kỳ')).toBeNull();
     expect(screen.queryByText('0 khoản phát sinh')).toBeNull();
 
     gate.resolve(periodStatement);
     expect(await screen.findByText('1 khoản phát sinh')).toBeTruthy();
+    // The sổ renders its opening row and the month band once loaded.
+    expect(await screen.findByText('Dư đầu kỳ')).toBeTruthy();
+    expect(screen.getByText('Tháng 8/2026')).toBeTruthy();
+    // The per-entry ledger stays one click away and renders its rows.
+    fireEvent.click(screen.getByRole('tab', { name: /Chi tiết công nợ/ }));
     // The note renders twice (reference cell + content cell), so match by list.
     expect((await screen.findAllByText('Cước chuyến tháng 8')).length).toBeGreaterThan(0);
   });
@@ -158,6 +201,9 @@ describe('debt detail period and tab state are stable across reloads (kanban 091
 
     const { container, client } = mount();
     await screen.findByText('1 khoản phát sinh');
+    // The period summary cards live on the Chi tiết công nợ tab — open it so
+    // the refetch-stability assertions exercise their real surface.
+    fireEvent.click(screen.getByRole('tab', { name: /Chi tiết công nợ/ }));
     expect(screen.getByText('5.000.000 ₫')).toBeTruthy();
 
     // A refetch in flight with the data still cached must not blank the
