@@ -54,7 +54,8 @@ export function StatementLedger({ lines, totals, isLoading = false }: StatementL
               <th>TK ĐỐI ỨNG</th>
               <th className="dd-r so-ke-n">PHÁT SINH NỢ</th>
               <th className="dd-r so-ke-c">PHÁT SINH CÓ</th>
-              <th className="dd-r">DƯ CUỐI</th>
+              <th className="dd-r so-ke-n">DƯ NỢ CUỐI</th>
+              <th className="dd-r so-ke-c">DƯ CÓ CUỐI</th>
             </tr>
           </thead>
           <tbody>
@@ -66,12 +67,13 @@ export function StatementLedger({ lines, totals, isLoading = false }: StatementL
               <td />
               <td className="dd-r so-ke-n" />
               <td className="dd-r so-ke-c" />
-              <td className="dd-r so-ke-bal">{formatCurrency(opening)}</td>
+              <td className="dd-r so-ke-bal">{opening > 0 ? formatCurrency(opening) : ''}</td>
+              <td className="dd-r so-ke-bal">{opening < 0 ? formatCurrency(Math.abs(opening)) : ''}</td>
             </tr>
             {groups.map(group => (
               <Fragment key={group.month}>
                 <tr className="so-ke-month">
-                  <td colSpan={8}>{monthLabel(group.month)}</td>
+                  <td colSpan={9}>{monthLabel(group.month)}</td>
                 </tr>
                 {group.lines.map(line => (
                   line.kind === 'payment' ? (
@@ -86,7 +88,8 @@ export function StatementLedger({ lines, totals, isLoading = false }: StatementL
                       <td className="so-ke-acc">{line.counterAccount ?? '—'}</td>
                       <td className="dd-r so-ke-n">{line.debit ? formatCurrency(line.debit) : ''}</td>
                       <td className="dd-r so-ke-c">{line.credit ? formatCurrency(line.credit) : ''}</td>
-                      <td className={`dd-r so-ke-bal${line.balance < 0 ? ' so-ke-bal--advance' : ''}`}>{formatCurrency(line.balance)}</td>
+                      <td className="dd-r so-ke-bal">{line.balance > 0 ? formatCurrency(line.balance) : ''}</td>
+                      <td className="dd-r so-ke-bal so-ke-bal--advance">{line.balance < 0 ? formatCurrency(Math.abs(line.balance)) : ''}</td>
                     </tr>
                   ) : (
                     <tr key={line.id}>
@@ -103,7 +106,8 @@ export function StatementLedger({ lines, totals, isLoading = false }: StatementL
                       <td className="so-ke-acc">{line.counterAccount ?? '—'}</td>
                       <td className="dd-r so-ke-n">{line.debit ? formatCurrency(line.debit) : ''}</td>
                       <td className="dd-r so-ke-c">{line.credit ? formatCurrency(line.credit) : ''}</td>
-                      <td className={`dd-r so-ke-bal${line.balance < 0 ? ' so-ke-bal--advance' : ''}`}>{formatCurrency(line.balance)}</td>
+                      <td className="dd-r so-ke-bal">{line.balance > 0 ? formatCurrency(line.balance) : ''}</td>
+                      <td className="dd-r so-ke-bal so-ke-bal--advance">{line.balance < 0 ? formatCurrency(Math.abs(line.balance)) : ''}</td>
                     </tr>
                   )
                 ))}
@@ -111,7 +115,7 @@ export function StatementLedger({ lines, totals, isLoading = false }: StatementL
             ))}
             {groups.length === 0 && (
               <tr>
-                <td colSpan={8} className="dd-table-empty">
+                <td colSpan={9} className="dd-table-empty">
                   {isLoading ? 'Đang tải sổ chi tiết…' : 'Không có giao dịch trong kỳ'}
                 </td>
               </tr>
@@ -120,13 +124,14 @@ export function StatementLedger({ lines, totals, isLoading = false }: StatementL
           {totals && groups.length > 0 && (
             <tfoot>
               <tr className="so-ke-total">
-                <td colSpan={5}>Tổng phát sinh trong kỳ</td>
+                <td colSpan={6}>Tổng phát sinh trong kỳ</td>
                 <td className="dd-r so-ke-n">{formatCurrency(totals.debitTotal)}</td>
                 <td className="dd-r so-ke-c">{formatCurrency(totals.creditTotal)}</td>
                 <td className="dd-r" />
+                <td className="dd-r" />
               </tr>
               <tr className="so-ke-closing">
-                <td colSpan={5}>
+                <td colSpan={6}>
                   {closingNegative ? (
                     <span className="so-ke-advance-label">
                       <Wallet size={14} aria-hidden />
@@ -138,7 +143,8 @@ export function StatementLedger({ lines, totals, isLoading = false }: StatementL
                 </td>
                 <td className="dd-r so-ke-n" />
                 <td className="dd-r so-ke-c" />
-                <td className={`dd-r so-ke-bal${closingNegative ? ' so-ke-bal--advance' : ' so-ke-bal--debt'}`}>{formatCurrency(closing)}</td>
+                <td className="dd-r so-ke-bal so-ke-bal--debt">{closing > 0 ? formatCurrency(closing) : ''}</td>
+                <td className="dd-r so-ke-bal so-ke-bal--advance">{closing < 0 ? formatCurrency(Math.abs(closing)) : ''}</td>
               </tr>
             </tfoot>
           )}

@@ -201,3 +201,32 @@ describe('buildStatementLines — TK đối ứng (MISA counter account)', () =>
     assert.equal(lines[1].counterAccount, null);
   });
 });
+
+describe('buildStatementLines — diễn giải strips the duplicated trip code', () => {
+  test('a revenue note loses its own trip code — the Số hiệu column already carries it', () => {
+    const rows = [
+      row({ ts: '2026-10-23T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 22_000_000, note: 'Doanh thu chuyến TRP-202610-0057', txnId: 57, tripId: 57, tripCode: 'TRP-202610-0057' }),
+    ];
+    const { lines } = buildStatementLines(rows, 0);
+    assert.equal(lines[0].docNo, 'TRP-202610-0057');
+    assert.equal(lines[0].description, 'Doanh thu chuyến');
+  });
+
+  test('a reversal keeps its (Hoàn tác) marker after the strip', () => {
+    const rows = [
+      row({ ts: '2026-10-23T00:00:00Z', txnType: TxnType.TRIP_REVENUE, credit: 6_480_000, note: 'Doanh thu chuyến TRP-202610-0020 (Hoàn tác)', txnId: 20, tripId: 20, tripCode: 'TRP-202610-0020' }),
+    ];
+    const { lines } = buildStatementLines(rows, 0);
+    assert.equal(lines[0].description, 'Doanh thu chuyến (Hoàn tác)');
+  });
+
+  test('notes without the line code stay untouched', () => {
+    const rows = [
+      row({ ts: '2026-10-24T00:00:00Z', txnType: TxnType.SERVICE_FEE, debit: 500_000, note: 'Phí chi hộ', txnId: 21 }),
+      row({ ts: '2026-10-25T00:00:00Z', txnType: TxnType.ADJUSTMENT, debit: 100_000, note: 'Điều chỉnh theo TRP-202609-0001', tripCode: 'TRP-202610-0057' }),
+    ];
+    const { lines } = buildStatementLines(rows, 0);
+    assert.equal(lines[0].description, 'Phí chi hộ');
+    assert.equal(lines[1].description, 'Điều chỉnh theo TRP-202609-0001', 'a different trip reference survives');
+  });
+});

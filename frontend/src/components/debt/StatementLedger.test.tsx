@@ -118,4 +118,18 @@ describe('StatementLedger (NEPO-46 sổ chi tiết)', () => {
     );
     expect(within(getByTestId('so-ke-payment-row')).getByText('—')).toBeTruthy();
   });
+
+  it('splits the running dư into the Dư nợ / Dư có columns by sign', () => {
+    const lines = [
+      trip(1, '2026-07', '2026-07-05', 10_000_000, 'T1'),
+      payment(2, '2026-10', '2026-10-15', 12_000_000, -2_000_000, 'R9', 2),
+    ];
+    const { getByTestId } = render(
+      <StatementLedger lines={lines} totals={totals(0, 10_000_000, 12_000_000, -2_000_000)} />,
+    );
+
+    const cells = within(getByTestId('so-ke-payment-row')).getAllByRole('cell');
+    expect(cells[7].textContent).toBe('');
+    expect(cells[8].textContent).toBe('2.000.000 ₫');
+  });
 });
