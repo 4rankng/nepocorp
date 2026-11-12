@@ -13,7 +13,7 @@ export type LedgerFilter =
   | typeof TxnType.TRIP_REVENUE
   | typeof TxnType.SERVICE_FEE;
 
-export type WorkspaceTab = 'statement' | 'debit-note' | 'payments' | 'ledger';
+export type WorkspaceTab = 'statement' | 'debit-note' | 'payments' | 'ledger' | 'soke';
 
 export const FILTER_OPTIONS: { key: LedgerFilter; label: string }[] = [
   { key: 'all',              label: 'Tất cả' },

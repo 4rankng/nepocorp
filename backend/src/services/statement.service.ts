@@ -3,7 +3,7 @@ import * as s from '../db/schema';
 import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import type { Writable } from 'stream';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
-import type { AgingBucket, PeriodSummary, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip } from '@tingting/shared';
+import type { AgingBucket, PeriodSummary, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, StatementLine, StatementPeriodTotals } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
@@ -69,6 +69,9 @@ export interface CustomerStatementData {
   agingBuckets: Array<{ range: string; amount: number }>;
   latestActivityDate?: string | null;
   periodSummary?: PeriodSummary;
+  /** NEPO-46 sổ chi tiết lines + tổng kết kỳ (see shared StatementLine). */
+  statementLines: StatementLine[];
+  statementTotals: StatementPeriodTotals;
 }
 
 export interface SupplierStatementData {
@@ -195,6 +198,12 @@ interface StatementExportConfig {
   ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
   agingBuckets: Array<{ range: string; amount: number }>;
+  /** NEPO-46: when present, the detail section renders the sổ chi tiết
+   * layout (month groups + aggregate payments + running balance) instead of
+   * the flat ledger table. Supplier/carrier/fuel exports omit it. */
+  statementLines?: StatementLine[];
+  statementTotals?: StatementPeriodTotals;
+  periodSummary?: PeriodSummary | null;
 }
 
 export function safeFilename(name: string): string {
@@ -436,8 +445,175 @@ export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedge
   return rows.filter((_, index) => !dropped.has(index));
 }
 
+/** VND is integer-only (NEPO money law): round every parsed component. */
+function toVndInt(v: string | number | null | undefined): number {
+  const n = Number(v ?? 0);
+  return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
+/** Ledger timestamps store Indochina wall time at UTC-offset 0 (repo-wide
+ * display convention: toISOString().slice(0, 10) is the posting date). */
+function ledgerDay(ts: Date | string): string {
+  return new Date(ts).toISOString().slice(0, 10);
+}
+
+export interface StatementLinesResult {
+  lines: StatementLine[];
+  totals: StatementPeriodTotals;
+}
+
+/** The MISA payment line text — both call sites (draft creation + fold)
+ * MUST produce the identical format: 'KH trả X ₫ ngày dd/mm/yyyy'. */
+const paymentLineDescription = (debit: number, credit: number, postedDate: string): string =>
+  `KH trả ${(credit - debit).toLocaleString('vi-VN')} ₫ ngày ${postedDate.slice(8, 10)}/${postedDate.slice(5, 7)}/${postedDate.slice(0, 4)}`;
+
+/**
+ * Builds the MISA 'Sổ chi tiết' lines (NEPO-46) from the statement's display
+ * rows (already period-filtered + collapseEditCyclePairs'd) and the period
+ * opening balance.
+ *
+ * Payment folding: one bank receipt = one document. PAYMENT_RECEIVED rows
+ * sharing a receiptId fold into a single aggregate line — 'KH trả X ₫ ngày
+ * dd/mm' — because recordPayment FIFO-splits the received total across trips
+ * at posting time, and the accountant must read the receipt, not the split.
+ * Rows without a receipt (legacy) stand alone. Folding is presentational:
+ * the running balance is opening + Σ(debit − credit) over whatever lines are
+ * on screen, so the sổ always closes at the same dư cuối the period summary
+ * reports, regardless of grouping.
+ *
+ * Money law: every component passes toVndInt (integers in, integers out);
+ * correctness validates by TOTAL — closingBalance must equal opening +
+ * Σnợ − Σcó — never against per-trip component sums, since the balance
+ * legitimately carries non-trip rows (trả trước credits, adjustments) that
+ * trip-level sums never see.
+ */
+export function buildStatementLines(
+  rows: EnrichedLedgerRow[],
+  openingBalance: number,
+  tripDepartureByTripId?: Map<number, string>,
+): StatementLinesResult {
+  const opening = Math.round(openingBalance);
+
+  interface LineDraft {
+    id: number;
+    kind: StatementLine['kind'];
+    timestamp: number;
+    postedDate: string;
+    docDate: string | null;
+    docNo: string | null;
+    description: string;
+    debit: number;
+    credit: number;
+    txnType: TxnType;
+    tripId: number | null;
+    routeName: string | null;
+    containerNumbers: string[];
+    rowCount: number;
+  }
+
+  const drafts = new Map<number, LineDraft>();
+  const receiptToDraftId = new Map<string, number>();
+
+  const ordered = [...rows].sort((a, b) => {
+    const ta = new Date(a.timestamp).getTime();
+    const tb = new Date(b.timestamp).getTime();
+    return ta !== tb ? ta - tb : a.id - b.id;
+  });
+
+  for (const r of ordered) {
+    const debit = toVndInt(r.debit);
+    const credit = toVndInt(r.credit);
+    const postedDate = ledgerDay(r.timestamp);
+    const isPayment = r.txnType === TxnType.PAYMENT_RECEIVED;
+
+    // Fold into an existing same-receipt document — the 2nd..Nth FIFO row of
+    // one bank receipt adds its amount to the aggregate payment line.
+    if (isPayment && r.receiptId) {
+      const existingId = receiptToDraftId.get(r.receiptId);
+      if (existingId !== undefined) {
+        const draft = drafts.get(existingId);
+        if (draft) {
+          draft.debit += debit;
+          draft.credit += credit;
+          draft.rowCount += 1;
+          // The aggregate amount changes with every folded row — the
+          // 'KH trả X ₫ ngày dd/mm' text must track the running receipt
+          // total, not the first FIFO slice.
+          draft.description = paymentLineDescription(draft.debit, draft.credit, draft.postedDate);
+          continue;
+        }
+      }
+    }
+
+    drafts.set(r.id, {
+      id: r.id,
+      kind: isPayment ? 'payment' : 'transaction',
+      timestamp: new Date(r.timestamp).getTime(),
+      postedDate,
+      docDate: isPayment
+        ? postedDate
+        : (r.tripId != null ? tripDepartureByTripId?.get(r.tripId) ?? null : null),
+      docNo: isPayment ? (r.receiptId ?? null) : (r.tripCode ?? null),
+      description: isPayment
+        ? paymentLineDescription(debit, credit, postedDate)
+        : (r.note ?? 'Ghi nhận công nợ'),
+      debit,
+      credit,
+      // Drizzle's pgEnum infers a string union; the values are exactly the
+      // shared TxnType enum members, so this cast is safe.
+      txnType: r.txnType as TxnType,
+      tripId: r.tripId ?? null,
+      routeName: r.routeName ?? null,
+      containerNumbers: r.containerNumbers ?? [],
+      rowCount: 1,
+    });
+    if (isPayment && r.receiptId) receiptToDraftId.set(r.receiptId, r.id);
+  }
+
+  const lines: StatementLine[] = [];
+  let balance = opening;
+  let debitTotal = 0;
+  let creditTotal = 0;
+  const orderedDrafts = [...drafts.values()].sort((a, b) =>
+    a.timestamp !== b.timestamp ? a.timestamp - b.timestamp : a.id - b.id,
+  );
+  for (const d of orderedDrafts) {
+    balance += d.debit - d.credit;
+    debitTotal += d.debit;
+    creditTotal += d.credit;
+    lines.push({
+      id: d.id,
+      kind: d.kind,
+      month: d.postedDate.slice(0, 7),
+      postedDate: d.postedDate,
+      docDate: d.docDate,
+      docNo: d.docNo,
+      description: d.description,
+      debit: d.debit,
+      credit: d.credit,
+      balance,
+      txnType: d.txnType,
+      tripId: d.tripId,
+      ...(d.routeName ? { routeName: d.routeName } : {}),
+      ...(d.containerNumbers.length > 0 ? { containerNumbers: d.containerNumbers } : {}),
+      ...(d.kind === 'payment' ? { rowCount: d.rowCount } : {}),
+    });
+  }
+
+  return {
+    lines,
+    totals: {
+      openingBalance: opening,
+      debitTotal,
+      creditTotal,
+      closingBalance: balance,
+    },
+  };
+}
+
 const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; max-width: 900px; margin: 24px auto; padding: 0 16px; }
   h1 { font-size: 18px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 18px 0 4px; color: #00702f; }
   .meta { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
   .total { font-size: 16px; font-weight: 700; color: #111827; margin: 12px 0; }
   table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12.5px; }
@@ -446,6 +622,14 @@ const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Sego
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .aging { width: auto; margin-top: 8px; }
   .aging td { padding: 4px 12px 4px 0; }
+  .soke th { white-space: nowrap; }
+  .soke td:nth-child(1), .soke td:nth-child(2), .soke td:nth-child(3) { white-space: nowrap; }
+  .soke .soke-month td { background: #e6f4ea; color: #00702f; font-weight: 700; }
+  .soke .soke-payment td { background: #f0fdf4; }
+  .soke .soke-opening td { background: #f9fafb; }
+  .soke tfoot td { background: #f3f4f6; border-top: 2px solid #00702f; }
+  .soke-neg { color: #dc2626; }
+  .soke-pos { color: #10b981; }
   @media print { body { margin: 0; } }`;
 
 export async function getStatementData(customerId: number, dateFrom?: string, dateTo?: string): Promise<CustomerStatementData | null> {
@@ -582,12 +766,13 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     }
   }
 
-  const tripDetailsMap = new Map<number, { tripCode: string | null; routeName: string | null; containerNumbers: string[] }>();
+  const tripDetailsMap = new Map<number, { tripCode: string | null; routeName: string | null; containerNumbers: string[]; departureDate: string | null }>();
   if (tripIds.length > 0) {
     const tripRows = await db.select({
       tripId: s.trips.id,
       tripCode: s.trips.tripCode,
       routeName: s.routes.name,
+      departureDate: s.trips.departureDate,
     }).from(s.trips)
       .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
       .where(inArray(s.trips.id, tripIds));
@@ -612,6 +797,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
         tripCode: t.tripCode,
         routeName: t.routeName,
         containerNumbers: containersByTrip.get(t.tripId) ?? [],
+        departureDate: t.departureDate ?? null,
       });
     }
   }
@@ -654,7 +840,6 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     })),
     now,
   );
-
   const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
 
   const revenueEntries = enrichedLedgerRows.filter((r) => r.txnType === TxnType.TRIP_REVENUE);
@@ -696,9 +881,23 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   const unpaidTrips = Array.from(tripOutstanding.values())
     .sort((a, b) => a.date.localeCompare(b.date));
 
+  // NEPO-46 sổ chi tiết: build from the same collapsed display rows the
+  // response renders, seeded by the period opening balance (0 for the
+  // unscoped whole-ledger statement — the book starts at zero).
+  const displayRows = collapseEditCyclePairs(enrichedLedgerRows);
+  const tripDepartureByTripId = new Map<number, string>();
+  for (const [tripId, details] of tripDetailsMap) {
+    if (details.departureDate) tripDepartureByTripId.set(tripId, details.departureDate);
+  }
+  const { lines: statementLines, totals: statementTotals } = buildStatementLines(
+    displayRows,
+    periodSummary?.openingBalance ?? 0,
+    tripDepartureByTripId,
+  );
+
   return {
     customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY', isCarrier: customer.isCarrier },
-    ledgerRows: collapseEditCyclePairs(enrichedLedgerRows),
+    ledgerRows: displayRows,
     totalOutstanding,
     currentTotalOutstanding,
     agingAsOfPeriodEnd,
@@ -711,13 +910,15 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
       { range: 'Trên 90 ngày', amount: aging.over90 },
     ],
     ...(periodSummary ? { periodSummary } : null),
+    statementLines,
+    statementTotals,
   };
 }
 
 export async function exportStatementXlsx(data: CustomerStatementData, dateStr: string, writable: import('stream').Writable): Promise<void> {
   return buildStatementXlsx({
-    heading: 'Sao kê công nợ',
-    sheetName: 'Sao kê công nợ',
+    heading: 'Sổ chi tiết công nợ',
+    sheetName: 'Sổ chi tiết công nợ',
     entityLabel: 'Khách hàng',
     entityName: data.customer.name,
     contactLines: [`Liên hệ: ${data.customer.contactInfo || '—'}`],
@@ -725,12 +926,15 @@ export async function exportStatementXlsx(data: CustomerStatementData, dateStr: 
     ledgerRows: data.ledgerRows,
     totalOutstanding: data.totalOutstanding,
     agingBuckets: data.agingBuckets,
+    statementLines: data.statementLines,
+    statementTotals: data.statementTotals,
+    periodSummary: data.periodSummary ?? null,
   }, dateStr, writable);
 }
 
 export function exportStatementHtml(data: CustomerStatementData, dateStr: string): string {
   return buildStatementHtml({
-    heading: 'Sao kê công nợ',
+    heading: 'Sổ chi tiết công nợ',
     entityLabel: 'Khách hàng',
     entityName: data.customer.name,
     contactLines: [`Liên hệ: ${data.customer.contactInfo || '—'}`],
@@ -738,6 +942,9 @@ export function exportStatementHtml(data: CustomerStatementData, dateStr: string
     ledgerRows: data.ledgerRows,
     totalOutstanding: data.totalOutstanding,
     agingBuckets: data.agingBuckets,
+    statementLines: data.statementLines,
+    statementTotals: data.statementTotals,
+    periodSummary: data.periodSummary ?? null,
   }, dateStr);
 }
 
@@ -1727,6 +1934,124 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
   // Space
   currentOffset++;
 
+  // NEPO-46: customer statements carry sổ chi tiết lines — render the
+  // MISA-style book (month groups, aggregate payment documents, running
+  // balance). Other statement kinds keep the flat ledger table.
+  if (config.statementLines && config.statementTotals) {
+    const so = config.statementLines;
+    const totals = config.statementTotals;
+
+    const transHeaderRow = currentOffset;
+    sheet.mergeCells(`A${transHeaderRow}:G${transHeaderRow}`);
+    const transHeaderCell = sheet.getCell(`A${transHeaderRow}`);
+    transHeaderCell.value = 'SỔ CHI TIẾT CÔNG NỢ';
+    transHeaderCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    transHeaderCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00702F' } };
+    transHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+    sheet.getRow(transHeaderRow).height = 24;
+    currentOffset++;
+
+    const soHeaders = ['Ngày ghi sổ', 'Số hiệu', 'Ngày CT', 'Diễn giải', 'Phát sinh Nợ (VND)', 'Phát sinh Có (VND)', 'Dư cuối (VND)'];
+    soHeaders.forEach((h, i) => {
+      const cell = sheet.getCell(currentOffset, i + 1);
+      cell.value = h;
+      cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+      cell.alignment = { vertical: 'middle', horizontal: i >= 4 ? 'right' : (i <= 2 ? 'center' : 'left') };
+      cell.border = borderStyle;
+    });
+    sheet.getRow(currentOffset).height = 22;
+    currentOffset++;
+
+    const soStyleRow = (r: number, cells: Array<{ col: number; value: string | number | null; numFmt?: boolean; align?: 'left' | 'right' | 'center'; bold?: boolean; color?: string }>, fill?: string) => {
+      cells.forEach(({ col, value, numFmt, align, bold, color }) => {
+        const cell = sheet.getCell(r, col);
+        cell.value = value;
+        if (numFmt) cell.numFmt = '#,##0';
+        cell.alignment = { vertical: 'middle', horizontal: align ?? 'left' };
+        cell.font = { name: 'Segoe UI', size: 10, bold: bold ?? false, color: { argb: color ?? 'FF1F2937' } };
+        cell.border = borderStyle;
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill ?? 'FFFFFFFF' } };
+      });
+      sheet.getRow(r).height = 20;
+    };
+
+    // Dư đầu kỳ
+    soStyleRow(currentOffset, [
+      { col: 1, value: '', align: 'center' },
+      { col: 2, value: '', align: 'center' },
+      { col: 3, value: '', align: 'center' },
+      { col: 4, value: 'Dư đầu kỳ', bold: true },
+      { col: 5, value: '', numFmt: true, align: 'right' },
+      { col: 6, value: '', numFmt: true, align: 'right' },
+      { col: 7, value: totals.openingBalance, numFmt: true, align: 'right', bold: true, color: totals.openingBalance > 0 ? 'FFDC2626' : (totals.openingBalance < 0 ? 'FF10B981' : 'FF1F2937') },
+    ], 'FFE6F4EA');
+    currentOffset++;
+
+    let currentMonth = '';
+    so.forEach((line, i) => {
+      if (line.month !== currentMonth) {
+        currentMonth = line.month;
+        const mm = currentMonth.slice(5, 7);
+        const yyyy = currentMonth.slice(0, 4);
+        const monthRow = currentOffset;
+        sheet.mergeCells(`A${monthRow}:G${monthRow}`);
+        const monthCell = sheet.getCell(`A${monthRow}`);
+        monthCell.value = `Tháng ${Number(mm)}/${yyyy}`;
+        monthCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF00702F' } };
+        monthCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4EA' } };
+        monthCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+        sheet.getRow(monthRow).height = 20;
+        currentOffset++;
+      }
+      const isPayment = line.kind === 'payment';
+      soStyleRow(currentOffset, [
+        { col: 1, value: line.postedDate, align: 'center' },
+        { col: 2, value: line.docNo ?? '—', align: 'center' },
+        { col: 3, value: line.docDate ?? line.postedDate, align: 'center' },
+        { col: 4, value: isPayment ? line.description : `${line.description}${line.routeName ? ` — ${line.routeName}` : ''}${line.containerNumbers?.length ? ` (${line.containerNumbers.join(', ')})` : ''}` },
+        { col: 5, value: line.debit || null, numFmt: true, align: 'right' },
+        { col: 6, value: line.credit || null, numFmt: true, align: 'right' },
+        { col: 7, value: line.balance, numFmt: true, align: 'right', bold: true, color: line.balance > 0 ? 'FFDC2626' : (line.balance < 0 ? 'FF10B981' : 'FF1F2937') },
+      ], isPayment ? 'FFF0FDF4' : (i % 2 === 0 ? 'FFFFFFFF' : 'FFF9FBF9'));
+      currentOffset++;
+    });
+
+    // Tổng kết kỳ
+    soStyleRow(currentOffset, [
+      { col: 1, value: '', align: 'center' },
+      { col: 2, value: '', align: 'center' },
+      { col: 3, value: '', align: 'center' },
+      { col: 4, value: 'TỔNG PHÁT SINH TRONG KỲ', bold: true },
+      { col: 5, value: totals.debitTotal, numFmt: true, align: 'right', bold: true },
+      { col: 6, value: totals.creditTotal, numFmt: true, align: 'right', bold: true },
+      { col: 7, value: '', numFmt: true, align: 'right' },
+    ], 'FFF3F4F6');
+    currentOffset++;
+    soStyleRow(currentOffset, [
+      { col: 1, value: '', align: 'center' },
+      { col: 2, value: '', align: 'center' },
+      { col: 3, value: '', align: 'center' },
+      { col: 4, value: totals.closingBalance < 0 ? `DƯ CUỐI KỲ — KHÁCH ĐÃ TRẢ TRƯỚC ${Math.abs(totals.closingBalance).toLocaleString('vi-VN')} ₫` : 'DƯ CUỐI KỲ', bold: true, color: totals.closingBalance < 0 ? 'FF10B981' : 'FFDC2626' },
+      { col: 5, value: '', numFmt: true, align: 'right' },
+      { col: 6, value: '', numFmt: true, align: 'right' },
+      { col: 7, value: totals.closingBalance, numFmt: true, align: 'right', bold: true, color: totals.closingBalance > 0 ? 'FFDC2626' : (totals.closingBalance < 0 ? 'FF10B981' : 'FF1F2937') },
+    ], 'FFF3F4F6');
+
+    // Column widths for the sổ layout
+    sheet.getColumn(1).width = 13;
+    sheet.getColumn(2).width = 17;
+    sheet.getColumn(3).width = 12;
+    sheet.getColumn(4).width = 52;
+    sheet.getColumn(5).width = 17;
+    sheet.getColumn(6).width = 17;
+    sheet.getColumn(7).width = 18;
+    sheet.getColumn(8).width = 4;
+
+    await workbook.xlsx.write(writable);
+    return;
+  }
+
   // Transaction Detail Header (Row 13+)
   const transHeaderRow = currentOffset;
   sheet.mergeCells(`A${transHeaderRow}:H${transHeaderRow}`);
@@ -1828,7 +2153,14 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
 }
 
 function buildStatementHtml(config: StatementExportConfig, dateStr: string): string {
-  const rows = config.ledgerRows.map((row) => {
+  // NEPO-46: when sổ chi tiết lines are present, the detail table renders the
+  // MISA book layout (dư đầu kỳ, month groups, aggregate payment rows,
+  // running balance, tổng kết kỳ) instead of the flat ledger slice.
+  const detailTable = config.statementLines && config.statementTotals
+    ? buildSoKeDetailHtml(config.statementLines, config.statementTotals)
+    : `<table>
+  <thead><tr><th>Ngày</th><th>Tuyến</th><th>Số Cont</th><th>Loại GD</th><th class="num">Nợ</th><th class="num">Có</th><th class="num">Số dư</th><th>Ghi chú</th></tr></thead>
+  <tbody>${config.ledgerRows.map((row) => {
     const debit = parseFloat(row.debit || '0');
     const credit = parseFloat(row.credit || '0');
     const balance = parseFloat(row.balance || '0');
@@ -1847,7 +2179,8 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
       <td class="num">${balance.toLocaleString('vi-VN')}</td>
       <td>${escapeHtml(row.note || '')}</td>
     </tr>`;
-  }).join('');
+  }).join('')}</tbody>
+</table>`;
 
   const agingRows = config.agingBuckets.map(b =>
     `<tr><td>${b.range}</td><td class="num">${b.amount.toLocaleString('vi-VN')} ₫</td></tr>`
@@ -1871,11 +2204,52 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
 </div>
 <div class="total">Tổng nợ: ${config.totalOutstanding.toLocaleString('vi-VN')} ₫</div>
 <table class="aging">${agingRows}</table>
-<table>
-  <thead><tr><th>Ngày</th><th>Tuyến</th><th>Số Cont</th><th>Loại GD</th><th class="num">Nợ</th><th class="num">Có</th><th class="num">Số dư</th><th>Ghi chú</th></tr></thead>
-  <tbody>${rows}</tbody>
-</table>
+${detailTable}
 </body></html>`;
+}
+
+function buildSoKeDetailHtml(lines: StatementLine[], totals: StatementPeriodTotals): string {
+  const monthLabel = (month: string) => `Tháng ${Number(month.slice(5, 7))}/${month.slice(0, 4)}`;
+  const body: string[] = [];
+
+  body.push(`<tr class="soke-opening"><td></td><td></td><td></td><td><strong>Dư đầu kỳ</strong></td><td class="num"></td><td class="num"></td><td class="num"><strong>${totals.openingBalance.toLocaleString('vi-VN')}</strong></td></tr>`);
+
+  let currentMonth = '';
+  for (const line of lines) {
+    if (line.month !== currentMonth) {
+      currentMonth = line.month;
+      body.push(`<tr class="soke-month"><td colspan="7">${escapeHtml(monthLabel(line.month))}</td></tr>`);
+    }
+    const isPayment = line.kind === 'payment';
+    const detail = isPayment
+      ? line.description
+      : `${line.description}${line.routeName ? ` — ${escapeHtml(line.routeName)}` : ''}${line.containerNumbers?.length ? ` (${escapeHtml(line.containerNumbers.join(', '))})` : ''}`;
+    const balColor = line.balance > 0 ? 'soke-neg' : (line.balance < 0 ? 'soke-pos' : '');
+    body.push(`<tr class="${isPayment ? 'soke-payment' : ''}">
+      <td>${line.postedDate}</td>
+      <td>${escapeHtml(line.docNo ?? '—')}</td>
+      <td>${line.docDate ?? line.postedDate}</td>
+      <td>${isPayment ? `<strong>${escapeHtml(line.description)}</strong>` : escapeHtml(detail)}</td>
+      <td class="num">${line.debit ? line.debit.toLocaleString('vi-VN') : ''}</td>
+      <td class="num">${line.credit ? line.credit.toLocaleString('vi-VN') : ''}</td>
+      <td class="num ${balColor}"><strong>${line.balance.toLocaleString('vi-VN')}</strong></td>
+    </tr>`);
+  }
+
+  const closingLabel = totals.closingBalance < 0
+    ? `DƯ CUỐI KỲ — KHÁCH ĐÃ TRẢ TRƯỚC ${Math.abs(totals.closingBalance).toLocaleString('vi-VN')} ₫`
+    : 'DƯ CUỐI KỲ';
+  const closingColor = totals.closingBalance > 0 ? 'soke-neg' : (totals.closingBalance < 0 ? 'soke-pos' : '');
+
+  return `<h2>Sổ chi tiết công nợ</h2>
+<table class="soke">
+  <thead><tr><th>Ngày ghi sổ</th><th>Số hiệu</th><th>Ngày CT</th><th>Diễn giải</th><th class="num">Phát sinh Nợ</th><th class="num">Phát sinh Có</th><th class="num">Dư cuối</th></tr></thead>
+  <tbody>${body.join('')}</tbody>
+  <tfoot>
+    <tr><td colspan="4"><strong>TỔNG PHÁT SINH TRONG KỲ</strong></td><td class="num"><strong>${totals.debitTotal.toLocaleString('vi-VN')}</strong></td><td class="num"><strong>${totals.creditTotal.toLocaleString('vi-VN')}</strong></td><td class="num"></td></tr>
+    <tr><td colspan="4" class="${closingColor}"><strong>${closingLabel}</strong></td><td class="num"></td><td class="num"></td><td class="num ${closingColor}"><strong>${totals.closingBalance.toLocaleString('vi-VN')}</strong></td></tr>
+  </tfoot>
+</table>`;
 }
 
 // escapeHtml imported from lib/format

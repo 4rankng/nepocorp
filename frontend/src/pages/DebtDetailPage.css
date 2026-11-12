@@ -1928,3 +1928,61 @@
   .dd-filters::-webkit-scrollbar { display: none; }
   .dd-aging-grid { grid-template-columns: 1fr; gap: 10px; }
 } /* end 640px */
+
+/* ─── NEPO-46: Sổ chi tiết công nợ (Sao kê tab) ───────────────────────────
+   MISA-style book: dư đầu kỳ row, month group bands, aggregate payment rows
+   (KH trả X ₫ ngày dd/mm), running dư cuối per line, tổng kết kỳ footer. */
+.so-ke-table { min-width: 860px; }
+.so-ke-table thead th.so-ke-n { color: var(--danger); }
+.so-ke-table thead th.so-ke-c { color: var(--accent-2); }
+.so-ke-table .so-ke-n { font-variant-numeric: tabular-nums; }
+.so-ke-table .so-ke-c { font-variant-numeric: tabular-nums; }
+.so-ke-table td.so-ke-bal,
+.so-ke-table tfoot td.so-ke-bal { font-variant-numeric: tabular-nums; font-weight: 700; }
+.so-ke-table tr.so-ke-opening td {
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.so-ke-table tr.so-ke-month td {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--accent-2);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+}
+.so-ke-table tr.so-ke-payment td { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.so-ke-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  vertical-align: 1px;
+}
+.so-ke-table .so-ke-desc { display: block; }
+.so-ke-table .so-ke-route,
+.so-ke-table .so-ke-cont {
+  display: block;
+  color: var(--ink-3);
+  font-size: var(--fs-xs);
+}
+.so-ke-bal--advance { color: var(--accent-2) !important; }
+.so-ke-bal--debt { color: var(--danger); }
+.so-ke-table tfoot tr.so-ke-total td,
+.so-ke-table tfoot tr.so-ke-closing td {
+  background: var(--surface-2);
+  font-weight: 700;
+  border-top: 2px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+.so-ke-advance-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-2);
+}
