@@ -337,18 +337,19 @@ describe('US-007 statement XLSX labels SERVICE_FEE as "Phí chi hộ"', () => {
     await wb.xlsx.load(buf as unknown as ArrayBuffer);
     const ws = wb.worksheets[0];
 
-    // Scan every cell for the literal label. The XLSX builder writes
-    // `config.txnLabels[row.txnType]` into the type column; if the map missed
-    // SERVICE_FEE it would fall back to 'Khác'. We must NOT see 'Khác' on the
-    // fee's row and we MUST see 'Phí chi hộ' somewhere in the sheet.
+    // Scan every cell for the label. NEPO-46 moved the customer statement XLSX
+    // to the sổ chi tiết layout — the type no longer owns a dedicated column
+    // and travels inside the diễn giải text instead. The contract stays: a
+    // SERVICE_FEE row must remain recognizable as chi hộ somewhere in the
+    // sheet, and no row may fall back to the 'Khác' default.
     const labels: string[] = [];
     ws.eachRow((row) => {
       row.eachCell((cell) => {
         if (typeof cell.value === 'string') labels.push(cell.value);
       });
     });
-    assert.ok(labels.includes('Phí chi hộ'),
-      'XLSX contains the "Phí chi hộ" label');
+    assert.ok(labels.some(l => l.includes('Phí chi hộ')),
+      'XLSX carries the "Phí chi hộ" label (diễn giải column)');
     assert.ok(!labels.includes('Khác'),
       'no SERVICE_FEE row fell back to the "Khác" default');
 

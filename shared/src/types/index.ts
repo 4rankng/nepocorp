@@ -1262,6 +1262,52 @@ export interface UnpaidTrip {
   note: string;
 }
 
+/**
+ * One line of the customer 'Sổ chi tiết công nợ' (NEPO-46, MISA-style
+ * 'Sổ chi tiết thanh toán với người mua'): ngày ghi sổ | số hiệu | ngày
+ * chứng từ | diễn giải | phát sinh nợ | phát sinh có | dư cuối cộng dồn.
+ *
+ * A PAYMENT_RECEIVED bank receipt is ONE line even though the ledger stores
+ * it as several per-trip FIFO rows — the accountant must read 'KH trả X ₫
+ * ngày dd/mm' as a single aggregate document, not per-trip allocations.
+ */
+export interface StatementLine {
+  /** Representative ledger row id (first row of a grouped payment). */
+  id: number;
+  /** 'payment' lines carry the THÀNH TOÁN badge; 'transaction' = chuyến / chi hộ / điều chỉnh. */
+  kind: 'transaction' | 'payment';
+  /** 'YYYY-MM' posted-month group key. */
+  month: string;
+  /** Ngày ghi sổ (yyyy-mm-dd) — ledger posting date. */
+  postedDate: string;
+  /** Ngày chứng từ (yyyy-mm-dd) — trip departure date; null when the line has no trip document. */
+  docDate: string | null;
+  /** Số hiệu chứng từ — trip code, or payment receipt id. */
+  docNo: string | null;
+  /** Diễn giải — payment lines read 'KH trả X ₫ ngày dd/mm'. */
+  description: string;
+  /** Phát sinh nợ — integer VND. */
+  debit: number;
+  /** Phát sinh có — integer VND. */
+  credit: number;
+  /** Dư cuối cộng dồn sau dòng này — integer VND; negative = khách trả trước. */
+  balance: number;
+  txnType: TxnType;
+  tripId: number | null;
+  routeName?: string | null;
+  containerNumbers?: string[];
+  /** Payment lines only: ledger rows folded into this aggregate document. */
+  rowCount?: number;
+}
+
+/** Tổng kết kỳ derived from the displayed sổ chi tiết lines (integer VND). */
+export interface StatementPeriodTotals {
+  openingBalance: number;
+  debitTotal: number;
+  creditTotal: number;
+  closingBalance: number;
+}
+
 export interface CustomerStatement {
   customer: Pick<Customer, 'id' | 'name' | 'contactInfo' | 'isCarrier'> & { debitNoteMode?: string | null };
   ledgerRows: LedgerEntry[];
@@ -1276,6 +1322,17 @@ export interface CustomerStatement {
   currentTotalOutstanding?: number;
   /** See {@link SupplierStatement.agingAsOfPeriodEnd}. */
   agingAsOfPeriodEnd?: AgingBucket[] | null;
+  /**
+   * MISA sổ chi tiết lines (NEPO-46): chronological display documents — trips
+   * + chi hộ as posted, payment receipts folded into one aggregate line —
+   * with a running balance seeded from the period opening. Built from the
+   * collapseEditCyclePairs'd rows the statement renders, so totals may differ
+   * from periodSummary's gross debit/credit (edit-cycle pairs are net-0) while
+   * the closing balance stays identical.
+   */
+  statementLines?: StatementLine[];
+  /** Tổng kết kỳ over statementLines (opening / Σ nợ / Σ có / dư cuối). */
+  statementTotals?: StatementPeriodTotals;
 }
 
 export interface DebtOffset {

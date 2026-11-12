@@ -25,6 +25,7 @@ import { PeriodFilter } from '../components/debt/PeriodFilter';
 import { resolvePeriodRange, initialPeriodState, applyModeSwitch, periodFromLatestActivity, type PeriodState } from '../components/debt/periodFilterRange';
 import { buildStatementExportUrl, statementExportFilename } from '../lib/statementExport';
 import { PeriodSummaryCards } from '../components/debt/PeriodSummaryCards';
+import { StatementLedger } from '../components/debt/StatementLedger';
 import { matchLinkedSupplierStatement } from './linked-supplier-statement';
 import { DebtDetailHeader } from '../features/debt/debtHeader';
 import { DebtAccountStrip, DebtAgingSummary } from '../features/debt/debtSummary';
@@ -351,6 +352,7 @@ export default function DebtDetailPage() {
     // transactions and then jumping to the real count is the tab flicker QA
     // logged (kanban 091026235510).
     { key: 'ledger', label: 'Chi tiết công nợ', meta: statement ? `${statement.ledgerRows.length} khoản phát sinh` : 'Đang tải…' },
+    { key: 'soke', label: 'Sao kê', meta: statement?.statementTotals ? 'Sổ chi tiết theo kỳ' : 'Đang tải…' },
     { key: 'payments', label: 'Thanh toán', meta: hasDebt ? `${unpaidTrips.length} chuyến chưa thu` : 'Không còn nợ' },
     { key: 'statement', label: 'Bảng kê', meta: 'Lập chứng từ thanh toán' },
     { key: 'debit-note', label: 'Giấy báo nợ', meta: 'Nhắc nợ theo mẫu' },
@@ -675,6 +677,40 @@ export default function DebtDetailPage() {
               onOpenCreate={() => navigate(billingCreatePath)}
               onBuilderClose={() => navigate(detailPath, { replace: true })}
             />
+          )}
+
+          {workspaceTab === 'soke' && (
+            <section className="dd-ledger so-ke-section" aria-label="Sao kê công nợ theo kỳ">
+              <div className="dd-ledger-head dd-ledger-head--workspace">
+                <div className="dd-ledger-heading">
+                  <h2>Sổ chi tiết công nợ</h2>
+                  <p>Dư đầu kỳ, phát sinh theo tháng (chuyến + chi hộ), khoản khách trả gộp và dư cuối cộng dồn từng dòng.</p>
+                </div>
+                <span className="dd-cnt">{statement?.statementLines?.length ?? 0} dòng sổ</span>
+              </div>
+
+              {/* Same period state as the ledger tab — switching tabs never
+                  loses the chosen kỳ, and the sổ always mirrors the filter. */}
+              <PeriodFilter
+                mode={period.mode}
+                onModeChange={(m) => touchPeriod(applyModeSwitch(period, m))}
+                month={period.month}
+                year={period.year}
+                onMonthYearChange={({ month, year }) => touchPeriod({ ...period, month, year })}
+                dateFrom={period.dateFrom}
+                dateTo={period.dateTo}
+                onRangeChange={(next) => touchPeriod({ ...period, ...next })}
+                onApply={() => setAppliedOverride(period)}
+                isApplying={isStatementFetching}
+                isApplyDisabled={!isPeriodDirty || isStatementFetching}
+              />
+
+              <StatementLedger
+                lines={statement?.statementLines ?? []}
+                totals={statement?.statementTotals}
+                isLoading={isStatementFetching && !statement}
+              />
+            </section>
           )}
 
           {workspaceTab === 'payments' && (
