@@ -13,6 +13,12 @@
  * so a future patch that drops the grid (or adds a background to the pair)
  * will be rejected. jsdom cannot run layout, so a true rendering check lives
  * in the puppeteer screenshot pass before commit.
+ *
+ * Scope note (2026-11-12, post merge 5544c5e8): the grid rebuild survives only
+ * on ForwarderTripsPage. The expense page kept main's NEPO-24 toolbar redesign
+ * (single-row toolbar + popover/sheet filters), which replaced the multi-row
+ * filter bar this card targeted; and fwd date inputs now render through the
+ * shared DateInput (kanban 101026101520), so no page-specific input css exists.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -21,7 +27,6 @@ import { describe, expect, it } from 'vitest';
 
 const PAGES_DIR = dirname(fileURLToPath(import.meta.url));
 const fwdCss = readFileSync(resolve(PAGES_DIR, 'ForwarderTripsPage.css'), 'utf8');
-const expCss = readFileSync(resolve(PAGES_DIR, 'ExpenseListPage.css'), 'utf8');
 
 describe('filter-bar grid rebuild (kanban 20260925_8)', () => {
   describe('ForwarderTripsPage filter', () => {
@@ -52,11 +57,14 @@ describe('filter-bar grid rebuild (kanban 20260925_8)', () => {
       expect(fwdCss).toMatch(/@media\s*\(max-width:\s*767px\)/);
     });
 
-    it('pair input retains control-h token (height consistency)', () => {
+    it('page-specific date input css, if re-added, keeps the control-h token', () => {
+      // Since kanban 101026101520 the date fields render through the shared
+      // DateInput and this page defines no input css at all. If a future patch
+      // reintroduces a page-specific override, it must keep height coherence.
       const input = fwdCss.match(/\.fwd-trip-filters__date\s+input\s*\{[^}]*\}/);
-      expect(input, '.fwd-trip-filters__date input block missing').toBeTruthy();
-      expect(input![0]).toMatch(/height:\s*var\(--control-h\)/);
-      expect(input![0]).toMatch(/min-height:\s*var\(--control-h\)/);
+      if (!input) return;
+      expect(input[0]).toMatch(/height:\s*var\(--control-h\)/);
+      expect(input[0]).toMatch(/min-height:\s*var\(--control-h\)/);
     });
 
     it('search cell has min-width: 0 so the grid can shrink it under pressure', () => {
@@ -66,44 +74,17 @@ describe('filter-bar grid rebuild (kanban 20260925_8)', () => {
     });
   });
 
-  describe('ExpenseListPage filter', () => {
-    it('uses display: grid on the filter bar (not flex)', () => {
-      const filterBar = expCss.match(/\.expense-filter-bar\s*\{[^}]*\}/);
-      expect(filterBar, '.expense-filter-bar block missing').toBeTruthy();
-      expect(filterBar![0]).toMatch(/display:\s*grid/);
-    });
-
-    it('date pair wrapper is transparent and 2-col internally', () => {
-      const pair = expCss.match(/\.expense-filter-bar__pair\s*\{[^}]*\}/);
-      expect(pair, '.expense-filter-bar__pair block missing').toBeTruthy();
-      expect(pair![0]).toMatch(/display:\s*grid/);
-      expect(pair![0]).toMatch(/grid-template-columns:\s*1fr\s+1fr/);
-      expect(pair![0]).toMatch(/background:\s*transparent/);
-      expect(pair![0]).toMatch(/border:\s*0/);
-    });
-
-    it('reset button keeps control-h height (no chrome-jacking the row)', () => {
-      const reset = expCss.match(/\.expense-filter-bar__reset\s*\{[^}]*\}/);
-      expect(reset, '.expense-filter-bar__reset block missing').toBeTruthy();
-      expect(reset![0]).toMatch(/min-height:\s*var\(--control-h\)/);
-    });
-
-    it('declares a 1-col stack at <768 (kanban 20260925_8)', () => {
-      const mobileMatch = expCss.match(
-        /@media\s*\(max-width:\s*767px\)\s*\{[\s\S]*?\.expense-list-page\s+\.expense-filter-bar\s*\{[^}]*\}/
-      );
-      expect(mobileMatch, 'no <768 @media touching .expense-filter-bar').toBeTruthy();
-      expect(mobileMatch![0]).toMatch(/grid-template-columns:\s*1fr/);
-    });
-  });
+  // ExpenseListPage assertions removed 2026-11-12: main's NEPO-24 toolbar
+  // redesign (single-row toolbar + popover/sheet filters, commit 778b81e0)
+  // replaced the multi-row .expense-filter-bar this card rebuilt. The grid
+  // invariants apply to ForwarderTripsPage only.
 
   describe('shared invariant: pair wrappers cannot paint chrome', () => {
     // CHIEF's evidence showed a white panel floating off the filter row.
-    // Both pages' pair wrappers MUST be background- and border-free so the
+    // The pair wrapper MUST be background- and border-free so the
     // pair blends into the filter bar at every viewport.
     for (const [label, selector, css] of [
       ['fwd-trip-filters__dates', '.fwd-trip-filters__dates', fwdCss],
-      ['expense-filter-bar__pair', '.expense-filter-bar__pair', expCss],
     ] as const) {
       it(`${label} has no background-color, no 1px border, no border-radius`, () => {
         const m = css.match(new RegExp(`\\${selector}\\s*\\{[^}]*\\}`));
