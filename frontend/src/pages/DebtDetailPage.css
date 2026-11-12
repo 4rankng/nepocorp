@@ -1932,9 +1932,10 @@
 /* ─── NEPO-46: Sổ chi tiết công nợ (Sao kê tab) ───────────────────────────
    MISA-style book: dư đầu kỳ row, month group bands, aggregate payment rows
    (KH trả X ₫ ngày dd/mm), running dư cuối per line, tổng kết kỳ footer. */
-.so-ke-table { min-width: 860px; }
+.so-ke-table { min-width: 920px; }
 .so-ke-table thead th.so-ke-n { color: var(--danger); }
 .so-ke-table thead th.so-ke-c { color: var(--accent-2); }
+.so-ke-table td.so-ke-tk { white-space: nowrap; font-size: 12px; color: var(--ink-3); }
 .so-ke-table .so-ke-n { font-variant-numeric: tabular-nums; }
 .so-ke-table .so-ke-c { font-variant-numeric: tabular-nums; }
 .so-ke-table td.so-ke-bal,

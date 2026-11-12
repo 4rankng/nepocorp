@@ -1294,6 +1294,13 @@ export interface StatementLine {
   balance: number;
   txnType: TxnType;
   tripId: number | null;
+  /**
+   * TK ĐỐI ỨNG (NEPO-47, MISA sample column) — contra account code(s) for the
+   * line's posting: '1121' for bank-receipt payments, '5111, 33311' for
+   * revenue + VAT lines. Null = the posting has no fixed account (bespoke
+   * adjustments) — the cell renders blank, no code is invented.
+   */
+  contraAccount?: string | null;
   routeName?: string | null;
   containerNumbers?: string[];
   /** Payment lines only: ledger rows folded into this aggregate document. */

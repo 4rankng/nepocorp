@@ -24,6 +24,7 @@ const trip = (id: number, month: string, posted: string, debit: number, docNo: s
   balance: debit,
   txnType: TxnType.TRIP_REVENUE,
   tripId: id,
+  contraAccount: '5111, 33311',
 });
 
 const payment = (id: number, month: string, posted: string, credit: number, balance: number, docNo = 'R1', rowCount = 2): StatementLine => ({
@@ -39,6 +40,7 @@ const payment = (id: number, month: string, posted: string, credit: number, bala
   balance,
   txnType: TxnType.PAYMENT_RECEIVED,
   tripId: null,
+  contraAccount: '1121',
   rowCount,
 });
 
@@ -66,6 +68,27 @@ describe('StatementLedger (NEPO-46 sổ chi tiết)', () => {
     const paymentRow = getByTestId('so-ke-payment-row');
     expect(within(paymentRow).getByText('KH trả 12.000.000 ₫ ngày 15/10/2026')).toBeTruthy();
     expect(within(paymentRow).getByText('R1')).toBeTruthy();
+    expect(within(paymentRow).getByText('1121')).toBeTruthy();
+
+    const tripRow = getByText('Doanh thu chuyến TRP-202607-0001').closest('tr')!;
+    expect(within(tripRow).getByText('5111, 33311')).toBeTruthy();
+  });
+
+  it('places TK ĐỐI ỨNG between DIỄN GIẢI and PHÁT SINH NỢ (MISA sample order)', () => {
+    const lines = [trip(1, '2026-07', '2026-07-05', 10_000_000, 'T1')];
+    const { getByLabelText } = render(
+      <StatementLedger lines={lines} totals={totals(0, 10_000_000, 0, 10_000_000)} />,
+    );
+    const headers = Array.from(getByLabelText('Sổ chi tiết công nợ').querySelectorAll('thead th'))
+      .map(th => th.textContent);
+    expect(headers.indexOf('TK ĐỐI ỨNG')).toBe(headers.indexOf('DIỄN GIẢI') + 1);
+    expect(headers.indexOf('PHÁT SINH NỢ')).toBe(headers.indexOf('TK ĐỐI ỨNG') + 1);
+  });
+
+  it('renders a blank marker (—) when a line has no fixed contra account', () => {
+    const adjustment = { ...trip(1, '2026-08', '2026-08-01', 500_000, 'ADJ-1'), contraAccount: undefined, txnType: TxnType.ADJUSTMENT };
+    const { getByText } = render(<StatementLedger lines={[adjustment]} />);
+    expect(getByText('—')).toBeTruthy();
   });
 
   it('shows the tổng kết kỳ footer totals without recomputing them', () => {

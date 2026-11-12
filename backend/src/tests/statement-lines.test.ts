@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TxnType } from '@tingting/shared';
-import { buildStatementLines, computePeriodSummary } from '../services/statement.service';
+import { buildStatementLines, computePeriodSummary, statementContraAccount } from '../services/statement.service';
 
 /**
  * Unit tests for the NEPO-46 sổ chi tiết builder (MISA-style customer
@@ -145,5 +145,43 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
     assert.equal(lines[0].docDate, '2026-07-04');
     assert.equal(lines[0].routeName, 'Hải Phòng — Hà Nội');
     assert.equal(lines[0].kind, 'transaction');
+  });
+});
+
+describe('buildStatementLines — TK ĐỐI ỨNG (NEPO-47)', () => {
+  test('revenue + chi hộ lines carry 5111/33311, payments carry 1121', () => {
+    const rows = [
+      row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 10_000_000, tripCode: 'TRP-202607-0001' }),
+      row({ ts: '2026-07-06T00:00:00Z', txnType: TxnType.SERVICE_FEE, debit: 2_000_000, note: 'Phí chi hộ', txnId: 21 }),
+      row({ ts: '2026-07-02T00:00:00Z', txnType: TxnType.UNLOCK_REVERSAL, credit: 10_000_000, note: 'Doanh thu chuyến TRP (Hoàn tác)', txnId: 11 }),
+      row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 7_500_000, receiptId: 'R1', txnId: 11 }),
+      row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 4_500_000, receiptId: 'R1', txnId: 21 }),
+    ];
+    const { lines } = buildStatementLines(rows, 0);
+
+    const txnLines = lines.filter(l => l.kind === 'transaction');
+    const paymentLines = lines.filter(l => l.kind === 'payment');
+    assert.ok(txnLines.every(l => l.contraAccount === '5111, 33311'),
+      'trip revenue, phí chi hộ and unlock reversals all reverse/post against revenue + VAT');
+    assert.ok(paymentLines.every(l => l.contraAccount === '1121'),
+      'bank-receipt payments (incl. the folded aggregate) post against tiền gửi ngân hàng');
+  });
+
+  test('bespoke adjustments have no fixed contra account — the cell stays blank, no code invented', () => {
+    const rows = [
+      row({ ts: '2026-08-01T00:00:00Z', txnType: TxnType.ADJUSTMENT, debit: 500_000, note: 'Điều chỉnh cước (HĐ: 01/2026)' }),
+    ];
+    const { lines } = buildStatementLines(rows, 0);
+    assert.equal(lines[0].contraAccount, undefined);
+  });
+
+  test('statementContraAccount maps only the postings the ledger actually books', () => {
+    assert.equal(statementContraAccount(TxnType.TRIP_REVENUE), '5111, 33311');
+    assert.equal(statementContraAccount(TxnType.SERVICE_FEE), '5111, 33311');
+    assert.equal(statementContraAccount(TxnType.UNLOCK_REVERSAL), '5111, 33311');
+    assert.equal(statementContraAccount(TxnType.PAYMENT_RECEIVED), '1121');
+    assert.equal(statementContraAccount(TxnType.ADJUSTMENT), null);
+    assert.equal(statementContraAccount(TxnType.MANAGEMENT_FEE), null);
+    assert.equal(statementContraAccount(TxnType.PENALTY), null);
   });
 });

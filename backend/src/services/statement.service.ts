@@ -468,6 +468,36 @@ const paymentLineDescription = (debit: number, credit: number, postedDate: strin
   `KH trả ${(credit - debit).toLocaleString('vi-VN')} ₫ ngày ${postedDate.slice(8, 10)}/${postedDate.slice(5, 7)}/${postedDate.slice(0, 4)}`;
 
 /**
+ * TK ĐỐI ỨNG (NEPO-47) — the contra account of the posting each ledger row
+ * actually represents, read from the posting code rather than invented:
+ *
+ *   - PAYMENT_RECEIVED → '1121': intake is bank-receipt-based (`receiptId`
+ *     is mandatory on the payment form, postEntry stores it per row); the
+ *     ledger records no CASH/BANK method, so 1121 is the only grounded code.
+ *   - TRIP_REVENUE / SERVICE_FEE → '5111, 33311': both post the incl-VAT
+ *     amount billed to the customer as ONE debit (freight revenue —
+ *     postTripLock §2, and phí chi hộ sell side — postTripLock §5; legacy
+ *     service-fee rows reuse TRIP_REVENUE). The MISA entry is
+ *     Nợ 131 / Có 5111 + Có 33311 — both codes on the one line because the
+ *     ledger stores only the incl-VAT total, not the ex-VAT split.
+ *   - UNLOCK_REVERSAL on the CUSTOMER ledger reverses exactly those
+ *     revenue/fee rows → same contra pair.
+ *   - ADJUSTMENT (bút toán điều chỉnh with arbitrary business nature) and
+ *     anything absent below → no entry: no fixed account exists in this
+ *     system, the cell stays blank instead of guessing a code.
+ */
+const STATEMENT_CONTRA_BY_TXN: Partial<Record<TxnType, string>> = {
+  [TxnType.PAYMENT_RECEIVED]: '1121',
+  [TxnType.TRIP_REVENUE]: '5111, 33311',
+  [TxnType.SERVICE_FEE]: '5111, 33311',
+  [TxnType.UNLOCK_REVERSAL]: '5111, 33311',
+};
+
+export function statementContraAccount(txnType: TxnType): string | null {
+  return STATEMENT_CONTRA_BY_TXN[txnType] ?? null;
+}
+
+/**
  * Builds the MISA 'Sổ chi tiết' lines (NEPO-46) from the statement's display
  * rows (already period-filtered + collapseEditCyclePairs'd) and the period
  * opening balance.
@@ -506,6 +536,7 @@ export function buildStatementLines(
     credit: number;
     txnType: TxnType;
     tripId: number | null;
+    contraAccount: string | null;
     routeName: string | null;
     containerNumbers: string[];
     rowCount: number;
@@ -563,6 +594,7 @@ export function buildStatementLines(
       // shared TxnType enum members, so this cast is safe.
       txnType: r.txnType as TxnType,
       tripId: r.tripId ?? null,
+      contraAccount: statementContraAccount(r.txnType as TxnType),
       routeName: r.routeName ?? null,
       containerNumbers: r.containerNumbers ?? [],
       rowCount: 1,
@@ -594,6 +626,7 @@ export function buildStatementLines(
       balance,
       txnType: d.txnType,
       tripId: d.tripId,
+      ...(d.contraAccount ? { contraAccount: d.contraAccount } : {}),
       ...(d.routeName ? { routeName: d.routeName } : {}),
       ...(d.containerNumbers.length > 0 ? { containerNumbers: d.containerNumbers } : {}),
       ...(d.kind === 'payment' ? { rowCount: d.rowCount } : {}),
@@ -623,7 +656,7 @@ const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Sego
   .aging { width: auto; margin-top: 8px; }
   .aging td { padding: 4px 12px 4px 0; }
   .soke th { white-space: nowrap; }
-  .soke td:nth-child(1), .soke td:nth-child(2), .soke td:nth-child(3) { white-space: nowrap; }
+  .soke td:nth-child(1), .soke td:nth-child(2), .soke td:nth-child(3), .soke td:nth-child(4) { white-space: nowrap; }
   .soke .soke-month td { background: #e6f4ea; color: #00702f; font-weight: 700; }
   .soke .soke-payment td { background: #f0fdf4; }
   .soke .soke-opening td { background: #f9fafb; }
@@ -1942,7 +1975,7 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
     const totals = config.statementTotals;
 
     const transHeaderRow = currentOffset;
-    sheet.mergeCells(`A${transHeaderRow}:G${transHeaderRow}`);
+    sheet.mergeCells(`A${transHeaderRow}:H${transHeaderRow}`);
     const transHeaderCell = sheet.getCell(`A${transHeaderRow}`);
     transHeaderCell.value = 'SỔ CHI TIẾT CÔNG NỢ';
     transHeaderCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -1951,13 +1984,13 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
     sheet.getRow(transHeaderRow).height = 24;
     currentOffset++;
 
-    const soHeaders = ['Ngày ghi sổ', 'Số hiệu', 'Ngày CT', 'Diễn giải', 'Phát sinh Nợ (VND)', 'Phát sinh Có (VND)', 'Dư cuối (VND)'];
+    const soHeaders = ['Ngày ghi sổ', 'Số hiệu', 'Ngày CT', 'Diễn giải', 'TK ĐỐI ỨNG', 'Phát sinh Nợ (VND)', 'Phát sinh Có (VND)', 'Dư cuối (VND)'];
     soHeaders.forEach((h, i) => {
       const cell = sheet.getCell(currentOffset, i + 1);
       cell.value = h;
       cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
-      cell.alignment = { vertical: 'middle', horizontal: i >= 4 ? 'right' : (i <= 2 ? 'center' : 'left') };
+      cell.alignment = { vertical: 'middle', horizontal: i >= 5 ? 'right' : (i <= 2 || i === 4 ? 'center' : 'left') };
       cell.border = borderStyle;
     });
     sheet.getRow(currentOffset).height = 22;
@@ -1982,9 +2015,10 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
       { col: 2, value: '', align: 'center' },
       { col: 3, value: '', align: 'center' },
       { col: 4, value: 'Dư đầu kỳ', bold: true },
-      { col: 5, value: '', numFmt: true, align: 'right' },
+      { col: 5, value: '', align: 'center' },
       { col: 6, value: '', numFmt: true, align: 'right' },
-      { col: 7, value: totals.openingBalance, numFmt: true, align: 'right', bold: true, color: totals.openingBalance > 0 ? 'FFDC2626' : (totals.openingBalance < 0 ? 'FF10B981' : 'FF1F2937') },
+      { col: 7, value: '', numFmt: true, align: 'right' },
+      { col: 8, value: totals.openingBalance, numFmt: true, align: 'right', bold: true, color: totals.openingBalance > 0 ? 'FFDC2626' : (totals.openingBalance < 0 ? 'FF10B981' : 'FF1F2937') },
     ], 'FFE6F4EA');
     currentOffset++;
 
@@ -1995,7 +2029,7 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
         const mm = currentMonth.slice(5, 7);
         const yyyy = currentMonth.slice(0, 4);
         const monthRow = currentOffset;
-        sheet.mergeCells(`A${monthRow}:G${monthRow}`);
+        sheet.mergeCells(`A${monthRow}:H${monthRow}`);
         const monthCell = sheet.getCell(`A${monthRow}`);
         monthCell.value = `Tháng ${Number(mm)}/${yyyy}`;
         monthCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF00702F' } };
@@ -2010,9 +2044,10 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
         { col: 2, value: line.docNo ?? '—', align: 'center' },
         { col: 3, value: line.docDate ?? line.postedDate, align: 'center' },
         { col: 4, value: isPayment ? line.description : `${line.description}${line.routeName ? ` — ${line.routeName}` : ''}${line.containerNumbers?.length ? ` (${line.containerNumbers.join(', ')})` : ''}` },
-        { col: 5, value: line.debit || null, numFmt: true, align: 'right' },
-        { col: 6, value: line.credit || null, numFmt: true, align: 'right' },
-        { col: 7, value: line.balance, numFmt: true, align: 'right', bold: true, color: line.balance > 0 ? 'FFDC2626' : (line.balance < 0 ? 'FF10B981' : 'FF1F2937') },
+        { col: 5, value: line.contraAccount ?? '', align: 'center' },
+        { col: 6, value: line.debit || null, numFmt: true, align: 'right' },
+        { col: 7, value: line.credit || null, numFmt: true, align: 'right' },
+        { col: 8, value: line.balance, numFmt: true, align: 'right', bold: true, color: line.balance > 0 ? 'FFDC2626' : (line.balance < 0 ? 'FF10B981' : 'FF1F2937') },
       ], isPayment ? 'FFF0FDF4' : (i % 2 === 0 ? 'FFFFFFFF' : 'FFF9FBF9'));
       currentOffset++;
     });
@@ -2023,9 +2058,10 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
       { col: 2, value: '', align: 'center' },
       { col: 3, value: '', align: 'center' },
       { col: 4, value: 'TỔNG PHÁT SINH TRONG KỲ', bold: true },
-      { col: 5, value: totals.debitTotal, numFmt: true, align: 'right', bold: true },
-      { col: 6, value: totals.creditTotal, numFmt: true, align: 'right', bold: true },
-      { col: 7, value: '', numFmt: true, align: 'right' },
+      { col: 5, value: '', align: 'center' },
+      { col: 6, value: totals.debitTotal, numFmt: true, align: 'right', bold: true },
+      { col: 7, value: totals.creditTotal, numFmt: true, align: 'right', bold: true },
+      { col: 8, value: '', numFmt: true, align: 'right' },
     ], 'FFF3F4F6');
     currentOffset++;
     soStyleRow(currentOffset, [
@@ -2033,9 +2069,10 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
       { col: 2, value: '', align: 'center' },
       { col: 3, value: '', align: 'center' },
       { col: 4, value: totals.closingBalance < 0 ? `DƯ CUỐI KỲ — KHÁCH ĐÃ TRẢ TRƯỚC ${Math.abs(totals.closingBalance).toLocaleString('vi-VN')} ₫` : 'DƯ CUỐI KỲ', bold: true, color: totals.closingBalance < 0 ? 'FF10B981' : 'FFDC2626' },
-      { col: 5, value: '', numFmt: true, align: 'right' },
+      { col: 5, value: '', align: 'center' },
       { col: 6, value: '', numFmt: true, align: 'right' },
-      { col: 7, value: totals.closingBalance, numFmt: true, align: 'right', bold: true, color: totals.closingBalance > 0 ? 'FFDC2626' : (totals.closingBalance < 0 ? 'FF10B981' : 'FF1F2937') },
+      { col: 7, value: '', numFmt: true, align: 'right' },
+      { col: 8, value: totals.closingBalance, numFmt: true, align: 'right', bold: true, color: totals.closingBalance > 0 ? 'FFDC2626' : (totals.closingBalance < 0 ? 'FF10B981' : 'FF1F2937') },
     ], 'FFF3F4F6');
 
     // Column widths for the sổ layout
@@ -2043,10 +2080,11 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
     sheet.getColumn(2).width = 17;
     sheet.getColumn(3).width = 12;
     sheet.getColumn(4).width = 52;
-    sheet.getColumn(5).width = 17;
+    sheet.getColumn(5).width = 12;
     sheet.getColumn(6).width = 17;
-    sheet.getColumn(7).width = 18;
-    sheet.getColumn(8).width = 4;
+    sheet.getColumn(7).width = 17;
+    sheet.getColumn(8).width = 18;
+    sheet.getColumn(9).width = 4;
 
     await workbook.xlsx.write(writable);
     return;
@@ -2212,13 +2250,13 @@ function buildSoKeDetailHtml(lines: StatementLine[], totals: StatementPeriodTota
   const monthLabel = (month: string) => `Tháng ${Number(month.slice(5, 7))}/${month.slice(0, 4)}`;
   const body: string[] = [];
 
-  body.push(`<tr class="soke-opening"><td></td><td></td><td></td><td><strong>Dư đầu kỳ</strong></td><td class="num"></td><td class="num"></td><td class="num"><strong>${totals.openingBalance.toLocaleString('vi-VN')}</strong></td></tr>`);
+  body.push(`<tr class="soke-opening"><td></td><td></td><td></td><td><strong>Dư đầu kỳ</strong></td><td></td><td class="num"></td><td class="num"></td><td class="num"><strong>${totals.openingBalance.toLocaleString('vi-VN')}</strong></td></tr>`);
 
   let currentMonth = '';
   for (const line of lines) {
     if (line.month !== currentMonth) {
       currentMonth = line.month;
-      body.push(`<tr class="soke-month"><td colspan="7">${escapeHtml(monthLabel(line.month))}</td></tr>`);
+      body.push(`<tr class="soke-month"><td colspan="8">${escapeHtml(monthLabel(line.month))}</td></tr>`);
     }
     const isPayment = line.kind === 'payment';
     const detail = isPayment
@@ -2230,6 +2268,7 @@ function buildSoKeDetailHtml(lines: StatementLine[], totals: StatementPeriodTota
       <td>${escapeHtml(line.docNo ?? '—')}</td>
       <td>${line.docDate ?? line.postedDate}</td>
       <td>${isPayment ? `<strong>${escapeHtml(line.description)}</strong>` : escapeHtml(detail)}</td>
+      <td>${escapeHtml(line.contraAccount ?? '')}</td>
       <td class="num">${line.debit ? line.debit.toLocaleString('vi-VN') : ''}</td>
       <td class="num">${line.credit ? line.credit.toLocaleString('vi-VN') : ''}</td>
       <td class="num ${balColor}"><strong>${line.balance.toLocaleString('vi-VN')}</strong></td>
@@ -2243,11 +2282,11 @@ function buildSoKeDetailHtml(lines: StatementLine[], totals: StatementPeriodTota
 
   return `<h2>Sổ chi tiết công nợ</h2>
 <table class="soke">
-  <thead><tr><th>Ngày ghi sổ</th><th>Số hiệu</th><th>Ngày CT</th><th>Diễn giải</th><th class="num">Phát sinh Nợ</th><th class="num">Phát sinh Có</th><th class="num">Dư cuối</th></tr></thead>
+  <thead><tr><th>Ngày ghi sổ</th><th>Số hiệu</th><th>Ngày CT</th><th>Diễn giải</th><th>TK ĐỐI ỨNG</th><th class="num">Phát sinh Nợ</th><th class="num">Phát sinh Có</th><th class="num">Dư cuối</th></tr></thead>
   <tbody>${body.join('')}</tbody>
   <tfoot>
-    <tr><td colspan="4"><strong>TỔNG PHÁT SINH TRONG KỲ</strong></td><td class="num"><strong>${totals.debitTotal.toLocaleString('vi-VN')}</strong></td><td class="num"><strong>${totals.creditTotal.toLocaleString('vi-VN')}</strong></td><td class="num"></td></tr>
-    <tr><td colspan="4" class="${closingColor}"><strong>${closingLabel}</strong></td><td class="num"></td><td class="num"></td><td class="num ${closingColor}"><strong>${totals.closingBalance.toLocaleString('vi-VN')}</strong></td></tr>
+    <tr><td colspan="5"><strong>TỔNG PHÁT SINH TRONG KỲ</strong></td><td class="num"><strong>${totals.debitTotal.toLocaleString('vi-VN')}</strong></td><td class="num"><strong>${totals.creditTotal.toLocaleString('vi-VN')}</strong></td><td class="num"></td></tr>
+    <tr><td colspan="5" class="${closingColor}"><strong>${closingLabel}</strong></td><td class="num"></td><td class="num"></td><td class="num ${closingColor}"><strong>${totals.closingBalance.toLocaleString('vi-VN')}</strong></td></tr>
   </tfoot>
 </table>`;
 }
