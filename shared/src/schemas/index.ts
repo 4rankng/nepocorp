@@ -431,6 +431,10 @@ const receivedDateField = z.string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày nhận không hợp lệ (YYYY-MM-DD)')
   .refine((d) => d <= todayVN(), { message: 'Ngày nhận không được lớn hơn ngày hôm nay' });
 
+/** Payment channel of a customer receipt: bank transfer (1121) or cash (1111). */
+export const paymentMethodSchema = z.enum(['BANK', 'CASH']);
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
+
 export const createPaymentSchema = z.object({
   customerId: z.coerce.number().int().positive(),
   receiptId: z.string().min(1),
@@ -439,6 +443,7 @@ export const createPaymentSchema = z.object({
     amount: positiveNumeric,
   })).min(1),
   receivedDate: receivedDateField.optional(),
+  paymentMethod: paymentMethodSchema.default('BANK'),
 });
 
 /** Editable fields of a recorded receivable payment entry. */
@@ -446,6 +451,7 @@ export const updatePaymentSchema = z.object({
   amount: positiveNumeric,
   receiptId: z.string().min(1),
   receivedDate: receivedDateField,
+  paymentMethod: paymentMethodSchema.optional(),
 });
 
 // ─── Penalty ─────────────────────────────────────────────────────────────────

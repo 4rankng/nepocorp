@@ -75,6 +75,7 @@ describe('NEPO-45 — overpay is recorded as advance credit, not blocked', () =>
     // client guard false-positived even on this case) and must not create an
     // advance row.
     const result = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-OVP-EXACT-${suffix}`,
       payments: [{ tripId: tripA, amount: 15_000_000 }],
@@ -95,12 +96,14 @@ describe('NEPO-45 — overpay is recorded as advance credit, not blocked', () =>
     // 18.882.200 → 13.882.200 lands as advance (negative balance).
     const { customerId, tripA } = await seedCustomerWithDebt(suffix, trackers);
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-OVP-SEED-${suffix}`,
       payments: [{ tripId: tripA, amount: 10_000_000 }],
     });
 
     const result = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-OVP-OVER-${suffix}`,
       payments: [{ tripId: tripA, amount: 18_882_200 }],
@@ -130,6 +133,7 @@ describe('NEPO-45 — overpay is recorded as advance credit, not blocked', () =>
     for (const amount of [-4_000_000, 0]) {
       await assert.rejects(
         recordPayment({
+          paymentMethod: 'BANK',
           customerId,
           receiptId: `PT-OVP-NEG-${suffix}`,
           payments: [{ tripId: tripA, amount }],

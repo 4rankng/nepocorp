@@ -74,6 +74,7 @@ describe('payment received date (Ngày nhận)', () => {
     // A bank transfer that actually landed 5 days ago, entered today.
     const backdated = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-DATE1-${suffix}`,
       payments: [{ tripId: tripA, amount: 4_000_000 }],
@@ -99,6 +100,7 @@ describe('payment received date (Ngày nhận)', () => {
     const before = Date.now();
 
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-DATE2-${suffix}`,
       payments: [{ tripId: tripA, amount: 1_000_000 }],
@@ -119,6 +121,7 @@ describe('payment received date (Ngày nhận)', () => {
 
     await assert.rejects(
       recordPayment({
+        paymentMethod: 'BANK',
         customerId,
         receiptId: `PT-DATE3-${suffix}`,
         payments: [{ tripId: tripA, amount: 1_000_000 }],

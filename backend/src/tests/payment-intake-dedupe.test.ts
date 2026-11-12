@@ -65,6 +65,7 @@ describe('payment intake idempotency (kanban 141026163910)', () => {
       customerId,
       receiptId: `PT-DEDUPE-${suffix}`,
       payments: [{ tripId: tripA, amount: 4_000_000 }],
+      paymentMethod: 'BANK' as const,
     };
 
     // First submit — the one that "froze" from the user's point of view.
@@ -89,6 +90,7 @@ describe('payment intake idempotency (kanban 141026163910)', () => {
     const { customerId, tripA } = await seedCustomerWithDebt(suffix, trackers);
 
     const first = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-WIN1-${suffix}`,
       payments: [{ tripId: tripA, amount: 2_500_000 }],
@@ -100,6 +102,7 @@ describe('payment intake idempotency (kanban 141026163910)', () => {
     // matching used to swallow this as a duplicate (the false positive the
     // comprehensive E2E suite caught across back-to-back runs).
     const second = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-WIN2-${suffix}`,
       payments: [{ tripId: tripA, amount: 2_500_000 }],
@@ -114,12 +117,14 @@ describe('payment intake idempotency (kanban 141026163910)', () => {
     const { customerId, tripA, tripB } = await seedCustomerWithDebt(suffix, trackers);
 
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-NP1-${suffix}`,
       payments: [{ tripId: tripA, amount: 1_000_000 }],
     });
     // Different amount AND a multi-trip split — must not match the window group.
     const result = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-NP2-${suffix}`,
       payments: [
@@ -140,9 +145,9 @@ describe('payment intake idempotency (kanban 141026163910)', () => {
     const beta = await seedCustomerWithDebt(`${suffix}-b`, trackers);
     const receiptId = `PT-SHARED-${suffix}`;
 
-    await recordPayment({ customerId: alpha.customerId, receiptId, payments: [{ tripId: alpha.tripA, amount: 1_000_000 }] });
+    await recordPayment({ customerId: alpha.customerId, receiptId, payments: [{ tripId: alpha.tripA, amount: 1_000_000 }], paymentMethod: 'BANK' });
     // Same receipt id, DIFFERENT customer — a different bank statement line.
-    const result = await recordPayment({ customerId: beta.customerId, receiptId, payments: [{ tripId: beta.tripA, amount: 1_000_000 }] });
+    const result = await recordPayment({ customerId: beta.customerId, receiptId, payments: [{ tripId: beta.tripA, amount: 1_000_000 }], paymentMethod: 'BANK' });
     assert.equal(result.duplicate, false);
     assert.equal((await paymentRows(beta.customerId)).length, 1);
   });

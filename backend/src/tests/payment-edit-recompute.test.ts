@@ -87,6 +87,7 @@ describe('payment entry editing + balance recompute', () => {
     const { customerId, tripA } = await seedCustomerWithDebt(suffix, trackers);
 
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-EDIT1-${suffix}`,
       payments: [{ tripId: tripA, amount: 4_000_000 }],
@@ -121,6 +122,7 @@ describe('payment entry editing + balance recompute', () => {
     const today = new Date().toISOString().slice(0, 10);
 
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-EDIT2-${suffix}`,
       payments: [{ tripId: tripA, amount: 5_000_000 }],
@@ -143,11 +145,13 @@ describe('payment entry editing + balance recompute', () => {
     const today = new Date().toISOString().slice(0, 10);
 
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-KEEP-${suffix}`,
       payments: [{ tripId: tripA, amount: 1_000_000 }],
     });
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-EDIT3-${suffix}`,
       payments: [{ tripId: tripB, amount: 1_000_000 }],
@@ -178,6 +182,7 @@ describe('payment entry editing + balance recompute', () => {
     const today = new Date().toISOString().slice(0, 10);
 
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-EDIT4-${suffix}`,
       payments: [{ tripId: tripA, amount: 4_000_000 }],
@@ -214,6 +219,7 @@ describe('payment entry editing + balance recompute', () => {
     const future = new Date(Date.now() + 7 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-EDIT5-${suffix}`,
       payments: [{ tripId: tripA, amount: 1_000_000 }],
@@ -257,6 +263,45 @@ describe('payment entry editing + balance recompute', () => {
       updatePaymentEntry(revenueRow.id, { amount: 1_000, receiptId: 'PT-X', receivedDate: today }),
       (error: unknown) =>
         error instanceof Error && 'statusCode' in error && (error as { statusCode: number }).statusCode === 422,
+    );
+  });
+
+  test('editing the channel cascades to every FIFO slice of the same receipt', async () => {
+    // The sổ folds a receipt into ONE line and reads the FIRST row's channel —
+    // a half-updated receipt (one slice BANK, one slice CASH) would keep
+    // showing the old channel after the edit.
+    const suffix = testSuffix();
+    const { customerId, tripA, tripB } = await seedCustomerWithDebt(suffix, trackers);
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Trip A holds 10M collectible, trip B 5M — requesting 12M total forces
+    // the server FIFO to split the receipt into two ledger rows.
+    await recordPayment({
+      paymentMethod: 'CASH',
+      customerId,
+      receiptId: `PT-CASCADE-${suffix}`,
+      payments: [
+        { tripId: tripA, amount: 8_000_000 },
+        { tripId: tripB, amount: 4_000_000 },
+      ],
+    });
+    const slices = await paymentRows(customerId);
+    assert.equal(slices.length, 2, 'payment split across two trips');
+    assert.ok(slices.every(r => r.paymentMethod === 'CASH'), 'intake writes the channel on every slice');
+
+    const [firstSlice] = slices;
+    await updatePaymentEntry(firstSlice.id, {
+      amount: Number(firstSlice.credit),
+      receiptId: `PT-CASCADE-${suffix}`,
+      receivedDate: today,
+      paymentMethod: 'BANK',
+    });
+
+    const after = await paymentRows(customerId);
+    assert.equal(after.length, 2);
+    assert.ok(
+      after.every(r => r.paymentMethod === 'BANK'),
+      'both slices carry the edited channel, not just the edited row',
     );
   });
 });

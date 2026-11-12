@@ -422,6 +422,8 @@ export interface LedgerEntry {
   txnType: TxnType;
   txnId: number | null;
   receiptId: string | null;
+  /** Receipt channel: 'BANK' (chuyển khoản) | 'CASH' (tiền mặt); null = legacy. */
+  paymentMethod?: string | null;
   entityType: string;
   entityId: number;
   credit: string;
@@ -1286,6 +1288,8 @@ export interface StatementLine {
   docNo: string | null;
   /** Diễn giải — payment lines read 'KH trả X ₫ ngày dd/mm'. */
   description: string;
+  /** TK đối ứng — '1121' chuyển khoản, '1111' tiền mặt, '5111' doanh thu/chi hộ; null hiển thị '—'. */
+  counterAccount: string | null;
   /** Phát sinh nợ — integer VND. */
   debit: number;
   /** Phát sinh có — integer VND. */

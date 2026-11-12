@@ -25,6 +25,7 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
     receiptId: data.receiptId,
     payments: data.payments.map((p) => ({ tripId: p.tripId, amount: p.amount })),
     receivedDate: data.receivedDate,
+    paymentMethod: data.paymentMethod,
   });
   await invalidateReportCaches();
   if (result.duplicate) {
@@ -96,6 +97,7 @@ router.put('/payments/:id', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTA
     amount: data.amount,
     receiptId: data.receiptId,
     receivedDate: data.receivedDate,
+    paymentMethod: data.paymentMethod,
   });
   await invalidateReportCaches();
   res.locals.auditEntityId = updated.id;

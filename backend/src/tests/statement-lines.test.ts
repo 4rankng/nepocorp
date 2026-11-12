@@ -23,6 +23,7 @@ const row = (opts: {
   credit?: number;
   note?: string | null;
   receiptId?: string | null;
+  paymentMethod?: 'BANK' | 'CASH' | null;
   txnId?: number | null;
   tripId?: number | null;
   tripCode?: string | null;
@@ -34,6 +35,7 @@ const row = (opts: {
   txnType: opts.txnType,
   txnId: opts.txnId ?? null,
   receiptId: opts.receiptId ?? null,
+  paymentMethod: opts.paymentMethod ?? null,
   entityType: 'CUSTOMER',
   entityId: 1,
   debit: String(opts.debit ?? 0),
@@ -145,5 +147,57 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
     assert.equal(lines[0].docDate, '2026-07-04');
     assert.equal(lines[0].routeName, 'Hải Phòng — Hà Nội');
     assert.equal(lines[0].kind, 'transaction');
+  });
+});
+
+describe('buildStatementLines — TK đối ứng (MISA counter account)', () => {
+  test('a BANK receipt folding across 2 trips carries TK 1121 and the chuyển khoản suffix', () => {
+    const rows = [
+      row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 10_000_000, note: 'Doanh thu chuyến TRP-202607-0001', txnId: 11, tripId: 11, tripCode: 'TRP-202607-0001' }),
+      row({ ts: '2026-07-06T00:00:00Z', txnType: TxnType.SERVICE_FEE, debit: 2_000_000, note: 'Phí chi hộ', txnId: 21 }),
+      row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 7_500_000, receiptId: 'RB', paymentMethod: 'BANK', txnId: 11 }),
+      row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 4_500_000, receiptId: 'RB', paymentMethod: 'BANK', txnId: 21 }),
+    ];
+    const { lines, totals } = buildStatementLines(rows, 1_000_000);
+
+    const payment = lines[lines.length - 1];
+    assert.equal(payment.kind, 'payment');
+    assert.equal(payment.credit, 12_000_000, 'fold keeps the aggregate receipt total');
+    assert.equal(payment.counterAccount, '1121');
+    assert.match(payment.description, /\(chuyển khoản\)$/);
+    assert.equal(totals.closingBalance, 1_000_000 + 12_000_000 - 12_000_000, 'closing = opening + Σnợ − Σcó');
+  });
+
+  test('a CASH receipt carries TK 1111 and the tiền mặt suffix', () => {
+    const rows = [
+      row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 5_000_000, tripCode: 'T1' }),
+      row({ ts: '2026-07-20T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 5_000_000, receiptId: 'RC', paymentMethod: 'CASH', txnId: 1 }),
+    ];
+    const { lines } = buildStatementLines(rows, 0);
+    const payment = lines[1];
+    assert.equal(payment.counterAccount, '1111');
+    assert.match(payment.description, /\(tiền mặt\)$/);
+  });
+
+  test('a legacy receipt with no recorded channel maps to null without a channel suffix', () => {
+    const rows = [
+      row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 5_000_000, tripCode: 'T1' }),
+      row({ ts: '2026-07-20T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 5_000_000, receiptId: 'RL', txnId: 1 }),
+    ];
+    const { lines } = buildStatementLines(rows, 0);
+    const payment = lines[1];
+    assert.equal(payment.counterAccount, null);
+    assert.doesNotMatch(payment.description, /\(chuyển khoản\)|\(tiền mặt\)/);
+    assert.match(payment.description, /KH trả 5\.000\.000 ₫ ngày 20\/07\/2026/);
+  });
+
+  test('TRIP_REVENUE clears against 5111; ADJUSTMENT carries no counter account', () => {
+    const rows = [
+      row({ ts: '2026-07-01T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 3_000_000, tripCode: 'T1' }),
+      row({ ts: '2026-07-02T00:00:00Z', txnType: TxnType.ADJUSTMENT, debit: 500_000, note: 'Điều chỉnh' }),
+    ];
+    const { lines } = buildStatementLines(rows, 0);
+    assert.equal(lines[0].counterAccount, '5111');
+    assert.equal(lines[1].counterAccount, null);
   });
 });

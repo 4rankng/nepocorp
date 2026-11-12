@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDate } from '../lib/format';
 import { downloadBlob, openBlobInNewTab } from '../lib/download';
 import { TxnType, isFinancialRole } from '@tingting/shared';
-import type { LedgerEntry } from '@tingting/shared';
+import type { LedgerEntry, PaymentMethod } from '@tingting/shared';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
 import { useAuth } from '../hooks/useAuth';
@@ -131,6 +131,9 @@ export default function DebtDetailPage() {
   // to today, back-dating allowed for retro entries, future dates rejected
   // by the picker's max + the backend.
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  // Receipt channel — TK đối ứng 1121 (chuyển khoản) vs 1111 (tiền mặt) on
+  // the sổ; bank transfer is the default intake channel.
+  const [payMethod, setPayMethod] = useState<PaymentMethod>('BANK');
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState('');
   // NEPO-45: money received beyond the outstanding debt is legal (tiền trả
@@ -166,16 +169,19 @@ export default function DebtDetailPage() {
   const [editAmount, setEditAmount] = useState('');
   const [editReceipt, setEditReceipt] = useState('');
   const [editDate, setEditDate] = useState('');
+  const [editMethod, setEditMethod] = useState<PaymentMethod>('BANK');
   const [editError, setEditError] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const requestEditPayment = useCallback((row: LedgerEntry) => {
     // Prefill from the row: credit is the amount, timestamp is the received
     // date (stored at midnight Indochina time, so shift +07:00 for the
-    // YYYY-MM-DD the date input wants).
+    // YYYY-MM-DD the date input wants). Legacy rows with no recorded channel
+    // prefill BANK; the accountant confirms via the radio before saving.
     setEditAmount(String(parseFloat(row.credit) || 0));
     setEditReceipt(row.receiptId ?? '');
     setEditDate(new Date(new Date(row.timestamp).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10));
+    setEditMethod(row.paymentMethod === 'CASH' ? 'CASH' : 'BANK');
     setEditError('');
     setEditTarget(row);
   }, []);
@@ -371,6 +377,7 @@ export default function DebtDetailPage() {
     // Re-default the date on every open — a payment left open overnight must
     // not silently carry yesterday as "Ngày nhận".
     setPayDate(new Date().toISOString().slice(0, 10));
+    setPayMethod('BANK');
     setPayError('');
     setShowPay(true);
   };
@@ -457,6 +464,7 @@ export default function DebtDetailPage() {
         receiptId: payReceipt.trim(),
         payments: intake.payments,
         receivedDate: payDate,
+        paymentMethod: payMethod,
       });
       await invalidatePaymentCaches();
       setShowPay(false);
@@ -557,6 +565,7 @@ export default function DebtDetailPage() {
         amount,
         receiptId: editReceipt.trim(),
         receivedDate: editDate,
+        paymentMethod: editMethod,
       });
       setEditConfirmOpen(false);
       setEditTarget(null);
@@ -862,11 +871,13 @@ export default function DebtDetailPage() {
         payAmount={payAmount}
         payReceipt={payReceipt}
         payDate={payDate}
+        payMethod={payMethod}
         payError={payError}
         paySubmitting={paySubmitting}
         onAmountChange={setPayAmount}
         onReceiptChange={setPayReceipt}
         onDateChange={setPayDate}
+        onMethodChange={setPayMethod}
         onSubmit={() => { void submitPayment(); }}
         onClose={() => setShowPay(false)}
       />
@@ -900,11 +911,13 @@ export default function DebtDetailPage() {
         amount={editAmount}
         receiptId={editReceipt}
         receivedDate={editDate}
+        paymentMethod={editMethod}
         error={editError}
         submitting={editSubmitting}
         onAmountChange={setEditAmount}
         onReceiptChange={setEditReceipt}
         onDateChange={setEditDate}
+        onMethodChange={setEditMethod}
         onSubmit={submitEditPayment}
         onClose={() => setEditTarget(null)}
       />

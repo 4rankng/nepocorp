@@ -26,6 +26,7 @@ function ledgerRow(overrides: Partial<EnrichedLedgerRow>): EnrichedLedgerRow {
     note: 'Chi phí dầu chuyến TRP-202607-0061',
     createdAt: new Date('2026-07-24T00:00:00.000Z'),
     ...overrides,
+    paymentMethod: overrides.paymentMethod ?? null,
   };
 }
 

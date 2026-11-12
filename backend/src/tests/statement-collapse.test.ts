@@ -28,6 +28,7 @@ const row = (over: Partial<EnrichedLedgerRow> & Pick<EnrichedLedgerRow, 'txnType
   note: null,
   createdAt: new Date('2026-10-08T07:24:17.897Z'),
   ...over,
+  paymentMethod: over.paymentMethod ?? null,
 });
 
 const revenue = (over: Partial<EnrichedLedgerRow> = {}) => row({

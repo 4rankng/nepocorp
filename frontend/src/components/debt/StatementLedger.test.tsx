@@ -11,7 +11,7 @@ import { StatementLedger } from './StatementLedger';
  * renders exactly as delivered by the API (integer VND) — no recomputation.
  */
 
-const trip = (id: number, month: string, posted: string, debit: number, docNo: string): StatementLine => ({
+const trip = (id: number, month: string, posted: string, debit: number, docNo: string, counterAccount: string | null = '5111'): StatementLine => ({
   id,
   kind: 'transaction',
   month,
@@ -19,6 +19,7 @@ const trip = (id: number, month: string, posted: string, debit: number, docNo: s
   docDate: posted,
   docNo,
   description: `Doanh thu chuyến ${docNo}`,
+  counterAccount,
   debit,
   credit: 0,
   balance: debit,
@@ -26,7 +27,7 @@ const trip = (id: number, month: string, posted: string, debit: number, docNo: s
   tripId: id,
 });
 
-const payment = (id: number, month: string, posted: string, credit: number, balance: number, docNo = 'R1', rowCount = 2): StatementLine => ({
+const payment = (id: number, month: string, posted: string, credit: number, balance: number, docNo = 'R1', rowCount = 2, counterAccount: string | null = '1121'): StatementLine => ({
   id,
   kind: 'payment',
   month,
@@ -34,6 +35,7 @@ const payment = (id: number, month: string, posted: string, credit: number, bala
   docDate: posted,
   docNo,
   description: `KH trả ${credit.toLocaleString('vi-VN')} ₫ ngày ${posted.slice(8, 10)}/${posted.slice(5, 7)}/${posted.slice(0, 4)}`,
+  counterAccount,
   debit: 0,
   credit,
   balance,
@@ -90,5 +92,30 @@ describe('StatementLedger (NEPO-46 sổ chi tiết)', () => {
     const { getByText, queryByText } = render(<StatementLedger lines={[]} isLoading={false} />);
     expect(getByText('Không có giao dịch trong kỳ')).toBeTruthy();
     expect(queryByText('Tổng phát sinh trong kỳ')).toBeNull();
+  });
+
+  it('renders the TK ĐỐI ỨNG column with the counter account per line kind', () => {
+    const lines = [
+      trip(1, '2026-07', '2026-07-05', 10_000_000, 'TRP-202607-0001', '5111'),
+      payment(2, '2026-07', '2026-07-20', 10_000_000, 0, 'R5', 2, '1121'),
+    ];
+    const { getByText, getByTestId } = render(
+      <StatementLedger lines={lines} totals={totals(0, 10_000_000, 10_000_000, 0)} />,
+    );
+
+    expect(getByText('TK ĐỐI ỨNG')).toBeTruthy();
+    const paymentRow = getByTestId('so-ke-payment-row');
+    expect(within(paymentRow).getByText('1121')).toBeTruthy();
+    expect(getByText('5111')).toBeTruthy();
+  });
+
+  it('shows — for a line with no counter account (legacy receipt, no channel)', () => {
+    const lines = [
+      payment(1, '2026-10', '2026-10-15', 12_000_000, 2_000_000, 'R1', 2, null),
+    ];
+    const { getByTestId } = render(
+      <StatementLedger lines={lines} totals={totals(0, 0, 12_000_000, 2_000_000)} />,
+    );
+    expect(within(getByTestId('so-ke-payment-row')).getByText('—')).toBeTruthy();
   });
 });

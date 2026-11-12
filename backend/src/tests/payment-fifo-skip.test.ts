@@ -127,6 +127,7 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
 
     // Pay trip A (10M) in full first — the oldest trip is now closed.
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-FIFO1-${suffix}`,
       payments: [{ tripId: tripA, amount: 10_000_000 }],
@@ -137,6 +138,7 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
     // oldest trip (aging view and per-trip ledger sums disagree). The request
     // must NOT fail — the server reallocates the total onto trip B.
     const result = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-FIFO2-${suffix}`,
       payments: [{ tripId: tripA, amount: 5_000_000 }],
@@ -158,11 +160,13 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
 
     // A (oldest) fully paid; B (middle) partially paid 3M of 5M; C untouched.
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-FIFO3-${suffix}`,
       payments: [{ tripId: tripA, amount: 10_000_000 }],
     });
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-FIFO4-${suffix}`,
       payments: [{ tripId: tripB, amount: 3_000_000 }],
@@ -173,6 +177,7 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
     // those 7M land FIFO and the 3M excess posts as a customer-level advance
     // credit — no rejection.
     const result = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-FIFO5-${suffix}`,
       payments: [{ tripId: tripA, amount: 10_000_000 }],
@@ -199,6 +204,7 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
     const { customerId, tripA, tripB } = await seedCustomerWithDebt(suffix, trackers);
 
     const result = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-FIFO7-${suffix}`,
       payments: [{ tripId: tripA, amount: 15_500_000 }],
@@ -222,6 +228,7 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
 
     // Arbitrary "wrong" split on the client — only the 15M total matters.
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-FIFO8-${suffix}`,
       payments: [
@@ -242,6 +249,7 @@ describe('FIFO allocation skips fully-paid trips (NITODA incident)', () => {
     // NEPO-45: it posts entirely as advance credit and the balance dips
     // negative instead of being rejected.
     const result = await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-FIFO9-${suffix}`,
       payments: [{ tripId: tripA, amount: 1_000 }],

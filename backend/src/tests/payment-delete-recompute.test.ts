@@ -68,11 +68,13 @@ describe('payment entry deletion + balance recompute (kanban 141026163920)', () 
     // 2M(A) + 3M(B), but allocation is server-authoritative FIFO (NITODA
     // incident): A still has 6M collectible, so all 5M lands on A as ONE row.
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-DEL1-${suffix}`,
       payments: [{ tripId: tripA, amount: 4_000_000 }],
     });
     await recordPayment({
+      paymentMethod: 'BANK',
       customerId,
       receiptId: `PT-DEL2-${suffix}`,
       payments: [

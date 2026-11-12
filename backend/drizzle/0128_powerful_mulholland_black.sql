@@ -1,0 +1,2 @@
+ALTER TABLE "ledger" ADD COLUMN "payment_method" varchar(8);--> statement-breakpoint
+ALTER TABLE "ledger" ADD CONSTRAINT "ledger_payment_method_check" CHECK ("ledger"."payment_method" IN ('BANK', 'CASH'));

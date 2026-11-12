@@ -104,6 +104,7 @@ export {
   fuelReconcileRequestSchema,
   ledgerQuerySchema, ledgerPlanContainerSchema, ledgerPlanLegSchema,
   updateTripPlanSchema, updateLedgerMoneySchema, createLedgerDraftSchema,
+  paymentMethodSchema,
 } from './schemas';
 
 export { appSettingsSchema } from './schemas/app-settings';
@@ -143,6 +144,7 @@ export type {
   FaqEntry, FaqEntryCreate, FaqEntryUpdate, FaqEmbeddingStatus, FaqEntryMutationResponse,
   FuelReconcileRowInput, FuelReconcileRequest,
   LedgerQueryInput, UpdateTripPlanInput, UpdateLedgerMoneyInput, CreateLedgerDraftInput,
+  PaymentMethod,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

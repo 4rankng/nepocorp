@@ -20,6 +20,8 @@ export interface PaymentInput {
   payments: Array<{ tripId: number; amount: number }>;
   /** "Ngày nhận" (YYYY-MM-DD). Defaults to now; may be back-dated, never future. */
   receivedDate?: string;
+  /** Receipt channel: '1121' bank transfer or '1111' cash. Defaults to 'BANK'. */
+  paymentMethod: 'BANK' | 'CASH';
 }
 
 /**
@@ -161,6 +163,9 @@ export type RecordPaymentResult =
  * non-positive amounts are refused (400).
  */
 export async function recordPayment(input: PaymentInput): Promise<RecordPaymentResult> {
+  // Route always sends this (zod default 'BANK'); the fallback guards direct
+  // untyped callers.
+  const paymentMethod = input.paymentMethod ?? 'BANK';
   return db.transaction(async (tx) => {
     // "Ngày nhận" — validated before any posting so a bad date can never
     // leave half a payment on the books.
@@ -197,6 +202,7 @@ export async function recordPayment(input: PaymentInput): Promise<RecordPaymentR
         txnType: TxnType.PAYMENT_RECEIVED,
         txnId: trip.tripId,
         receiptId: input.receiptId,
+        paymentMethod,
         entityType: 'CUSTOMER',
         entityId: input.customerId,
         debit: 0,
@@ -217,6 +223,7 @@ export async function recordPayment(input: PaymentInput): Promise<RecordPaymentR
       await LedgerService.postEntry(tx, {
         txnType: TxnType.PAYMENT_RECEIVED,
         receiptId: input.receiptId,
+        paymentMethod,
         entityType: 'CUSTOMER',
         entityId: input.customerId,
         debit: 0,
@@ -337,7 +344,7 @@ export interface UpdatedPaymentEntry {
  */
 export async function updatePaymentEntry(
   entryId: number,
-  input: { amount: number; receiptId: string; receivedDate: string },
+  input: { amount: number; receiptId: string; receivedDate: string; paymentMethod?: 'BANK' | 'CASH' },
 ): Promise<UpdatedPaymentEntry> {
   return db.transaction(async (tx) => {
     const [entry] = await tx.select().from(s.ledger)
@@ -396,8 +403,31 @@ export async function updatePaymentEntry(
         credit: String(input.amount),
         receiptId: input.receiptId,
         timestamp: postedAt,
+        // Only overwrite the channel when the caller sends one — a PUT without
+        // paymentMethod keeps the stored value instead of nulling it.
+        ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
       })
       .where(eq(s.ledger.id, entryId));
+
+    // The channel is a receipt-level attribute: every FIFO slice of one bank
+    // receipt is the same physical document, so an edit cascades the new
+    // channel to all sibling slices (the sổ folds a receipt into one line and
+    // reads the FIRST row's channel — a half-updated receipt would show the
+    // old channel). Covers both the pre-edit and post-edit receipt id in case
+    // the edit renamed the receipt.
+    if (input.paymentMethod) {
+      const receiptIds = [entry.receiptId, input.receiptId].filter((v): v is string => v != null);
+      if (receiptIds.length > 0) {
+        await tx.update(s.ledger)
+          .set({ paymentMethod: input.paymentMethod })
+          .where(and(
+            eq(s.ledger.entityType, entry.entityType),
+            eq(s.ledger.entityId, entry.entityId),
+            eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+            inArray(s.ledger.receiptId, receiptIds),
+          ));
+      }
+    }
 
     const newBalance = await LedgerService.recomputeEntityBalances(tx, entry.entityType, entry.entityId);
 

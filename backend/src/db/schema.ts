@@ -440,6 +440,9 @@ export const ledger = pgTable('ledger', {
   txnType: txnTypeEnum('txn_type').notNull(),
   txnId: integer('txn_id'),
   receiptId: varchar('receipt_id', { length: 100 }),
+  // Payment channel of a customer receipt: 'BANK' (chuyển khoản → TK 1121) or
+  // 'CASH' (tiền mặt → TK 1111). Null = legacy receipt, channel unknown.
+  paymentMethod: varchar('payment_method', { length: 8 }),
   entityType: varchar('entity_type', { length: 50 }).notNull(),
   entityId: integer('entity_id').notNull(),
   credit: numeric('credit', { precision: 15, scale: 0 }).default('0'),
@@ -452,6 +455,10 @@ export const ledger = pgTable('ledger', {
   index('ledger_entity_entity_idx').on(table.entityType, table.entityId),
   index('ledger_entity_entity_id_idx').on(table.entityType, table.entityId, table.id),
   index('ledger_entity_txn_timestamp_idx').on(table.entityType, table.txnType, table.timestamp),
+  check(
+    'ledger_payment_method_check',
+    sql`${table.paymentMethod} IN ('BANK', 'CASH')`,
+  ),
   uniqueIndex('ledger_forwarder_settlement_once_idx')
     .on(table.txnType, table.txnId, table.entityType, table.entityId)
     .where(sql`${table.txnType} = 'FORWARDER_SETTLEMENT'`),

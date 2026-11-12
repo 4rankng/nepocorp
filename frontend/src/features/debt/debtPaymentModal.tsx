@@ -1,4 +1,5 @@
 import { Loader2, Save, X } from 'lucide-react';
+import type { PaymentMethod } from '@tingting/shared';
 import { Modal } from '../../components/UI';
 import { formatCurrency } from '../../lib/format';
 
@@ -11,11 +12,14 @@ interface DebtPaymentModalProps {
   payReceipt: string;
   /** "Ngày nhận" (YYYY-MM-DD) — defaults to today, back-dating allowed. */
   payDate: string;
+  /** Receipt channel: TK đối ứng 1121 (BANK) or 1111 (CASH). */
+  payMethod: PaymentMethod;
   payError: string;
   paySubmitting: boolean;
   onAmountChange: (value: string) => void;
   onReceiptChange: (value: string) => void;
   onDateChange: (value: string) => void;
+  onMethodChange: (value: PaymentMethod) => void;
   onSubmit: () => void;
   onClose: () => void;
 }
@@ -28,11 +32,13 @@ export function DebtPaymentModal({
   payAmount,
   payReceipt,
   payDate,
+  payMethod,
   payError,
   paySubmitting,
   onAmountChange,
   onReceiptChange,
   onDateChange,
+  onMethodChange,
   onSubmit,
   onClose,
 }: DebtPaymentModalProps) {
@@ -125,6 +131,36 @@ export function DebtPaymentModal({
           />
           <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
             Bắt buộc để đối chiếu với sao kê ngân hàng / sổ quỹ.
+          </p>
+        </div>
+        <div className="field">
+          <span style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            Thanh toán qua
+          </span>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-body)', color: 'var(--fg-2)', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="pay-method"
+                value="BANK"
+                checked={payMethod === 'BANK'}
+                onChange={() => onMethodChange('BANK')}
+              />
+              Chuyển khoản (TK 1121)
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-body)', color: 'var(--fg-2)', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="pay-method"
+                value="CASH"
+                checked={payMethod === 'CASH'}
+                onChange={() => onMethodChange('CASH')}
+              />
+              Tiền mặt (TK 1111)
+            </label>
+          </div>
+          <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, color: 'var(--fg-3)', marginTop: 4 }}>
+            Quyết định cột TK đối ứng trên sổ chi tiết công nợ.
           </p>
         </div>
       </div>

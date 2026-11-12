@@ -1,4 +1,5 @@
 import { Loader2, Save, X } from 'lucide-react';
+import type { PaymentMethod } from '@tingting/shared';
 import { Modal } from '../../components/UI';
 
 interface DebtPaymentEditModalProps {
@@ -9,18 +10,21 @@ interface DebtPaymentEditModalProps {
   receiptId: string;
   /** "Ngày nhận" (YYYY-MM-DD) prefilled from the row's timestamp. */
   receivedDate: string;
+  /** Receipt channel prefilled from the row ('BANK' for legacy rows). */
+  paymentMethod: PaymentMethod;
   error: string;
   submitting: boolean;
   onAmountChange: (value: string) => void;
   onReceiptChange: (value: string) => void;
   onDateChange: (value: string) => void;
+  onMethodChange: (value: PaymentMethod) => void;
   onSubmit: () => void;
   onClose: () => void;
 }
 
 /**
- * Edit form for a recorded receivable payment entry — amount, "Ngày nhận"
- * and receipt code (the editable trio; the FIFO allocation itself stays).
+ * Edit form for a recorded receivable payment entry — amount, "Ngày nhận",
+ * receipt code and payment channel (the FIFO allocation itself stays).
  * Submitting asks for confirmation in the parent before the PUT goes out.
  */
 export function DebtPaymentEditModal({
@@ -29,11 +33,13 @@ export function DebtPaymentEditModal({
   amount,
   receiptId,
   receivedDate,
+  paymentMethod,
   error,
   submitting,
   onAmountChange,
   onReceiptChange,
   onDateChange,
+  onMethodChange,
   onSubmit,
   onClose,
 }: DebtPaymentEditModalProps) {
@@ -108,6 +114,33 @@ export function DebtPaymentEditModal({
             onChange={e => onReceiptChange(e.target.value)}
             placeholder="VD: PT-20260601-01"
           />
+        </div>
+        <div className="field">
+          <span style={{ display: 'block', fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--fg-2)', marginBottom: 6 }}>
+            Thanh toán qua
+          </span>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-body)', color: 'var(--fg-2)', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="edit-pay-method"
+                value="BANK"
+                checked={paymentMethod === 'BANK'}
+                onChange={() => onMethodChange('BANK')}
+              />
+              Chuyển khoản (TK 1121)
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-body)', color: 'var(--fg-2)', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="edit-pay-method"
+                value="CASH"
+                checked={paymentMethod === 'CASH'}
+                onChange={() => onMethodChange('CASH')}
+              />
+              Tiền mặt (TK 1111)
+            </label>
+          </div>
         </div>
       </div>
     </Modal>

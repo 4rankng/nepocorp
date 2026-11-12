@@ -41,6 +41,8 @@ export interface LedgerPostRequest {
   txnType: TxnType;
   txnId?: number;
   receiptId?: string;
+  /** Receipt channel 'BANK' | 'CASH'; only meaningful for PAYMENT_RECEIVED rows. */
+  paymentMethod?: string;
   entityType: 'CUSTOMER' | 'DRIVER' | 'VENDOR' | 'FORWARDER' | 'CARRIER';
   entityId: number;
   debit: number;
@@ -151,6 +153,7 @@ export class LedgerService {
       txnType: request.txnType,
       txnId: request.txnId ?? null,
       receiptId: request.receiptId ?? null,
+      paymentMethod: request.paymentMethod ?? null,
       entityType: request.entityType,
       entityId: request.entityId,
       debit: String(request.debit),
