@@ -34,7 +34,7 @@ export type {
   CreateTripRequest, TripLegInput, UpdateTripFiguresRequest,
   BulkUpdateTripFiguresRequest, BulkUpdateTripFiguresResponse,
   CreatePaymentRequest, CreatePenaltyRequest, CreateAdjustmentRequest,
-  LoginResponse, PaginatedResponse, DashboardStats, DashboardDecisionItem, DashboardDecisionKind, DashboardDecisionSeverity, CustomerStatement, AgingBucket, UnpaidTrip, PeriodSummary, StatementLine, StatementPeriodTotals,
+  LoginResponse, PaginatedResponse, DashboardStats, DashboardDecisionItem, DashboardDecisionKind, DashboardDecisionSeverity, CustomerStatement, AgingBucket, UnpaidTrip, PeriodSummary, StatementLine, StatementPeriodTotals, StatementVoucher, StatementVoucherLine, StatementBalancePair, FastStatementDetail,
   SalaryPeriod, SalaryPeriodRange, PnlTruck, PnlMaintenanceItem, PnlTripDetail, PnlReport,
   Supplier, ExpenseCategory, Expense, ExpenseWithRefs, PayableSummary, PayablesCategory, SupplierStatement, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, RenewalReminder, VendorPaymentRequest,
   TripContainer, TripExpense, TripExpenseWithRefs, ForwarderTripDetail, TripExpenseWithSupplier,

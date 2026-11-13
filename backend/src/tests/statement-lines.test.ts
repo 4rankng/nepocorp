@@ -1,7 +1,8 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TxnType } from '@tingting/shared';
-import { buildStatementLines, computePeriodSummary } from '../services/statement.service';
+import type { StatementLine, StatementPeriodTotals } from '@tingting/shared';
+import { buildStatementLines, buildFastStatement, computePeriodSummary } from '../services/statement.service';
 
 /**
  * Unit tests for the NEPO-46 sổ chi tiết builder (MISA-style customer
@@ -228,5 +229,127 @@ describe('buildStatementLines — diễn giải strips the duplicated trip code'
     const { lines } = buildStatementLines(rows, 0);
     assert.equal(lines[0].description, 'Phí chi hộ');
     assert.equal(lines[1].description, 'Điều chỉnh theo TRP-202609-0001', 'a different trip reference survives');
+  });
+});
+
+describe('buildFastStatement — NEPO-47 Fast SỔ CHI TIẾT CÔNG NỢ', () => {
+  const tripLine = (id: number, posted: string, docNo: string, debit: number, overrides: Partial<StatementLine> = {}): StatementLine => ({
+    id,
+    kind: 'transaction',
+    month: posted.slice(0, 7),
+    postedDate: posted,
+    docDate: posted,
+    docNo,
+    description: 'Phí chi hộ',
+    counterAccount: null,
+    debit,
+    credit: 0,
+    balance: debit,
+    txnType: TxnType.TRIP_REVENUE,
+    tripId: id,
+    ...overrides,
+  });
+  const paymentLine = (id: number, posted: string, credit: number, balance: number, docNo: string | null = 'R1'): StatementLine => ({
+    id,
+    kind: 'payment',
+    month: posted.slice(0, 7),
+    postedDate: posted,
+    docDate: posted,
+    docNo,
+    description: `KH trả ${credit.toLocaleString('vi-VN')} ₫ ngày ${posted.slice(8, 10)}/${posted.slice(5, 7)}/${posted.slice(0, 4)}`,
+    counterAccount: '1121',
+    debit: 0,
+    credit,
+    balance,
+    txnType: TxnType.PAYMENT_RECEIVED,
+    tripId: null,
+    rowCount: 1,
+  });
+  const totalsOf = (opening: number, debit: number, credit: number, closing: number): StatementPeriodTotals => ({
+    openingBalance: opening, debitTotal: debit, creditTotal: credit, closingBalance: closing,
+  });
+
+  test('cước + chi hộ của cùng chuyến gộp một STT dù đăng ký lệch thời điểm', () => {
+    const lines = [
+      tripLine(1, '2026-07-06', 'TRP-202607-0001', 2_000_000, { description: 'Phí chi hộ', txnType: TxnType.SERVICE_FEE }),
+      tripLine(2, '2026-07-05', 'TRP-202607-0001', 10_000_000, { description: 'Doanh thu chuyến' }),
+      tripLine(3, '2026-07-10', 'TRP-202607-0002', 8_000_000, { description: 'Doanh thu chuyến' }),
+    ];
+    const { vouchers, totals } = buildFastStatement(lines, totalsOf(0, 20_000_000, 0, 20_000_000));
+
+    assert.equal(vouchers.length, 2, '2 chuyến = 2 STT');
+    assert.equal(vouchers[0].stt, 1);
+    assert.equal(vouchers[0].docNo, 'TRP-202607-0001', 'first-occurrence order by ngày ghi sổ');
+    assert.equal(vouchers[0].lines.length, 2, 'cước + chi hộ dưới cùng một STT');
+    assert.equal(vouchers[0].debit, 12_000_000, 'voucher nợ = cước + chi hộ');
+    assert.equal(vouchers[1].stt, 2);
+    assert.equal(vouchers[1].docNo, 'TRP-202607-0002');
+    assert.equal(totals.debitTotal, 20_000_000);
+  });
+
+  test('phiếu thu là chứng từ riêng; phiếu thu legacy không mã tự đứng một STT', () => {
+    const lines = [
+      tripLine(1, '2026-07-05', 'TRP-202607-0001', 10_000_000),
+      paymentLine(2, '2026-10-15', 12_000_000, -2_000_000, 'R1'),
+      paymentLine(3, '2026-10-16', 1_000_000, -3_000_000, null),
+      paymentLine(4, '2026-10-16', 2_000_000, -5_000_000, null),
+    ];
+    const { vouchers } = buildFastStatement(lines, totalsOf(0, 10_000_000, 15_000_000, -5_000_000));
+
+    assert.equal(vouchers.length, 4, '1 chuyến + 1 phiếu có mã + 2 phiếu legacy');
+    assert.equal(vouchers[1].kind, 'payment');
+    assert.equal(vouchers[1].docNo, 'R1');
+    assert.equal(vouchers[2].kind, 'payment');
+    assert.equal(vouchers[2].docNo, null, 'legacy receipt stands alone');
+    assert.equal(vouchers[3].docNo, null);
+  });
+
+  test('dư đầu/cuối kỳ tách 2 ô Nợ|Có theo dấu — thang 10 dư nợ months 1-9', () => {
+    // Kế toán case NEPO-47: tháng 10 mở sổ với dư Nợ cộng dồn từ các tháng trước.
+    const lines = [
+      tripLine(1, '2026-10-05', 'TRP-202610-0001', 5_000_000),
+      paymentLine(2, '2026-10-20', 8_000_000, 9_000_000),
+    ];
+    const opening = buildFastStatement(lines, totalsOf(12_000_000, 5_000_000, 8_000_000, 9_000_000));
+    assert.deepEqual(opening.opening, { debit: 12_000_000, credit: 0 }, 'dư dương → ô Nợ');
+    assert.deepEqual(opening.closing, { debit: 9_000_000, credit: 0 });
+
+    const advance = buildFastStatement([], totalsOf(-4_000_000, 0, 0, -4_000_000));
+    assert.deepEqual(advance.opening, { debit: 0, credit: 4_000_000 }, 'dư âm (trả trước) → ô Có');
+    assert.deepEqual(advance.closing, { debit: 0, credit: 4_000_000 });
+  });
+
+  test('bất biến tiền: Σ voucher = tổng phát sinh; closing = opening + Σnợ − Σcó', () => {
+    const lines = [
+      tripLine(1, '2026-07-05', 'TRP-202607-0001', 10_000_000),
+      tripLine(2, '2026-07-06', 'TRP-202607-0001', 2_000_000, { txnType: TxnType.SERVICE_FEE }),
+      paymentLine(3, '2026-10-15', 12_000_000, 0),
+    ];
+    const totals = totalsOf(3_000_000, 12_000_000, 12_000_000, 3_000_000);
+    const { opening, vouchers, closing } = buildFastStatement(lines, totals);
+
+    const sumDebit = vouchers.reduce((s, v) => s + v.debit, 0);
+    const sumCredit = vouchers.reduce((s, v) => s + v.credit, 0);
+    assert.equal(sumDebit, totals.debitTotal, 'grouping không đổi tiền (Nợ)');
+    assert.equal(sumCredit, totals.creditTotal, 'grouping không đổi tiền (Có)');
+    assert.equal(closing.debit - closing.credit, opening.debit - opening.credit + sumDebit - sumCredit);
+    for (const v of vouchers) {
+      const lineSum = v.lines.reduce((s, l) => s + l.debit - l.credit, 0);
+      assert.equal(v.debit - v.credit, lineSum, 'voucher tổng = tổng dòng nghiệp vụ dưới nó');
+    }
+  });
+
+  test('ngày chứng từ = ngày đi chuyến, fallback ngày ghi sổ; STT chạy 1..N', () => {
+    const lines = [
+      tripLine(1, '2026-10-05', 'TRP-202610-0001', 5_000_000, { docDate: null, description: 'Doanh thu chuyến', routeName: 'Hải Phòng — Hà Nội', containerNumbers: ['ABC-1'] }),
+      paymentLine(2, '2026-10-06', 1_000_000, 4_000_000),
+    ];
+    const { vouchers } = buildFastStatement(lines, totalsOf(0, 5_000_000, 1_000_000, 4_000_000));
+
+    assert.equal(vouchers[0].stt, 1);
+    assert.equal(vouchers[0].docDate, '2026-10-05', 'null ngày CT → fallback ngày ghi sổ');
+    assert.equal(vouchers[0].lines[0].description, 'Doanh thu chuyến — Hải Phòng — Hà Nội (ABC-1)');
+    assert.equal(vouchers[1].stt, 2);
+    assert.equal(vouchers[1].docDate, '2026-10-06');
   });
 });

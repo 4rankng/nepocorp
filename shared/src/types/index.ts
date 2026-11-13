@@ -1312,8 +1312,52 @@ export interface StatementPeriodTotals {
   closingBalance: number;
 }
 
+/** NEPO-47 — một dòng nghiệp vụ dưới một chứng từ (integer VND). */
+export interface StatementVoucherLine {
+  description: string;
+  debit: number;
+  credit: number;
+}
+
+/** NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ': một STT cho cả chứng từ, nhiều
+ * dòng nghiệp vụ dưới cùng một STT (vd cước vận chuyển + chi hộ của cùng
+ * một chuyến, hoặc 2 dòng Nợ/Có của cùng phiếu). */
+export interface StatementVoucher {
+  /** Số thứ tự chứng từ, bắt đầu từ 1 theo thứ tự ngày ghi sổ. */
+  stt: number;
+  /** 'payment' = phiếu thu (hiện nổi bản 'KH trả X ₫'); 'transaction' = chuyến/chi hộ/điều chỉnh. */
+  kind: 'transaction' | 'payment';
+  /** Ngày chứng từ (yyyy-mm-dd) — ngày đi chuyến; null khi không có (fallback ngày ghi sổ). */
+  docDate: string | null;
+  /** Số chứng từ — mã chuyến, mã phiếu thu; null hiển thị '—'. */
+  docNo: string | null;
+  lines: StatementVoucherLine[];
+  debit: number;
+  credit: number;
+}
+
+/** Số dư Nợ/Có (Fast hiển thị 2 ô — dương là Nợ, âm là Có; chỉ một ô có số). */
+export interface StatementBalancePair {
+  /** Dư Nợ (khách còn nợ) — integer VND, 0 khi số dư là Có. */
+  debit: number;
+  /** Dư Có (khách trả trước) — integer VND, 0 khi số dư là Nợ. */
+  credit: number;
+}
+
+/** NEPO-47 — payload SỔ CHI TIẾT CÔNG NỢ mẫu Fast: dư đầu kỳ 2 ô Nợ|Có,
+ * bảng chứng từ theo STT, tổng phát sinh kỳ và dư cuối kỳ 2 ô Nợ|Có.
+ * Derived presentationally từ statementLines/statementTotals — grouping
+ * không đổi tiền: Σ voucher nợ = debitTotal, Σ voucher có = creditTotal,
+ * closing = opening (dùng totals.openingBalance) + Σnợ − Σcó. */
+export interface FastStatementDetail {
+  opening: StatementBalancePair;
+  vouchers: StatementVoucher[];
+  totals: StatementPeriodTotals;
+  closing: StatementBalancePair;
+}
+
 export interface CustomerStatement {
-  customer: Pick<Customer, 'id' | 'name' | 'contactInfo' | 'isCarrier'> & { debitNoteMode?: string | null };
+  customer: Pick<Customer, 'id' | 'name' | 'contactInfo' | 'isCarrier'> & { taxCode?: string | null; debitNoteMode?: string | null };
   ledgerRows: LedgerEntry[];
   agingBuckets: AgingBucket[];
   totalOutstanding: number;
@@ -1337,6 +1381,11 @@ export interface CustomerStatement {
   statementLines?: StatementLine[];
   /** Tổng kết kỳ over statementLines (opening / Σ nợ / Σ có / dư cuối). */
   statementTotals?: StatementPeriodTotals;
+  /** NEPO-47 — cùng dữ liệu xếp theo mẫu Fast 'SỔ CHI TIẾT CÔNG NỢ'
+   * (STT per chứng từ, dư đầu/cuối kỳ 2 ô Nợ|Có, không cột dư từng dòng). */
+  fastStatement?: FastStatementDetail;
+  /** Kỳ báo cáo of the request (filter bounds or ledger activity bounds). */
+  period?: { dateFrom: string; dateTo: string };
 }
 
 export interface DebtOffset {

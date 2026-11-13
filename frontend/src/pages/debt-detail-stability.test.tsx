@@ -125,6 +125,36 @@ const periodStatement: CustomerStatement = {
     creditTotal: 5_000_000,
     closingBalance: 12_000_000,
   },
+  fastStatement: {
+    opening: { debit: 5_000_000, credit: 0 },
+    vouchers: [
+      {
+        stt: 1,
+        kind: 'transaction',
+        docDate: '2026-08-05',
+        docNo: 'TRIP-0805',
+        lines: [{ description: 'Cước chuyến tháng 8', debit: 12_000_000, credit: 0 }],
+        debit: 12_000_000,
+        credit: 0,
+      },
+      {
+        stt: 2,
+        kind: 'payment',
+        docDate: '2026-08-20',
+        docNo: 'PT-0001',
+        lines: [{ description: 'KH trả 5.000.000 ₫ ngày 20/08', debit: 0, credit: 5_000_000 }],
+        debit: 0,
+        credit: 5_000_000,
+      },
+    ],
+    totals: {
+      openingBalance: 5_000_000,
+      debitTotal: 12_000_000,
+      creditTotal: 5_000_000,
+      closingBalance: 12_000_000,
+    },
+    closing: { debit: 12_000_000, credit: 0 },
+  },
 };
 
 function deferred<T>() {
@@ -188,9 +218,9 @@ describe('debt detail period and tab state are stable across reloads (kanban 091
 
     gate.resolve(periodStatement);
     expect(await screen.findByText('1 khoản phát sinh')).toBeTruthy();
-    // The sổ renders its opening row and the month band once loaded.
-    expect(await screen.findByText('Dư đầu kỳ')).toBeTruthy();
-    expect(screen.getByText('Tháng 8/2026')).toBeTruthy();
+    // The sổ renders the Fast layout: opening row + the voucher table.
+    expect(await screen.findByText('SỐ DƯ ĐẦU KỲ')).toBeTruthy();
+    expect(screen.getByText('TRIP-0805')).toBeTruthy();
     // The per-entry ledger stays one click away and renders its rows.
     fireEvent.click(screen.getByRole('tab', { name: /Chi tiết công nợ/ }));
     // The note renders twice (reference cell + content cell), so match by list.

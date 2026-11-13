@@ -22,13 +22,15 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3090',
+        // Parallel dev instances: run the second backend on another port and
+        // point the proxy at it with VITE_PROXY_TARGET (default stays 3090).
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3090',
         changeOrigin: true,
       },
       // socket.io (assistant transport). `ws: true` proxies the WebSocket
       // upgrade handshake; without it the engine.io upgrade fails in dev.
       '/socket.io': {
-        target: 'http://localhost:3090',
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:3090',
         changeOrigin: true,
         ws: true,
       },
