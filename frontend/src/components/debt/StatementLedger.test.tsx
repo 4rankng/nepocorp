@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, within } from '@testing-library/react';
-import { TxnType } from '@tingting/shared';
-import type { FastStatementDetail, StatementLine, StatementPeriodTotals, StatementVoucherLine } from '@tingting/shared';
+import type { FastStatementDetail, StatementPeriodTotals, StatementVoucherLine } from '@tingting/shared';
 import { StatementLedger } from './StatementLedger';
 
 /**

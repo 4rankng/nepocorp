@@ -110,12 +110,6 @@ function dataRows(rows: string[][]): string[][] {
   });
 }
 
-/** True if the table's header row matches `re` — guards fixed-index parsers
- *  against silently misattributing fields if the vendor changes column layout. */
-function headerOk(rows: string[][], re: RegExp): boolean {
-  return Boolean(rows[0]) && re.test(rows[0].join(' '));
-}
-
 // ─── carId resolution ────────────────────────────────────────────────────────
 
 /**
@@ -228,93 +222,3 @@ export async function getJourneyRange(carId: number, fromDay: string, toDay: str
   all.sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
   return all;
 }
-
-export interface OverSpeedEvent { time: string | null; avgSpeed: number | null; driver: string | null; license: string | null; }
-/** Overspeed events (empty array if none in range). */
-export async function getOverSpeed(carId: number, range: ReportRange): Promise<OverSpeedEvent[]> {
-  const html = await fetchReport(carId, '/ReportBGTVT/_ResultReportsOverSpeed', range, { referer: 'ReportBGTVT/ReportsOverSpeed' });
-  const rows = dataRows(parseTable(html));
-  // #, Biển số, Biển số xe, Lái xe, GPLX, Loại hình, Thời điểm, Tốc độ TB...
-  return rows
-    .filter((r) => /\d/.test(r[0] ?? '') && r.length >= 7 && !/không có dữ liệu/i.test(r.join(' ')))
-    .map((r) => ({
-      time: toIso(parsePortalDateTime(r[6] ?? '')),
-      avgSpeed: toNum(r[7]),
-      driver: r[3] || null,
-      license: r[4] || null,
-    }));
-}
-
-export interface SummaryByCar { totalKm: number | null; overSpeedPct: { band5to10: number | null; band10to20: number | null; bandOver20: number | null; }; bounds: { minLat: number | null; minLng: number | null; maxLat: number | null; maxLng: number | null; }; }
-/** Per-car summary: total km, overspeed distribution, geo bounds. */
-export async function getSummaryByCar(carId: number, range: ReportRange): Promise<SummaryByCar> {
-  const html = await fetchReport(carId, '/ReportBGTVT/_ResultReportsSummaryByCar', range, { referer: 'ReportBGTVT/ReportSummaryByCar' });
-  const rows = parseTable(html);
-  if (!headerOk(rows, /tổng km|loại hình/i)) {
-    return { totalKm: null, overSpeedPct: { band5to10: null, band10to20: null, bandOver20: null }, bounds: { minLat: null, minLng: null, maxLat: null, maxLng: null } };
-  }
-  const r = rows.find((x) => /\d{2}[A-Z]-/i.test(x[0] ?? '')) ?? rows[0];
-  // cols: Biển số, Loại hình, Tổng km, %5-10, %10-20, %>20, ... , bbox (last)
-  const bboxRaw = r?.[r.length - 1] ?? '';
-  const b = bboxRaw.split(',').map((x) => toNum(x.trim()));
-  return {
-    totalKm: toNum(r?.[2]),
-    overSpeedPct: { band5to10: toNum(r?.[3]), band10to20: toNum(r?.[4]), bandOver20: toNum(r?.[5]) },
-    bounds: { minLat: b[0] ?? null, maxLat: b[1] ?? null, minLng: b[2] ?? null, maxLng: b[3] ?? null },
-  };
-}
-
-export interface CarSpeedSample { time: string | null; speeds: number[]; }
-/** Per-10s speed samples (can be large). */
-export async function getCarSpeed(carId: number, range: ReportRange, maxSamples = 5000): Promise<CarSpeedSample[]> {
-  const html = await fetchReport(carId, '/ReportBGTVT/_ResultReportsCarSpeed', range, { referer: 'ReportBGTVT/ReportsCarSpeed' });
-  const rows = dataRows(parseTable(html));
-  // #, Thời điểm, Các tốc độ (comma-separated), Ghi chú
-  const out = rows
-    .filter((r) => r.length >= 3)
-    .map((r) => ({
-      time: toIso(parsePortalDateTime(r[1] ?? '')),
-      speeds: (r[2] ?? '').split(',').map((s) => toNum(s.trim())).filter((x): x is number => x !== null),
-    }));
-  return out.slice(0, maxSamples);
-}
-
-export interface ActivitySummary { startTime: string | null; endTime: string | null; km: number | null; stopSec: number | null; parkSec: number | null; driveSec: number | null; }
-/** Daily activity: km + stop/park/drive time (params: dateF + dateE, no times). */
-export async function getActivitySummary(carId: number, range: ReportRange): Promise<ActivitySummary | null> {
-  const html = await fetchReport(carId, '/ReportDN/_ResultReportActivitySummary', range, { omitTimes: true, referer: 'ReportDN/ReportActivitySummary' });
-  const rows = parseTable(html);
-  // Biển số, Bắt đầu, Kết thúc, Số km, Thời gian dừng, Thời gian đỗ, Thời gian chạy
-  const r = rows.find((x) => /\d{2}[A-Z]-/i.test(x[0] ?? ''));
-  if (!r) return null;
-  return {
-    startTime: toIso(parsePortalDateTime(r[1] ?? '')),
-    endTime: toIso(parsePortalDateTime(r[2] ?? '')),
-    km: toNum(r[3]),
-    stopSec: durationToSec(r[4]),
-    parkSec: durationToSec(r[5]),
-    driveSec: durationToSec(r[6]),
-  };
-}
-
-export interface OfficialStop { time: string | null; durationMin: number | null; lat: number | null; lng: number | null; address: string | null; }
-/** Official BGTVT stop report (params: numberMinute, not timeS). */
-export async function getStopCar(carId: number, range: ReportRange): Promise<OfficialStop[]> {
-  const html = await fetchReport(carId, '/ReportBGTVT/_ResultReportsStopCar', range, { extra: { numberMinute: '0' }, referer: 'ReportBGTVT/StopCar' });
-  const rows = dataRows(parseTable(html));
-  // STT, Biển số, Lái xe, GPLX, Loại hình, Thời điểm, Thời gian dừng(min), Tọa độ, Địa điểm
-  return rows
-    .filter((r) => /\d/.test(r[0] ?? '') && r.length >= 9)
-    .map((r) => {
-      const ll = (r[7] ?? '').split(',');
-      return {
-        time: toIso(parsePortalDateTime(r[5] ?? '')),
-        durationMin: toNum(r[6]),
-        lat: toNum(ll[0]?.trim()),
-        lng: toNum(ll[1]?.trim()),
-        address: r[8] ?? null,
-      };
-    });
-}
-
-

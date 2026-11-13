@@ -4,7 +4,7 @@ import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import type { Writable } from 'stream';
 import ExcelJS from 'exceljs';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
-import type { AgingBucket, FastStatementDetail, PeriodSummary, StatementBalancePair, StatementVoucher, StatementVoucherLine, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, StatementLine, StatementPeriodTotals } from '@tingting/shared';
+import type { AgingBucket, FastStatementDetail, PeriodSummary, StatementVoucher, StatementVoucherLine, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, StatementLine, StatementPeriodTotals } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml, formatDateVi } from '../lib/format';
@@ -2009,7 +2009,6 @@ async function buildFastStatementXlsx(config: StatementExportConfig, dateStr: st
     bottom: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
     right: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
   };
-  const FONT = { name: 'Segoe UI', size: 10 };
 
   // Style one row of the book: label/amount cells with grid borders; the
   // header/total rows use it too, only fills differ.

@@ -1,7 +1,16 @@
 import type { Request, Response, NextFunction } from 'express';
+import type { ZodError } from 'zod';
 import multer from 'multer';
 import { ApiError } from '../errors';
 import { config } from '../config';
+
+/** First Zod issue + field path → user-readable message ("msg (a.b)"). */
+function zodTopMessage(zodErr: ZodError): string {
+  const first = zodErr.issues[0];
+  if (!first?.message) return 'Dữ liệu không hợp lệ';
+  const pathLabel = first.path.length > 0 ? ` (${first.path.join('.')})` : '';
+  return `${first.message}${pathLabel}`;
+}
 
 export function globalErrorHandler(err: Error, req: Request, res: Response, _next: NextFunction) {
   // Multipart limits fail before the route handler can validate the upload.
@@ -17,18 +26,11 @@ export function globalErrorHandler(err: Error, req: Request, res: Response, _nex
 
   // Zod validation errors → 400
   if (err.name === 'ZodError') {
-    const issues = (err as unknown as { issues?: Array<{ message: string; path?: Array<string | number> }> }).issues;
-    const first = issues?.[0];
+    // Name check (not instanceof) is the discriminator — survives duplicate zod copies.
+    const zodErr = err as ZodError;
     // Surface a user-readable top-level message including field path so the UI doesn't
     // have to inspect `details`. Fall back to the generic message if no issues.
-    let topMessage = 'Dữ liệu không hợp lệ';
-    if (first?.message) {
-      const pathLabel = first.path && first.path.length
-        ? ` (${first.path.join('.')})`
-        : '';
-      topMessage = `${first.message}${pathLabel}`;
-    }
-    res.status(400).json({ error: topMessage, details: issues });
+    res.status(400).json({ error: zodTopMessage(zodErr), details: zodErr.issues });
     return;
   }
 

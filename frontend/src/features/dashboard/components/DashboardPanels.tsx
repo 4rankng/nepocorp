@@ -79,8 +79,6 @@ export function RevenueChartCard({
   monthTotalM, dayAvgM, dayPeakM, onNavigate,
 }: RevenueChartCardProps) {
   const isDaily = chartView === 'day';
-  const barsEmpty = dailyRevenue.every(v => v === 0) && dailyGross.every(v => v === 0);
-  const lineEmpty = chartRevenue.every(v => v === 0) && chartGross.every(v => v === 0);
   return (
     <section className="d-card d-card-border bg-base-100 wf-card wf-chart wf-bento-hero" aria-labelledby="dashboard-revenue-title">
         <div className="wf-card-h">
@@ -143,7 +141,6 @@ export function RevenueChartCard({
         </div>
         <div className="body">
           {(() => {
-            const empty = isDaily ? barsEmpty : lineEmpty;
             const rawEmpty = isDaily ? dailyRevenue.length === 0 : chartRevenue.length === 0;
             // Skeleton ONLY while the stats query is in flight. A finished
             // query over an empty month is a legitimate "no trips yet" state —

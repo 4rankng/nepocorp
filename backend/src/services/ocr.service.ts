@@ -41,9 +41,8 @@ import { getOcrAiSettings } from './ocr/settings';
 const MAX_IMAGE_DIMENSION = 2048;
 const MAX_DETECT = 10;
 
-// Format validator (anchored) and global extractor (for free-text fallback).
+// Format validator (anchored).
 const CONTAINER_RE = /^[A-Z]{4}\d{7}$/;
-const CONTAINER_RE_G = /[A-Z]{4}\d{7}/g;
 
 // OpenRouter vision transport — endpoint AND model come from the admin
 // settings (services/ocr/settings.ts), falling back to the env key and the

@@ -108,8 +108,6 @@ export function TripFiltersBar(props: TripFiltersBarProps) {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- utility helper co-located with the filter component
-
-// eslint-disable-next-line react-refresh/only-export-components -- utility helper co-located with the filter component
 export function defaultStatusCounts(): StatusCounts {
   return {
     all: 0,
