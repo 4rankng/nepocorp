@@ -696,9 +696,9 @@ export default function DebtDetailPage() {
               <div className="dd-ledger-head dd-ledger-head--workspace">
                 <div className="dd-ledger-heading">
                   <h2>Sổ chi tiết công nợ</h2>
-                  <p>Dư đầu kỳ, phát sinh theo tháng (chuyến + chi hộ), khoản khách trả gộp và dư cuối cộng dồn từng dòng.</p>
+                  <p>Mẫu Fast: dư đầu kỳ, chứng từ theo STT (cước vận chuyển + chi hộ), khoản khách trả gộp, tổng phát sinh và dư cuối kỳ — không cột TK đối ứng, không cột dư từng dòng.</p>
                 </div>
-                <span className="dd-cnt">{statement?.statementLines?.length ?? 0} dòng sổ</span>
+                <span className="dd-cnt">{statement?.fastStatement?.vouchers?.length ?? 0} chứng từ</span>
               </div>
 
               {/* Same period state as the ledger tab — switching tabs never
@@ -718,8 +718,11 @@ export default function DebtDetailPage() {
               />
 
               <StatementLedger
-                lines={statement?.statementLines ?? []}
-                totals={statement?.statementTotals}
+                fast={statement?.fastStatement}
+                customerName={profileStatement?.customer.name}
+                customerCode={profileStatement?.customer.taxCode ?? null}
+                dateFrom={appliedPeriodRange.dateFrom}
+                dateTo={appliedPeriodRange.dateTo}
                 isLoading={isStatementFetching && !statement}
               />
             </section>

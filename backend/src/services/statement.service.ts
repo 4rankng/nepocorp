@@ -2,11 +2,12 @@ import { db } from '../db';
 import * as s from '../db/schema';
 import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import type { Writable } from 'stream';
+import ExcelJS from 'exceljs';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
-import type { AgingBucket, PeriodSummary, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, StatementLine, StatementPeriodTotals } from '@tingting/shared';
+import type { AgingBucket, FastStatementDetail, PeriodSummary, StatementBalancePair, StatementVoucher, StatementVoucherLine, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, StatementLine, StatementPeriodTotals } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
-import { escapeHtml } from '../lib/format';
+import { escapeHtml, formatDateVi } from '../lib/format';
 import { CustomerAgingListItem } from './aging.service';
 
 type LedgerRow = typeof s.ledger.$inferSelect;
@@ -58,7 +59,7 @@ export interface SupplierExpenseStatementRow {
 }
 
 export interface CustomerStatementData {
-  customer: { id: number; name: string; contactInfo: string | null; debitNoteMode?: string | null; isCarrier?: boolean };
+  customer: { id: number; name: string; contactInfo: string | null; taxCode?: string | null; debitNoteMode?: string | null; isCarrier?: boolean };
   ledgerRows: EnrichedLedgerRow[];
   totalOutstanding: number;
   /** Debt owed across the WHOLE ledger — independent of any date filter. */
@@ -72,6 +73,11 @@ export interface CustomerStatementData {
   /** NEPO-46 sổ chi tiết lines + tổng kết kỳ (see shared StatementLine). */
   statementLines: StatementLine[];
   statementTotals: StatementPeriodTotals;
+  /** NEPO-47 — cùng dữ liệu xếp theo mẫu Fast 'SỔ CHI TIẾT CÔNG NỢ'. */
+  fastStatement: FastStatementDetail;
+  /** Kỳ báo cáo of the request (client filter or ledger activity bounds) —
+   * renders 'TỪ NGÀY … ĐẾN NGÀY …' in the Fast header + exports. */
+  period: { dateFrom: string; dateTo: string };
 }
 
 export interface SupplierStatementData {
@@ -204,6 +210,13 @@ interface StatementExportConfig {
   statementLines?: StatementLine[];
   statementTotals?: StatementPeriodTotals;
   periodSummary?: PeriodSummary | null;
+  /** NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ' header data (customer statements
+   * only): account line, customer code (MST), report period. */
+  fast?: {
+    accountLine: string;
+    customerCode: string | null;
+    period: { dateFrom: string; dateTo: string };
+  };
 }
 
 export function safeFilename(name: string): string {
@@ -665,6 +678,87 @@ export function buildStatementLines(
   };
 }
 
+/**
+ * NEPO-47 — re-renders the sổ chi tiết into the customer's Fast 'SỔ CHI TIẾT
+ * CÔNG NỢ' layout (đọc mô tả NEPO-47): one STT per chứng từ, nhiều dòng
+ * nghiệp vụ dưới cùng một STT (cước vận chuyển + chi hộ của cùng chuyến;
+ * 2 dòng Nợ/Có của cùng phiếu), số dư chỉ ở đầu kỳ + tổng + cuối kỳ dạng 2 ô
+ * Nợ|Có — KHÔNG cột dư từng dòng, KHÔNG cột TK đối ứng.
+ *
+ * Grouping is presentational and order-preserving: lines sharing a voucher
+ * document (trip code for shipments, receipt for payments) fold into one
+ * voucher keyed by first occurrence; the money is untouched — Σ voucher nợ =
+ * debitTotal, Σ voucher có = creditTotal, and the dư đầu/cuối pairs are the
+ * signed balances split by sign (dương = Nợ khách còn nợ, âm = Có khách trả
+ * trước). A composite voucher can legitimately carry both sides at once.
+ */
+export function buildFastStatement(
+  lines: StatementLine[],
+  totals: StatementPeriodTotals,
+): FastStatementDetail {
+  interface VoucherDraft {
+    kind: StatementVoucher['kind'];
+    docDate: string | null;
+    docNo: string | null;
+    lines: StatementVoucherLine[];
+    debit: number;
+    credit: number;
+  }
+
+  const drafts = new Map<string, VoucherDraft>();
+  for (const line of lines) {
+    // One voucher = one document: trip shipments group by their code (cước +
+    // chi hộ under one STT), bank/cash receipts already fold per receipt
+    // upstream, and docNo-less rows (legacy receipts, standalone adjustments)
+    // each stand as their own voucher.
+    const key = line.docNo && line.kind === 'transaction'
+      ? `doc:${line.docNo}`
+      : line.kind === 'payment' && line.docNo
+        ? `receipt:${line.docNo}`
+        : `row:${line.id}`;
+    const detail = line.kind === 'payment'
+      ? line.description
+      : `${line.description}${line.routeName ? ` — ${line.routeName}` : ''}${line.containerNumbers?.length ? ` (${line.containerNumbers.join(', ')})` : ''}`;
+
+    let draft = drafts.get(key);
+    if (!draft) {
+      draft = {
+        kind: line.kind,
+        docDate: line.docDate ?? line.postedDate,
+        docNo: line.docNo,
+        lines: [],
+        debit: 0,
+        credit: 0,
+      };
+      drafts.set(key, draft);
+    }
+    draft.lines.push({ description: detail, debit: line.debit, credit: line.credit });
+    draft.debit += line.debit;
+    draft.credit += line.credit;
+  }
+
+  const vouchers: StatementVoucher[] = [...drafts.values()].map((d, i) => ({
+    stt: i + 1,
+    kind: d.kind,
+    docDate: d.docDate,
+    docNo: d.docNo,
+    lines: d.lines,
+    debit: d.debit,
+    credit: d.credit,
+  }));
+
+  // Signed balance → Fast 2 ô Nợ|Có: dương là Nợ (khách còn nợ), âm là Có
+  // (khách trả trước); chỉ một ô trong hai mang số.
+  const openingSigned = Math.round(totals.openingBalance);
+  const closingSigned = Math.round(totals.closingBalance);
+  return {
+    opening: { debit: Math.max(0, openingSigned), credit: Math.max(0, -openingSigned) },
+    vouchers,
+    totals,
+    closing: { debit: Math.max(0, closingSigned), credit: Math.max(0, -closingSigned) },
+  };
+}
+
 const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; max-width: 900px; margin: 24px auto; padding: 0 16px; }
   h1 { font-size: 18px; margin: 0 0 4px; }
   h2 { font-size: 14px; margin: 18px 0 4px; color: #00702f; }
@@ -685,7 +779,14 @@ const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Sego
   .soke-neg { color: #dc2626; }
   .soke-pos { color: #10b981; }
   .du-line { font-size: 13px; margin: 4px 0 12px; color: #374151; }
-  @media print { body { margin: 0; } }`;
+  .soke-head { text-align: center; margin: 6px 0 12px; font-size: 13px; line-height: 1.8; }
+  .soke-head div:first-child { font-weight: 700; }
+  .soke .stt { text-align: center; }
+  .soke-sign { margin-top: 30px; font-size: 13px; }
+  .soke-sign-date { text-align: right; color: #6b7280; }
+  .soke-sign-row { display: flex; justify-content: space-between; margin-top: 16px; font-weight: 700; text-align: center; }
+  .soke-sign-row span { font-weight: 400; color: #6b7280; font-size: 11px; }
+  @media print { body { margin: 0; } .soke-sign-row { page-break-inside: avoid; } }`;
 
 export async function getStatementData(customerId: number, dateFrom?: string, dateTo?: string): Promise<CustomerStatementData | null> {
   const [customer] = await db.select().from(s.customers).where(eq(s.customers.id, customerId)).limit(1);
@@ -950,8 +1051,27 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     tripDepartureByTripId,
   );
 
+  // NEPO-47 Fast layout — derived presentationally from the same lines/totals.
+  const fastStatement = buildFastStatement(statementLines, statementTotals);
+
+  // 'TỪ NGÀY … ĐẾN NGÀY …' header period: the requested filter when scoped,
+  // otherwise the ledger's actual activity bounds so the unscoped book still
+  // reports a truthful range.
+  let periodFrom = dateFrom;
+  let periodTo = dateTo;
+  if (!periodFrom || !periodTo) {
+    let minTs: Date | null = null;
+    let maxTs: Date | null = null;
+    for (const r of allLedgerRows) {
+      if (!minTs || r.timestamp < minTs) minTs = r.timestamp;
+      if (!maxTs || r.timestamp > maxTs) maxTs = r.timestamp;
+    }
+    if (minTs) periodFrom = periodFrom ?? minTs.toISOString().slice(0, 10);
+    if (maxTs) periodTo = periodTo ?? maxTs.toISOString().slice(0, 10);
+  }
+
   return {
-    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY', isCarrier: customer.isCarrier },
+    customer: { id: customer.id, name: customer.name, contactInfo: customer.contactInfo, taxCode: customer.taxCode, debitNoteMode: customer.debitNoteMode ?? 'MONTHLY', isCarrier: customer.isCarrier },
     ledgerRows: displayRows,
     totalOutstanding,
     currentTotalOutstanding,
@@ -967,13 +1087,15 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     ...(periodSummary ? { periodSummary } : null),
     statementLines,
     statementTotals,
+    fastStatement,
+    period: { dateFrom: periodFrom ?? '', dateTo: periodTo ?? '' },
   };
 }
 
-export async function exportStatementXlsx(data: CustomerStatementData, dateStr: string, writable: import('stream').Writable): Promise<void> {
+export async function exportStatementXlsx(data: CustomerStatementData, dateStr: string, writable: Writable): Promise<void> {
   return buildStatementXlsx({
-    heading: 'Sổ chi tiết công nợ',
-    sheetName: 'Sổ chi tiết công nợ',
+    heading: 'SỔ CHI TIẾT CÔNG NỢ',
+    sheetName: 'SỔ CHI TIẾT CÔNG NỢ',
     entityLabel: 'Khách hàng',
     entityName: data.customer.name,
     contactLines: [`Liên hệ: ${data.customer.contactInfo || '—'}`],
@@ -984,12 +1106,17 @@ export async function exportStatementXlsx(data: CustomerStatementData, dateStr: 
     statementLines: data.statementLines,
     statementTotals: data.statementTotals,
     periodSummary: data.periodSummary ?? null,
+    fast: {
+      accountLine: '131111 - PHẢI THU NGẮN HẠN KHÁCH HÀNG',
+      customerCode: data.customer.taxCode || null,
+      period: data.period,
+    },
   }, dateStr, writable);
 }
 
 export function exportStatementHtml(data: CustomerStatementData, dateStr: string): string {
   return buildStatementHtml({
-    heading: 'Sổ chi tiết công nợ',
+    heading: 'SỔ CHI TIẾT CÔNG NỢ',
     entityLabel: 'Khách hàng',
     entityName: data.customer.name,
     contactLines: [`Liên hệ: ${data.customer.contactInfo || '—'}`],
@@ -1000,6 +1127,11 @@ export function exportStatementHtml(data: CustomerStatementData, dateStr: string
     statementLines: data.statementLines,
     statementTotals: data.statementTotals,
     periodSummary: data.periodSummary ?? null,
+    fast: {
+      accountLine: '131111 - PHẢI THU NGẮN HẠN KHÁCH HÀNG',
+      customerCode: data.customer.taxCode || null,
+      period: data.period,
+    },
   }, dateStr);
 }
 
@@ -1452,10 +1584,6 @@ export async function exportSupplierFuelStatementXlsx(
   dateStr: string,
   writable: Writable,
 ): Promise<void> {
-  const ExcelJSMod = await import('exceljs');
-  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
-    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
-    : ExcelJSMod;
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Bảng kê xăng dầu');
   sheet.views = [{ showGridLines: true }];
@@ -1860,11 +1988,185 @@ export function exportSupplierStatementHtml(
   }, dateStr);
 }
 
-async function buildStatementXlsx(config: StatementExportConfig, dateStr: string, writable: import('stream').Writable): Promise<void> {
-  const ExcelJSMod = await import('exceljs');
-  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
-    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
-    : ExcelJSMod;
+/**
+ * NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ' workbook (customer statement export,
+ * đọc mô tả NEPO-47): header SỔ CHI TIẾT CÔNG NỢ + dòng tài khoản 131111 +
+ * KHÁCH HÀNG + TỪ/ĐẾN NGÀY, SỐ DƯ ĐẦU KỲ 2 ô Nợ|Có, bảng STT | CHỨNG TỪ
+ * (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH (NỢ | CÓ) — mỗi chứng từ một STT,
+ * nhiều dòng nghiệp vụ dưới một STT — rồi TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ 2 ô
+ * và khối ký tên NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG. Không cột TK đối ứng,
+ * không cột dư từng dòng. Vouchers derive từ chính statementLines/totals
+ * của response (buildFastStatement) — file luôn khớp màn hình.
+ */
+async function buildFastStatementXlsx(config: StatementExportConfig, dateStr: string, writable: Writable): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet(config.sheetName || config.heading);
+  sheet.views = [{ showGridLines: true }];
+
+  const borderStyle = {
+    top: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    left: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    bottom: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    right: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+  };
+  const FONT = { name: 'Segoe UI', size: 10 };
+
+  // Style one row of the book: label/amount cells with grid borders; the
+  // header/total rows use it too, only fills differ.
+  let currentOffset = 1;
+  const styleRow = (
+    cells: Array<{ col: number; value: string | number | null; numFmt?: boolean; align?: 'left' | 'right' | 'center'; bold?: boolean; color?: string; fill?: string; size?: number }>,
+    fill?: string,
+  ) => {
+    const r = currentOffset;
+    cells.forEach(({ col, value, numFmt, align, bold, color, fill: cellFill, size }) => {
+      const cell = sheet.getCell(r, col);
+      cell.value = value;
+      if (numFmt) cell.numFmt = '#,##0';
+      cell.alignment = { vertical: 'middle', horizontal: align ?? 'left' };
+      cell.font = { name: 'Segoe UI', size: size ?? 10, bold: bold ?? false, color: { argb: color ?? 'FF1F2937' } };
+      cell.border = borderStyle;
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cellFill ?? fill ?? 'FFFFFFFF' } };
+    });
+    sheet.getRow(r).height = 20;
+    currentOffset++;
+  };
+  const mergedBand = (fromCol: number, toCol: number, value: string, opts: { bold?: boolean; fill?: string; align?: 'left' | 'right' | 'center'; size?: number; height?: number; color?: string; border?: boolean } = {}) => {
+    const r = currentOffset;
+    sheet.mergeCells(r, fromCol, r, toCol);
+    const cell = sheet.getCell(r, fromCol);
+    cell.value = value;
+    cell.alignment = { vertical: 'middle', horizontal: opts.align ?? 'center' };
+    cell.font = { name: 'Segoe UI', size: opts.size ?? 10, bold: opts.bold ?? false, color: { argb: opts.color ?? 'FF1F2937' } };
+    if (opts.fill) {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.fill } };
+    }
+    if (opts.border) {
+      for (let c = fromCol; c <= toCol; c++) sheet.getCell(r, c).border = borderStyle;
+    }
+    sheet.getRow(r).height = opts.height ?? 20;
+    currentOffset++;
+  };
+
+  // ── Fast header: title / tài khoản / khách hàng / kỳ ─────────────────────
+  mergedBand(1, 6, config.heading, { bold: true, size: 13, height: 32 });
+  currentOffset++; // blank spacer row
+  const fast = config.fast;
+  mergedBand(1, 6, fast?.accountLine ?? '', { bold: true, align: 'center', size: 11 });
+  const codeSuffix = fast?.customerCode ? ` (${fast.customerCode})` : '';
+  mergedBand(1, 6, `KHÁCH HÀNG: ${config.entityName}${codeSuffix}`, { align: 'center', size: 11 });
+  mergedBand(1, 6, `TỪ NGÀY ${fast?.period.dateFrom || '…'} ĐẾN NGÀY ${fast?.period.dateTo || '…'}`, { align: 'center', size: 11 });
+  currentOffset++; // blank spacer row
+
+  const fastData = buildFastStatement(config.statementLines!, config.statementTotals!);
+
+  // ── SỐ DƯ ĐẦU KỲ — 2 ô Nợ | Có ──────────────────────────────────────────
+  styleRow([
+    { col: 1, value: 'SỐ DƯ ĐẦU KỲ', bold: true, align: 'left' },
+    { col: 2, value: null },
+    { col: 3, value: null },
+    { col: 4, value: null },
+    { col: 5, value: fastData.opening.debit || null, numFmt: true, align: 'right', bold: true, color: 'FFDC2626' },
+    { col: 6, value: fastData.opening.credit || null, numFmt: true, align: 'right', bold: true, color: 'FF10B981' },
+  ], 'FFE6F4EA');
+  // Opening row keeps its merge across the label columns.
+  sheet.mergeCells(currentOffset - 1, 1, currentOffset - 1, 4);
+
+  // ── Bảng chứng từ — header 2 tầng: STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH (NỢ | CÓ)
+  const headerRow = currentOffset;
+  const subRow = currentOffset + 1;
+  sheet.mergeCells(headerRow, 1, subRow, 1); // STT
+  sheet.mergeCells(headerRow, 2, headerRow, 3); // CHỨNG TỪ spans NGÀY|SỐ
+  sheet.mergeCells(headerRow, 4, subRow, 4); // DIỄN GIẢI
+  sheet.mergeCells(headerRow, 5, headerRow, 6); // SỐ PHÁT SINH spans NỢ|CÓ
+  const headerCell = (r: number, col: number, value: string, align: 'left' | 'center' = 'center') => {
+    const cell = sheet.getCell(r, col);
+    cell.value = value;
+    cell.alignment = { vertical: 'middle', horizontal: align };
+    cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
+    cell.border = borderStyle;
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+  };
+  headerCell(headerRow, 1, 'STT');
+  headerCell(headerRow, 2, 'CHỨNG TỪ');
+  headerCell(subRow, 2, 'NGÀY');
+  headerCell(subRow, 3, 'SỐ');
+  headerCell(headerRow, 4, 'DIỄN GIẢI', 'left');
+  headerCell(headerRow, 5, 'SỐ PHÁT SINH');
+  headerCell(subRow, 5, 'NỢ');
+  headerCell(subRow, 6, 'CÓ');
+  for (let c = 1; c <= 6; c++) {
+    sheet.getCell(subRow, c).border = borderStyle;
+    sheet.getCell(subRow, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+  }
+  sheet.getRow(headerRow).height = 20;
+  sheet.getRow(subRow).height = 20;
+  currentOffset = subRow + 1;
+
+  // ── Chứng từ: mỗi chứng từ một STT, các dòng nghiệp vụ dưới 1 STT ────────
+  for (const voucher of fastData.vouchers) {
+    voucher.lines.forEach((line, lineIdx) => {
+      const docDate = lineIdx === 0 ? (voucher.docDate ? formatDateVi(voucher.docDate) : '') : null;
+      const docNo = lineIdx === 0 ? (voucher.docNo ?? '—') : null;
+      const stt = lineIdx === 0 ? voucher.stt : null;
+      styleRow([
+        { col: 1, value: stt, align: 'center' },
+        { col: 2, value: docDate, align: 'center' },
+        { col: 3, value: docNo, align: 'center' },
+        { col: 4, value: line.description, bold: voucher.kind === 'payment' },
+        { col: 5, value: line.debit || null, numFmt: true, align: 'right' },
+        { col: 6, value: line.credit || null, numFmt: true, align: 'right' },
+      ], voucher.kind === 'payment' ? 'FFF0FDF4' : undefined);
+    });
+  }
+  if (fastData.vouchers.length === 0) {
+    mergedBand(1, 6, 'Không có giao dịch trong kỳ', { align: 'center', border: true });
+  }
+
+  // ── TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ ──────────────────────────────────────
+  styleRow([
+    { col: 1, value: 'TỔNG PHÁT SINH', bold: true, align: 'left' },
+    { col: 2, value: null },
+    { col: 3, value: null },
+    { col: 4, value: null },
+    { col: 5, value: fastData.totals.debitTotal, numFmt: true, align: 'right', bold: true },
+    { col: 6, value: fastData.totals.creditTotal, numFmt: true, align: 'right', bold: true },
+  ], 'FFF3F4F6');
+  sheet.mergeCells(currentOffset - 1, 1, currentOffset - 1, 4);
+  styleRow([
+    { col: 1, value: 'SỐ DƯ CUỐI KỲ', bold: true, align: 'left' },
+    { col: 2, value: null },
+    { col: 3, value: null },
+    { col: 4, value: null },
+    { col: 5, value: fastData.closing.debit || null, numFmt: true, align: 'right', bold: true, color: 'FFDC2626' },
+    { col: 6, value: fastData.closing.credit || null, numFmt: true, align: 'right', bold: true, color: 'FF10B981' },
+  ], 'FFF3F4F6');
+  sheet.mergeCells(currentOffset - 1, 1, currentOffset - 1, 4);
+
+  // ── Khối ký tên: NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG + Ngày … tháng … năm … ──
+  currentOffset += 2;
+  mergedBand(5, 6, 'Ngày …… tháng …… năm ……', { align: 'right', color: 'FF6B7280' });
+  mergedBand(1, 2, 'NGƯỜI LẬP BIỂU', { align: 'center', bold: true });
+  mergedBand(5, 6, 'KẾ TOÁN TRƯỞNG', { align: 'center', bold: true });
+  mergedBand(1, 2, '(Ký, ghi rõ họ tên)', { align: 'center', color: 'FF6B7280', size: 9 });
+  mergedBand(5, 6, '(Ký, ghi rõ họ tên)', { align: 'center', color: 'FF6B7280', size: 9 });
+
+  sheet.getColumn(1).width = 6;
+  sheet.getColumn(2).width = 12;
+  sheet.getColumn(3).width = 20;
+  sheet.getColumn(4).width = 54;
+  sheet.getColumn(5).width = 16;
+  sheet.getColumn(6).width = 16;
+
+  await workbook.xlsx.write(writable);
+}
+
+async function buildStatementXlsx(config: StatementExportConfig, dateStr: string, writable: Writable): Promise<void> {
+  // NEPO-47: customer statements render the Fast 'SỔ CHI TIẾT CÔNG NỢ' book —
+  // dedicated builder, the shared aging/flat-ledger scaffold does not apply.
+  if (config.statementLines && config.statementTotals) {
+    return buildFastStatementXlsx(config, dateStr, writable);
+  }
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(config.sheetName);
 
@@ -1989,135 +2291,6 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
   // Space
   currentOffset++;
 
-  // NEPO-46: customer statements carry sổ chi tiết lines — render the
-  // MISA-style book (month groups, aggregate payment documents, running
-  // balance). Other statement kinds keep the flat ledger table.
-  if (config.statementLines && config.statementTotals) {
-    const so = config.statementLines;
-    const totals = config.statementTotals;
-
-    const transHeaderRow = currentOffset;
-    sheet.mergeCells(`A${transHeaderRow}:I${transHeaderRow}`);
-    const transHeaderCell = sheet.getCell(`A${transHeaderRow}`);
-    transHeaderCell.value = 'SỔ CHI TIẾT CÔNG NỢ';
-    transHeaderCell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-    transHeaderCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00702F' } };
-    transHeaderCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-    sheet.getRow(transHeaderRow).height = 24;
-    currentOffset++;
-
-    const soHeaders = ['Ngày ghi sổ', 'Số hiệu', 'Ngày CT', 'Diễn giải', 'TK đối ứng', 'Phát sinh Nợ (VND)', 'Phát sinh Có (VND)', 'Dư nợ cuối (VND)', 'Dư có cuối (VND)'];
-    soHeaders.forEach((h, i) => {
-      const cell = sheet.getCell(currentOffset, i + 1);
-      cell.value = h;
-      cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
-      cell.alignment = { vertical: 'middle', horizontal: i >= 5 ? 'right' : (i <= 2 || i === 4 ? 'center' : 'left') };
-      cell.border = borderStyle;
-    });
-    sheet.getRow(currentOffset).height = 22;
-    currentOffset++;
-
-    const soStyleRow = (r: number, cells: Array<{ col: number; value: string | number | null; numFmt?: boolean; align?: 'left' | 'right' | 'center'; bold?: boolean; color?: string }>, fill?: string) => {
-      cells.forEach(({ col, value, numFmt, align, bold, color }) => {
-        const cell = sheet.getCell(r, col);
-        cell.value = value;
-        if (numFmt) cell.numFmt = '#,##0';
-        cell.alignment = { vertical: 'middle', horizontal: align ?? 'left' };
-        cell.font = { name: 'Segoe UI', size: 10, bold: bold ?? false, color: { argb: color ?? 'FF1F2937' } };
-        cell.border = borderStyle;
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill ?? 'FFFFFFFF' } };
-      });
-      sheet.getRow(r).height = 20;
-    };
-
-    // Dư đầu kỳ — dư nợ (khách còn nợ) and dư có (khách trả trước) split
-    // across the last two columns; the accountant reads the column, not the sign.
-    soStyleRow(currentOffset, [
-      { col: 1, value: '', align: 'center' },
-      { col: 2, value: '', align: 'center' },
-      { col: 3, value: '', align: 'center' },
-      { col: 4, value: 'Dư đầu kỳ', bold: true },
-      { col: 5, value: '', align: 'center' },
-      { col: 6, value: '', numFmt: true, align: 'right' },
-      { col: 7, value: '', numFmt: true, align: 'right' },
-      { col: 8, value: totals.openingBalance > 0 ? totals.openingBalance : null, numFmt: true, align: 'right', bold: true, color: 'FFDC2626' },
-      { col: 9, value: totals.openingBalance < 0 ? Math.abs(totals.openingBalance) : null, numFmt: true, align: 'right', bold: true, color: 'FF10B981' },
-    ], 'FFE6F4EA');
-    currentOffset++;
-
-    let currentMonth = '';
-    so.forEach((line, i) => {
-      if (line.month !== currentMonth) {
-        currentMonth = line.month;
-        const mm = currentMonth.slice(5, 7);
-        const yyyy = currentMonth.slice(0, 4);
-        const monthRow = currentOffset;
-        sheet.mergeCells(`A${monthRow}:I${monthRow}`);
-        const monthCell = sheet.getCell(`A${monthRow}`);
-        monthCell.value = `Tháng ${Number(mm)}/${yyyy}`;
-        monthCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF00702F' } };
-        monthCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4EA' } };
-        monthCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-        sheet.getRow(monthRow).height = 20;
-        currentOffset++;
-      }
-      const isPayment = line.kind === 'payment';
-      soStyleRow(currentOffset, [
-        { col: 1, value: line.postedDate, align: 'center' },
-        { col: 2, value: line.docNo ?? '—', align: 'center' },
-        { col: 3, value: line.docDate ?? line.postedDate, align: 'center' },
-        { col: 4, value: isPayment ? line.description : `${line.description}${line.routeName ? ` — ${line.routeName}` : ''}${line.containerNumbers?.length ? ` (${line.containerNumbers.join(', ')})` : ''}` },
-        { col: 5, value: line.counterAccount ?? '—', align: 'center' },
-        { col: 6, value: line.debit || null, numFmt: true, align: 'right' },
-        { col: 7, value: line.credit || null, numFmt: true, align: 'right' },
-        { col: 8, value: line.balance > 0 ? line.balance : null, numFmt: true, align: 'right', bold: true, color: 'FFDC2626' },
-        { col: 9, value: line.balance < 0 ? Math.abs(line.balance) : null, numFmt: true, align: 'right', bold: true, color: 'FF10B981' },
-      ], isPayment ? 'FFF0FDF4' : (i % 2 === 0 ? 'FFFFFFFF' : 'FFF9FBF9'));
-      currentOffset++;
-    });
-
-    // Tổng kết kỳ
-    soStyleRow(currentOffset, [
-      { col: 1, value: '', align: 'center' },
-      { col: 2, value: '', align: 'center' },
-      { col: 3, value: '', align: 'center' },
-      { col: 4, value: 'TỔNG PHÁT SINH TRONG KỲ', bold: true },
-      { col: 5, value: '', align: 'center' },
-      { col: 6, value: totals.debitTotal, numFmt: true, align: 'right', bold: true },
-      { col: 7, value: totals.creditTotal, numFmt: true, align: 'right', bold: true },
-      { col: 8, value: '', numFmt: true, align: 'right' },
-      { col: 9, value: '', numFmt: true, align: 'right' },
-    ], 'FFF3F4F6');
-    currentOffset++;
-    soStyleRow(currentOffset, [
-      { col: 1, value: '', align: 'center' },
-      { col: 2, value: '', align: 'center' },
-      { col: 3, value: '', align: 'center' },
-      { col: 4, value: 'DƯ CUỐI KỲ', bold: true, color: totals.closingBalance < 0 ? 'FF10B981' : 'FFDC2626' },
-      { col: 5, value: '', align: 'center' },
-      { col: 6, value: '', numFmt: true, align: 'right' },
-      { col: 7, value: '', numFmt: true, align: 'right' },
-      { col: 8, value: totals.closingBalance > 0 ? totals.closingBalance : null, numFmt: true, align: 'right', bold: true, color: 'FFDC2626' },
-      { col: 9, value: totals.closingBalance < 0 ? Math.abs(totals.closingBalance) : null, numFmt: true, align: 'right', bold: true, color: 'FF10B981' },
-    ], 'FFF3F4F6');
-
-    // Column widths for the sổ layout
-    sheet.getColumn(1).width = 13;
-    sheet.getColumn(2).width = 17;
-    sheet.getColumn(3).width = 12;
-    sheet.getColumn(4).width = 52;
-    sheet.getColumn(5).width = 10;
-    sheet.getColumn(6).width = 17;
-    sheet.getColumn(7).width = 17;
-    sheet.getColumn(8).width = 18;
-    sheet.getColumn(9).width = 18;
-    sheet.getColumn(10).width = 4;
-
-    await workbook.xlsx.write(writable);
-    return;
-  }
-
   // Transaction Detail Header (Row 13+)
   const transHeaderRow = currentOffset;
   sheet.mergeCells(`A${transHeaderRow}:H${transHeaderRow}`);
@@ -2219,12 +2392,12 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
 }
 
 function buildStatementHtml(config: StatementExportConfig, dateStr: string): string {
-  // NEPO-46: when sổ chi tiết lines are present, the detail table renders the
-  // MISA book layout (dư đầu kỳ, month groups, aggregate payment rows,
-  // running balance, tổng kết kỳ) instead of the flat ledger slice.
-  const detailTable = config.statementLines && config.statementTotals
-    ? buildSoKeDetailHtml(config.statementLines, config.statementTotals)
-    : `<table>
+  // NEPO-47: customer statements render the Fast 'SỔ CHI TIẾT CÔNG NỢ' page —
+  // dedicated builder (no aging/flat-ledger scaffold).
+  if (config.statementLines && config.statementTotals) {
+    return buildFastStatementHtml(config);
+  }
+  const detailTable = `<table>
   <thead><tr><th>Ngày</th><th>Tuyến</th><th>Số Cont</th><th>Loại GD</th><th class="num">Nợ</th><th class="num">Có</th><th class="num">Số dư</th><th>Ghi chú</th></tr></thead>
   <tbody>${config.ledgerRows.map((row) => {
     const debit = parseFloat(row.debit || '0');
@@ -2254,13 +2427,6 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
 
   const contactHtml = config.contactLines.map(l => escapeHtml(l)).join('<br>\n  ');
 
-  // MISA 'Sổ chi tiết thanh toán với người mua' header strip: dư nợ/có đầu kỳ
-  // và cuối kỳ in one line above the aging (so = null for supplier/fuel kinds).
-  const so = config.statementTotals;
-  const duMeta = so
-    ? `<div class="du-line">Dư nợ đầu: <strong class="${so.openingBalance > 0 ? 'soke-neg' : ''}">${so.openingBalance > 0 ? so.openingBalance.toLocaleString('vi-VN') : '0'}</strong> · Dư có đầu: <strong class="${so.openingBalance < 0 ? 'soke-pos' : ''}">${so.openingBalance < 0 ? Math.abs(so.openingBalance).toLocaleString('vi-VN') : '0'}</strong> · Dư nợ cuối: <strong class="${so.closingBalance > 0 ? 'soke-neg' : ''}">${so.closingBalance > 0 ? so.closingBalance.toLocaleString('vi-VN') : '0'}</strong> · Dư có cuối: <strong class="${so.closingBalance < 0 ? 'soke-pos' : ''}">${so.closingBalance < 0 ? Math.abs(so.closingBalance).toLocaleString('vi-VN') : '0'}</strong> ₫</div>`
-    : '';
-
   return `<!doctype html>
 <html lang="vi"><head>
 <meta charset="utf-8">
@@ -2276,66 +2442,84 @@ function buildStatementHtml(config: StatementExportConfig, dateStr: string): str
   Ngày xuất: ${dateStr}
 </div>
 <div class="total">Tổng nợ: ${config.totalOutstanding.toLocaleString('vi-VN')} ₫</div>
-${duMeta}
 <table class="aging">${agingRows}</table>
 ${detailTable}
 </body></html>`;
 }
 
-function buildSoKeDetailHtml(lines: StatementLine[], totals: StatementPeriodTotals): string {
-  const monthLabel = (month: string) => `Tháng ${Number(month.slice(5, 7))}/${month.slice(0, 4)}`;
-  // MISA layout: the signed dư splits into a Dư nợ cuối (khách còn nợ) and a
-  // Dư có cuối (khách trả trước) column — the accountant reads the column,
-  // not the sign.
-  const duNo = (v: number) => (v > 0 ? `<strong>${v.toLocaleString('vi-VN')}</strong>` : '');
-  const duCo = (v: number) => (v < 0 ? `<strong>${Math.abs(v).toLocaleString('vi-VN')}</strong>` : '');
-  const body: string[] = [];
+/**
+ * NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ' print page (đọc mô tả NEPO-47):
+ * tiêu đề + dòng tài khoản 131111 + KHÁCH HÀNG (MST) + TỪ/ĐẾN NGÀY, SỐ DƯ
+ * ĐẦU KỲ 2 ô Nợ|Có, bảng STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT
+ * SINH (NỢ | CÓ) với mỗi chứng từ một STT (nhiều dòng nghiệp vụ dưới một
+ * STT), TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ 2 ô, khối ký tên NGƯỜI LẬP BIỂU /
+ * KẾ TOÁN TRƯỞNG + 'Ngày … tháng … năm …'. Không cột TK đối ứng, không cột
+ * dư từng dòng.
+ */
+function buildFastStatementHtml(config: StatementExportConfig): string {
+  const fastData = buildFastStatement(config.statementLines!, config.statementTotals!);
+  const amount = (v: number) => (v ? v.toLocaleString('vi-VN') : '');
+  const dmy = (iso: string) => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? formatDateVi(iso) : iso;
 
-  body.push(`<tr class="soke-opening"><td></td><td></td><td></td><td><strong>Dư đầu kỳ</strong></td><td></td><td class="num"></td><td class="num"></td><td class="num ${totals.openingBalance > 0 ? 'soke-neg' : ''}">${duNo(totals.openingBalance)}</td><td class="num ${totals.openingBalance < 0 ? 'soke-pos' : ''}">${duCo(totals.openingBalance)}</td></tr>`);
-
-  let currentMonth = '';
-  for (const line of lines) {
-    if (line.month !== currentMonth) {
-      currentMonth = line.month;
-      body.push(`<tr class="soke-month"><td colspan="9">${escapeHtml(monthLabel(line.month))}</td></tr>`);
-    }
-    const isPayment = line.kind === 'payment';
-    const detail = isPayment
-      ? line.description
-      : `${line.description}${line.routeName ? ` — ${escapeHtml(line.routeName)}` : ''}${line.containerNumbers?.length ? ` (${escapeHtml(line.containerNumbers.join(', '))})` : ''}`;
-    body.push(`<tr class="${isPayment ? 'soke-payment' : ''}">
-      <td>${line.postedDate}</td>
-      <td>${escapeHtml(line.docNo ?? '—')}</td>
-      <td>${line.docDate ?? line.postedDate}</td>
-      <td>${isPayment ? `<strong>${escapeHtml(line.description)}</strong>` : escapeHtml(detail)}</td>
-      <td class="so-ke-acc">${escapeHtml(line.counterAccount ?? '—')}</td>
-      <td class="num">${line.debit ? line.debit.toLocaleString('vi-VN') : ''}</td>
-      <td class="num">${line.credit ? line.credit.toLocaleString('vi-VN') : ''}</td>
-      <td class="num ${line.balance > 0 ? 'soke-neg' : ''}">${duNo(line.balance)}</td>
-      <td class="num ${line.balance < 0 ? 'soke-pos' : ''}">${duCo(line.balance)}</td>
+  const voucherRows: string[] = [];
+  for (const voucher of fastData.vouchers) {
+    voucher.lines.forEach((line, lineIdx) => {
+      const first = lineIdx === 0;
+      voucherRows.push(`<tr class="${voucher.kind === 'payment' ? 'soke-payment' : ''}">
+      <td class="stt">${first ? voucher.stt : ''}</td>
+      <td>${first && voucher.docDate ? escapeHtml(dmy(voucher.docDate)) : ''}</td>
+      <td>${first ? escapeHtml(voucher.docNo ?? '—') : ''}</td>
+      <td>${voucher.kind === 'payment' ? `<strong>${escapeHtml(line.description)}</strong>` : escapeHtml(line.description)}</td>
+      <td class="num">${amount(line.debit)}</td>
+      <td class="num">${amount(line.credit)}</td>
     </tr>`);
+    });
   }
 
-  const closingColor = totals.closingBalance > 0 ? 'soke-neg' : (totals.closingBalance < 0 ? 'soke-pos' : '');
+  const codeSuffix = config.fast?.customerCode ? ` (${escapeHtml(config.fast.customerCode)})` : '';
 
-  return `<h2>Sổ chi tiết công nợ</h2>
+  return `<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8">
+<title>${escapeHtml(config.heading)} — ${escapeHtml(config.entityName)}</title>
+<style>
+  ${SHARED_CSS}
+</style>
+</head><body>
+<h1>${escapeHtml(config.heading)}</h1>
+<div class="soke-head">
+  <div>${escapeHtml(config.fast?.accountLine ?? '')}</div>
+  <div>KHÁCH HÀNG: ${escapeHtml(config.entityName)}${codeSuffix}</div>
+  <div>TỪ NGÀY ${escapeHtml(config.fast?.period.dateFrom ? dmy(config.fast.period.dateFrom) : '……')} ĐẾN NGÀY ${escapeHtml(config.fast?.period.dateTo ? dmy(config.fast.period.dateTo) : '……')}</div>
+</div>
 <table class="soke">
-  <thead><tr><th>Ngày ghi sổ</th><th>Số hiệu</th><th>Ngày CT</th><th>Diễn giải</th><th>TK đối ứng</th><th class="num">Phát sinh Nợ</th><th class="num">Phát sinh Có</th><th class="num">Dư nợ cuối</th><th class="num">Dư có cuối</th></tr></thead>
-  <tbody>${body.join('')}</tbody>
+  <thead>
+    <tr><th rowspan="2">STT</th><th colspan="2">CHỨNG TỪ</th><th rowspan="2">DIỄN GIẢI</th><th colspan="2">SỐ PHÁT SINH</th></tr>
+    <tr><th>NGÀY</th><th>SỐ</th><th class="num">NỢ</th><th class="num">CÓ</th></tr>
+  </thead>
+  <tbody>
+    <tr class="soke-opening"><td colspan="4"><strong>SỐ DƯ ĐẦU KỲ</strong></td><td class="num soke-neg">${fastData.opening.debit ? `<strong>${fastData.opening.debit.toLocaleString('vi-VN')}</strong>` : ''}</td><td class="num soke-pos">${fastData.opening.credit ? `<strong>${fastData.opening.credit.toLocaleString('vi-VN')}</strong>` : ''}</td></tr>
+    ${voucherRows.join('')}
+    ${fastData.vouchers.length === 0 ? '<tr><td colspan="6" class="dd-table-empty">Không có giao dịch trong kỳ</td></tr>' : ''}
+  </tbody>
   <tfoot>
-    <tr><td colspan="6"><strong>TỔNG PHÁT SINH TRONG KỲ</strong></td><td class="num"><strong>${totals.debitTotal.toLocaleString('vi-VN')}</strong></td><td class="num"><strong>${totals.creditTotal.toLocaleString('vi-VN')}</strong></td><td class="num"></td></tr>
-    <tr><td colspan="6" class="${closingColor}"><strong>DƯ CUỐI KỲ</strong></td><td class="num"></td><td class="num ${totals.closingBalance > 0 ? 'soke-neg' : ''}">${duNo(totals.closingBalance)}</td><td class="num ${totals.closingBalance < 0 ? 'soke-pos' : ''}">${duCo(totals.closingBalance)}</td></tr>
+    <tr class="soke-total"><td colspan="4"><strong>TỔNG PHÁT SINH</strong></td><td class="num"><strong>${fastData.totals.debitTotal.toLocaleString('vi-VN')}</strong></td><td class="num"><strong>${fastData.totals.creditTotal.toLocaleString('vi-VN')}</strong></td></tr>
+    <tr class="soke-closing"><td colspan="4"><strong>SỐ DƯ CUỐI KỲ</strong></td><td class="num soke-neg">${fastData.closing.debit ? `<strong>${fastData.closing.debit.toLocaleString('vi-VN')}</strong>` : ''}</td><td class="num soke-pos">${fastData.closing.credit ? `<strong>${fastData.closing.credit.toLocaleString('vi-VN')}</strong>` : ''}</td></tr>
   </tfoot>
-</table>`;
+</table>
+<div class="soke-sign">
+  <div class="soke-sign-date">Ngày …… tháng …… năm ……</div>
+  <div class="soke-sign-row">
+    <div>NGƯỜI LẬP BIỂU<br><span>(Ký, ghi rõ họ tên)</span></div>
+    <div>KẾ TOÁN TRƯỞNG<br><span>(Ký, ghi rõ họ tên)</span></div>
+  </div>
+</div>
+</body></html>`;
 }
 
 // escapeHtml imported from lib/format
 
-export async function exportReceivablesAgingXlsx(data: CustomerAgingListItem[], dateStr: string, writable: import('stream').Writable): Promise<void> {
-  const ExcelJSMod = await import('exceljs');
-  const ExcelJS = (ExcelJSMod as Record<string, unknown>).default
-    ? ((ExcelJSMod as Record<string, unknown>).default as typeof ExcelJSMod)
-    : ExcelJSMod;
+export async function exportReceivablesAgingXlsx(data: CustomerAgingListItem[], dateStr: string, writable: Writable): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Công nợ phải thu');
 

@@ -1929,27 +1929,38 @@
   .dd-aging-grid { grid-template-columns: 1fr; gap: 10px; }
 } /* end 640px */
 
-/* ─── NEPO-46: Sổ chi tiết công nợ (Sao kê tab) ───────────────────────────
-   MISA-style book: dư đầu kỳ row, month group bands, aggregate payment rows
-   (KH trả X ₫ ngày dd/mm), running dư cuối per line, tổng kết kỳ footer. */
-.so-ke-table { min-width: 860px; }
+/* ─── NEPO-47: SỔ CHI TIẾT CÔNG NỢ mẫu Fast (Sao kê tab) ──────────────────
+   Header (tiêu đề + tài khoản + khách hàng + kỳ), dư đầu kỳ 2 ô Nợ|Có,
+   bảng STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH (NỢ | CÓ) —
+   mỗi chứng từ một STT, nhiều dòng nghiệp vụ dưới một STT — tổng phát sinh
+   + dư cuối kỳ 2 ô, khối ký tên. Không TK đối ứng, không dư từng dòng. */
+.so-ke-head {
+  margin: 0 0 14px;
+  text-align: center;
+  line-height: 1.8;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.so-ke-head .so-ke-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+.so-ke-table { min-width: 760px; }
+.so-ke-table .so-ke-stt-h,
+.so-ke-table td.so-ke-stt { text-align: center; white-space: nowrap; width: 48px; }
+.so-ke-table .so-ke-date-h,
+.so-ke-table td.so-ke-date { text-align: center; white-space: nowrap; }
+.so-ke-table td.so-ke-docno { text-align: center; white-space: nowrap; }
 .so-ke-table thead th.so-ke-n { color: var(--danger); }
 .so-ke-table thead th.so-ke-c { color: var(--accent-2); }
 .so-ke-table .so-ke-n { font-variant-numeric: tabular-nums; }
 .so-ke-table .so-ke-c { font-variant-numeric: tabular-nums; }
-.so-ke-table td.so-ke-bal,
-.so-ke-table tfoot td.so-ke-bal { font-variant-numeric: tabular-nums; font-weight: 700; }
 .so-ke-table tr.so-ke-opening td {
   background: var(--surface-2);
   color: var(--ink-2);
   font-weight: 600;
-}
-.so-ke-table tr.so-ke-month td {
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-  color: var(--accent-2);
-  font-weight: 700;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
 }
 .so-ke-table tr.so-ke-payment td { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
 .so-ke-badge {
@@ -1966,12 +1977,6 @@
   vertical-align: 1px;
 }
 .so-ke-table .so-ke-desc { display: block; }
-.so-ke-table .so-ke-route,
-.so-ke-table .so-ke-cont {
-  display: block;
-  color: var(--ink-3);
-  font-size: var(--fs-xs);
-}
 .so-ke-bal--advance { color: var(--accent-2) !important; }
 .so-ke-bal--debt { color: var(--danger); }
 .so-ke-table tfoot tr.so-ke-total td,
@@ -1980,9 +1985,17 @@
   font-weight: 700;
   border-top: 2px solid color-mix(in srgb, var(--accent) 35%, var(--line));
 }
-.so-ke-advance-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--accent-2);
+.so-ke-sign { margin-top: 26px; font-size: var(--fs-sm); color: var(--ink-2); }
+.so-ke-sign .so-ke-sign-date { text-align: right; color: var(--ink-3); }
+.so-ke-sign .so-ke-sign-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+.so-ke-sign .so-ke-sign-row span { font-weight: 400; color: var(--ink-3); font-size: var(--fs-xs); }
+@media print {
+  .so-ke-head { page-break-inside: avoid; }
+  .so-ke-sign { page-break-inside: avoid; }
 }

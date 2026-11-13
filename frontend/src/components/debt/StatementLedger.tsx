@@ -1,155 +1,143 @@
-import { Fragment, useMemo } from 'react';
-import { Wallet } from 'lucide-react';
-import type { StatementLine, StatementPeriodTotals } from '@tingting/shared';
+import type { FastStatementDetail } from '@tingting/shared';
 import { formatCurrency, formatDatePadded } from '../../lib/format';
 
 /**
- * NEPO-46 — 'Sổ chi tiết công nợ' (MISA 'Sổ chi tiết thanh toán với người
- * mua' layout) for a customer statement period:
+ * NEPO-47 — 'SỔ CHI TIẾT CÔNG NỢ' đúng mẫu Fast (thay layout MISA của
+ * NEPO-46): tiêu đề + dòng tài khoản 131111 + KHÁCH HÀNG (MST) + TỪ/ĐẾN
+ * NGÀY, SỐ DƯ ĐẦU KỲ 2 ô Nợ|Có, bảng STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI
+ * | SỐ PHÁT SINH (NỢ | CÓ) với mỗi chứng từ một STT (nhiều dòng nghiệp vụ
+ * dưới một STT — cước vận chuyển + chi hộ cùng chuyến; 2 dòng Nợ/Có của
+ * cùng phiếu), TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ 2 ô Nợ|Có, khối ký tên
+ * NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG + 'Ngày … tháng … năm …'.
  *
- *   Dư đầu kỳ · lines grouped by month (ngày ghi sổ | số hiệu | ngày CT |
- *   diễn giải) · THANH TOÁN rows reading 'KH trả X ₫ ngày dd/mm' as one
- *   aggregate document · phát sinh Nợ/Có + dư cuối cộng dồn per line ·
- *   tổng kết kỳ footer.
+ * KHÔNG cột TK ĐỐI ỨNG (khách bỏ), KHÔNG cột dư cuối từng dòng (mẫu không
+ * có) — số dư chỉ đọc ở đầu kỳ + tổng + cuối kỳ.
  *
- * Lines and totals come straight from the statement API (integer VND) —
- * this component is display-only; the running balance is never recomputed
- * here, so the screen always matches the ledger's own arithmetic.
+ * Dữ liệu (`fast`) đi thẳng từ statement API (integer VND, đã cộng dồn đúng
+ * ledger) — component này chỉ hiển thị, KHÔNG tính lại tiền.
  */
 
-const monthLabel = (month: string): string =>
-  `Tháng ${Number(month.slice(5, 7))}/${month.slice(0, 4)}`;
+const ACCOUNT_LINE = '131111 - PHẢI THU NGẮN HẠN KHÁCH HÀNG';
 
 interface StatementLedgerProps {
-  lines: StatementLine[];
-  totals?: StatementPeriodTotals;
+  /** Payload Fast từ statement API (opening/vouchers/totals/closing). */
+  fast?: FastStatementDetail;
+  customerName?: string;
+  customerCode?: string | null;
+  dateFrom?: string;
+  dateTo?: string;
   isLoading?: boolean;
 }
 
-export function StatementLedger({ lines, totals, isLoading = false }: StatementLedgerProps) {
-  const groups = useMemo(() => {
-    const out: Array<{ month: string; lines: StatementLine[] }> = [];
-    for (const line of lines) {
-      const last = out[out.length - 1];
-      if (last && last.month === line.month) last.lines.push(line);
-      else out.push({ month: line.month, lines: [line] });
-    }
-    return out;
-  }, [lines]);
-
-  const opening = totals?.openingBalance ?? 0;
-  const closing = totals?.closingBalance ?? 0;
-  const closingNegative = closing < 0;
+export function StatementLedger({ fast, customerName, customerCode, dateFrom, dateTo, isLoading = false }: StatementLedgerProps) {
+  const opening = fast?.opening;
+  const closing = fast?.closing;
+  const vouchers = fast?.vouchers ?? [];
+  const hasVouchers = vouchers.length > 0;
+  const showFoot = !!fast && hasVouchers;
 
   return (
     <div className="so-ke" data-testid="statement-ledger">
+      {/* Fast header: tiêu đề + tài khoản + khách hàng + kỳ báo cáo */}
+      <div className="so-ke-head">
+        <div className="so-ke-title">SỔ CHI TIẾT CÔNG NỢ</div>
+        <div>{ACCOUNT_LINE}</div>
+        <div>
+          KHÁCH HÀNG: {customerName ?? '—'}
+          {customerCode ? ` (${customerCode})` : ''}
+        </div>
+        <div>
+          TỪ NGÀY {dateFrom ? formatDatePadded(dateFrom) : '……'} ĐẾN NGÀY {dateTo ? formatDatePadded(dateTo) : '……'}
+        </div>
+      </div>
+
       <div className="table-scroll">
         <table className="dd-table so-ke-table" aria-label="Sổ chi tiết công nợ">
           <thead>
             <tr>
-              <th>NGÀY GHI SỔ</th>
-              <th>SỐ HIỆU</th>
-              <th>NGÀY CT</th>
-              <th>DIỄN GIẢI</th>
-              <th>TK ĐỐI ỨNG</th>
-              <th className="dd-r so-ke-n">PHÁT SINH NỢ</th>
-              <th className="dd-r so-ke-c">PHÁT SINH CÓ</th>
-              <th className="dd-r so-ke-n">DƯ NỢ CUỐI</th>
-              <th className="dd-r so-ke-c">DƯ CÓ CUỐI</th>
+              <th rowSpan={2} className="so-ke-stt-h">STT</th>
+              <th colSpan={2}>CHỨNG TỪ</th>
+              <th rowSpan={2}>DIỄN GIẢI</th>
+              <th colSpan={2}>SỐ PHÁT SINH</th>
+            </tr>
+            <tr>
+              <th className="so-ke-date-h">NGÀY</th>
+              <th>SỐ</th>
+              <th className="dd-r so-ke-n">NỢ</th>
+              <th className="dd-r so-ke-c">CÓ</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="so-ke-opening">
-              <td />
-              <td />
-              <td />
-              <td>Dư đầu kỳ</td>
-              <td />
-              <td className="dd-r so-ke-n" />
-              <td className="dd-r so-ke-c" />
-              <td className="dd-r so-ke-bal">{opening > 0 ? formatCurrency(opening) : ''}</td>
-              <td className="dd-r so-ke-bal">{opening < 0 ? formatCurrency(Math.abs(opening)) : ''}</td>
+            <tr className="so-ke-opening" data-testid="so-ke-opening-row">
+              <td colSpan={4}>SỐ DƯ ĐẦU KỲ</td>
+              <td className="dd-r so-ke-n">{opening?.debit ? formatCurrency(opening.debit) : ''}</td>
+              <td className="dd-r so-ke-c">{opening?.credit ? formatCurrency(opening.credit) : ''}</td>
             </tr>
-            {groups.map(group => (
-              <Fragment key={group.month}>
-                <tr className="so-ke-month">
-                  <td colSpan={9}>{monthLabel(group.month)}</td>
-                </tr>
-                {group.lines.map(line => (
-                  line.kind === 'payment' ? (
-                    <tr key={line.id} className="so-ke-payment" data-testid="so-ke-payment-row">
-                      <td className="so-ke-date">{formatDatePadded(line.postedDate)}</td>
-                      <td className="so-ke-docno">{line.docNo ?? '—'}</td>
-                      <td className="so-ke-date">{formatDatePadded(line.docDate ?? line.postedDate)}</td>
-                      <td>
-                        <span className="so-ke-badge">Thanh toán</span>
-                        <strong>{line.description}</strong>
-                      </td>
-                      <td className="so-ke-acc">{line.counterAccount ?? '—'}</td>
-                      <td className="dd-r so-ke-n">{line.debit ? formatCurrency(line.debit) : ''}</td>
-                      <td className="dd-r so-ke-c">{line.credit ? formatCurrency(line.credit) : ''}</td>
-                      <td className="dd-r so-ke-bal">{line.balance > 0 ? formatCurrency(line.balance) : ''}</td>
-                      <td className="dd-r so-ke-bal so-ke-bal--advance">{line.balance < 0 ? formatCurrency(Math.abs(line.balance)) : ''}</td>
-                    </tr>
+            {vouchers.map(voucher => voucher.lines.map((line, lineIdx) => (
+              <tr
+                key={`${voucher.stt}-${lineIdx}`}
+                className={voucher.kind === 'payment' ? 'so-ke-payment' : undefined}
+                data-testid={voucher.kind === 'payment' ? 'so-ke-payment-row' : undefined}
+              >
+                <td className="so-ke-stt">{lineIdx === 0 ? voucher.stt : ''}</td>
+                <td className="so-ke-date">{lineIdx === 0 && voucher.docDate ? formatDatePadded(voucher.docDate) : ''}</td>
+                <td className="so-ke-docno">{lineIdx === 0 ? (voucher.docNo ?? '—') : ''}</td>
+                <td>
+                  {voucher.kind === 'payment' ? (
+                    <>
+                      <span className="so-ke-badge">Thanh toán</span>
+                      <strong>{line.description}</strong>
+                    </>
                   ) : (
-                    <tr key={line.id}>
-                      <td className="so-ke-date">{formatDatePadded(line.postedDate)}</td>
-                      <td className="so-ke-docno">{line.docNo ?? '—'}</td>
-                      <td className="so-ke-date">{formatDatePadded(line.docDate ?? line.postedDate)}</td>
-                      <td>
-                        <span className="so-ke-desc">{line.description}</span>
-                        {line.routeName && <span className="so-ke-route">{line.routeName}</span>}
-                        {line.containerNumbers && line.containerNumbers.length > 0 && (
-                          <span className="so-ke-cont">{line.containerNumbers.join(', ')}</span>
-                        )}
-                      </td>
-                      <td className="so-ke-acc">{line.counterAccount ?? '—'}</td>
-                      <td className="dd-r so-ke-n">{line.debit ? formatCurrency(line.debit) : ''}</td>
-                      <td className="dd-r so-ke-c">{line.credit ? formatCurrency(line.credit) : ''}</td>
-                      <td className="dd-r so-ke-bal">{line.balance > 0 ? formatCurrency(line.balance) : ''}</td>
-                      <td className="dd-r so-ke-bal so-ke-bal--advance">{line.balance < 0 ? formatCurrency(Math.abs(line.balance)) : ''}</td>
-                    </tr>
-                  )
-                ))}
-              </Fragment>
-            ))}
-            {groups.length === 0 && (
+                    <span className="so-ke-desc">{line.description}</span>
+                  )}
+                </td>
+                <td className="dd-r so-ke-n">{line.debit ? formatCurrency(line.debit) : ''}</td>
+                <td className="dd-r so-ke-c">{line.credit ? formatCurrency(line.credit) : ''}</td>
+              </tr>
+            )))}
+            {!hasVouchers && (
               <tr>
-                <td colSpan={9} className="dd-table-empty">
+                <td colSpan={6} className="dd-table-empty">
                   {isLoading ? 'Đang tải sổ chi tiết…' : 'Không có giao dịch trong kỳ'}
                 </td>
               </tr>
             )}
           </tbody>
-          {totals && groups.length > 0 && (
+          {showFoot && fast && (
             <tfoot>
               <tr className="so-ke-total">
-                <td colSpan={6}>Tổng phát sinh trong kỳ</td>
-                <td className="dd-r so-ke-n">{formatCurrency(totals.debitTotal)}</td>
-                <td className="dd-r so-ke-c">{formatCurrency(totals.creditTotal)}</td>
-                <td className="dd-r" />
-                <td className="dd-r" />
+                <td colSpan={4}>TỔNG PHÁT SINH</td>
+                <td className="dd-r so-ke-n">{formatCurrency(fast.totals.debitTotal)}</td>
+                <td className="dd-r so-ke-c">{formatCurrency(fast.totals.creditTotal)}</td>
               </tr>
-              <tr className="so-ke-closing">
-                <td colSpan={6}>
-                  {closingNegative ? (
-                    <span className="so-ke-advance-label">
-                      <Wallet size={14} aria-hidden />
-                      Dư cuối kỳ — khách đã trả trước {formatCurrency(Math.abs(closing))}
-                    </span>
-                  ) : (
-                    'Dư cuối kỳ'
-                  )}
-                </td>
-                <td className="dd-r so-ke-n" />
-                <td className="dd-r so-ke-c" />
-                <td className="dd-r so-ke-bal so-ke-bal--debt">{closing > 0 ? formatCurrency(closing) : ''}</td>
-                <td className="dd-r so-ke-bal so-ke-bal--advance">{closing < 0 ? formatCurrency(Math.abs(closing)) : ''}</td>
+              <tr className="so-ke-closing" data-testid="so-ke-closing-row">
+                <td colSpan={4}>SỐ DƯ CUỐI KỲ</td>
+                <td className="dd-r so-ke-n so-ke-bal--debt">{closing?.debit ? formatCurrency(closing.debit) : ''}</td>
+                <td className="dd-r so-ke-c so-ke-bal--advance">{closing?.credit ? formatCurrency(closing.credit) : ''}</td>
               </tr>
             </tfoot>
           )}
         </table>
       </div>
+
+      {showFoot && (
+        <div className="so-ke-sign" aria-label="Chữ ký">
+          <div className="so-ke-sign-date">Ngày …… tháng …… năm ……</div>
+          <div className="so-ke-sign-row">
+            <div>
+              NGƯỜI LẬP BIỂU
+              <br />
+              <span>(Ký, ghi rõ họ tên)</span>
+            </div>
+            <div>
+              KẾ TOÁN TRƯỞNG
+              <br />
+              <span>(Ký, ghi rõ họ tên)</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
