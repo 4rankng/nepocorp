@@ -30,6 +30,7 @@ overrides:
   nanoid@<3.3.18: ">=3.3.18 <4"
   browserslist@<=4.28.6: ">=4.28.7 <5"
   qs@<6.16.0: ">=6.16.0 <7"
+  systeminformation@<5.33.16: ">=5.33.16 <6"
 
 # Native/postinstall builds that are allowed to run (pnpm 10 blocks the rest).
 onlyBuiltDependencies:
