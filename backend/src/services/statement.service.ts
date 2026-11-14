@@ -7,7 +7,7 @@ import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tin
 import type { AgingBucket, FastStatementDetail, PeriodSummary, StatementVoucher, StatementVoucherLine, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, StatementLine, StatementPeriodTotals } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
-import { escapeHtml, formatDateVi } from '../lib/format';
+import { escapeHtml } from '../lib/format';
 import { getCompanyInfo } from './company-info.service';
 import { CustomerAgingListItem } from './aging.service';
 
@@ -2005,10 +2005,10 @@ export function exportSupplierStatementHtml(
  * chưa cấu hình), khối giữa căn giữa: tiêu đề + dòng tài khoản 131111 +
  * KHÁCH HÀNG (MST) + TỪ/ĐẾN NGÀY, SỐ DƯ ĐẦU KỲ 2 ô Nợ|Có (fill EAEFF8,
  * viền chỉ trên E:G), header 2 tầng nền 244677 chữ trắng: STT | CHỨNG TỪ
- * (NGÀY | SỐ) | DIỄN GIẢI | TK Đ.ỨNG | SỐ PHÁT SINH (NỢ | CÓ) — mỗi chứng từ
+ * (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH (NỢ | CÓ) — mỗi chứng từ
  * một STT, nhiều dòng nghiệp vụ dưới một STT, NGÀY là date thật định dạng
  * 'dd-mm' — rồi TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ (công thức =SUM/=MAX, fill +
- * viền đủ 7 cột) và khối ký tên NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG. Vouchers
+ * viền đủ 6 cột) và khối ký tên NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG. Vouchers
  * derive từ chính statementLines/totals của response (buildFastStatement) —
  * file luôn khớp màn hình.
  */
@@ -2031,15 +2031,15 @@ export async function buildFastStatementXlsx(config: StatementExportConfig, writ
   // letterhead/centered block lines use mergedLine (no borders) instead.
   const setCells = (
     r: number,
-    cells: Array<{ col: number; value: string | number | Date | null | { formula: string; result: number }; numFmt?: boolean; fmt?: string; align?: 'left' | 'right' | 'center'; bold?: boolean; size?: number; fill?: string }>,
+    cells: Array<{ col: number; value: string | number | Date | null | { formula: string; result: number }; numFmt?: boolean; fmt?: string; align?: 'left' | 'right' | 'center'; bold?: boolean; size?: number; fill?: string; wrap?: boolean }>,
     height?: number,
   ) => {
-    for (const { col, value, numFmt, fmt, align, bold, size, fill } of cells) {
+    for (const { col, value, numFmt, fmt, align, bold, size, fill, wrap } of cells) {
       const cell = sheet.getCell(r, col);
       if (value !== null) cell.value = value;
       if (numFmt) cell.numFmt = '#,##0';
       if (fmt) cell.numFmt = fmt;
-      cell.alignment = { vertical: 'middle', horizontal: align ?? 'left' };
+      cell.alignment = { vertical: 'middle', horizontal: align ?? 'left', wrapText: wrap ?? false };
       cell.font = { name: 'Arial', size: size ?? 10, bold: bold ?? false, color: { argb: 'FF1F2937' } };
       if (fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
       cell.border = borderStyle;
@@ -2048,10 +2048,10 @@ export async function buildFastStatementXlsx(config: StatementExportConfig, writ
   };
 
   let currentOffset = 1;
-  // Full-width merged line (cols 1–7) — letterhead + centered block, borderless.
+  // Full-width merged line (cols 1–6) — letterhead + centered block, borderless.
   const mergedLine = (value: string, opts: { bold?: boolean; size?: number; height?: number; align?: 'left' | 'right' | 'center' } = {}) => {
     const r = currentOffset++;
-    sheet.mergeCells(r, 1, r, 7);
+    sheet.mergeCells(r, 1, r, 6);
     const cell = sheet.getCell(r, 1);
     cell.value = value;
     cell.alignment = { vertical: 'middle', horizontal: opts.align ?? 'center' };
@@ -2082,19 +2082,18 @@ export async function buildFastStatementXlsx(config: StatementExportConfig, writ
   // ── SỐ DƯ ĐẦU KỲ — 2 ô Nợ | Có (label + tiền ở cột E:G, A:D trống) ───────
   const openingRow = currentOffset++;
   setCells(openingRow, [
-    { col: 5, value: 'SỐ DƯ ĐẦU KỲ:', align: 'right', bold: true, fill: bandFill },
-    { col: 6, value: fastData.opening.debit, numFmt: true, align: 'right', bold: true, fill: bandFill },
-    { col: 7, value: fastData.opening.credit, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 4, value: 'SỐ DƯ ĐẦU KỲ:', align: 'right', bold: true, fill: bandFill },
+    { col: 5, value: fastData.opening.debit, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 6, value: fastData.opening.credit, numFmt: true, align: 'right', bold: true, fill: bandFill },
   ], 19.5);
 
-  // ── Header 2 tầng: STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | TK Đ.ỨNG | SỐ PHÁT SINH (NỢ | CÓ)
+  // ── Header 2 tầng: STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH (NỢ | CÓ)
   const headerRow = currentOffset++;
   const subRow = currentOffset++;
   sheet.mergeCells(headerRow, 1, subRow, 1); // STT
   sheet.mergeCells(headerRow, 2, headerRow, 3); // CHỨNG TỪ spans NGÀY|SỐ
   sheet.mergeCells(headerRow, 4, subRow, 4); // DIỄN GIẢI
-  sheet.mergeCells(headerRow, 5, subRow, 5); // TK Đ.ỨNG
-  sheet.mergeCells(headerRow, 6, headerRow, 7); // SỐ PHÁT SINH spans NỢ|CÓ
+  sheet.mergeCells(headerRow, 5, headerRow, 6); // SỐ PHÁT SINH spans NỢ|CÓ
   const headerCell = (r: number, col: number, value: string) => {
     const cell = sheet.getCell(r, col);
     cell.value = value;
@@ -2108,13 +2107,12 @@ export async function buildFastStatementXlsx(config: StatementExportConfig, writ
   headerCell(subRow, 2, 'NGÀY');
   headerCell(subRow, 3, 'SỐ');
   headerCell(headerRow, 4, 'DIỄN GIẢI');
-  headerCell(headerRow, 5, 'TK Đ.ỨNG');
-  headerCell(headerRow, 6, 'SỐ PHÁT SINH');
-  headerCell(subRow, 6, 'NỢ');
-  headerCell(subRow, 7, 'CÓ');
+  headerCell(headerRow, 5, 'SỐ PHÁT SINH');
+  headerCell(subRow, 5, 'NỢ');
+  headerCell(subRow, 6, 'CÓ');
   // Merged slave cells also carry the navy fill + grid border.
   for (const r of [headerRow, subRow]) {
-    for (let c = 1; c <= 7; c++) {
+    for (let c = 1; c <= 6; c++) {
       const cell = sheet.getCell(r, c);
       cell.border = borderStyle;
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF244677' } };
@@ -2132,21 +2130,24 @@ export async function buildFastStatementXlsx(config: StatementExportConfig, writ
       lastDataRow = r;
       const first = lineIdx === 0;
       const zebra = (r - firstDataRow) % 2 === 1 ? zebraFill : 'FFFFFFFF';
+      // DIỄN GIẢI wrap thay vì cắt chữ — cao dòng theo số dòng ước tính
+      // (cột 4 rộng ~44 ký tự, ~13.5pt mỗi dòng wrap).
+      const descLen = line.description?.length ?? 0;
+      const rowH = Math.max(18, Math.ceil(descLen / 44) * 13.5);
       setCells(r, [
         { col: 1, value: first ? voucher.stt : null, align: 'center', fill: zebra },
         { col: 2, value: first && voucher.docDate ? new Date(`${voucher.docDate}T00:00:00Z`) : null, fmt: first && voucher.docDate ? 'dd/MM/yyyy' : undefined, align: 'center', fill: zebra },
         { col: 3, value: first ? (voucher.docNo ?? '—') : null, align: 'center', fill: zebra },
-        { col: 4, value: line.description, align: 'left', fill: zebra },
-        { col: 5, value: line.contraAccount ?? 0, align: 'center', fill: zebra },
-        { col: 6, value: line.debit ?? 0, numFmt: true, align: 'right', fill: zebra },
-        { col: 7, value: line.credit ?? 0, numFmt: true, align: 'right', fill: zebra },
-      ], 18);
+        { col: 4, value: line.description, align: 'left', fill: zebra, wrap: true },
+        { col: 5, value: line.debit ?? 0, numFmt: true, align: 'right', fill: zebra },
+        { col: 6, value: line.credit ?? 0, numFmt: true, align: 'right', fill: zebra },
+      ], rowH);
     });
   }
   if (fastData.vouchers.length === 0) {
     const r = currentOffset++;
-    sheet.mergeCells(r, 1, r, 7);
-    setCells(r, Array.from({ length: 7 }, (_, i) => ({ col: i + 1, value: i === 0 ? 'Không có giao dịch trong kỳ' : null, align: 'center' as const, fill: 'FFFFFFFF' })), 18);
+    sheet.mergeCells(r, 1, r, 6);
+    setCells(r, Array.from({ length: 6 }, (_, i) => ({ col: i + 1, value: i === 0 ? 'Không có giao dịch trong kỳ' : null, align: 'center' as const, fill: 'FFFFFFFF' })), 18);
   }
 
   // ── TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ — công thức sống, fill/viền đủ 7 cột ──
@@ -2157,48 +2158,45 @@ export async function buildFastStatementXlsx(config: StatementExportConfig, writ
     { col: 1, value: null, fill: bandFill },
     { col: 2, value: null, fill: bandFill },
     { col: 3, value: null, fill: bandFill },
-    { col: 4, value: null, fill: bandFill },
-    { col: 5, value: 'TỔNG PHÁT SINH:', align: 'right', bold: true, fill: bandFill },
-    { col: 6, value: hasData ? { formula: `SUM(F${firstDataRow}:F${lastDataRow})`, result: fastData.totals.debitTotal } : 0, numFmt: true, align: 'right', bold: true, fill: bandFill },
-    { col: 7, value: hasData ? { formula: `SUM(G${firstDataRow}:G${lastDataRow})`, result: fastData.totals.creditTotal } : 0, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 4, value: 'TỔNG PHÁT SINH:', align: 'right', bold: true, fill: bandFill },
+    { col: 5, value: hasData ? { formula: `SUM(E${firstDataRow}:E${lastDataRow})`, result: fastData.totals.debitTotal } : 0, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 6, value: hasData ? { formula: `SUM(F${firstDataRow}:F${lastDataRow})`, result: fastData.totals.creditTotal } : 0, numFmt: true, align: 'right', bold: true, fill: bandFill },
   ], 19.5);
   setCells(closingRow, [
     { col: 1, value: null, fill: bandFill },
     { col: 2, value: null, fill: bandFill },
     { col: 3, value: null, fill: bandFill },
-    { col: 4, value: null, fill: bandFill },
-    { col: 5, value: 'SỐ DƯ CUỐI KỲ:', align: 'right', bold: true, fill: bandFill },
-    { col: 6, value: { formula: `MAX(0,(F${openingRow}+F${totalRow})-(G${openingRow}+G${totalRow}))`, result: fastData.closing.debit }, numFmt: true, align: 'right', bold: true, fill: bandFill },
-    { col: 7, value: { formula: `MAX(0,(G${openingRow}+G${totalRow})-(F${openingRow}+F${totalRow}))`, result: fastData.closing.credit }, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 4, value: 'SỐ DƯ CUỐI KỲ:', align: 'right', bold: true, fill: bandFill },
+    { col: 5, value: { formula: `MAX(0,(E${openingRow}+E${totalRow})-(F${openingRow}+F${totalRow}))`, result: fastData.closing.debit }, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 6, value: { formula: `MAX(0,(F${openingRow}+F${totalRow})-(E${openingRow}+E${totalRow}))`, result: fastData.closing.credit }, numFmt: true, align: 'right', bold: true, fill: bandFill },
   ], 19.5);
 
   // ── Khối ký tên: Ngày … tháng … năm … + NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG ──
   currentOffset++; // blank spacer row
   const signDateRow = currentOffset++;
-  sheet.mergeCells(signDateRow, 6, signDateRow, 7);
-  setCells(signDateRow, [{ col: 6, value: 'Ngày ..... tháng ..... năm .........', align: 'center' }], 16);
+  sheet.mergeCells(signDateRow, 5, signDateRow, 6);
+  setCells(signDateRow, [{ col: 5, value: 'Ngày ..... tháng ..... năm .........', align: 'center' }], 16);
   const signTitleRow = currentOffset++;
   sheet.mergeCells(signTitleRow, 2, signTitleRow, 3);
-  sheet.mergeCells(signTitleRow, 6, signTitleRow, 7);
+  sheet.mergeCells(signTitleRow, 5, signTitleRow, 6);
   setCells(signTitleRow, [
     { col: 2, value: 'NGƯỜI LẬP BIỂU', align: 'center', bold: true },
-    { col: 6, value: 'KẾ TOÁN TRƯỞNG', align: 'center', bold: true },
+    { col: 5, value: 'KẾ TOÁN TRƯỞNG', align: 'center', bold: true },
   ], 16);
   const signSubRow = currentOffset++;
   sheet.mergeCells(signSubRow, 2, signSubRow, 3);
-  sheet.mergeCells(signSubRow, 6, signSubRow, 7);
+  sheet.mergeCells(signSubRow, 5, signSubRow, 6);
   setCells(signSubRow, [
     { col: 2, value: '(Ký, họ tên)', align: 'center', size: 9 },
-    { col: 6, value: '(Ký, họ tên)', align: 'center', size: 9 },
+    { col: 5, value: '(Ký, họ tên)', align: 'center', size: 9 },
   ], 14);
 
   sheet.getColumn(1).width = 6.4;
   sheet.getColumn(2).width = 12;
   sheet.getColumn(3).width = Math.max(13.2, ...fastData.vouchers.map((v) => (v.docNo?.length ?? 0) + 3));
   sheet.getColumn(4).width = 46.4;
-  sheet.getColumn(5).width = 12;
+  sheet.getColumn(5).width = 15.8;
   sheet.getColumn(6).width = 15.8;
-  sheet.getColumn(7).width = 15.8;
 
   await workbook.xlsx.write(writable);
 }
@@ -2494,9 +2492,9 @@ ${detailTable}
  * công ty (ẩn khi chưa cấu hình), khối giữa căn giữa (tiêu đề + dòng tài
  * khoản 131111 + KHÁCH HÀNG (MST) + TỪ/ĐẾN NGÀY), SỐ DƯ ĐẦU KỲ 2 ô Nợ|Có
  * phía trên bảng (fill EAEFF8, hiển thị cả số 0), bảng nền 244677: STT |
- * CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | TK Đ.ỨNG | SỐ PHÁT SINH (NỢ | CÓ) với
+ * CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH (NỢ | CÓ) với
  * mỗi chứng từ một STT (nhiều dòng nghiệp vụ dưới một STT, ngày dd-mm),
- * TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ (fill đủ 7 cột), khối ký tên NGƯỜI LẬP
+ * TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ (fill đủ 6 cột), khối ký tên NGƯỜI LẬP
  * BIỂU / KẾ TOÁN TRƯỞNG. Tiền hiển thị '#,##0' không ₫, số 0 phía tiền còn
  * ô trống. Tự mang <style> riêng — SHARED_CSS phục vụ các bản export khác.
  */
@@ -2528,7 +2526,6 @@ export function buildFastStatementHtml(config: StatementExportConfig): string {
       <td class="c">${first && voucher.docDate ? escapeHtml(dm(voucher.docDate)) : ''}</td>
       <td class="c">${first ? escapeHtml(voucher.docNo ?? '—') : ''}</td>
       <td>${escapeHtml(line.description)}</td>
-      <td class="c">${escapeHtml(line.contraAccount ?? '')}</td>
       <td class="num">${blank(line.debit)}</td>
       <td class="num">${blank(line.credit)}</td>
     </tr>`);
@@ -2581,12 +2578,12 @@ export function buildFastStatementHtml(config: StatementExportConfig): string {
 </div>
 <table class="soke2">
   <thead>
-    <tr><th rowspan="2">STT</th><th colspan="2">CHỨNG TỪ</th><th rowspan="2">DIỄN GIẢI</th><th rowspan="2">TK Đ.ỨNG</th><th colspan="2">SỐ PHÁT SINH</th></tr>
+    <tr><th rowspan="2">STT</th><th colspan="2">CHỨNG TỪ</th><th rowspan="2">DIỄN GIẢI</th><th colspan="2">SỐ PHÁT SINH</th></tr>
     <tr><th>NGÀY</th><th>SỐ</th><th class="num">NỢ</th><th class="num">CÓ</th></tr>
   </thead>
   <tbody>
     ${voucherRows.join('\n    ')}
-    ${fastData.vouchers.length === 0 ? '<tr><td colspan="7" class="c">Không có giao dịch trong kỳ</td></tr>' : ''}
+    ${fastData.vouchers.length === 0 ? '<tr><td colspan="6" class="c">Không có giao dịch trong kỳ</td></tr>' : ''}
   </tbody>
   <tfoot>
     <tr><td colspan="4"></td><td class="lbl">TỔNG PHÁT SINH:</td><td class="num">${amount(fastData.totals.debitTotal)}</td><td class="num">${amount(fastData.totals.creditTotal)}</td></tr>

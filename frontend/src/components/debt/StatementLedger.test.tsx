@@ -7,7 +7,7 @@ import { StatementLedger } from './StatementLedger';
  * NEPO-47 — the statement screen renders the customer's Fast 'SỔ CHI TIẾT
  * CÔNG NỢ': letterhead công ty, khối giữa (tài khoản 131111 + KHÁCH HÀNG +
  * TỪ/ĐẾN NGÀY), SỐ DƯ ĐẦU KỲ băng 2 ô Nợ|Có (hiện cả số 0) trên cùng bảng,
- * bảng STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | TK Đ.ỨNG | SỐ PHÁT SINH
+ * bảng STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH
  * (NỢ | CÓ) với mỗi chứng từ một STT (nhiều dòng nghiệp vụ dưới một STT,
  * ngày dd-mm), TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ băng đủ cột, khối ký tên.
  * KHÔNG cột dư từng dòng. Money renders '#,##0' without ₫ exactly as
@@ -117,25 +117,24 @@ describe('StatementLedger (NEPO-47 SỔ CHI TIẾT CÔNG NỢ mẫu Fast)', () =
     const chiHoCells = within(chiHoRow!).getAllByRole('cell');
     expect(revenueCells[0].textContent).toBe('1'); // STT trên dòng đầu của chứng từ
     expect(revenueCells[1].textContent).toBe('04-07'); // NGÀY chứng từ dd-mm
-    expect(revenueCells[4].textContent).toBe('5111'); // TK Đ.ỨNG của dòng doanh thu
+    expect(revenueCells[4].textContent).toBe('10.000.000'); // NỢ của dòng doanh thu
     expect(chiHoCells[0].textContent).toBe(''); // dòng 2 của chứng từ không lặp STT
     expect(chiHoCells[1].textContent).toBe(''); // dòng 2 không lặp NGÀY chứng từ
     expect(chiHoCells[2].textContent).toBe(''); // dòng 2 không lặp SỐ chứng từ
-    expect(chiHoCells[4].textContent).toBe('5111');
+    expect(chiHoCells[4].textContent).toBe('2.000.000'); // NỢ của dòng chi hộ
   });
 
-  it('payment voucher reads KH trả … and carries TK Đ.ỨNG between DIỄN GIẢI and SỐ PHÁT SINH', () => {
-    const { getByTestId, getByText, queryByText } = render(<StatementLedger fast={fastFixture()} />);
+  it('payment voucher reads KH trả … right after DIỄN GIẢI in the 6-column layout', () => {
+    const { getByTestId, queryByText } = render(<StatementLedger fast={fastFixture()} />);
     const paymentRow = getByTestId('so-ke-payment-row');
     expect(within(paymentRow).getByText('KH trả 12.000.000 ₫ ngày 15/10/2026 (chuyển khoản)')).toBeTruthy();
-    expect(within(paymentRow).getByText('1121')).toBeTruthy(); // TK Đ.ỨNG của phiếu thu
     expect(within(paymentRow).getByText('R1')).toBeTruthy();
     expect(queryByText('Thanh toán')).toBeNull(); // không badge
+    expect(queryByText('1121')).toBeNull(); // cột TK Đ.ỨNG đã bỏ
 
     const headers = getAllHeaderCells(paymentRow);
-    const tkIdx = headers.indexOf('TK Đ.ỨNG');
-    expect(tkIdx).toBe(headers.indexOf('DIỄN GIẢI') + 1);
-    expect(tkIdx + 1).toBe(headers.indexOf('SỐ PHÁT SINH'));
+    expect(headers.indexOf('SỐ PHÁT SINH')).toBe(headers.indexOf('DIỄN GIẢI') + 1);
+    expect(headers.indexOf('TK Đ.ỨNG')).toBe(-1);
   });
 
   it('renders TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ băng đủ cột without recomputing', () => {

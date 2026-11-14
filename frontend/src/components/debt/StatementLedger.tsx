@@ -4,14 +4,14 @@ import type { FastStatementDetail } from '@tingting/shared';
  * NEPO-47 — 'SỔ CHI TIẾT CÔNG NỢ' đúng mẫu Fast: letterhead công ty (khi có),
  * khối giữa (tiêu đề + dòng tài khoản 131111 + KHÁCH HÀNG (MST) + TỪ/ĐẾN
  * NGÀY), SỐ DƯ ĐẦU KỲ 2 ô Nợ|Có (fill băng, hiển thị cả số 0) nằm ngay trên
- * bảng, bảng STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | TK Đ.ỨNG | SỐ PHÁT
+ * bảng, bảng STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT
  * SINH (NỢ | CÓ) với mỗi chứng từ một STT (nhiều dòng nghiệp vụ dưới một
  * STT — cước vận chuyển + chi hộ cùng chuyến; 2 dòng Nợ/Có của cùng phiếu,
  * NGÀY dd-mm), TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ 2 ô Nợ|Có (fill băng đủ cột),
  * khối ký tên NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG.
  *
  * KHÔNG cột dư từng dòng (mẫu không có) — số dư chỉ đọc ở đầu kỳ + tổng +
- * cuối kỳ. TK Đ.ỨNG trống khi dòng không có mã cố định.
+ * cuối kỳ.
  *
  * Dữ liệu (`fast`) đi thẳng từ statement API (integer VND, đã cộng dồn đúng
  * ledger) — component này chỉ hiển thị, KHÔNG tính lại tiền. Tiền hiển thị
@@ -84,7 +84,6 @@ export function StatementLedger({ fast, customerName, customerCode, dateFrom, da
               <th rowSpan={2}>STT</th>
               <th colSpan={2}>CHỨNG TỪ</th>
               <th rowSpan={2}>DIỄN GIẢI</th>
-              <th rowSpan={2}>TK Đ.ỨNG</th>
               <th colSpan={2}>SỐ PHÁT SINH</th>
             </tr>
             <tr>
@@ -104,14 +103,13 @@ export function StatementLedger({ fast, customerName, customerCode, dateFrom, da
                 <td className="so-ke-date">{lineIdx === 0 && voucher.docDate ? dm(voucher.docDate) : ''}</td>
                 <td className="so-ke-docno">{lineIdx === 0 ? (voucher.docNo ?? '—') : ''}</td>
                 <td className="so-ke-desc">{line.description}</td>
-                <td className="so-ke-tk">{line.contraAccount ?? ''}</td>
                 <td className="dd-r so-ke-n">{line.debit ? vnd(line.debit) : ''}</td>
                 <td className="dd-r so-ke-c">{line.credit ? vnd(line.credit) : ''}</td>
               </tr>
             )))}
             {!hasVouchers && (
               <tr>
-                <td colSpan={7} className="dd-table-empty">
+                <td colSpan={6} className="dd-table-empty">
                   {isLoading ? 'Đang tải sổ chi tiết…' : 'Không có giao dịch trong kỳ'}
                 </td>
               </tr>
