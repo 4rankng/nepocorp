@@ -8,6 +8,7 @@ import type { AgingBucket, FastStatementDetail, PeriodSummary, StatementVoucher,
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml, formatDateVi } from '../lib/format';
+import { getCompanyInfo } from './company-info.service';
 import { CustomerAgingListItem } from './aging.service';
 
 type LedgerRow = typeof s.ledger.$inferSelect;
@@ -211,11 +212,14 @@ interface StatementExportConfig {
   statementTotals?: StatementPeriodTotals;
   periodSummary?: PeriodSummary | null;
   /** NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ' header data (customer statements
-   * only): account line, customer code (MST), report period. */
+   * only): account line, customer code (MST), report period, company
+   * letterhead (tên + địa chỉ công ty; '' = ẩn dòng letterhead tương ứng). */
   fast?: {
     accountLine: string;
     customerCode: string | null;
     period: { dateFrom: string; dateTo: string };
+    companyName: string;
+    companyAddress: string;
   };
 }
 
@@ -683,7 +687,8 @@ export function buildStatementLines(
  * CÔNG NỢ' layout (đọc mô tả NEPO-47): one STT per chứng từ, nhiều dòng
  * nghiệp vụ dưới cùng một STT (cước vận chuyển + chi hộ của cùng chuyến;
  * 2 dòng Nợ/Có của cùng phiếu), số dư chỉ ở đầu kỳ + tổng + cuối kỳ dạng 2 ô
- * Nợ|Có — KHÔNG cột dư từng dòng, KHÔNG cột TK đối ứng.
+ * Nợ|Có — mỗi dòng mang TK Đ.ỨNG từ `StatementLine.counterAccount` (null =
+ * không có mã cố định); KHÔNG cột dư từng dòng.
  *
  * Grouping is presentational and order-preserving: lines sharing a voucher
  * document (trip code for shipments, receipt for payments) fold into one
@@ -732,7 +737,7 @@ export function buildFastStatement(
       };
       drafts.set(key, draft);
     }
-    draft.lines.push({ description: detail, debit: line.debit, credit: line.credit });
+    draft.lines.push({ description: detail, debit: line.debit, credit: line.credit, contraAccount: line.counterAccount ?? null });
     draft.debit += line.debit;
     draft.credit += line.credit;
   }
@@ -1093,6 +1098,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
 }
 
 export async function exportStatementXlsx(data: CustomerStatementData, dateStr: string, writable: Writable): Promise<void> {
+  const company = await getCompanyInfo();
   return buildStatementXlsx({
     heading: 'SỔ CHI TIẾT CÔNG NỢ',
     sheetName: 'SỔ CHI TIẾT CÔNG NỢ',
@@ -1107,14 +1113,17 @@ export async function exportStatementXlsx(data: CustomerStatementData, dateStr: 
     statementTotals: data.statementTotals,
     periodSummary: data.periodSummary ?? null,
     fast: {
-      accountLine: '131111 - PHẢI THU NGẮN HẠN KHÁCH HÀNG',
+      accountLine: 'TÀI KHOẢN: 131111 - PHẢI THU NGẮN HẠN KHÁCH HÀNG: HOẠT ĐỘNG SXKD (VND)',
       customerCode: data.customer.taxCode || null,
       period: data.period,
+      companyName: company.name,
+      companyAddress: company.address,
     },
   }, dateStr, writable);
 }
 
-export function exportStatementHtml(data: CustomerStatementData, dateStr: string): string {
+export async function exportStatementHtml(data: CustomerStatementData, dateStr: string): Promise<string> {
+  const company = await getCompanyInfo();
   return buildStatementHtml({
     heading: 'SỔ CHI TIẾT CÔNG NỢ',
     entityLabel: 'Khách hàng',
@@ -1128,9 +1137,11 @@ export function exportStatementHtml(data: CustomerStatementData, dateStr: string
     statementTotals: data.statementTotals,
     periodSummary: data.periodSummary ?? null,
     fast: {
-      accountLine: '131111 - PHẢI THU NGẮN HẠN KHÁCH HÀNG',
+      accountLine: 'TÀI KHOẢN: 131111 - PHẢI THU NGẮN HẠN KHÁCH HÀNG: HOẠT ĐỘNG SXKD (VND)',
       customerCode: data.customer.taxCode || null,
       period: data.period,
+      companyName: company.name,
+      companyAddress: company.address,
     },
   }, dateStr);
 }
@@ -1989,173 +2000,205 @@ export function exportSupplierStatementHtml(
 }
 
 /**
- * NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ' workbook (customer statement export,
- * đọc mô tả NEPO-47): header SỔ CHI TIẾT CÔNG NỢ + dòng tài khoản 131111 +
- * KHÁCH HÀNG + TỪ/ĐẾN NGÀY, SỐ DƯ ĐẦU KỲ 2 ô Nợ|Có, bảng STT | CHỨNG TỪ
- * (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH (NỢ | CÓ) — mỗi chứng từ một STT,
- * nhiều dòng nghiệp vụ dưới một STT — rồi TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ 2 ô
- * và khối ký tên NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG. Không cột TK đối ứng,
- * không cột dư từng dòng. Vouchers derive từ chính statementLines/totals
- * của response (buildFastStatement) — file luôn khớp màn hình.
+ * NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ' workbook (customer statement export):
+ * đúng mẫu Fast — letterhead công ty (tên + địa chỉ từ company info, ẩn khi
+ * chưa cấu hình), khối giữa căn giữa: tiêu đề + dòng tài khoản 131111 +
+ * KHÁCH HÀNG (MST) + TỪ/ĐẾN NGÀY, SỐ DƯ ĐẦU KỲ 2 ô Nợ|Có (fill EAEFF8,
+ * viền chỉ trên E:G), header 2 tầng nền 244677 chữ trắng: STT | CHỨNG TỪ
+ * (NGÀY | SỐ) | DIỄN GIẢI | TK Đ.ỨNG | SỐ PHÁT SINH (NỢ | CÓ) — mỗi chứng từ
+ * một STT, nhiều dòng nghiệp vụ dưới một STT, NGÀY là date thật định dạng
+ * 'dd-mm' — rồi TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ (công thức =SUM/=MAX, fill +
+ * viền đủ 7 cột) và khối ký tên NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG. Vouchers
+ * derive từ chính statementLines/totals của response (buildFastStatement) —
+ * file luôn khớp màn hình.
  */
-async function buildFastStatementXlsx(config: StatementExportConfig, dateStr: string, writable: Writable): Promise<void> {
+export async function buildFastStatementXlsx(config: StatementExportConfig, writable: Writable): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(config.sheetName || config.heading);
   sheet.views = [{ showGridLines: true }];
+  workbook.calcProperties.fullCalcOnLoad = true;
 
   const borderStyle = {
-    top: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
-    left: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
-    bottom: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
-    right: { style: 'thin' as const, color: { argb: 'FFD1D5DB' } },
+    top: { style: 'thin' as const, color: { argb: 'FFAFBDC5' } },
+    left: { style: 'thin' as const, color: { argb: 'FFAFBDC5' } },
+    bottom: { style: 'thin' as const, color: { argb: 'FFAFBDC5' } },
+    right: { style: 'thin' as const, color: { argb: 'FFAFBDC5' } },
+  };
+  const bandFill = 'FFEAEFF8';
+  const zebraFill = 'FFF8F9FB';
+
+  // Style one row at an explicit index; borders default on (data/grid rows),
+  // letterhead/centered block lines use mergedLine (no borders) instead.
+  const setCells = (
+    r: number,
+    cells: Array<{ col: number; value: string | number | Date | null | { formula: string; result: number }; numFmt?: boolean; fmt?: string; align?: 'left' | 'right' | 'center'; bold?: boolean; size?: number; fill?: string }>,
+    height?: number,
+  ) => {
+    for (const { col, value, numFmt, fmt, align, bold, size, fill } of cells) {
+      const cell = sheet.getCell(r, col);
+      if (value !== null) cell.value = value;
+      if (numFmt) cell.numFmt = '#,##0';
+      if (fmt) cell.numFmt = fmt;
+      cell.alignment = { vertical: 'middle', horizontal: align ?? 'left' };
+      cell.font = { name: 'Arial', size: size ?? 10, bold: bold ?? false, color: { argb: 'FF1F2937' } };
+      if (fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+      cell.border = borderStyle;
+    }
+    if (height !== undefined) sheet.getRow(r).height = height;
   };
 
-  // Style one row of the book: label/amount cells with grid borders; the
-  // header/total rows use it too, only fills differ.
   let currentOffset = 1;
-  const styleRow = (
-    cells: Array<{ col: number; value: string | number | null; numFmt?: boolean; align?: 'left' | 'right' | 'center'; bold?: boolean; color?: string; fill?: string; size?: number }>,
-    fill?: string,
-  ) => {
-    const r = currentOffset;
-    cells.forEach(({ col, value, numFmt, align, bold, color, fill: cellFill, size }) => {
-      const cell = sheet.getCell(r, col);
-      cell.value = value;
-      if (numFmt) cell.numFmt = '#,##0';
-      cell.alignment = { vertical: 'middle', horizontal: align ?? 'left' };
-      cell.font = { name: 'Segoe UI', size: size ?? 10, bold: bold ?? false, color: { argb: color ?? 'FF1F2937' } };
-      cell.border = borderStyle;
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cellFill ?? fill ?? 'FFFFFFFF' } };
-    });
-    sheet.getRow(r).height = 20;
-    currentOffset++;
-  };
-  const mergedBand = (fromCol: number, toCol: number, value: string, opts: { bold?: boolean; fill?: string; align?: 'left' | 'right' | 'center'; size?: number; height?: number; color?: string; border?: boolean } = {}) => {
-    const r = currentOffset;
-    sheet.mergeCells(r, fromCol, r, toCol);
-    const cell = sheet.getCell(r, fromCol);
+  // Full-width merged line (cols 1–7) — letterhead + centered block, borderless.
+  const mergedLine = (value: string, opts: { bold?: boolean; size?: number; height?: number; align?: 'left' | 'right' | 'center' } = {}) => {
+    const r = currentOffset++;
+    sheet.mergeCells(r, 1, r, 7);
+    const cell = sheet.getCell(r, 1);
     cell.value = value;
     cell.alignment = { vertical: 'middle', horizontal: opts.align ?? 'center' };
-    cell.font = { name: 'Segoe UI', size: opts.size ?? 10, bold: opts.bold ?? false, color: { argb: opts.color ?? 'FF1F2937' } };
-    if (opts.fill) {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.fill } };
-    }
-    if (opts.border) {
-      for (let c = fromCol; c <= toCol; c++) sheet.getCell(r, c).border = borderStyle;
-    }
-    sheet.getRow(r).height = opts.height ?? 20;
-    currentOffset++;
+    cell.font = { name: 'Arial', size: opts.size ?? 10, bold: opts.bold ?? false, color: { argb: 'FF1F2937' } };
+    sheet.getRow(r).height = opts.height ?? 16;
   };
 
-  // ── Fast header: title / tài khoản / khách hàng / kỳ ─────────────────────
-  mergedBand(1, 6, config.heading, { bold: true, size: 13, height: 32 });
-  currentOffset++; // blank spacer row
+  const dash = (iso: string | undefined | null) => {
+    const s = iso ?? '';
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}` : (s || '……');
+  };
+
+  // ── Letterhead công ty (mẫu Fast) — chỉ khi company info có dữ liệu ──────
   const fast = config.fast;
-  mergedBand(1, 6, fast?.accountLine ?? '', { bold: true, align: 'center', size: 11 });
-  const codeSuffix = fast?.customerCode ? ` (${fast.customerCode})` : '';
-  mergedBand(1, 6, `KHÁCH HÀNG: ${config.entityName}${codeSuffix}`, { align: 'center', size: 11 });
-  mergedBand(1, 6, `TỪ NGÀY ${fast?.period.dateFrom || '…'} ĐẾN NGÀY ${fast?.period.dateTo || '…'}`, { align: 'center', size: 11 });
+  if (fast?.companyName) mergedLine(fast.companyName, { bold: true, align: 'left', height: 14 });
+  if (fast?.companyAddress) mergedLine(fast.companyAddress, { size: 9, align: 'left', height: 13 });
   currentOffset++; // blank spacer row
+
+  // ── Khối giữa: tiêu đề / tài khoản / khách hàng / kỳ ─────────────────────
+  mergedLine(config.heading, { bold: true, size: 15, height: 27 });
+  mergedLine(fast?.accountLine ?? '', { bold: true });
+  const codeSuffix = fast?.customerCode ? ` (${fast.customerCode})` : '';
+  mergedLine(`KHÁCH HÀNG: ${config.entityName}${codeSuffix}`, { bold: true });
+  mergedLine(`TỪ NGÀY: ${dash(fast?.period.dateFrom)} ĐẾN NGÀY: ${dash(fast?.period.dateTo)}`, { bold: true });
 
   const fastData = buildFastStatement(config.statementLines!, config.statementTotals!);
 
-  // ── SỐ DƯ ĐẦU KỲ — 2 ô Nợ | Có ──────────────────────────────────────────
-  styleRow([
-    { col: 1, value: 'SỐ DƯ ĐẦU KỲ', bold: true, align: 'left' },
-    { col: 2, value: null },
-    { col: 3, value: null },
-    { col: 4, value: null },
-    { col: 5, value: fastData.opening.debit || null, numFmt: true, align: 'right', bold: true, color: 'FFDC2626' },
-    { col: 6, value: fastData.opening.credit || null, numFmt: true, align: 'right', bold: true, color: 'FF10B981' },
-  ], 'FFE6F4EA');
-  // Opening row keeps its merge across the label columns.
-  sheet.mergeCells(currentOffset - 1, 1, currentOffset - 1, 4);
+  // ── SỐ DƯ ĐẦU KỲ — 2 ô Nợ | Có (label + tiền ở cột E:G, A:D trống) ───────
+  const openingRow = currentOffset++;
+  setCells(openingRow, [
+    { col: 5, value: 'SỐ DƯ ĐẦU KỲ:', align: 'right', bold: true, fill: bandFill },
+    { col: 6, value: fastData.opening.debit, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 7, value: fastData.opening.credit, numFmt: true, align: 'right', bold: true, fill: bandFill },
+  ], 19.5);
 
-  // ── Bảng chứng từ — header 2 tầng: STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT SINH (NỢ | CÓ)
-  const headerRow = currentOffset;
-  const subRow = currentOffset + 1;
+  // ── Header 2 tầng: STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | TK Đ.ỨNG | SỐ PHÁT SINH (NỢ | CÓ)
+  const headerRow = currentOffset++;
+  const subRow = currentOffset++;
   sheet.mergeCells(headerRow, 1, subRow, 1); // STT
   sheet.mergeCells(headerRow, 2, headerRow, 3); // CHỨNG TỪ spans NGÀY|SỐ
   sheet.mergeCells(headerRow, 4, subRow, 4); // DIỄN GIẢI
-  sheet.mergeCells(headerRow, 5, headerRow, 6); // SỐ PHÁT SINH spans NỢ|CÓ
-  const headerCell = (r: number, col: number, value: string, align: 'left' | 'center' = 'center') => {
+  sheet.mergeCells(headerRow, 5, subRow, 5); // TK Đ.ỨNG
+  sheet.mergeCells(headerRow, 6, headerRow, 7); // SỐ PHÁT SINH spans NỢ|CÓ
+  const headerCell = (r: number, col: number, value: string) => {
     const cell = sheet.getCell(r, col);
     cell.value = value;
-    cell.alignment = { vertical: 'middle', horizontal: align };
-    cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF374151' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
     cell.border = borderStyle;
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF244677' } };
   };
   headerCell(headerRow, 1, 'STT');
   headerCell(headerRow, 2, 'CHỨNG TỪ');
   headerCell(subRow, 2, 'NGÀY');
   headerCell(subRow, 3, 'SỐ');
-  headerCell(headerRow, 4, 'DIỄN GIẢI', 'left');
-  headerCell(headerRow, 5, 'SỐ PHÁT SINH');
-  headerCell(subRow, 5, 'NỢ');
-  headerCell(subRow, 6, 'CÓ');
-  for (let c = 1; c <= 6; c++) {
-    sheet.getCell(subRow, c).border = borderStyle;
-    sheet.getCell(subRow, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+  headerCell(headerRow, 4, 'DIỄN GIẢI');
+  headerCell(headerRow, 5, 'TK Đ.ỨNG');
+  headerCell(headerRow, 6, 'SỐ PHÁT SINH');
+  headerCell(subRow, 6, 'NỢ');
+  headerCell(subRow, 7, 'CÓ');
+  // Merged slave cells also carry the navy fill + grid border.
+  for (const r of [headerRow, subRow]) {
+    for (let c = 1; c <= 7; c++) {
+      const cell = sheet.getCell(r, c);
+      cell.border = borderStyle;
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF244677' } };
+    }
   }
-  sheet.getRow(headerRow).height = 20;
-  sheet.getRow(subRow).height = 20;
-  currentOffset = subRow + 1;
+  sheet.getRow(headerRow).height = 19.5;
+  sheet.getRow(subRow).height = 19.5;
+  const firstDataRow = currentOffset;
+  let lastDataRow = firstDataRow - 1;
 
   // ── Chứng từ: mỗi chứng từ một STT, các dòng nghiệp vụ dưới 1 STT ────────
   for (const voucher of fastData.vouchers) {
     voucher.lines.forEach((line, lineIdx) => {
-      const docDate = lineIdx === 0 ? (voucher.docDate ? formatDateVi(voucher.docDate) : '') : null;
-      const docNo = lineIdx === 0 ? (voucher.docNo ?? '—') : null;
-      const stt = lineIdx === 0 ? voucher.stt : null;
-      styleRow([
-        { col: 1, value: stt, align: 'center' },
-        { col: 2, value: docDate, align: 'center' },
-        { col: 3, value: docNo, align: 'center' },
-        { col: 4, value: line.description, bold: voucher.kind === 'payment' },
-        { col: 5, value: line.debit || null, numFmt: true, align: 'right' },
-        { col: 6, value: line.credit || null, numFmt: true, align: 'right' },
-      ], voucher.kind === 'payment' ? 'FFF0FDF4' : undefined);
+      const r = currentOffset++;
+      lastDataRow = r;
+      const first = lineIdx === 0;
+      const zebra = (r - firstDataRow) % 2 === 1 ? zebraFill : 'FFFFFFFF';
+      setCells(r, [
+        { col: 1, value: first ? voucher.stt : null, align: 'center', fill: zebra },
+        { col: 2, value: first && voucher.docDate ? new Date(`${voucher.docDate}T00:00:00Z`) : null, fmt: first && voucher.docDate ? 'dd/MM/yyyy' : undefined, align: 'center', fill: zebra },
+        { col: 3, value: first ? (voucher.docNo ?? '—') : null, align: 'center', fill: zebra },
+        { col: 4, value: line.description, align: 'left', fill: zebra },
+        { col: 5, value: line.contraAccount ?? 0, align: 'center', fill: zebra },
+        { col: 6, value: line.debit ?? 0, numFmt: true, align: 'right', fill: zebra },
+        { col: 7, value: line.credit ?? 0, numFmt: true, align: 'right', fill: zebra },
+      ], 18);
     });
   }
   if (fastData.vouchers.length === 0) {
-    mergedBand(1, 6, 'Không có giao dịch trong kỳ', { align: 'center', border: true });
+    const r = currentOffset++;
+    sheet.mergeCells(r, 1, r, 7);
+    setCells(r, Array.from({ length: 7 }, (_, i) => ({ col: i + 1, value: i === 0 ? 'Không có giao dịch trong kỳ' : null, align: 'center' as const, fill: 'FFFFFFFF' })), 18);
   }
 
-  // ── TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ ──────────────────────────────────────
-  styleRow([
-    { col: 1, value: 'TỔNG PHÁT SINH', bold: true, align: 'left' },
-    { col: 2, value: null },
-    { col: 3, value: null },
-    { col: 4, value: null },
-    { col: 5, value: fastData.totals.debitTotal, numFmt: true, align: 'right', bold: true },
-    { col: 6, value: fastData.totals.creditTotal, numFmt: true, align: 'right', bold: true },
-  ], 'FFF3F4F6');
-  sheet.mergeCells(currentOffset - 1, 1, currentOffset - 1, 4);
-  styleRow([
-    { col: 1, value: 'SỐ DƯ CUỐI KỲ', bold: true, align: 'left' },
-    { col: 2, value: null },
-    { col: 3, value: null },
-    { col: 4, value: null },
-    { col: 5, value: fastData.closing.debit || null, numFmt: true, align: 'right', bold: true, color: 'FFDC2626' },
-    { col: 6, value: fastData.closing.credit || null, numFmt: true, align: 'right', bold: true, color: 'FF10B981' },
-  ], 'FFF3F4F6');
-  sheet.mergeCells(currentOffset - 1, 1, currentOffset - 1, 4);
+  // ── TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ — công thức sống, fill/viền đủ 7 cột ──
+  const hasData = lastDataRow >= firstDataRow;
+  const totalRow = currentOffset++;
+  const closingRow = currentOffset++;
+  setCells(totalRow, [
+    { col: 1, value: null, fill: bandFill },
+    { col: 2, value: null, fill: bandFill },
+    { col: 3, value: null, fill: bandFill },
+    { col: 4, value: null, fill: bandFill },
+    { col: 5, value: 'TỔNG PHÁT SINH:', align: 'right', bold: true, fill: bandFill },
+    { col: 6, value: hasData ? { formula: `SUM(F${firstDataRow}:F${lastDataRow})`, result: fastData.totals.debitTotal } : 0, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 7, value: hasData ? { formula: `SUM(G${firstDataRow}:G${lastDataRow})`, result: fastData.totals.creditTotal } : 0, numFmt: true, align: 'right', bold: true, fill: bandFill },
+  ], 19.5);
+  setCells(closingRow, [
+    { col: 1, value: null, fill: bandFill },
+    { col: 2, value: null, fill: bandFill },
+    { col: 3, value: null, fill: bandFill },
+    { col: 4, value: null, fill: bandFill },
+    { col: 5, value: 'SỐ DƯ CUỐI KỲ:', align: 'right', bold: true, fill: bandFill },
+    { col: 6, value: { formula: `MAX(0,(F${openingRow}+F${totalRow})-(G${openingRow}+G${totalRow}))`, result: fastData.closing.debit }, numFmt: true, align: 'right', bold: true, fill: bandFill },
+    { col: 7, value: { formula: `MAX(0,(G${openingRow}+G${totalRow})-(F${openingRow}+F${totalRow}))`, result: fastData.closing.credit }, numFmt: true, align: 'right', bold: true, fill: bandFill },
+  ], 19.5);
 
-  // ── Khối ký tên: NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG + Ngày … tháng … năm … ──
-  currentOffset += 2;
-  mergedBand(5, 6, 'Ngày …… tháng …… năm ……', { align: 'right', color: 'FF6B7280' });
-  mergedBand(1, 2, 'NGƯỜI LẬP BIỂU', { align: 'center', bold: true });
-  mergedBand(5, 6, 'KẾ TOÁN TRƯỞNG', { align: 'center', bold: true });
-  mergedBand(1, 2, '(Ký, ghi rõ họ tên)', { align: 'center', color: 'FF6B7280', size: 9 });
-  mergedBand(5, 6, '(Ký, ghi rõ họ tên)', { align: 'center', color: 'FF6B7280', size: 9 });
+  // ── Khối ký tên: Ngày … tháng … năm … + NGƯỜI LẬP BIỂU / KẾ TOÁN TRƯỞNG ──
+  currentOffset++; // blank spacer row
+  const signDateRow = currentOffset++;
+  sheet.mergeCells(signDateRow, 6, signDateRow, 7);
+  setCells(signDateRow, [{ col: 6, value: 'Ngày ..... tháng ..... năm .........', align: 'center' }], 16);
+  const signTitleRow = currentOffset++;
+  sheet.mergeCells(signTitleRow, 2, signTitleRow, 3);
+  sheet.mergeCells(signTitleRow, 6, signTitleRow, 7);
+  setCells(signTitleRow, [
+    { col: 2, value: 'NGƯỜI LẬP BIỂU', align: 'center', bold: true },
+    { col: 6, value: 'KẾ TOÁN TRƯỞNG', align: 'center', bold: true },
+  ], 16);
+  const signSubRow = currentOffset++;
+  sheet.mergeCells(signSubRow, 2, signSubRow, 3);
+  sheet.mergeCells(signSubRow, 6, signSubRow, 7);
+  setCells(signSubRow, [
+    { col: 2, value: '(Ký, họ tên)', align: 'center', size: 9 },
+    { col: 6, value: '(Ký, họ tên)', align: 'center', size: 9 },
+  ], 14);
 
-  sheet.getColumn(1).width = 6;
+  sheet.getColumn(1).width = 6.4;
   sheet.getColumn(2).width = 12;
-  sheet.getColumn(3).width = 20;
-  sheet.getColumn(4).width = 54;
-  sheet.getColumn(5).width = 16;
-  sheet.getColumn(6).width = 16;
+  sheet.getColumn(3).width = Math.max(13.2, ...fastData.vouchers.map((v) => (v.docNo?.length ?? 0) + 3));
+  sheet.getColumn(4).width = 46.4;
+  sheet.getColumn(5).width = 12;
+  sheet.getColumn(6).width = 15.8;
+  sheet.getColumn(7).width = 15.8;
 
   await workbook.xlsx.write(writable);
 }
@@ -2164,7 +2207,7 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
   // NEPO-47: customer statements render the Fast 'SỔ CHI TIẾT CÔNG NỢ' book —
   // dedicated builder, the shared aging/flat-ledger scaffold does not apply.
   if (config.statementLines && config.statementTotals) {
-    return buildFastStatementXlsx(config, dateStr, writable);
+    return buildFastStatementXlsx(config, writable);
   }
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(config.sheetName);
@@ -2447,70 +2490,114 @@ ${detailTable}
 }
 
 /**
- * NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ' print page (đọc mô tả NEPO-47):
- * tiêu đề + dòng tài khoản 131111 + KHÁCH HÀNG (MST) + TỪ/ĐẾN NGÀY, SỐ DƯ
- * ĐẦU KỲ 2 ô Nợ|Có, bảng STT | CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | SỐ PHÁT
- * SINH (NỢ | CÓ) với mỗi chứng từ một STT (nhiều dòng nghiệp vụ dưới một
- * STT), TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ 2 ô, khối ký tên NGƯỜI LẬP BIỂU /
- * KẾ TOÁN TRƯỞNG + 'Ngày … tháng … năm …'. Không cột TK đối ứng, không cột
- * dư từng dòng.
+ * NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ' print page: đúng mẫu Fast — letterhead
+ * công ty (ẩn khi chưa cấu hình), khối giữa căn giữa (tiêu đề + dòng tài
+ * khoản 131111 + KHÁCH HÀNG (MST) + TỪ/ĐẾN NGÀY), SỐ DƯ ĐẦU KỲ 2 ô Nợ|Có
+ * phía trên bảng (fill EAEFF8, hiển thị cả số 0), bảng nền 244677: STT |
+ * CHỨNG TỪ (NGÀY | SỐ) | DIỄN GIẢI | TK Đ.ỨNG | SỐ PHÁT SINH (NỢ | CÓ) với
+ * mỗi chứng từ một STT (nhiều dòng nghiệp vụ dưới một STT, ngày dd-mm),
+ * TỔNG PHÁT SINH + SỐ DƯ CUỐI KỲ (fill đủ 7 cột), khối ký tên NGƯỜI LẬP
+ * BIỂU / KẾ TOÁN TRƯỞNG. Tiền hiển thị '#,##0' không ₫, số 0 phía tiền còn
+ * ô trống. Tự mang <style> riêng — SHARED_CSS phục vụ các bản export khác.
  */
-function buildFastStatementHtml(config: StatementExportConfig): string {
+export function buildFastStatementHtml(config: StatementExportConfig): string {
   const fastData = buildFastStatement(config.statementLines!, config.statementTotals!);
-  const amount = (v: number) => (v ? v.toLocaleString('vi-VN') : '');
-  const dmy = (iso: string) => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? formatDateVi(iso) : iso;
+  const amount = (v: number) => v.toLocaleString('vi-VN');
+  const blank = (v: number) => (v ? amount(v) : '');
+  const dm = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso.slice(8, 10)}-${iso.slice(5, 7)}` : iso);
+  const dash = (iso: string | undefined) => {
+    const s = iso ?? '';
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s.slice(8, 10)}-${s.slice(5, 7)}-${s.slice(0, 4)}` : (s || '……');
+  };
+
+  const fast = config.fast;
+  const letterhead = [
+    fast?.companyName ? `<div class="lh-name">${escapeHtml(fast.companyName)}</div>` : '',
+    fast?.companyAddress ? `<div class="lh-addr">${escapeHtml(fast.companyAddress)}</div>` : '',
+  ].join('\n  ');
 
   const voucherRows: string[] = [];
+  let dataRowIdx = 0;
   for (const voucher of fastData.vouchers) {
     voucher.lines.forEach((line, lineIdx) => {
       const first = lineIdx === 0;
-      voucherRows.push(`<tr class="${voucher.kind === 'payment' ? 'soke-payment' : ''}">
-      <td class="stt">${first ? voucher.stt : ''}</td>
-      <td>${first && voucher.docDate ? escapeHtml(dmy(voucher.docDate)) : ''}</td>
-      <td>${first ? escapeHtml(voucher.docNo ?? '—') : ''}</td>
-      <td>${voucher.kind === 'payment' ? `<strong>${escapeHtml(line.description)}</strong>` : escapeHtml(line.description)}</td>
-      <td class="num">${amount(line.debit)}</td>
-      <td class="num">${amount(line.credit)}</td>
+      const z = dataRowIdx % 2 === 1 ? ' class="z"' : '';
+      dataRowIdx++;
+      voucherRows.push(`<tr${z}>
+      <td class="c">${first ? voucher.stt : ''}</td>
+      <td class="c">${first && voucher.docDate ? escapeHtml(dm(voucher.docDate)) : ''}</td>
+      <td class="c">${first ? escapeHtml(voucher.docNo ?? '—') : ''}</td>
+      <td>${escapeHtml(line.description)}</td>
+      <td class="c">${escapeHtml(line.contraAccount ?? '')}</td>
+      <td class="num">${blank(line.debit)}</td>
+      <td class="num">${blank(line.credit)}</td>
     </tr>`);
     });
   }
 
-  const codeSuffix = config.fast?.customerCode ? ` (${escapeHtml(config.fast.customerCode)})` : '';
+  const codeSuffix = fast?.customerCode ? ` (${escapeHtml(fast.customerCode)})` : '';
+  const period = fast?.period;
 
   return `<!doctype html>
 <html lang="vi"><head>
 <meta charset="utf-8">
 <title>${escapeHtml(config.heading)} — ${escapeHtml(config.entityName)}</title>
 <style>
-  ${SHARED_CSS}
+  body { font-family: Arial, sans-serif; color: #1f2937; max-width: 980px; margin: 24px auto; padding: 0 16px; }
+  .lh-name { font-weight: 700; font-size: 13px; }
+  .lh-addr { font-size: 12px; color: #475569; }
+  .rpt-head { text-align: center; margin: 10px 0 8px; line-height: 1.7; }
+  .rpt-head .title { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
+  .rpt-head .meta { font-size: 13px; font-weight: 700; }
+  .opening { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 8px 0; font-weight: 700; }
+  .opening .label { background: #EAEFF8; border: 1px solid #AFBDC5; padding: 2px 10px; white-space: nowrap; }
+  .opening .amt { min-width: 110px; text-align: right; background: #EAEFF8; border: 1px solid #AFBDC5; padding: 2px 10px; font-variant-numeric: tabular-nums; }
+  table.soke2 { border-collapse: collapse; width: 100%; }
+  .soke2 th, .soke2 td { border: 1px solid #AFBDC5; padding: 4px 8px; font-size: 12px; vertical-align: middle; }
+  .soke2 thead th { background: #244677; color: #fff; font-weight: 700; text-align: center; white-space: nowrap; }
+  .soke2 tbody tr.z td { background: #F8F9FB; }
+  .soke2 tfoot td { background: #EAEFF8; font-weight: 700; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .c { text-align: center; }
+  .lbl { text-align: right; white-space: nowrap; }
+  .sign { margin-top: 20px; }
+  .sign-date { width: 50%; margin-left: auto; text-align: center; color: #475569; }
+  .sign-row { display: flex; justify-content: space-between; margin-top: 14px; font-weight: 700; text-align: center; }
+  .sign-row span { display: block; margin-top: 2px; font-weight: 400; font-size: 11px; color: #475569; }
+  @media print { body { margin: 0; } .sign-row { page-break-inside: avoid; } }
 </style>
 </head><body>
-<h1>${escapeHtml(config.heading)}</h1>
-<div class="soke-head">
-  <div>${escapeHtml(config.fast?.accountLine ?? '')}</div>
-  <div>KHÁCH HÀNG: ${escapeHtml(config.entityName)}${codeSuffix}</div>
-  <div>TỪ NGÀY ${escapeHtml(config.fast?.period.dateFrom ? dmy(config.fast.period.dateFrom) : '……')} ĐẾN NGÀY ${escapeHtml(config.fast?.period.dateTo ? dmy(config.fast.period.dateTo) : '……')}</div>
+  ${letterhead}
+<div class="rpt-head">
+  <div class="title">${escapeHtml(config.heading)}</div>
+  <div class="meta">${escapeHtml(fast?.accountLine ?? '')}</div>
+  <div class="meta">KHÁCH HÀNG: ${escapeHtml(config.entityName)}${codeSuffix}</div>
+  <div class="meta">TỪ NGÀY: ${escapeHtml(dash(period?.dateFrom))} ĐẾN NGÀY: ${escapeHtml(dash(period?.dateTo))}</div>
 </div>
-<table class="soke">
+<div class="opening">
+  <span class="label">SỐ DƯ ĐẦU KỲ:</span>
+  <span class="amt num">${amount(fastData.opening.debit)}</span>
+  <span class="amt num">${amount(fastData.opening.credit)}</span>
+</div>
+<table class="soke2">
   <thead>
-    <tr><th rowspan="2">STT</th><th colspan="2">CHỨNG TỪ</th><th rowspan="2">DIỄN GIẢI</th><th colspan="2">SỐ PHÁT SINH</th></tr>
+    <tr><th rowspan="2">STT</th><th colspan="2">CHỨNG TỪ</th><th rowspan="2">DIỄN GIẢI</th><th rowspan="2">TK Đ.ỨNG</th><th colspan="2">SỐ PHÁT SINH</th></tr>
     <tr><th>NGÀY</th><th>SỐ</th><th class="num">NỢ</th><th class="num">CÓ</th></tr>
   </thead>
   <tbody>
-    <tr class="soke-opening"><td colspan="4"><strong>SỐ DƯ ĐẦU KỲ</strong></td><td class="num soke-neg">${fastData.opening.debit ? `<strong>${fastData.opening.debit.toLocaleString('vi-VN')}</strong>` : ''}</td><td class="num soke-pos">${fastData.opening.credit ? `<strong>${fastData.opening.credit.toLocaleString('vi-VN')}</strong>` : ''}</td></tr>
-    ${voucherRows.join('')}
-    ${fastData.vouchers.length === 0 ? '<tr><td colspan="6" class="dd-table-empty">Không có giao dịch trong kỳ</td></tr>' : ''}
+    ${voucherRows.join('\n    ')}
+    ${fastData.vouchers.length === 0 ? '<tr><td colspan="7" class="c">Không có giao dịch trong kỳ</td></tr>' : ''}
   </tbody>
   <tfoot>
-    <tr class="soke-total"><td colspan="4"><strong>TỔNG PHÁT SINH</strong></td><td class="num"><strong>${fastData.totals.debitTotal.toLocaleString('vi-VN')}</strong></td><td class="num"><strong>${fastData.totals.creditTotal.toLocaleString('vi-VN')}</strong></td></tr>
-    <tr class="soke-closing"><td colspan="4"><strong>SỐ DƯ CUỐI KỲ</strong></td><td class="num soke-neg">${fastData.closing.debit ? `<strong>${fastData.closing.debit.toLocaleString('vi-VN')}</strong>` : ''}</td><td class="num soke-pos">${fastData.closing.credit ? `<strong>${fastData.closing.credit.toLocaleString('vi-VN')}</strong>` : ''}</td></tr>
+    <tr><td colspan="4"></td><td class="lbl">TỔNG PHÁT SINH:</td><td class="num">${amount(fastData.totals.debitTotal)}</td><td class="num">${amount(fastData.totals.creditTotal)}</td></tr>
+    <tr><td colspan="4"></td><td class="lbl">SỐ DƯ CUỐI KỲ:</td><td class="num">${amount(fastData.closing.debit)}</td><td class="num">${amount(fastData.closing.credit)}</td></tr>
   </tfoot>
 </table>
-<div class="soke-sign">
-  <div class="soke-sign-date">Ngày …… tháng …… năm ……</div>
-  <div class="soke-sign-row">
-    <div>NGƯỜI LẬP BIỂU<br><span>(Ký, ghi rõ họ tên)</span></div>
-    <div>KẾ TOÁN TRƯỞNG<br><span>(Ký, ghi rõ họ tên)</span></div>
+<div class="sign">
+  <div class="sign-date">Ngày ..... tháng ..... năm .........</div>
+  <div class="sign-row">
+    <div>NGƯỜI LẬP BIỂU<span>(Ký, họ tên)</span></div>
+    <div>KẾ TOÁN TRƯỞNG<span>(Ký, họ tên)</span></div>
   </div>
 </div>
 </body></html>`;

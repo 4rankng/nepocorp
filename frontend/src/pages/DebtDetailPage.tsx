@@ -7,6 +7,7 @@ import { TxnType, isFinancialRole } from '@tingting/shared';
 import type { LedgerEntry, PaymentMethod } from '@tingting/shared';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries';
+import { useCompanyInfo } from '../hooks/useCatalogQueries';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
@@ -98,6 +99,8 @@ export default function DebtDetailPage() {
     isFetching: isStatementFetching,
     refetch,
   } = useCustomerStatement(id, appliedPeriodRange, { enabled: !!profileStatement });
+  // Letterhead for the Fast sổ chi tiết (Sao kê tab) — company profile.
+  const { data: company } = useCompanyInfo();
   const error = profileQueryError ? (profileQueryError as Error).message : null;
   const { rootRef } = usePageAnimations({ ready: !isProfileLoading && !!profileStatement });
 
@@ -696,7 +699,7 @@ export default function DebtDetailPage() {
               <div className="dd-ledger-head dd-ledger-head--workspace">
                 <div className="dd-ledger-heading">
                   <h2>Sổ chi tiết công nợ</h2>
-                  <p>Mẫu Fast: dư đầu kỳ, chứng từ theo STT (cước vận chuyển + chi hộ), khoản khách trả gộp, tổng phát sinh và dư cuối kỳ — không cột TK đối ứng, không cột dư từng dòng.</p>
+                  <p>Mẫu Fast: dư đầu kỳ, chứng từ theo STT (cước vận chuyển + chi hộ), khoản khách trả gộp, tổng phát sinh và dư cuối kỳ — kèm cột TK Đ.ỨNG, không cột dư từng dòng.</p>
                 </div>
                 <span className="dd-cnt">{statement?.fastStatement?.vouchers?.length ?? 0} chứng từ</span>
               </div>
@@ -723,6 +726,8 @@ export default function DebtDetailPage() {
                 customerCode={profileStatement?.customer.taxCode ?? null}
                 dateFrom={appliedPeriodRange.dateFrom}
                 dateTo={appliedPeriodRange.dateTo}
+                companyName={company?.name}
+                companyAddress={company?.address}
                 isLoading={isStatementFetching && !statement}
               />
             </section>

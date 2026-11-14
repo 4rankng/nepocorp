@@ -1317,6 +1317,8 @@ export interface StatementVoucherLine {
   description: string;
   debit: number;
   credit: number;
+  /** TK Đ.ỨNG (mẫu Fast) — mã đối ứng của dòng, từ StatementLine.counterAccount; null = không có mã cố định, ô hiển thị trống. */
+  contraAccount?: string | null;
 }
 
 /** NEPO-47 — Fast 'SỔ CHI TIẾT CÔNG NỢ': một STT cho cả chứng từ, nhiều

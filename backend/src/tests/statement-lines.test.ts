@@ -352,4 +352,14 @@ describe('buildFastStatement — NEPO-47 Fast SỔ CHI TIẾT CÔNG NỢ', () =>
     assert.equal(vouchers[1].stt, 2);
     assert.equal(vouchers[1].docDate, '2026-10-06');
   });
+
+  test('mỗi dòng nghiệp vụ mang TK Đ.ỨNG — 5111 cho doanh thu, 1121 cho phiếu thu', () => {
+    const rows = [
+      row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 10_000_000, txnId: 41, tripId: 41, tripCode: 'TRP-202607-0041' }),
+      row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 4_000_000, receiptId: 'RB41', paymentMethod: 'BANK', txnId: 41 }),
+    ];
+    const { vouchers } = buildFastStatement(buildStatementLines(rows, 0).lines, { openingBalance: 0, debitTotal: 10_000_000, creditTotal: 4_000_000, closingBalance: 6_000_000 });
+    assert.deepEqual(vouchers[0].lines.map((l) => l.contraAccount), ['5111']);
+    assert.deepEqual(vouchers[1].lines.map((l) => l.contraAccount), ['1121']);
+  });
 });
