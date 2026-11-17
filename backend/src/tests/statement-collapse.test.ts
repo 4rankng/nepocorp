@@ -19,8 +19,8 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { visibleLedgerRows, isOrphanChiHoRow, reattributePaymentRows } from '../services/statement.service';
-import type { EnrichedLedgerRow } from '../services/statement.service';
+import { reattributePaymentRows } from '../services/statement.service';
+import { visibleLedgerRows, isOrphanChiHoRow, type EnrichedLedgerRow } from '../services/ledger-visibility';
 import { TxnType } from '@tingting/shared';
 
 let nextRowId = 1;

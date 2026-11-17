@@ -5,6 +5,11 @@ import { eq, and, or, sql, inArray, like } from 'drizzle-orm';
 import { bucketOpenInvoices, computeFifoAging, maxOpenInvoiceAgeDays, TxnType } from '@tingting/shared';
 import type { AgingBuckets, OpenInvoice } from '@tingting/shared';
 import type { PayableSummary, PayablesCategory, Supplier } from '@tingting/shared';
+import {
+  buildCustomerBookContext,
+  visibleCustomerBooksByEntity,
+  type EnrichedLedgerRow,
+} from './ledger-visibility';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -81,6 +86,13 @@ async function fetchLedgerGrouped(
 ): Promise<Map<number, LedgerEntry[]>> {
   if (opts.entityIds && opts.entityIds.length === 0) return new Map();
 
+  // NEPO-48 wave 5 — the customer-AR projection (excludeCarrierPayables) reads
+  // the VISIBLE book, the same set the statement header and
+  // getEntityBalances' arDebt derive from. The asOfDate slice for this
+  // projection applies AFTER the collapse: a reversal cycle straddling the
+  // boundary must drop as a whole, never leave a lone mirror behind.
+  const customerArBook = opts.excludeCarrierPayables === true;
+  const sqlAsOf = customerArBook ? undefined : opts.asOfDate;
   const conditions = [
     opts.entityTypes?.length
       ? inArray(s.ledger.entityType, opts.entityTypes)
@@ -88,7 +100,7 @@ async function fetchLedgerGrouped(
   ];
   if (opts.entityId !== undefined) conditions.push(eq(s.ledger.entityId, opts.entityId));
   if (opts.entityIds && opts.entityIds.length > 0) conditions.push(inArray(s.ledger.entityId, opts.entityIds));
-  if (opts.asOfDate) conditions.push(sql`${s.ledger.timestamp} <= ${opts.asOfDate}::timestamptz`);
+  if (sqlAsOf) conditions.push(sql`${s.ledger.timestamp} <= ${sqlAsOf}::timestamptz`);
   if (opts.carrierPayables) {
     conditions.push(or(
       inArray(s.ledger.txnType, [TxnType.EXTERNAL_CARRIER_COST, TxnType.VENDOR_PAYMENT]),
@@ -136,23 +148,41 @@ async function fetchLedgerGrouped(
     )`);
   }
 
-  const ledgerRows = await db.select({
-    entityId: s.ledger.entityId,
-    debit: s.ledger.debit,
-    credit: s.ledger.credit,
-    timestamp: s.ledger.timestamp,
-    txnType: s.ledger.txnType,
-  }).from(s.ledger)
+  const ledgerRows = await db.select().from(s.ledger)
     .where(and(...conditions))
     .orderBy(sql`${s.ledger.id} ASC`);
 
   const grouped = new Map<number, LedgerEntry[]>();
-  for (const row of ledgerRows) {
-    const entries = grouped.get(row.entityId) || [];
-    entries.push({ debit: row.debit, credit: row.credit, timestamp: row.timestamp, txnType: row.txnType });
-    grouped.set(row.entityId, entries);
+  if (customerArBook) {
+    const [feeRows, tripRows] = await Promise.all([
+      db.select({ feeId: s.tripExpenses.id, tripId: s.tripExpenses.tripId, customerId: s.trips.customerId })
+        .from(s.tripExpenses)
+        .innerJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id)),
+      db.select({ tripId: s.trips.id, customerId: s.trips.customerId }).from(s.trips),
+    ]);
+    const ctx = buildCustomerBookContext(feeRows, tripRows);
+    for (const [entityId, book] of visibleCustomerBooksByEntity(ledgerRows, ctx)) {
+      grouped.set(entityId, book.map(toLedgerEntry));
+    }
+  } else {
+    for (const row of ledgerRows) {
+      const entries = grouped.get(row.entityId) || [];
+      entries.push({ debit: row.debit, credit: row.credit, timestamp: row.timestamp, txnType: row.txnType });
+      grouped.set(row.entityId, entries);
+    }
+  }
+  if (customerArBook && opts.asOfDate) {
+    const asOfMs = new Date(opts.asOfDate).getTime();
+    for (const [entityId, entries] of grouped) {
+      grouped.set(entityId, entries.filter((e) => !e.timestamp || new Date(e.timestamp).getTime() <= asOfMs));
+    }
   }
   return grouped;
+}
+
+/** Full ledger row (customer-AR collapse output) → the aging entry shape. */
+function toLedgerEntry(row: EnrichedLedgerRow): LedgerEntry {
+  return { debit: row.debit, credit: row.credit, timestamp: row.timestamp, txnType: row.txnType };
 }
 
 function computeAging(entries: LedgerEntry[], now: Date, invertSigns: boolean) {
@@ -243,7 +273,7 @@ async function getEntityResultsCached(
   const entityKey = opts.entityTypes?.join(',') ?? config.entityType;
   const projectionKey = opts.excludeCarrierPayables ? 'no-carrier-ap' : 'all-projections';
   return cacheGet<EntityAgingResult[]>(
-    `reports:entity-results:v2:${entityKey}:${config.invertSigns ? 'inv' : 'std'}:${asOfKey}:${txnKey}:${projectionKey}`,
+    `reports:entity-results:v3:${entityKey}:${config.invertSigns ? 'inv' : 'std'}:${asOfKey}:${txnKey}:${projectionKey}`,
     300,
     async () => {
       const grouped = await fetchLedgerGrouped(config, {

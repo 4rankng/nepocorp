@@ -32,7 +32,7 @@ import {
   visibleLedgerRows,
   isChiHoLedgerRow,
   isOrphanChiHoRow,
-} from '../services/statement.service';
+} from '../services/ledger-visibility';
 import { disconnectRedis } from '../lib/redis';
 
 describe('getEntityBalances aggregates', () => {

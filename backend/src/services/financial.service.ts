@@ -10,8 +10,11 @@ import { eq, and, inArray, sql, desc, isNull, gte, lte, or } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
-import { visibleLedgerRows, isOrphanChiHoRow, isChiHoLedgerRow } from './statement.service';
-import type { EnrichedLedgerRow } from './statement.service';
+import {
+  buildCustomerBookContext,
+  visibleCustomerBooksByEntity,
+  type EnrichedLedgerRow,
+} from './ledger-visibility';
 import type { Tx } from './trip-shared';
 
 // ─── Payment recording ─────────────────────────────────────────────────────────
@@ -730,36 +733,10 @@ export async function getEntityBalances(entityType: string) {
         .innerJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id)),
       db.select({ tripId: s.trips.id, customerId: s.trips.customerId }).from(s.trips),
     ]);
-    const feeTrip = new Map<number, number>();
-    const tripCustomer = new Map<number, number>();
-    const liveFeeIds = new Set<number>();
-    for (const fee of feeRows) {
-      feeTrip.set(fee.feeId, fee.tripId);
-      tripCustomer.set(fee.tripId, fee.customerId);
-      liveFeeIds.add(fee.feeId);
-    }
-    for (const trip of tripRows) tripCustomer.set(trip.tripId, trip.customerId);
-
-    const rowsByEntity = new Map<number, EnrichedLedgerRow[]>();
-    for (const row of ledgerRows) {
-      // Carrier-payable activity never belongs to the AR book — same rule as
-      // the SQL aggregate above and buildCustomerDebtMap.
-      if (row.txnType === TxnType.EXTERNAL_CARRIER_COST || row.txnType === TxnType.VENDOR_PAYMENT) continue;
-      if (row.txnType === TxnType.UNLOCK_REVERSAL && row.note?.startsWith('Cước thuê ngoài')) continue;
-      const list = rowsByEntity.get(row.entityId);
-      if (list) list.push(row);
-      else rowsByEntity.set(row.entityId, [row]);
-    }
+    const ctx = buildCustomerBookContext(feeRows, tripRows);
+    const booksByEntity = visibleCustomerBooksByEntity(ledgerRows, ctx);
     visibleByEntity = new Map();
-    for (const [entityId, rows] of rowsByEntity) {
-      const book = visibleLedgerRows(rows.filter((row) => {
-        if (!isChiHoLedgerRow(row)) return true;
-        if (isOrphanChiHoRow(row, liveFeeIds)) return false;
-        const tripId = row.txnId != null ? feeTrip.get(row.txnId) : undefined;
-        if (tripId == null) return true;
-        const owner = tripCustomer.get(tripId);
-        return owner === undefined || owner === entityId;
-      }));
+    for (const [entityId, book] of booksByEntity) {
       visibleByEntity.set(entityId, book.reduce((sum, r) => sum + Number(r.debit ?? 0) - Number(r.credit ?? 0), 0));
     }
   }

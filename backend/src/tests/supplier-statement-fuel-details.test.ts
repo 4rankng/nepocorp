@@ -6,10 +6,10 @@ import {
   attachSupplierExpenseDetailsToLedgerRows,
   withPayableProjectionBalances,
   withReceivableProjectionBalances,
-  type EnrichedLedgerRow,
   type FuelTripStatementRow,
   type SupplierExpenseStatementRow,
 } from '../services/statement.service';
+import { type EnrichedLedgerRow } from '../services/ledger-visibility';
 
 function ledgerRow(overrides: Partial<EnrichedLedgerRow>): EnrichedLedgerRow {
   return {
