@@ -189,6 +189,42 @@ export interface TireImportResult {
   results: TireImportRowResult[];
 }
 
+// ─── NEPO-49 — Tyre board (Bảng theo dõi lốp) ──────────────────────────────
+// One numbered slot of the 22-slot sheet, i.e. one data row of the
+// accountant's Excel: nhãn hiệu / cỡ lốp / loại gai / số seri / model /
+// ngày thay / ghi chú. All fields nullable = ô chưa có dữ liệu.
+// Tuổi lốp is computed client-side from lastChangedAt (days → today).
+export interface TyreBoardSlot {
+  position: number;
+  brand: string | null;
+  size: string | null;
+  treadType: string | null;
+  serial: string | null;
+  model: string | null;
+  /** Ngày thay (YYYY-MM-DD) — inline entry or the "Thay lốp" flow. */
+  lastChangedAt: string | null;
+  note: string | null;
+}
+
+/** The whole sheet for one truck (đầu kéo), always exactly 22 slots, in order. */
+export interface TyreBoard {
+  truckId: number;
+  truckPlate: string;
+  slots: TyreBoardSlot[];
+}
+
+/** One "Thay lốp" history row: date, old serial → new serial, per slot. */
+export interface TyreChangeRecord {
+  id: number;
+  truckId: number;
+  position: number;
+  oldSerial: string | null;
+  newSerial: string | null;
+  /** Local YYYY-MM-DD the user entered for the replacement. */
+  changedAt: string;
+  createdAt: string;
+}
+
 export interface Route {
   id: number;
   name: string;

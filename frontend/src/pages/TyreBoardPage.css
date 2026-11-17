@@ -1,0 +1,274 @@
+/* NEPO-49 — Bảng theo dõi lốp (/fleet/tyre-board).
+   Visual standard: docs/design/tyre-board-mockup-APPROVED.html (owner-approved).
+   Class prefix tbp- so nothing leaks into the app's global table/button CSS. */
+
+.tbp {
+  padding: 16px 20px 28px;
+}
+
+.tbp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--ink-2);
+  font-size: var(--fs-label);
+  text-decoration: none;
+}
+.tbp-back:hover { color: #1a56db; }
+
+/* ── Sheet container (the mockup's .wrap) ──────────────────────────────── */
+.tbp-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  padding: 22px 26px;
+}
+
+.tbp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 2px solid #1a56db;
+  padding-bottom: 12px;
+}
+.tbp-head h1 { font-size: 21px; margin: 0; }
+
+.tbp-plate {
+  background: #1a56db;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ── Vehicle tabs ──────────────────────────────────────────────────────── */
+.tbp-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 6px;
+}
+.tbp-tab {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #e8eefc;
+  color: #1a56db;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tbp-tab.active { background: #1a56db; color: #fff; }
+.tbp-tabs-empty { font-size: var(--fs-label); color: var(--ink-3); padding: 6px 0; }
+
+.tbp-loading { padding: 24px 4px; color: var(--ink-3); font-size: var(--fs-label); }
+
+/* ── Side-view diagram ─────────────────────────────────────────────────── */
+.tbp-diagram {
+  background: #fafbfd;
+  border: 1px solid #e3e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 12px 0;
+}
+
+/* ── 22-ô grid ─────────────────────────────────────────────────────────── */
+.tbp-map {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px 14px;
+  margin: 10px 2px 16px;
+}
+.tbp-slot {
+  border: 1.5px solid #c9d4e8;
+  border-radius: 8px;
+  padding: 6px 8px 5px;
+  background: #fff;
+}
+.tbp-slot-num {
+  display: inline-block;
+  background: #d62828;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-bottom: 3px;
+}
+.tbp-slot-seri-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #12284b;
+  padding: 0;
+  word-break: break-all;
+}
+.tbp-slot-meta {
+  font-size: 10.5px;
+  color: #6b7a90;
+  margin-top: 2px;
+  line-height: 1.35;
+  /* Quan tắc Cam: never truncate — meta wraps instead of ellipsizing. */
+  overflow-wrap: anywhere;
+}
+.tbp-slot--spare { border-style: dashed; background: #fffbe9; }
+
+.tbp-legend {
+  font-size: 11px;
+  color: #6b7a90;
+  margin: 0 2px 14px;
+}
+
+/* ── Inline cell inputs (data table) ───────────────────────────────────── */
+.tbp-cell-input {
+  width: 100%;
+  min-width: 56px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink, #1a2b42);
+  padding: 3px 5px;
+}
+.tbp-cell-input:hover { border-color: #d7e0ef; }
+.tbp-cell-input:focus {
+  outline: none;
+  border-color: #1a56db;
+  background: #f2f7ff;
+}
+.tbp-td-serial .tbp-cell-input { font-weight: 700; }
+
+/* ── Data + history tables ─────────────────────────────────────────────── */
+.tbp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.tbp-table th {
+  background: #12284b;
+  color: #fff;
+  padding: 8px 7px;
+  text-align: left;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.tbp-table td {
+  border-bottom: 1px solid #e5eaf2;
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+.tbp-table tbody tr:hover td { background: #f2f7ff; }
+.tbp-td-stt { font-weight: 700; }
+.tbp-age { color: #d62828; font-weight: 700; white-space: nowrap; }
+
+.tbp-btn {
+  background: #e8eefc;
+  color: #1a56db;
+  border: 1px solid #b9cdf3;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tbp-btn:hover { background: #dbe7fd; }
+.tbp-btn:disabled { opacity: 0.5; cursor: default; }
+.tbp-btn--primary {
+  background: #1a56db;
+  border-color: #1a56db;
+  color: #fff;
+}
+.tbp-btn--primary:hover { background: #1747b8; }
+
+/* ── History section ───────────────────────────────────────────────────── */
+.tbp-history { margin-top: 22px; }
+.tbp-history h2 { font-size: 15px; margin: 0 0 8px; }
+
+/* ── Thay lốp modal fields ─────────────────────────────────────────────── */
+.tbp-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.tbp-modal-field label {
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.tbp-modal-field input {
+  border: 1px solid #c9d4e8;
+  border-radius: 6px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 13px;
+}
+.tbp-modal-field input:focus { outline: none; border-color: #1a56db; }
+.tbp-modal-error {
+  color: #d62828;
+  font-size: var(--fs-caption);
+  margin-bottom: 8px;
+}
+.tbp-modal-hint {
+  font-size: var(--fs-caption);
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* The shared Modal footer (.modal__foot) already provides button spacing. */
+
+/* ── SVG diagram scales with its container (aspect-ratio from viewBox) ─── */
+.tbp-diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 90px;
+}
+/* Mobile: mũi xe hướng lên — cap the tall drawing so it never dominates the page. */
+.tbp-diagram--vertical { display: flex; justify-content: center; }
+.tbp-diagram--vertical svg {
+  width: auto;
+  max-width: 100%;
+  height: min(46vh, 420px);
+  min-height: 0;
+}
+
+/* ── Vehicle tabs: horizontal scroll when they overflow (never wrap-shrink) ── */
+.tbp-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.tbp-tab { flex: 0 0 auto; white-space: nowrap; }
+
+/* ── Responsive ladder (owner spec): 1440px = 6 cột · 768px = 4 · 390px = 2 ── */
+@media (max-width: 1023px) {
+  .tbp-map { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .tbp { padding: 12px; }
+  .tbp-wrap { padding: 14px; }
+
+  /* The data table is a desktop artifact: horizontal scroll inside the sheet
+     from tablet down ("cuộn ngang hoặc chế card ở mobile" — scroll chosen;
+     no card rewrite). Never truncates cell text. */
+  .tbp-wrap { overflow-x: auto; }
+  .tbp-table { min-width: 980px; }
+  .tbp-history { min-width: 980px; }
+}
+
+@media (max-width: 640px) {
+  .tbp-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  /* Avoid iOS focus-zoom: inputs at ≥16px keep the viewport static. */
+  .tbp-cell-input,
+  .tbp-slot-seri-input { font-size: 16px; }
+  .tbp-modal-field input { font-size: 16px; }
+}

@@ -1,6 +1,6 @@
 import {
   pgTable, serial, varchar, text, integer, boolean, timestamp,
-  jsonb, numeric, date, pgEnum, uniqueIndex, index, check, doublePrecision,
+  jsonb, numeric, date, pgEnum, uniqueIndex, unique, index, check, doublePrecision,
   customType,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -199,6 +199,49 @@ export const tirePositions = pgTable('tire_positions', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
 });
+
+// ─── NEPO-49 — Tyre board (Bảng theo dõi lốp) ────────────────────────────────
+// Per-truck tracking sheet mirroring the accountant's Excel
+// (docs/design/THEO-DOI-LOP.xlsx): 22 numbered slots — 1–2 trục trước,
+// 3–6 trục động, 7–10 dự phòng thân, 11–22 rơ-moóc (3 trục × 4 ô). Each slot
+// holds the full data-row of the sheet (nhãn hiệu, cỡ lốp, loại gai, số seri,
+// model, ngày thay, ghi chú); tuổi lốp is computed client-side from
+// last_changed_at. Distinct from the inventory-oriented `tires` module above:
+// the board is position-centric state per vehicle, not a tire lifecycle.
+export const tyrePositionsBoard = pgTable('tyre_positions', {
+  id: serial('id').primaryKey(),
+  truckId: integer('truck_id').notNull().references(() => trucks.id, { onDelete: 'cascade' }),
+  // Slot number on the sheet, 1..22 (see TYRE_BOARD_POSITION_COUNT).
+  positionNumber: integer('position_number').notNull(),
+  serial: varchar('serial', { length: 64 }),
+  brand: varchar('brand', { length: 64 }),
+  size: varchar('size', { length: 32 }),
+  treadType: varchar('tread_type', { length: 16 }),
+  model: varchar('model', { length: 64 }),
+  // Ngày thay — set by inline entry or the "Thay lốp" flow.
+  lastChangedAt: date('last_changed_at'),
+  note: varchar('note', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  unique('tyre_positions_truck_position_unique').on(table.truckId, table.positionNumber),
+  index('tyre_positions_truck_id_idx').on(table.truckId),
+]);
+
+// Replacement history per slot: one row per "Thay lốp" (date, old → new).
+// Inline serial edits (data entry / typo fixes) intentionally write no row.
+export const tyreChanges = pgTable('tyre_changes', {
+  id: serial('id').primaryKey(),
+  truckId: integer('truck_id').notNull().references(() => trucks.id, { onDelete: 'cascade' }),
+  positionNumber: integer('position_number').notNull(),
+  oldSerial: varchar('old_serial', { length: 64 }),
+  newSerial: varchar('new_serial', { length: 64 }),
+  // The replacement day the user enters (local YYYY-MM-DD), not a timestamp.
+  changedAt: date('changed_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('tyre_changes_truck_position_idx').on(table.truckId, table.positionNumber),
+]);
 
 export const customers = pgTable('customers', {
   id: serial('id').primaryKey(),

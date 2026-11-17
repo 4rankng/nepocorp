@@ -29,6 +29,7 @@ import {
   Activity,
   FileSearch,
   SlidersHorizontal,
+  CircleDot,
   X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -78,6 +79,7 @@ export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?:
 
 
         { key: 'fleet', label: 'Đội xe', path: routes.fleet, icon: Layers, section: 'master-data' },
+        { key: 'tyre-board', label: 'Bảng theo dõi lốp', path: routes.fleetTyreBoard, icon: CircleDot, section: 'master-data' },
         { key: 'customers', label: 'Khách hàng', path: routes.customers, icon: Users, section: 'master-data' },
         { key: 'suppliers', label: 'Nhà cung cấp', path: routes.suppliers, icon: Store, section: 'master-data' },
         { key: 'routes', label: 'Tuyến đường', path: routes.configRoutes, icon: Route, section: 'master-data' },

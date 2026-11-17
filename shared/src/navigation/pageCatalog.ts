@@ -108,6 +108,15 @@ export const PAGE_CATALOG = {
       aliases: ['lốp rơ moóc', 'vỏ rơ moóc', 'lốp moóc'],
     },
   },
+  fleetTyreBoard: {
+    title: 'Bảng theo dõi lốp',
+    path: '/fleet/tyre-board',
+    section: 'operations',
+    agent: {
+      description: 'Bảng theo dõi lốp — sơ đồ 22 vị trí lốp theo xe (đầu kéo + rơ-moóc + dự phòng): nhập/sửa số seri từng vị trí, thay lốp kèm lịch sử.',
+      aliases: ['bảng theo dõi lốp', 'bang theo doi lop', 'sơ đồ lốp', 'so do lop', 'vị trí lốp', 'theo dõi lốp xe'],
+    },
+  },
   trips: {
     title: 'Lệnh vận chuyển',
     path: '/trips',

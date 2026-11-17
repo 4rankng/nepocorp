@@ -17,6 +17,7 @@ import { initPushService } from './services/push.service';
 import { runRetentionJob } from './services/agent/retention-job';
 import authRoutes from './routes/auth';
 import configRoutes, { auditLogRouter, catalogBootstrapRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
+import tyreBoardRoutes from './routes/tyre-board';
 import tripRoutes from './routes/trips';
 import { agentRoutes } from './routes/agent';
 import { initAgentSocket } from './agentSocket';
@@ -175,6 +176,9 @@ app.use('/api/audit-logs', authMiddleware, casbinAuthz('audit_logs'), auditLogRo
 // at /api/fleet/tires; these dedicated endpoints need the same auth + config
 // gating + MANAGER/ADMIN role (enforced inside the router).
 app.use('/api/fleet/tires', authMiddleware, casbinAuthz('config'), tireLifecycleRouter);
+// NEPO-49 — tyre tracking board (bảng theo dõi lốp). Same config Casbin lane
+// as the tire lifecycle; writes additionally requireRoles ADMIN/MANAGER/ACCOUNTANT.
+app.use('/api/fleet/tyre-board', authMiddleware, casbinAuthz('config'), tyreBoardRoutes);
 app.use('/api/salary', authMiddleware, casbinAuthz('salary'), salaryRoutes);
 
 // ── 404 catch-all (before error handler so unmatched API routes get 404, not 500) ──

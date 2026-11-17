@@ -823,6 +823,29 @@ export const tirePositionSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']).optional().default('ACTIVE'),
 });
 
+// ─── NEPO-49 — Tyre board (Bảng theo dõi lốp) ─────────────────────────────
+// Inline cell edit on the sheet: any subset of the slot's data row. Omitted
+// field = keep current value; '' = clear. Data entry — records NO history
+// row; the "Thay lốp" flow below is the one that does.
+export const tyreBoardSlotUpdateSchema = z.object({
+  serial: z.string().trim().max(64, 'Số seri tối đa 64 ký tự').optional(),
+  brand: z.string().trim().max(64, 'Nhãn hiệu tối đa 64 ký tự').optional(),
+  size: z.string().trim().max(32, 'Cỡ lốp tối đa 32 ký tự').optional(),
+  treadType: z.string().trim().max(16, 'Loại gai tối đa 16 ký tự').optional(),
+  model: z.string().trim().max(64, 'Model tối đa 64 ký tự').optional(),
+  note: z.string().trim().max(255, 'Ghi chú tối đa 255 ký tự').optional(),
+  lastChangedAt: z.union([
+    z.literal(''),
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày thay phải có dạng YYYY-MM-DD'),
+  ]).optional(),
+});
+
+// Thay lốp: a replacement must carry the new serial + the day it happened.
+export const tyreBoardChangeSchema = z.object({
+  newSerial: z.string().trim().min(1, 'Nhập số seri lốp mới').max(64, 'Số seri tối đa 64 ký tự'),
+  changedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày thay phải có dạng YYYY-MM-DD'),
+});
+
 export const routeSchema = z.object({
   name: z.string().min(1),
   distanceKm: positiveNumeric.optional(),
@@ -1297,6 +1320,8 @@ export type TruckInput = z.infer<typeof truckSchema>;
 export type TrailerInput = z.infer<typeof trailerSchema>;
 export type TireInput = z.infer<typeof tireSchema>;
 export type InstallTireInput = z.infer<typeof installTireSchema>;
+export type TyreBoardSlotUpdateInput = z.infer<typeof tyreBoardSlotUpdateSchema>;
+export type TyreBoardChangeInput = z.infer<typeof tyreBoardChangeSchema>;
 export type DisposeTireInput = z.infer<typeof disposeTireSchema>;
 export type TirePositionInput = z.infer<typeof tirePositionSchema>;
 export type RouteInput = z.infer<typeof routeSchema>;

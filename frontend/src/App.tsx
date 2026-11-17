@@ -43,6 +43,7 @@ const ProfitPage = lazyPage(() => import('./pages/ProfitPage'));
 const UsersPage = lazyPage(() => import('./pages/UsersPage'));
 const FleetPage = lazyPage(() => import('./pages/FleetPage'));
 const TruckTiresPage = lazyPage(() => import('./pages/TruckTiresPage'));
+const TyreBoardPage = lazyPage(() => import('./pages/TyreBoardPage'));
 const TrucksConfigPage = lazyPage(() => import('./pages/config/TrucksConfigPage'));
 const TruckOwnersConfigPage = lazyPage(() => import('./pages/config/TruckOwnersConfigPage'));
 const RoutesConfigPage = lazyPage(() => import('./pages/config/RoutesConfigPage'));
@@ -135,7 +136,8 @@ function AppRoutes() {
           />
           <Route path="/dispatch" element={adminOnly(page(<DispatchPage />))} />
           <Route path="/fleet" element={adminOnly(page(<FleetPage />))} />
-<Route path="/fleet/:id/tires" element={officeStaffOnly(page(<TruckTiresPage />))} />
+          <Route path="/fleet/tyre-board" element={officeStaffOnly(page(<TyreBoardPage />))} />
+          <Route path="/fleet/:id/tires" element={officeStaffOnly(page(<TruckTiresPage />))} />
 <Route path="/fleet/trailers/:id/tires" element={officeStaffOnly(page(<TruckTiresPage vehicle="trailer" />))} />
           <Route path="/trips" element={adminOnly(page(<TripListPage />))} />
           <Route path="/trips/new" element={adminOnly(page(<TripCreatePage />))} />

@@ -345,6 +345,11 @@ export const TIRE_STATUS_LABELS: Record<TireStatus, string> = {
   DISPOSED: 'Đã thanh lý',
 };
 
+// NEPO-49 — the tyre tracking sheet has exactly 22 numbered slots per vehicle
+// (1–10 đầu kéo incl. dự phòng, 11–22 rơ-moóc 3 trục × 4 ô). Both the board
+// router's validation and the sheet UI derive from this single number.
+export const TYRE_BOARD_POSITION_COUNT = 22;
+
 // Lý do thanh lý lốp (chọn từ danh sách khi tháo lốp để thanh lý). "Khác" cho
 // phép nhập ghi chú tự do ở phía UI; backend chỉ bắt buộc chuỗi khác rỗng.
 export const TIRE_DISPOSAL_REASONS = [

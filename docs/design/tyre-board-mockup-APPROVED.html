@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #1a2b42; }
+  .wrap { max-width: 1180px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 18px rgba(0,0,0,.08); padding: 22px 26px; }
+  .head { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a56db; padding-bottom: 12px; }
+  h1 { font-size: 21px; margin: 0; }
+  .plate { background: #1a56db; color: #fff; padding: 6px 14px; border-radius: 8px; font-weight: 700; letter-spacing: .5px; }
+  .tabs { display: flex; gap: 8px; margin: 14px 0 6px; }
+  .tab { padding: 7px 16px; border-radius: 8px; background: #e8eefc; color: #1a56db; font-weight: 600; font-size: 13px; }
+  .tab.active { background: #1a56db; color: #fff; }
+  .diagram { background: #fafbfd; border: 1px solid #e3e8f0; border-radius: 10px; padding: 10px; margin: 12px 0; }
+  .map { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px 14px; margin: 10px 2px 16px; }
+  .slot { border: 1.5px solid #c9d4e8; border-radius: 8px; padding: 6px 8px 5px; background: #fff; }
+  .slot .num { display: inline-block; background: #d62828; color: #fff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 1px 6px; margin-bottom: 3px; }
+  .slot .seri { font-size: 12.5px; font-weight: 700; color: #12284b; word-break: break-all; }
+  .slot .meta { font-size: 10.5px; color: #6b7a90; margin-top: 2px; }
+  .slot.spare { border-style: dashed; background: #fffbe9; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { background: #12284b; color: #fff; padding: 8px 7px; text-align: left; font-size: 11.5px; }
+  td { border-bottom: 1px solid #e5eaf2; padding: 7px; }
+  tr:hover td { background: #f2f7ff; }
+  .age { color: #d62828; font-weight: 700; }
+  .btn { background: #e8eefc; color: #1a56db; border: 1px solid #b9cdf3; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .legend { font-size: 11px; color: #6b7a90; margin: 8px 2px 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>🛞 Bảng theo dõi lốp — Quản lý đội xe</h1>
+    <div class="plate">Số xe: 15C-136.31</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active">15C-136.31</div><div class="tab">15C-180.99</div><div class="tab">15C-139.82</div><div class="tab">15C-168.73</div>
+  </div>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1100 130" width="100%" height="120">
+      <rect x="30" y="30" width="150" height="55" rx="8" fill="none" stroke="#9fb3cc" stroke-width="2"/>
+      <text x="105" y="62" font-size="13" fill="#9fb3cc" text-anchor="middle">CABIN</text>
+      <rect x="185" y="42" width="330" height="42" rx="6" fill="none" stroke="#9fb3cc" stroke-width="2"/>
+      <text x="350" y="68" font-size="12" fill="#9fb3cc" text-anchor="middle">THÂN XE KÉO</text>
+      <rect x="545" y="34" width="510" height="55" rx="6" fill="none" stroke="#9fb3cc" stroke-width="2"/>
+      <text x="800" y="66" font-size="12" fill="#9fb3cc" text-anchor="middle">RƠ-MOOC</text>
+      <g fill="#dfe7f1" stroke="#9fb3cc">
+        <circle cx="70" cy="100" r="17"/><circle cx="235" cy="100" r="17"/><circle cx="272" cy="100" r="17"/>
+        <circle cx="330" cy="100" r="17"/><circle cx="367" cy="100" r="17"/>
+        <circle cx="700" cy="100" r="17"/><circle cx="737" cy="100" r="17"/><circle cx="820" cy="100" r="17"/><circle cx="857" cy="100" r="17"/><circle cx="940" cy="100" r="17"/><circle cx="977" cy="100" r="17"/>
+      </g>
+      <rect x="420" y="88" width="34" height="12" rx="3" fill="#e8d97a" stroke="#b5a13a"/>
+      <text x="437" y="98" font-size="9" text-anchor="middle" fill="#7a6b16">spare</text>
+    </svg>
+  </div>
+
+  <div class="map">
+    <div class="slot"><div class="num">1</div><div class="seri">095202021</div><div class="meta">Casumina · Lái · 25/06/25</div></div>
+    <div class="slot"><div class="num">2</div><div class="seri">424313087</div><div class="meta">Casumina · Lái · 25/06/25</div></div>
+    <div class="slot"><div class="num">3</div><div class="seri">32422059514</div><div class="meta">Black Lion · Tải · 16/09/24</div></div>
+    <div class="slot"><div class="num">4</div><div class="seri">32422058335</div><div class="meta">Black Lion · Tải · 17/08/25</div></div>
+    <div class="slot"><div class="num">5</div><div class="seri">32422059724</div><div class="meta">Black Lion · Tải · 22/05/25</div></div>
+    <div class="slot"><div class="num">6</div><div class="seri">144305001</div><div class="meta">Casumina · Tải · 26/05/24</div></div>
+    <div class="slot spare"><div class="num">7</div><div class="seri">3242057103</div><div class="meta">Black Lion · Tải · 04/09/24</div></div>
+    <div class="slot"><div class="num">8</div><div class="seri">32422059518</div><div class="meta">Black Lion · Tải · 16/09/24</div></div>
+    <div class="slot"><div class="num">9</div><div class="seri">295304044</div><div class="meta">Casumina · Tải · 05/10/25</div></div>
+    <div class="slot spare"><div class="num">10</div><div class="seri">015201066</div><div class="meta">Casumina · 11R20 · 30/09/25</div></div>
+    <div class="slot"><div class="num">11</div><div class="seri">32412031954</div><div class="meta">Casumina · 11R20 · 23/12/24</div></div>
+    <div class="slot"><div class="num">12</div><div class="seri">32512034</div><div class="meta">Black Lion · 11R20</div></div>
+    <div class="slot"><div class="num">13</div><div class="seri">32412017</div><div class="meta">Black Lion · 11R20</div></div>
+    <div class="slot"><div class="num">14</div><div class="seri">383320609</div><div class="meta">Casumina · 11R20</div></div>
+    <div class="slot"><div class="num">15</div><div class="seri">22224028</div><div class="meta">Casumina · 11R20</div></div>
+    <div class="slot"><div class="num">16</div><div class="seri">233421F0</div><div class="meta">Black Lion · 11R20</div></div>
+    <div class="slot"><div class="num">17</div><div class="seri">383330608</div><div class="meta">Casumina · 11R20</div></div>
+    <div class="slot"><div class="num">18</div><div class="seri">Guobbo</div><div class="meta">Black Lion · 11R20</div></div>
+    <div class="slot"><div class="num">19</div><div class="seri">273116097</div><div class="meta">Casumina · 11R20</div></div>
+    <div class="slot"><div class="num">20</div><div class="seri">273116113</div><div class="meta">Casumina · 11R20</div></div>
+    <div class="slot"><div class="num">21</div><div class="seri">3087</div><div class="meta">—</div></div>
+    <div class="slot spare"><div class="num">22</div><div class="seri">—</div><div class="meta">Dự phòng</div></div>
+  </div>
+  <div class="legend">Ô viền đứt = lốp dự phòng · Bấm vào ô để sửa seri trực tiếp · Nút "Thay lốp" lưu lịch sử (ngày, seri cũ → mới)</div>
+
+  <table>
+    <tr><th>STT</th><th>Nhãn hiệu</th><th>Cỡ lốp</th><th>Loại gai</th><th>Số seri</th><th>Model</th><th>Ngày thay</th><th>Tuổi lốp</th><th>Ghi chú</th><th></th></tr>
+    <tr><td>1</td><td>Casumina</td><td>295/75</td><td>Lái</td><td><b>095202021</b></td><td>BS881</td><td>25/06/2025</td><td class="age">510 ngày</td><td></td><td><button class="btn">Thay lốp</button></td></tr>
+    <tr><td>3</td><td>Black Lion</td><td>295/75</td><td>Tải</td><td><b>32422059514</b></td><td>BD171</td><td>16/09/2024</td><td class="age">792 ngày</td><td></td><td><button class="btn">Thay lốp</button></td></tr>
+    <tr><td>11</td><td>Casumina</td><td>11R20</td><td>Tải</td><td><b>32412031954</b></td><td>BA267</td><td>23/12/2024</td><td class="age">329 ngày</td><td>Lốp 070.63 chuyển sang 28/2</td><td><button class="btn">Thay lốp</button></td></tr>
+  </table>
+</div>
+</body>
+</html>

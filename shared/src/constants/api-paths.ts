@@ -108,6 +108,17 @@ export const TIRES = {
   TRANSFER: (id: number) => `/fleet/tires/${id}/transfer`,
 } as const;
 
+// ─── Fleet / Tyre board (NEPO-49) ────────────────────────────────────────────
+// Bảng theo dõi lốp per truck: 22 numbered slots, inline serial edits, and
+// the "Thay lốp" replacement flow with history. Mounted like the tire
+// lifecycle router (config Casbin gate + MANAGER/ACCOUNTANT/ADMIN writes).
+export const TYRE_BOARD = {
+  GET: (truckId: number) => `/fleet/tyre-board/${truckId}`,
+  CHANGES: (truckId: number) => `/fleet/tyre-board/${truckId}/changes`,
+  SET_SERIAL: (truckId: number, position: number) => `/fleet/tyre-board/${truckId}/${position}`,
+  CHANGE: (truckId: number, position: number) => `/fleet/tyre-board/${truckId}/${position}/change`,
+} as const;
+
 export const VEHICLE_SCHEDULES = {
   LIST: '/vehicle-schedules',
   DETAIL: (id: number) => `/vehicle-schedules/${id}`,

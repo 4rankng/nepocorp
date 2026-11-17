@@ -87,6 +87,11 @@ export const qk = {
     tires: (truckId?: number) => ['tires', truckId] as const,
     /** Broad prefix — matches every tires query regardless of truckId. */
     tiresAll: ['tires'] as const,
+    /** NEPO-49 — the 22-slot tracking sheet of one truck + its change history. */
+    tyreBoard: (truckId?: number) => ['tyre-board', truckId] as const,
+    tyreBoardAll: ['tyre-board'] as const,
+    tyreBoardChanges: (truckId?: number) => ['tyre-board-changes', truckId] as const,
+    tyreBoardChangesAll: ['tyre-board-changes'] as const,
   },
 
   /** All catalog-shaped keys, for one-shot invalidation after a config CRUD. */
@@ -117,6 +122,8 @@ export const qk = {
     'all-expense-categories',
     'salary-period',
     'tires',
+    'tyre-board',
+    'tyre-board-changes',
   ] as const,
 
   /* ── Trips ──────────────────────────────────────────────────────────── */
