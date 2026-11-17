@@ -63,77 +63,68 @@ export interface MarkerGeom {
 }
 
 /**
- * Horizontal variant, viewBox 1100 × 470: decorative side view y 0–190,
- * top view y 200–470. Left side of the truck = top edge (serial rows y 200/218),
- * right side = bottom edge (serial rows y 436/454). Wheel pills straddle the
- * body outline edges (the edges are the axle lines), like the Excel.
+ * Horizontal variant — slot table copied from the owner's mockup
+ * (viewBox 30 55 1270 905): pill 84x22 at (x0, yc-11), serial ON the pill
+ * (x0+1, yc-8, w82), red numeral at (x0+74, ly) outside the pill.
  */
 export const TOP_VIEW_LAYOUT: Record<number, MarkerGeom> = {
-  // Steer axle — tall single pills centered on the body's top/bottom edges.
-  1: { x: 132, y: 236, w: 16, h: 44, serial: { x: 92, y: 200, w: 110 } },
-  2: { x: 132, y: 390, w: 16, h: 44, serial: { x: 92, y: 454, w: 110 } },
-  // Drive tandem — dual pairs (two pills per position) on the axle edges.
-  3: { x: 288, y: 240, w: 16, h: 38, pair: { dx: 20 }, serial: { x: 246, y: 200, w: 110 } },
-  4: { x: 388, y: 240, w: 16, h: 38, pair: { dx: 20 }, serial: { x: 356, y: 218, w: 110 } },
-  5: { x: 388, y: 392, w: 16, h: 38, pair: { dx: 20 }, serial: { x: 356, y: 436, w: 110 } },
-  6: { x: 288, y: 392, w: 16, h: 38, pair: { dx: 20 }, serial: { x: 246, y: 454, w: 110 } },
-  // Spares — vertical pill stack at the catwalk, serials to the right
-  // (overlapping the trailer front, like the Excel).
-  7: { x: 472, y: 264, w: 20, h: 26, serial: { x: 505, y: 266, w: 110 } },
-  8: { x: 472, y: 296, w: 20, h: 26, serial: { x: 505, y: 298, w: 110 } },
-  9: { x: 472, y: 328, w: 20, h: 26, serial: { x: 505, y: 330, w: 110 } },
-  10: { x: 472, y: 360, w: 20, h: 26, serial: { x: 505, y: 362, w: 110 } },
-  // Trailer axles 1–3 — one pill per marker (individual duals, per the locked
-  // position semantics): outer dual straddles the slab edge, inner sits just
-  // inside. Serial columns w 72 at x 764/844/924 leave 8-unit gaps.
-  11: { x: 792, y: 238, w: 16, h: 36, serial: { x: 764, y: 200, w: 72 } },
-  12: { x: 792, y: 278, w: 16, h: 36, serial: { x: 764, y: 218, w: 72 } },
-  13: { x: 792, y: 356, w: 16, h: 36, serial: { x: 764, y: 436, w: 72 } },
-  14: { x: 792, y: 396, w: 16, h: 36, serial: { x: 764, y: 454, w: 72 } },
-  15: { x: 872, y: 238, w: 16, h: 36, serial: { x: 844, y: 200, w: 72 } },
-  16: { x: 872, y: 278, w: 16, h: 36, serial: { x: 844, y: 218, w: 72 } },
-  17: { x: 872, y: 356, w: 16, h: 36, serial: { x: 844, y: 436, w: 72 } },
-  18: { x: 872, y: 396, w: 16, h: 36, serial: { x: 844, y: 454, w: 72 } },
-  19: { x: 952, y: 238, w: 16, h: 36, serial: { x: 924, y: 200, w: 72 } },
-  20: { x: 952, y: 278, w: 16, h: 36, serial: { x: 924, y: 218, w: 72 } },
-  21: { x: 952, y: 356, w: 16, h: 36, serial: { x: 924, y: 436, w: 72 } },
-  22: { x: 952, y: 396, w: 16, h: 36, serial: { x: 924, y: 454, w: 72 } },
+  1: { x: 83, y: 659, w: 84, h: 22, num: { x: 175, y: 646 }, serial: { x: 84, y: 662, w: 82 } },
+  2: { x: 83, y: 827, w: 84, h: 22, num: { x: 175, y: 870 }, serial: { x: 84, y: 830, w: 82 } },
+  3: { x: 393, y: 659, w: 84, h: 22, num: { x: 467, y: 646 }, serial: { x: 394, y: 662, w: 82 } },
+  4: { x: 393, y: 686, w: 84, h: 22, num: { x: 467, y: 730 }, serial: { x: 394, y: 689, w: 82 } },
+  5: { x: 393, y: 799, w: 84, h: 22, num: { x: 467, y: 786 }, serial: { x: 394, y: 802, w: 82 } },
+  6: { x: 393, y: 827, w: 84, h: 22, num: { x: 467, y: 870 }, serial: { x: 394, y: 830, w: 82 } },
+  7: { x: 491, y: 659, w: 84, h: 22, num: { x: 565, y: 646 }, serial: { x: 492, y: 662, w: 82 } },
+  8: { x: 491, y: 686, w: 84, h: 22, num: { x: 565, y: 730 }, serial: { x: 492, y: 689, w: 82 } },
+  9: { x: 491, y: 799, w: 84, h: 22, num: { x: 565, y: 786 }, serial: { x: 492, y: 802, w: 82 } },
+  10: { x: 491, y: 827, w: 84, h: 22, num: { x: 565, y: 870 }, serial: { x: 492, y: 830, w: 82 } },
+  11: { x: 941, y: 659, w: 84, h: 22, num: { x: 1015, y: 646 }, serial: { x: 942, y: 662, w: 82 } },
+  12: { x: 941, y: 686, w: 84, h: 22, num: { x: 1015, y: 730 }, serial: { x: 942, y: 689, w: 82 } },
+  13: { x: 941, y: 799, w: 84, h: 22, num: { x: 1015, y: 786 }, serial: { x: 942, y: 802, w: 82 } },
+  14: { x: 941, y: 827, w: 84, h: 22, num: { x: 1015, y: 870 }, serial: { x: 942, y: 830, w: 82 } },
+  15: { x: 1038, y: 659, w: 84, h: 22, num: { x: 1112, y: 646 }, serial: { x: 1039, y: 662, w: 82 } },
+  16: { x: 1038, y: 686, w: 84, h: 22, num: { x: 1112, y: 730 }, serial: { x: 1039, y: 689, w: 82 } },
+  17: { x: 1038, y: 799, w: 84, h: 22, num: { x: 1112, y: 786 }, serial: { x: 1039, y: 802, w: 82 } },
+  18: { x: 1038, y: 827, w: 84, h: 22, num: { x: 1112, y: 870 }, serial: { x: 1039, y: 830, w: 82 } },
+  19: { x: 1133, y: 659, w: 84, h: 22, num: { x: 1207, y: 646 }, serial: { x: 1134, y: 662, w: 82 } },
+  20: { x: 1133, y: 686, w: 84, h: 22, num: { x: 1207, y: 730 }, serial: { x: 1134, y: 689, w: 82 } },
+  21: { x: 1133, y: 799, w: 84, h: 22, num: { x: 1207, y: 786 }, serial: { x: 1134, y: 802, w: 82 } },
+  22: { x: 1133, y: 827, w: 84, h: 22, num: { x: 1207, y: 870 }, serial: { x: 1134, y: 830, w: 82 } },
 };
 
 /**
- * Portrait variant, viewBox 470 × 850: truck nose-up, tractor y 20–280,
- * trailer y 300–830. Left column of the truck = left edge (serial boxes
- * x 5…, right column x 361/389), serial text stays horizontal. Side view is
- * omitted — a rotated side view with 11 labels is illegible at phone width.
+ * Portrait variant — the same mockup slots rotated 90 degrees (the mockup's
+ * own mobile transform): pill 22x84 at (964-yc, x0), viewBox 0 0 390 1250.
+ * Serials sit in the readable gaps below/beside their pill rows (horizontal
+ * text); numerals stay centered on the pills.
  */
 export const PORTRAIT_LAYOUT: Record<number, MarkerGeom> = {
-  // Steer axle — vertical single pills straddling the cab's side edges.
-  1: { x: 141, y: 30, w: 18, h: 44, serial: { x: 5, y: 42, w: 104 } },
-  2: { x: 311, y: 30, w: 18, h: 44, serial: { x: 361, y: 42, w: 104 } },
-  // Drive tandem — vertical dual pairs stacked along the travel axis, on the
-  // body's side edges: 3/4 = left (front/rear axle), 6/5 = right.
-  3: { x: 151, y: 120, w: 18, h: 34, pair: { dy: 38 }, serial: { x: 5, y: 182, w: 76 } },
-  4: { x: 151, y: 204, w: 18, h: 34, pair: { dy: 38 }, serial: { x: 5, y: 232, w: 76 } },
-  5: { x: 301, y: 204, w: 18, h: 34, pair: { dy: 38 }, serial: { x: 389, y: 232, w: 76 } },
-  6: { x: 301, y: 120, w: 18, h: 34, pair: { dy: 38 }, serial: { x: 389, y: 182, w: 76 } },
-  // Spares — circle stack at the catwalk, serials to the left.
-  7: { x: 224, y: 281, w: 22, h: 22, circle: true, serial: { x: 5, y: 283, w: 104 } },
-  8: { x: 224, y: 307, w: 22, h: 22, circle: true, serial: { x: 5, y: 309, w: 104 } },
-  9: { x: 224, y: 333, w: 22, h: 22, circle: true, serial: { x: 5, y: 335, w: 104 } },
-  10: { x: 224, y: 359, w: 22, h: 22, circle: true, serial: { x: 5, y: 361, w: 104 } },
-  // Trailer axles 1–3 — vertical pills per marker: outer duals straddle the
-  // slab's side edges, inner duals sit just inside (same pattern as the
-  // horizontal view, rotated 90°).
-  11: { x: 132, y: 668, w: 16, h: 44, serial: { x: 5, y: 676, w: 104 } },
-  12: { x: 172, y: 668, w: 16, h: 44, serial: { x: 5, y: 704, w: 104 } },
-  13: { x: 282, y: 668, w: 16, h: 44, serial: { x: 361, y: 704, w: 104 } },
-  14: { x: 322, y: 668, w: 16, h: 44, serial: { x: 361, y: 676, w: 104 } },
-  15: { x: 132, y: 728, w: 16, h: 44, serial: { x: 5, y: 736, w: 104 } },
-  16: { x: 172, y: 728, w: 16, h: 44, serial: { x: 5, y: 764, w: 104 } },
-  17: { x: 282, y: 728, w: 16, h: 44, serial: { x: 361, y: 764, w: 104 } },
-  18: { x: 322, y: 728, w: 16, h: 44, serial: { x: 361, y: 736, w: 104 } },
-  19: { x: 132, y: 788, w: 16, h: 44, serial: { x: 5, y: 796, w: 104 } },
-  20: { x: 172, y: 788, w: 16, h: 44, serial: { x: 5, y: 824, w: 104 } },
-  21: { x: 282, y: 788, w: 16, h: 44, serial: { x: 361, y: 824, w: 104 } },
-  22: { x: 322, y: 788, w: 16, h: 44, serial: { x: 361, y: 796, w: 104 } },
+  // Steer row — serials below the pills.
+  1: { x: 294, y: 83, w: 22, h: 84, serial: { x: 263, y: 171, w: 84 } },
+  2: { x: 126, y: 83, w: 22, h: 84, serial: { x: 95, y: 171, w: 84 } },
+  // Drive tandem row — serials staggered on two sub-rows above the pills
+// (pill pitch 27 < serial width 84, so neighbors alternate height).
+  3: { x: 294, y: 393, w: 22, h: 84, serial: { x: 263, y: 371, w: 84 } },
+  4: { x: 267, y: 393, w: 22, h: 84, serial: { x: 236, y: 352, w: 84 } },
+  5: { x: 154, y: 393, w: 22, h: 84, serial: { x: 123, y: 371, w: 84 } },
+  6: { x: 126, y: 393, w: 22, h: 84, serial: { x: 95, y: 352, w: 84 } },
+  // Spares row — serials staggered on two sub-rows below the pills.
+  7: { x: 294, y: 491, w: 22, h: 84, serial: { x: 263, y: 579, w: 84 } },
+  8: { x: 267, y: 491, w: 22, h: 84, serial: { x: 236, y: 598, w: 84 } },
+  9: { x: 154, y: 491, w: 22, h: 84, serial: { x: 123, y: 579, w: 84 } },
+  10: { x: 126, y: 491, w: 22, h: 84, serial: { x: 95, y: 598, w: 84 } },
+  // Trailer axles — serials stacked in the left lane, one per pill, ordered
+  // top-to-bottom to match the pills right-to-left.
+  11: { x: 294, y: 941, w: 22, h: 84, serial: { x: 4, y: 949, w: 118 } },
+  12: { x: 267, y: 941, w: 22, h: 84, serial: { x: 4, y: 969, w: 118 } },
+  13: { x: 154, y: 941, w: 22, h: 84, serial: { x: 4, y: 989, w: 118 } },
+  14: { x: 126, y: 941, w: 22, h: 84, serial: { x: 4, y: 1009, w: 118 } },
+  15: { x: 294, y: 1038, w: 22, h: 84, serial: { x: 4, y: 1046, w: 118 } },
+  16: { x: 267, y: 1038, w: 22, h: 84, serial: { x: 4, y: 1066, w: 118 } },
+  17: { x: 154, y: 1038, w: 22, h: 84, serial: { x: 4, y: 1086, w: 118 } },
+  18: { x: 126, y: 1038, w: 22, h: 84, serial: { x: 4, y: 1106, w: 118 } },
+  19: { x: 294, y: 1133, w: 22, h: 84, serial: { x: 4, y: 1141, w: 118 } },
+  20: { x: 267, y: 1133, w: 22, h: 84, serial: { x: 4, y: 1161, w: 118 } },
+  21: { x: 154, y: 1133, w: 22, h: 84, serial: { x: 4, y: 1181, w: 118 } },
+  22: { x: 126, y: 1133, w: 22, h: 84, serial: { x: 4, y: 1201, w: 118 } },
 };
