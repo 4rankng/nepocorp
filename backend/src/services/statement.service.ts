@@ -530,6 +530,14 @@ const stripDocNoFromNote = (note: string, docNo: string | null): string => {
     .trim();
 };
 
+/** Advance-settlement chi-hộ adjustments post 'Điều chỉnh phí chi hộ chuyến
+ * <code>' rows (SERVICE_FEE). The sổ already carries the code in its Số hiệu
+ * column, and 'Điều chỉnh …' reads like a correction banner rather than the
+ * fee itself (NEPO-48): normalize to 'Phí chi hộ' — the same label plain
+ * chi-hộ rows get — keeping any trailing marker ('(Hoàn tác)') intact. */
+const normalizeChiHoAdjust = (note: string): string =>
+  note.replace(/^Điều chỉnh\s+phí chi hộ(?:\s+chuyến)?\s*/, 'Phí chi hộ ').trim();
+
 /**
  * Builds the MISA 'Sổ chi tiết' lines (NEPO-46) from the statement's display
  * rows (already voucher-date-filtered + collapseEditCyclePairs'd, NEPO-48) and
@@ -630,7 +638,7 @@ export function buildStatementLines(
       docNo: isPayment ? (r.receiptId ?? null) : (r.tripCode ?? null),
       description: isPayment
         ? paymentLineDescription(customerName, method)
-        : stripDocNoFromNote(r.note ?? 'Ghi nhận công nợ', r.tripCode ?? null),
+        : normalizeChiHoAdjust(stripDocNoFromNote(r.note ?? 'Ghi nhận công nợ', r.tripCode ?? null)),
       method,
       counterAccount: counterAccountFor(r, isPayment),
       debit,
