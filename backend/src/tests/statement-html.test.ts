@@ -66,17 +66,17 @@ describe('buildFastStatementHtml — Fast mẫu chuẩn', () => {
     assert.match(html, /TỪ NGÀY: 01-07-2026 ĐẾN NGÀY: 31-10-2026/);
   });
 
-  test('header 2 tầng có TK Đ.ỨNG giữa DIỄN GIẢI và SỐ PHÁT SINH, nền 244677', () => {
+  test('header 2 tầng KHÔNG còn cột TK Đ.ỨNG (khách 15/11), nền 244677', () => {
     const html = buildFastStatementHtml(config);
-    assert.match(html, /<th rowspan="2">DIỄN GIẢI<\/th><th rowspan="2">TK Đ\.ỨNG<\/th><th colspan="2">SỐ PHÁT SINH<\/th>/);
+    assert.match(html, /<th rowspan="2">DIỄN GIẢI<\/th><th colspan="2">SỐ PHÁT SINH<\/th>/);
+    assert.doesNotMatch(html, /TK Đ\.ỨNG/);
     assert.match(html, /background: #244677/);
   });
 
-  test('dòng chứng từ: ngày dd-mm, TK Đ.ỨNG per dòng, không badge/strong', () => {
+  test('dòng chứng từ: ngày dd-mm, không TK per dòng, không badge/strong', () => {
     const html = buildFastStatementHtml(config);
     assert.match(html, /<td class="c">04-07<\/td>/);
-    assert.match(html, /<td class="c">5111<\/td>/);
-    assert.match(html, /<td class="c">1121<\/td>/);
+    assert.doesNotMatch(html, /<td class="c">5111<\/td>|<td class="c">1121<\/td>/);
     assert.doesNotMatch(html, /<strong>|soke-payment|class="badge"/);
     assert.match(html, /<tr class="z">/); // zebra trên dòng phát sinh lẻ
   });
