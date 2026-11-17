@@ -10,7 +10,7 @@ import {
 } from '@tingting/shared';
 import { formatCurrency, formatDatePadded, formatNumber, shortCompanyName } from '../../lib/format';
 import { StatusPill } from '../../components/UI';
-import { type LedgerCellContext, type LedgerCellPatch } from './ledgerCellTypes';
+import { type LedgerCellContext } from './ledgerCellTypes';
 
 // ─── Value helpers ───────────────────────────────────────────────────────────
 

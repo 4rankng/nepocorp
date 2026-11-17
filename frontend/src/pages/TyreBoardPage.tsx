@@ -7,9 +7,10 @@ import { Modal } from "../components/UI";
 import { useToast } from "../components/shared/Toast";
 import { formatErrorMessage } from "../lib/api";
 import { routes } from "../lib/routes";
-import { todayISO } from "../features/tires/tireUtils";
+import { daysBetween, todayISO } from "../features/tires/tireUtils";
 import { InlineCell } from "../features/tyre-board/TyreInlineCell";
 import { TyreTruckDiagram } from "../features/tyre-board/TyreTruckDiagram";
+import { tyreStatus, type TyreStatus } from "../features/tyre-board/tyreStatus";
 import { SLOT_GROUP_BY_POSITION } from "../features/tyre-board/tyrePositions";
 import { useTrucksAndDrivers } from "../hooks/useCatalogQueries";
 import { useTyreBoard, useTyreBoardChanges, useUpdateTyreSlot, useChangeTyre } from "../hooks/useTyreBoardQueries";
@@ -36,16 +37,7 @@ function fmtDate(iso: string | null): string {
   return `${d}/${m}/${y}`;
 }
 
-/** Tuổi lốp = whole days from ngày thay to today (Excel: DAYS(TODAY(), G)). */
-function tyreAgeDays(iso: string | null): number | null {
-  if (!iso) return null;
-  const [y, m, d] = iso.split("-").map(Number);
-  if (!y || !m || !d) return null;
-  const changed = new Date(y, m - 1, d);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.floor((today.getTime() - changed.getTime()) / 86_400_000);
-}
+// Tuổi lốp = whole days from ngày thay to today (Excel: DAYS(TODAY(), G)).
 
 /** Matches the CSS mobile breakpoint (≤640px) that flips the diagram portrait. */
 function useIsNarrowViewport() {
@@ -116,6 +108,10 @@ export default function TyreBoardPage() {
   };
 
   const slots = board?.slots ?? [];
+  const statusCounts = slots.reduce<Record<TyreStatus, number>>((acc, s) => {
+    acc[tyreStatus(s)] += 1;
+    return acc;
+  }, { good: 0, warn: 0, bad: 0, empty: 0 });
 
   return (
     <div className="tbp">
@@ -154,7 +150,7 @@ export default function TyreBoardPage() {
               <TyreTruckDiagram slots={slots} vertical={isNarrow} onSerialCommit={(position, raw) => commitCell(position, { serial: raw })} />
             </div>
             <div className="tbp-legend">
-              Số seri sửa trực tiếp trên sơ đồ · Ô vàng đứt = dự phòng · Nút "Thay lốp" ở bảng dưới lưu lịch sử (ngày, seri cũ → mới)
+              Màu lốp theo tuổi: <b>{statusCounts.good}</b> tốt · <b>{statusCounts.warn}</b> cần chú ý · <b>{statusCounts.bad}</b> cần thay · <b>{statusCounts.empty}</b> chưa lắp — ô vàng đứt là dự phòng. Số seri sửa trực tiếp trên sơ đồ; nút "Thay lốp" lưu lịch sử (ngày, seri cũ → mới).
             </div>
 
             <div className="tbp-table-scroll">
@@ -167,7 +163,7 @@ export default function TyreBoardPage() {
                 </thead>
                 <tbody>
                   {slots.map((slot) => {
-                    const age = tyreAgeDays(slot.lastChangedAt);
+                    const age = daysBetween(slot.lastChangedAt, null);
                     return (
                       <tr key={slot.position}>
                         <td className="tbp-td-stt">{slot.position}</td>

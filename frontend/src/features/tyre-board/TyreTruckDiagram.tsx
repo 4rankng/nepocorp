@@ -1,5 +1,6 @@
 import type { TyreBoardSlot } from "@tingting/shared";
 import { InlineCell } from "./TyreInlineCell";
+import { tyreStatus, type TyreStatus } from "./tyreStatus";
 import {
   ALL_POSITIONS,
   PORTRAIT_LAYOUT,
@@ -10,7 +11,6 @@ import {
   type MarkerGeom,
 } from "./tyrePositions";
 
-const TIRE_FILL = "#d9dde3";
 const TIRE_STROKE = "#9aa3ad";
 const RED = "#d62828";
 const MUTED = "#8a99b0";
@@ -18,6 +18,21 @@ const OUTLINE = "#c9ccd4";
 const PINK_FILL = "#fdeaea";
 const PINK_STROKE = "#e5b5b5";
 const SLAB_FILL = "#ececf0";
+
+const STATUS_STYLE: Record<TyreStatus, { fill: string; stroke: string; label: string }> = {
+  good: { fill: "#cfe8d5", stroke: "#3f8f5a", label: "tốt" },
+  warn: { fill: "#f6e3b4", stroke: "#c98a12", label: "cần chú ý" },
+  bad: { fill: "#f5c9c4", stroke: "#c0392b", label: "cần thay" },
+  empty: { fill: "#dcdcdc", stroke: "#a9a9a9", label: "chưa lắp" },
+};
+
+/** Pill fill/stroke + status label for one slot. Spares keep their yellow
+ *  dashed look regardless of age. */
+function pillStyle(slot: TyreBoardSlot | undefined, spare: boolean) {
+  if (spare) return { fill: "#fffbe9", stroke: "#b5a13a", dash: "4 3", label: "dự phòng" };
+  const st = tyreStatus(slot);
+  return { ...STATUS_STYLE[st], dash: undefined };
+}
 
 interface Props {
   slots: TyreBoardSlot[];
@@ -39,7 +54,7 @@ function Wheel({ cx, cy, r }: { cx: number; cy: number; r: number }) {
 /** Gray numeral annotation on the decorative side view (no badge circle). */
 function Callout({ x, y, n }: { x: number; y: number; n: string }) {
   return (
-    <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="12" fill={MUTED} fontWeight={600}>
+    <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="16" fill={MUTED} fontWeight={600}>
       {n}
     </text>
   );
@@ -50,8 +65,9 @@ function Callout({ x, y, n }: { x: number; y: number; n: string }) {
  * keeps 4.5:1 on the gray pill) + the serial editor embedded in the drawing
  * via <foreignObject>. Dual pairs draw a second pill offset `pair.dx`; the
  * numeral centers between the two pills. Spare tires (ô 7–10) are yellow
- * with a dashed outline; empty slots render at reduced opacity. The full
- * data lives in the <title> tooltip.
+ * with a dashed outline; other pills color by tyre age (tốt/cần chú ý/cần
+ * thay/chưa lắp); empty slots render at reduced opacity. The full data
+ * lives in the <title> tooltip.
  */
 function TireMarker({ position, geom, slot, onSerialCommit }: {
   position: number;
@@ -60,16 +76,15 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
   onSerialCommit: Props["onSerialCommit"];
 }) {
   const spare = SPARE_POSITIONS[position] === true;
+  const style = pillStyle(slot, spare);
   const title = [
     `Ô ${position} — ${SLOT_GROUP_BY_POSITION[position]}`,
+    style.label,
     slot?.size,
     slot?.model,
     slot?.note,
   ].filter(Boolean).join(" · ");
 
-  const fill = spare ? "#fffbe9" : TIRE_FILL;
-  const stroke = spare ? "#b5a13a" : TIRE_STROKE;
-  const dash = spare ? "4 3" : undefined;
   const opacity = slot?.serial ? 1 : 0.45;
   const cx = geom.x + geom.w / 2 + (geom.pair ? geom.pair.dx / 2 : 0);
   const cy = geom.y + geom.h / 2;
@@ -80,9 +95,9 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
       width={geom.w}
       height={geom.h}
       rx={geom.h / 2}
-      fill={fill}
-      stroke={stroke}
-      strokeDasharray={dash}
+      fill={style.fill}
+      stroke={style.stroke}
+      strokeDasharray={style.dash}
       opacity={opacity}
     />
   );
@@ -95,9 +110,9 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
           cx={geom.x + geom.w / 2}
           cy={cy}
           r={Math.min(geom.w, geom.h) / 2}
-          fill={fill}
-          stroke={stroke}
-          strokeDasharray={dash}
+          fill={style.fill}
+          stroke={style.stroke}
+          strokeDasharray={style.dash}
           opacity={opacity}
         />
       ) : (
