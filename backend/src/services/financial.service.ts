@@ -10,6 +10,8 @@ import { eq, and, inArray, sql, desc, isNull, gte, lte, or } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
+import { visibleLedgerRows, isOrphanChiHoRow, isChiHoLedgerRow } from './statement.service';
+import type { EnrichedLedgerRow } from './statement.service';
 import type { Tx } from './trip-shared';
 
 // ─── Payment recording ─────────────────────────────────────────────────────────
@@ -713,11 +715,61 @@ export async function getEntityBalances(entityType: string) {
   const aggregatesByEntity = new Map(
     revenueRows.map(r => [r.entityId, { tripRevenue: parseFloat(r.tripRevenue), arDebt: parseFloat(r.arDebt) }]),
   );
+
+  // NEPO-48 — the list's AR column reads the same VISIBLE book as the detail
+  // statement (reversal pairs collapsed, duplicate postings collapsed, dead
+  // chi-hộ refs out): the raw Σ left the list at the gross figure while the
+  // detail header showed the collapsed one (QA: Thanh Thịnh 279.889.199₫ on
+  // the list vs 240.519.199₫ on the detail header for one customer).
+  let visibleByEntity: Map<number, number> | null = null;
+  if (entityType === 'CUSTOMER') {
+    const [ledgerRows, feeRows, tripRows] = await Promise.all([
+      db.select().from(s.ledger).where(eq(s.ledger.entityType, 'CUSTOMER')).orderBy(s.ledger.id),
+      db.select({ feeId: s.tripExpenses.id, tripId: s.tripExpenses.tripId, customerId: s.trips.customerId })
+        .from(s.tripExpenses)
+        .innerJoin(s.trips, eq(s.tripExpenses.tripId, s.trips.id)),
+      db.select({ tripId: s.trips.id, customerId: s.trips.customerId }).from(s.trips),
+    ]);
+    const feeTrip = new Map<number, number>();
+    const tripCustomer = new Map<number, number>();
+    const liveFeeIds = new Set<number>();
+    for (const fee of feeRows) {
+      feeTrip.set(fee.feeId, fee.tripId);
+      tripCustomer.set(fee.tripId, fee.customerId);
+      liveFeeIds.add(fee.feeId);
+    }
+    for (const trip of tripRows) tripCustomer.set(trip.tripId, trip.customerId);
+
+    const rowsByEntity = new Map<number, EnrichedLedgerRow[]>();
+    for (const row of ledgerRows) {
+      // Carrier-payable activity never belongs to the AR book — same rule as
+      // the SQL aggregate above and buildCustomerDebtMap.
+      if (row.txnType === TxnType.EXTERNAL_CARRIER_COST || row.txnType === TxnType.VENDOR_PAYMENT) continue;
+      if (row.txnType === TxnType.UNLOCK_REVERSAL && row.note?.startsWith('Cước thuê ngoài')) continue;
+      const list = rowsByEntity.get(row.entityId);
+      if (list) list.push(row);
+      else rowsByEntity.set(row.entityId, [row]);
+    }
+    visibleByEntity = new Map();
+    for (const [entityId, rows] of rowsByEntity) {
+      const book = visibleLedgerRows(rows.filter((row) => {
+        if (!isChiHoLedgerRow(row)) return true;
+        if (isOrphanChiHoRow(row, liveFeeIds)) return false;
+        const tripId = row.txnId != null ? feeTrip.get(row.txnId) : undefined;
+        if (tripId == null) return true;
+        const owner = tripCustomer.get(tripId);
+        return owner === undefined || owner === entityId;
+      }));
+      visibleByEntity.set(entityId, book.reduce((sum, r) => sum + Number(r.debit ?? 0) - Number(r.credit ?? 0), 0));
+    }
+  }
   return balanceRows.map(r => ({
     entityId: r.entityId,
     balance: parseFloat(r.balance),
     tripRevenue: aggregatesByEntity.get(r.entityId)?.tripRevenue ?? 0,
-    arDebt: aggregatesByEntity.get(r.entityId)?.arDebt ?? 0,
+    arDebt: visibleByEntity
+      ? (visibleByEntity.get(r.entityId) ?? aggregatesByEntity.get(r.entityId)?.arDebt ?? 0)
+      : aggregatesByEntity.get(r.entityId)?.arDebt ?? 0,
     timestamp: r.timestamp,
   }));
 }

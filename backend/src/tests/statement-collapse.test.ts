@@ -1,20 +1,25 @@
 /**
  * Cover for the VISIBLE ledger derivation (NEPO-43/44/50 pairing + NEPO-48
  * owner decision): every UNLOCK_REVERSAL '(Hoàn tác)' row leaves the
- * statement on every surface — paired or not — and the original row each
- * reversal mirrors (same entityType, txnId family, mirrored amount
- * debit↔credit, any instant) leaves with it: TRIP_REVENUE,
- * EXTERNAL_CARRIER_COST, DRIVER_SALARY, fuel/VENDOR_EXPENSE,
- * FORWARDER_ADVANCE alike, regardless of posting instant. Chi-hộ rows pair
- * inside a `fee:` namespace so trip_expenses ids never cross-pair a
- * same-numbered trip's rows. Unpaired originals and non-reversal rows
- * (payments, penalties, odd-sign revenue) stay. Dropping a lone reversal
- * changes the net by design — callers must derive balances/totals/aging
- * from the returned set, never from the raw rows.
+ * statement on every surface — paired or not — and pairing happens strictly
+ * INSIDE a source family (entity | ledger | txn_id): the original each
+ * reversal mirrors (mirrored amount debit↔credit, oldest first) leaves with
+ * it; a re-post block that re-states exactly the mirrored amount is
+ * presentation noise and drops around the standing booking (NEPO-48 wave 4 —
+ * the booking keeps its original posting date), while a block with different
+ * amounts re-states for real (mirror out, re-posts in). Families never
+ * cross: TRIP_REVENUE, EXTERNAL_CARRIER_COST, DRIVER_SALARY, fuel/
+ * VENDOR_EXPENSE, FORWARDER_ADVANCE alike; chi-hộ rows pair inside a `fee:`
+ * namespace so trip_expenses ids never cross-pair a same-numbered trip's
+ * rows; the txn_id is part of the key so a reversal can never consume a
+ * same-amount stranger. Unpaired originals and non-reversal rows (payments,
+ * penalties, odd-sign revenue) stay. Dropping a lone reversal changes the
+ * net by design — callers must derive balances/totals/aging from the
+ * returned set, never from the raw rows.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { visibleLedgerRows, isOrphanChiHoRow } from '../services/statement.service';
+import { visibleLedgerRows, isOrphanChiHoRow, reattributePaymentRows } from '../services/statement.service';
 import type { EnrichedLedgerRow } from '../services/statement.service';
 import { TxnType } from '@tingting/shared';
 
@@ -115,8 +120,12 @@ describe('visibleLedgerRows', () => {
 
   it('is order-independent within the same instant', () => {
     const instant = new Date('2026-10-08T07:24:17.897Z');
-    const rows = [reversal({ timestamp: instant }), revenue({ timestamp: instant })];
-    assert.equal(visibleLedgerRows(rows).length, 0);
+    // Creation order fixes the ids (original before its reversal — the ledger
+    // is append-only); array order must not change the derivation.
+    const charge = revenue({ timestamp: instant });
+    const rec = reversal({ timestamp: instant });
+    assert.equal(visibleLedgerRows([rec, charge]).length, 0);
+    assert.equal(visibleLedgerRows([charge, rec]).length, 0);
   });
 
   it('collapses multiple legacy pairs and preserves the running net', () => {
@@ -167,7 +176,7 @@ describe('visibleLedgerRows', () => {
     assert.equal(net(rows), 0);
   });
 
-  it('keeps the live cost and hides only the churn — prod carrier 21/9 shape (cước lặp 3 lần)', () => {
+  it('keeps the standing cost and hides the churn — prod carrier 21/9 shape (cước lặp 3 lần)', () => {
     const rows = [
       carrierCost({ timestamp: new Date('2026-09-21T10:35:22.000Z') }),
       carrierReversal({ timestamp: new Date('2026-09-21T10:36:10.000Z') }),
@@ -178,7 +187,10 @@ describe('visibleLedgerRows', () => {
     const collapsed = visibleLedgerRows(rows);
     assert.equal(collapsed.length, 1);
     assert.equal(collapsed[0].txnType, TxnType.EXTERNAL_CARRIER_COST);
-    assert.equal(collapsed[0].id, rows[4].id, 'the newest re-posted charge survives');
+    // NEPO-48 wave 4 — identical re-statements are invisible: the cycle drops
+    // around the standing booking, which keeps its original posting date (the
+    // accountants never booked the unlock). Same amount either way.
+    assert.equal(collapsed[0].id, rows[0].id);
     assert.equal(net(rows), net(collapsed), 'running net preserved');
   });
 
@@ -375,7 +387,7 @@ describe('duplicate posting collapse (NEPO-48 QA wave 3)', () => {
     assert.equal(visibleLedgerRows(rows).length, 2);
   });
 
-  it('a reversal-explained generation still nets out and leaves only the re-post', () => {
+  it('a reversal-explained generation nets out around the standing original (wave 4)', () => {
     const rows = [
       revenue({ txnId: 125, entityId: 11, debit: '7728000', timestamp: july('17') }),
       row({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 125, entityId: 11, credit: '7728000', timestamp: july('17') }),
@@ -383,7 +395,123 @@ describe('duplicate posting collapse (NEPO-48 QA wave 3)', () => {
     ];
     const collapsed = visibleLedgerRows(rows);
     assert.equal(collapsed.length, 1);
-    assert.equal(collapsed[0].id, rows[2].id);
+    // The re-post re-states exactly what the reversal undid — the cycle is
+    // invisible and the accountant's original booking stands (NEPO-48 wave 4).
+    assert.equal(collapsed[0].id, rows[0].id);
+  });
+});
+
+describe('NEPO-48 wave 4 — source-family pairing (demo TRP-202607-0044 shapes)', () => {
+  const aug10 = new Date('2026-08-10T04:40:00.000Z');
+  const jul29 = new Date('2026-07-29T10:09:00.000Z');
+  // Demo ground truth: the 29/7 'Điều chỉnh phí chi hộ' originals (fees 378 /
+  // 380 / 377) and the 10/8 unlock cycle — reversal credit + re-post debit per
+  // fee, same amounts, same instant.
+  const stamped = (over: Partial<EnrichedLedgerRow> = {}) => row({
+    txnTable: 'trip_expenses', txnType: TxnType.SERVICE_FEE, entityId: 11, ...over,
+  });
+
+  it('the 0044 chi-hộ unlock cycle vanishes around its 29/7 originals — zero 10/8 rows', () => {
+    const rows = [
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 378, debit: '1404000', timestamp: jul29 }),
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 380, debit: '250000', timestamp: jul29 }),
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 377, debit: '1188000', timestamp: jul29 }),
+      stamped({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 378, credit: '1404000', timestamp: aug10 }),
+      stamped({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 380, credit: '250000', timestamp: aug10 }),
+      stamped({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 377, credit: '1188000', timestamp: aug10 }),
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 378, debit: '1404000', timestamp: aug10 }),
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 380, debit: '250000', timestamp: aug10 }),
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 377, debit: '1188000', timestamp: aug10 }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.deepEqual(collapsed.map((r) => [r.txnId, Number(r.debit)]), [
+      [378, 1404000], [380, 250000], [377, 1188000],
+    ], 'the 29/7 originals stand; reversals and 10/8 re-posts all leave');
+    assert.ok(collapsed.every((r) => r.timestamp === jul29), 'no 10/8-dated row renders');
+    assert.equal(net(rows), net(collapsed), 'the cycle is net-0 noise');
+  });
+
+  it('a reversal never consumes another trip or fee family — the same-amount strangers stay', () => {
+    // Demo shapes: trip 125's reversal ate trip 102's original; trip 377's
+    // reversal ate fee 382's charge; both were cross-family eats.
+    const rows = [
+      stamped({ txnTable: 'trips', txnType: TxnType.TRIP_REVENUE, txnId: 91, debit: '7728000' }),
+      stamped({ txnTable: 'trips', txnType: TxnType.TRIP_REVENUE, txnId: 102, debit: '7728000' }),
+      stamped({ txnTable: 'trips', txnType: TxnType.UNLOCK_REVERSAL, txnId: 125, credit: '7728000' }),
+      stamped({ txnTable: 'trips', txnType: TxnType.TRIP_REVENUE, txnId: 125, debit: '7728000' }),
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 382, debit: '1188000', timestamp: jul29 }),
+      stamped({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 377, credit: '1188000' }),
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 377, debit: '1188000' }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.deepEqual(collapsed.map((r) => [r.txnTable, r.txnType, r.txnId]), [
+      ['trips', TxnType.TRIP_REVENUE, 91],
+      ['trips', TxnType.TRIP_REVENUE, 102],
+      ['trips', TxnType.TRIP_REVENUE, 125],
+      ['trip_expenses', TxnType.SERVICE_FEE, 382],
+      ['trip_expenses', TxnType.SERVICE_FEE, 377],
+    ], 'trip 102 and fee 382 survive; trips 91/125 and fee 377 keep their standing originals');
+    assert.equal(collapsed.length, 5);
+  });
+
+  it('a reversal whose original lives on another book drops alone — its re-post is the charge', () => {
+    // Thanh Thịnh October: TRP-202610-0056's chi-hộ original was posted on the
+    // previous customer's ledger; this book holds only reversal + re-post.
+    const rows = [
+      stamped({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 957, credit: '3391200' }),
+      stamped({ txnType: TxnType.SERVICE_FEE, txnId: 957, debit: '3391200' }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.deepEqual(collapsed.map((r) => r.txnType), [TxnType.SERVICE_FEE], 'the re-post carries the charge');
+    assert.equal(net(collapsed) - net(rows), 3391200, 'the net moves by the dropped lone reversal credit');
+  });
+
+  it('a cycle that changes the amount re-states — the new value stands', () => {
+    const rows = [
+      stamped({ txnTable: 'trips', txnType: TxnType.TRIP_REVENUE, txnId: 161, debit: '7074000' }),
+      stamped({ txnTable: 'trips', txnType: TxnType.UNLOCK_REVERSAL, txnId: 161, credit: '7074000' }),
+      stamped({ txnTable: 'trips', txnType: TxnType.TRIP_REVENUE, txnId: 161, debit: '7674000' }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(Number(collapsed[0].debit), 7674000, 'the corrected trips.revenue');
+    assert.equal(net(rows), net(collapsed), 'running net preserved');
+  });
+
+  it('re-derives a receipt split FIFO over the voucher-day book — the reversed trip gets nothing', () => {
+    // Receipt 9214 was stored split across the gross book (28.200.000₫ into
+    // TRP-202607-0044). The display split re-derives on the visible book.
+    const tripRevenue = (tripId: number, day: string, debit: string) => row({
+      txnTable: 'trips', txnType: TxnType.TRIP_REVENUE, txnId: tripId, tripId,
+      debit, timestamp: new Date(`${day}T00:00:00.000Z`),
+    });
+    const rows = [
+      tripRevenue(91, '2026-06-29', '11152000'),
+      tripRevenue(80, '2026-06-24', '11072200'),
+      tripRevenue(102, '2026-07-02', '7728000'),
+      tripRevenue(138, '2026-07-17', '6750000'),
+      row({ txnTable: 'trips', txnType: TxnType.PAYMENT_RECEIVED, txnId: 91, receiptId: '9214', credit: '15000000', timestamp: new Date('2026-07-18T04:40:00.000Z'), tripId: 91, tripCode: 'TRP-202606-0088' }),
+      row({ txnTable: 'trips', txnType: TxnType.PAYMENT_RECEIVED, txnId: 138, receiptId: '9214', credit: '18022400', timestamp: new Date('2026-07-18T04:40:00.000Z'), tripId: 138, tripCode: 'TRP-202607-0044' }),
+    ];
+    const dayOf = (r: EnrichedLedgerRow) =>
+      r.txnType === TxnType.PAYMENT_RECEIVED
+        ? '2026-07-18'
+        : new Date(r.timestamp).toISOString().slice(0, 10);
+    const attributed = reattributePaymentRows(rows, dayOf, new Map([
+      [91, { tripCode: 'TRP-202606-0088', routeName: null }],
+      [80, { tripCode: 'TRP-202606-0077', routeName: null }],
+      [102, { tripCode: 'TRP-202607-0008', routeName: null }],
+      [138, { tripCode: 'TRP-202607-0044', routeName: null }],
+    ]));
+    const payments = attributed.filter((r) => r.txnType === TxnType.PAYMENT_RECEIVED);
+    const total = payments.reduce((sum, r) => sum + Number(r.credit), 0);
+    assert.equal(total, 33022400, 'the receipt total never moves');
+    const byTrip = new Map(payments.map((r) => [r.txnId, Number(r.credit)]));
+    assert.equal(byTrip.get(91), 11152000, 'oldest voucher is covered first');
+    assert.equal(byTrip.get(80), 11072200);
+    assert.equal(byTrip.get(102), 7728000);
+    assert.equal(byTrip.get(138), 3070200, 'only the true remainder reaches trip 138 — never the stored 18.022.400₫');
+    assert.ok(payments.every((r) => !String(r.note).includes('Hoàn tác')));
   });
 });
 

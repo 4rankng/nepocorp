@@ -356,8 +356,8 @@ function isLegacyServiceFeeRevenueRow(row: LedgerRow): boolean {
  * row stamped any other table is not. Only legacy rows with no stamp fall back
  * to the note-prefix convention (advance.service separates FORWARDER_ADVANCE
  * families the same way). */
-const CHI_HO_NOTE_RE = /chi hộ/i;
-function isChiHoLedgerRow(row: Pick<LedgerRow, 'txnTable' | 'txnType' | 'note' | 'txnId'>): boolean {
+export const CHI_HO_NOTE_RE = /chi hộ/i;
+export function isChiHoLedgerRow(row: Pick<LedgerRow, 'txnTable' | 'txnType' | 'note' | 'txnId'>): boolean {
   if (row.txnTable === 'trip_expenses') return true;
   if (row.txnTable != null) return false;
   if (row.txnType === TxnType.SERVICE_FEE) return true;
@@ -386,7 +386,7 @@ export function isOrphanChiHoRow(
 /** NEPO-50 — true when the row's txn_id references trips.id (revenue, salary,
  * fuel, carrier cost, their reversals, per-trip payments). Authoritative on
  * txn_table; legacy stamp-less rows fall back to txn_type + note exclusion. */
-function rowJoinsTrips(row: LedgerRow): boolean {
+export function rowJoinsTrips(row: LedgerRow): boolean {
   if (row.txnTable != null) return row.txnTable === 'trips';
   if (isChiHoLedgerRow(row)) return false;
   return row.txnType === TxnType.TRIP_REVENUE
@@ -448,18 +448,26 @@ function computeAgingFor(
  *    accountants never book the unlock and the re-post as one entry, so the
  *    reversal rows only skew the book (they leaked into TỔNG PHÁT SINH and
  *    the FIFO allocation on demo data TRP-202607-0044).
- * 2. An original row mirrored by a dropped reversal (same entity, same txn
- *    namespace, mirrored amount debit↔credit, any instant) is dropped with
- *    it — the net-0 pair the reversal existed to cancel.
- * 3. Unpaired originals stay: the charge is real on this book.
- *
- * Pairing is 1:1 (oldest original first) and generic across every pair the
- * lock can mint — CUSTOMER↔TRIP_REVENUE / SERVICE_FEE,
- * CARRIER↔EXTERNAL_CARRIER_COST, DRIVER↔DRIVER_SALARY, VENDOR↔fuel
- * (FUEL_EXPENSE / VENDOR_EXPENSE), FORWARDER↔FORWARDER_ADVANCE. Chi-hộ rows
- * (SERVICE_FEE family, fee id in txnId) carry a `fee:` key prefix:
- * trip_expenses.id and trips.id share one numeric space, so a chi-hộ
- * reversal must never pair a same-numbered trip's revenue rows.
+ * 2. A reversal pairs inside its SOURCE family only — entity | ledger |
+ *    txn_id, never across rows: the pre-wave-4 key carried the amount but
+ *    dropped txn_id for stamped rows, so a reversal consumed ANY same-amount
+ *    row of the book (a June fee eaten by a July unlock, another trip's
+ *    revenue eaten by this trip's churn) and the eaten rows silently left
+ *    every surface. Within the family it pairs 1:1 with the OLDEST standing
+ *    same-amount row, debit↔credit, any instant — generic across every pair
+ *    the lock can mint (CUSTOMER↔TRIP_REVENUE / SERVICE_FEE,
+ *    CARRIER↔EXTERNAL_CARRIER_COST, DRIVER↔DRIVER_SALARY, VENDOR↔fuel,
+ *    FORWARDER↔FORWARDER_ADVANCE). trip_expenses.id and trips.id share one
+ *    numeric space, so chi-hộ families key on the `fee:` prefix and a
+ *    chi-hộ reversal can never pair a same-numbered trip's revenue rows.
+ * 3. The re-post block that follows a reversal decides what the cycle meant:
+ *    re-stating exactly the mirrored amount is presentation noise — the
+ *    whole cycle drops and the standing booking survives on its original
+ *    posting date (the accountants never booked the unlock; demo
+ *    TRP-202607-0044 reads its 29/7 chi-hộ rows, not the 10/8 re-posts).
+ *    Anything else re-states for real: the mirror leaves and the re-posts
+ *    carry the new state; with no mirror on this book only the reversal
+ *    itself leaves.
  *
  * Dropping a lone reversal changes the net by design — that is the owner
  * decision (the credit was never a real customer payment). Callers MUST
@@ -487,60 +495,88 @@ const DEDUPABLE_CHARGE_TYPES: Readonly<Partial<Record<TxnType, true>>> = {
 };
 
 export function visibleLedgerRows(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
-  // Bucket matchable original rows by entity|txn family|side:amount so a
-  // reversal matches at most one original row (1:1), any instant. entityType/
-  // entityId are part of the key: statement builders merge ledgers (e.g. the
-  // carrier payable merges historical CUSTOMER rows with CARRIER rows), and
-  // rows from different ledgers must never cross-pair.
-  const originalBuckets = new Map<string, number[]>();
-  // NEPO-50 — the txn namespace is the stamped txn_table when present
-  // ('trips' vs 'trip_expenses' never cross-pair, even when a fee id collides
-  // with a trip id); legacy stamp-less rows fall back to the fee: marker from
-  // the note-based chi-hộ classification.
-  const bucketKey = (row: EnrichedLedgerRow, side: 'd' | 'c', amount: number) =>
-    `${row.entityType}|${row.entityId}|${row.txnTable ?? (isChiHoLedgerRow(row) ? `fee:${row.txnId}` : row.txnId)}|${side}${amount}`;
-
+  // NEPO-48 wave 4 — rows walk their own source family chronologically
+  // instead of shifting global amount buckets. entityType/entityId and the
+  // txn namespace are part of the family key: statement builders merge
+  // ledgers (e.g. the carrier payable merges historical CUSTOMER rows with
+  // CARRIER rows), and rows from different ledgers must never cross-pair.
+  const families = new Map<string, number[]>();
+  const familyKey = (row: EnrichedLedgerRow) => {
+    // NEPO-50 — the txn namespace is the stamped txn_table when present
+    // ('trips' vs 'trip_expenses' never cross-pair, even when a fee id
+    // collides with a trip id); legacy stamp-less rows fall back to the fee:
+    // marker from the note-based chi-hộ classification. The txn_id itself is
+    // ALWAYS part of the key — the pre-wave-4 key dropped it for stamped rows
+    // and let reversals consume same-amount strangers.
+    const table = row.txnTable ?? (isChiHoLedgerRow(row) ? 'fee:' : '');
+    return `${row.entityType}|${row.entityId}|${table}|${row.txnId ?? 'null'}`;
+  };
   rows.forEach((row, index) => {
-    if (row.txnType === TxnType.UNLOCK_REVERSAL || row.txnId == null) return;
-    const debit = Number(row.debit ?? 0);
-    const credit = Number(row.credit ?? 0);
-    for (const side of ['d', 'c'] as const) {
-      const amount = side === 'd' ? debit : credit;
-      if (amount <= 0) continue;
-      const key = bucketKey(row, side, amount);
-      const bucket = originalBuckets.get(key);
-      if (bucket) bucket.push(index);
-      else originalBuckets.set(key, [index]);
-    }
+    if (row.txnId == null && row.txnType !== TxnType.UNLOCK_REVERSAL) return;
+    const key = familyKey(row);
+    const family = families.get(key);
+    if (family) family.push(index);
+    else families.set(key, [index]);
   });
 
-  // Pair oldest-first (ascending id) so N identical pairs collapse in posting
-  // order and a surplus original or reversal stays visible.
-  for (const bucket of originalBuckets.values()) {
-    bucket.sort((a, b) => rows[a].id - rows[b].id);
-  }
+  // Ledger ids are the append-only creation serial: within a family the
+  // original always carries a smaller id than the reversal that undoes it,
+  // and the re-post a larger one still — id order IS the posting order, and
+  // unlike timestamps it cannot put an undo before the charge it undoes.
+  const rowAmount = (index: number) => {
+    const row = rows[index];
+    return Number(row.debit ?? 0) > 0 ? Number(row.debit ?? 0) : Number(row.credit ?? 0);
+  };
 
   const dropped = new Set<number>();
-  rows.forEach((row, index) => {
-    // NEPO-48 owner decision — every reversal row leaves the visible ledger,
-    // even when no mirrored original exists on this book.
-    if (row.txnType !== TxnType.UNLOCK_REVERSAL) return;
-    dropped.add(index);
-    if (row.txnId == null) return;
-    const debit = Number(row.debit ?? 0);
-    const credit = Number(row.credit ?? 0);
-    // A reversal mirrors exactly one original side: its credit cancels an
-    // original debit, its debit cancels an original credit. The mirrored
-    // original leaves with it; a surplus original stays visible.
-    const key = debit > 0
-      ? bucketKey(row, 'c', debit)
-      : credit > 0
-        ? bucketKey(row, 'd', credit)
-        : null;
-    if (key === null) return;
-    const originalIndex = originalBuckets.get(key)?.shift();
-    if (originalIndex !== undefined) dropped.add(originalIndex);
-  });
+  for (const family of families.values()) {
+    family.sort((a, b) => rows[a].id - rows[b].id);
+    const standing: number[] = [];
+    let i = 0;
+    while (i < family.length) {
+      const index = family[i];
+      const row = rows[index];
+      if (row.txnType !== TxnType.UNLOCK_REVERSAL) {
+        standing.push(index);
+        i += 1;
+        continue;
+      }
+      // NEPO-48 owner decision — every reversal row leaves the visible
+      // ledger, even when no mirrored original exists on this book.
+      dropped.add(index);
+      const amount = rowAmount(index);
+      // At most one standing mirror, oldest first, on the mirrored side
+      // (its credit cancels a debit, its debit cancels a credit).
+      let mirror = -1;
+      if (amount > 0) {
+        for (const candidate of standing) {
+          const c = rows[candidate];
+          const mirrored = Number(row.debit ?? 0) > 0 ? Number(c.credit ?? 0) : Number(c.debit ?? 0);
+          if (mirrored === amount) {
+            mirror = candidate;
+            break;
+          }
+        }
+      }
+      // The re-post block that follows (until the family's next reversal)
+      // decides the meaning of the cycle — identical re-statement vs a real
+      // re-post of changed values, per the rules in the doc comment above.
+      const reposts: number[] = [];
+      let j = i + 1;
+      while (j < family.length && rows[family[j]].txnType !== TxnType.UNLOCK_REVERSAL) {
+        reposts.push(family[j]);
+        j += 1;
+      }
+      if (mirror >= 0 && reposts.length === 1 && rowAmount(reposts[0]) === amount) {
+        dropped.add(reposts[0]);
+      } else if (mirror >= 0) {
+        standing.splice(standing.indexOf(mirror), 1);
+        dropped.add(mirror);
+        for (const repost of reposts) standing.push(repost);
+      }
+      i = j;
+    }
+  }
 
   // NEPO-48 QA wave 3 — duplicate-posting collapse. An edit cycle whose
   // unlock reversal is missing (dead fee refs, restored rows) leaves two
@@ -916,6 +952,118 @@ export function buildFastStatement(
   };
 }
 
+/**
+ * NEPO-48 wave 4 — the chi tiết công nợ renders each receipt's per-trip
+ * allocation re-derived on the visible voucher-day book, not the split stored
+ * at posting time: recordPayment split receipt 9214 across the then-gross
+ * book (28.200.000₫ against trip TRP-202607-0044 alone — double-counted
+ * revenue that has since collapsed) and stored split rows never age out. The
+ * walk mirrors computeFifoAging: charges open invoices in voucher-date order,
+ * each receipt's credit applies to the oldest open invoice first, and the
+ * receipt renders its derived (trip, amount) pairs. The receipt TOTAL is
+ * untouched — only its attribution moves — so every total and the folded sổ
+ * line still reconcile. Credit left after every open invoice is exhausted
+ * renders as one unallocated row.
+ */
+export function reattributePaymentRows<Row extends EnrichedLedgerRow>(
+  rows: Row[],
+  voucherDayOf: (row: Row) => string,
+  tripDetails: Map<number, { tripCode: string | null; routeName: string | null }>,
+): Row[] {
+  interface Invoice { row: Row; open: number; }
+  const invoices: Invoice[] = [];
+  const allocatedByRow = new Map<number, Map<number, number>>();
+
+  const ordered = [...rows].sort((a, b) => {
+    const dayA = voucherDayOf(a);
+    const dayB = voucherDayOf(b);
+    if (dayA !== dayB) return dayA.localeCompare(dayB);
+    const ta = new Date(a.timestamp).getTime();
+    const tb = new Date(b.timestamp).getTime();
+    return ta !== tb ? ta - tb : a.id - b.id;
+  });
+
+  for (const row of ordered) {
+    if (row.txnType !== TxnType.PAYMENT_RECEIVED) {
+      const debit = toVndInt(row.debit);
+      if (debit > 0) invoices.push({ row, open: debit });
+      continue;
+    }
+    let remaining = toVndInt(row.credit);
+    // tripId 0 = credit no invoice could absorb (trip-less invoices or pure
+    // surplus) — it renders as one 'Thanh toán (chưa đối trừ)' row so the
+    // stored split is never silently kept when the derived one is emptier.
+    const perRow = new Map<number, number>();
+    for (const inv of invoices) {
+      if (remaining <= 0 || inv.open <= 0) continue;
+      const applied = Math.min(inv.open, remaining);
+      inv.open -= applied;
+      remaining -= applied;
+      const tripId = inv.row.tripId ?? 0;
+      perRow.set(tripId, (perRow.get(tripId) ?? 0) + applied);
+    }
+    if (remaining > 0) perRow.set(0, (perRow.get(0) ?? 0) + remaining);
+    allocatedByRow.set(row.id, perRow);
+  }
+
+  // One receipt = one document: its rows' derived allocations merge into a
+  // single (trip, amount) set, rendered in the group's first position.
+  const rowsByReceipt = new Map<string, Row[]>();
+  for (const row of rows) {
+    if (row.txnType !== TxnType.PAYMENT_RECEIVED || !row.receiptId) continue;
+    const group = rowsByReceipt.get(row.receiptId);
+    if (group) group.push(row);
+    else rowsByReceipt.set(row.receiptId, [row]);
+  }
+
+  const out: Row[] = [];
+  const doneReceipts = new Set<string>();
+  let syntheticId = 0;
+  for (const row of rows) {
+    if (row.txnType !== TxnType.PAYMENT_RECEIVED || !row.receiptId) {
+      out.push(row);
+      continue;
+    }
+    if (doneReceipts.has(row.receiptId)) continue;
+    doneReceipts.add(row.receiptId);
+    const group = rowsByReceipt.get(row.receiptId)!;
+    const perTrip = new Map<number, number>();
+    for (const member of group) {
+      for (const [tripId, amount] of allocatedByRow.get(member.id) ?? []) {
+        perTrip.set(tripId, (perTrip.get(tripId) ?? 0) + amount);
+      }
+    }
+    if (perTrip.size === 0) {
+      // Nothing to allocate at all (zero-credit rows) — keep the stored
+      // attribution rather than invent one.
+      for (const member of group) out.push(member);
+      continue;
+    }
+    const orderedTrips = [...perTrip.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+      .map(([tripId, amount]) => ({ tripId, amount }));
+    for (const { tripId, amount } of orderedTrips) {
+      const base = group[0];
+      const details = tripId > 0 ? tripDetails.get(tripId) : undefined;
+      syntheticId -= 1;
+      out.push({
+        ...base,
+        id: syntheticId,
+        txnId: tripId > 0 ? tripId : null,
+        tripId: tripId > 0 ? tripId : null,
+        debit: '0',
+        credit: String(amount),
+        note: details?.tripCode ? `Thanh toán chuyến ${details.tripCode}` : 'Thanh toán (chưa đối trừ)',
+        tripCode: details?.tripCode ?? null,
+        routeName: details?.routeName ?? null,
+        containerNumbers: [],
+        serviceFeeLabel: null,
+      } as Row);
+    }
+  }
+  return out;
+}
+
 const SHARED_CSS = `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; max-width: 900px; margin: 24px auto; padding: 0 16px; }
   h1 { font-size: 18px; margin: 0 0 4px; }
   h2 { font-size: 14px; margin: 18px 0 4px; color: #00702f; }
@@ -1200,11 +1348,21 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
       .map(({ row }) => row)
     : collapsedWithDay.map(({ row }) => row);
 
+  // FIFO allocation reads the VOUCHER-day book — the same period key as the
+  // period summary above — so a receipt covers every receivable its voucher
+  // date can reach: charges whose trip departed before the receipt but only
+  // posted after it (demo: the 29/7 June-trip chi-hộ adjustments vs receipt
+  // 9214, 18/7) are reachable, charges dated after it are not. Each invoice
+  // carries its ledger row id as `ref` so open amounts map back to their trip
+  // directly — keying open invoices on timestamps collided same-day
+  // departures (TRP-202607-0044 and -0045 both depart 17/7) and dropped the
+  // per-trip chi-hộ receivables entirely.
   const { aging, openInvoices } = computeFifoAging(
     inPeriodRows.map((r) => ({
-      timestamp: r.timestamp.toISOString(),
+      timestamp: `${voucherDayOf(r)}T00:00:00.000Z`,
       debit: r.debit ?? '0',
       credit: r.credit ?? '0',
+      ref: String(r.id),
     })),
     now,
   );
@@ -1218,20 +1376,20 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     }
   }
 
-  const tsToTripId = new Map<string, number>();
-  for (const entry of revenueEntries) {
-    if (entry.txnId && entry.timestamp) {
-      tsToTripId.set(new Date(entry.timestamp).toISOString(), entry.txnId);
-    }
+  const tripIdByRowId = new Map<number, number | null>();
+  const dayByRowId = new Map<number, string>();
+  for (const r of inPeriodRows) {
+    dayByRowId.set(r.id, voucherDayOf(r));
+    // unpaidTrips is freight-only by contract: chi-hộ fees surface in the
+    // aging/totals instead, so only revenue invoices map back to their trip.
+    if (r.txnType === TxnType.TRIP_REVENUE) tripIdByRowId.set(r.id, r.tripId ?? null);
   }
 
   const tripOutstanding = new Map<number, { tripId: number; date: string; outstanding: number; note: string }>();
   for (const inv of openInvoices) {
-    if (inv.open <= 0) continue;
-    const tsRaw: unknown = inv.ts;
-    if (tsRaw == null) continue;
-    const tsKey = tsRaw instanceof Date ? tsRaw.toISOString() : String(tsRaw);
-    const tripId = tsToTripId.get(tsKey) ?? 0;
+    if (inv.open <= 0 || inv.ref === undefined) continue;
+    const rowId = Number(inv.ref);
+    const tripId = tripIdByRowId.get(rowId) ?? 0;
     if (!tripId) continue;
     const existing = tripOutstanding.get(tripId);
     if (existing) {
@@ -1239,7 +1397,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     } else {
       tripOutstanding.set(tripId, {
         tripId,
-        date: tsKey.slice(0, 10),
+        date: dayByRowId.get(rowId) ?? '',
         outstanding: inv.open,
         note: tripNotes.get(tripId) || '',
       });
@@ -1254,7 +1412,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   // unscoped whole-ledger statement — the book starts at zero). No
   // '(Hoàn tác)' row survives into displayRows (visibleLedgerRows drops
   // every reversal), so the NEPO-50 reversal trace is gone with them.
-  const displayRows = inPeriodRows;
+  const displayRows = reattributePaymentRows(inPeriodRows, voucherDayOf, tripDetailsMap);
 
   const { lines: statementLines, totals: statementTotals } = buildStatementLines(
     displayRows,
