@@ -52,43 +52,48 @@ export interface MarkerGeom {
   h: number;
   /** Draw the tire as a circle inscribed in the bbox (spare stack). */
   circle?: boolean;
+  /** Dual pair: draw a second identical pill offset `dx` to the right; the
+   * position numeral centers between the two pills. */
+  pair?: { dx: number };
   serial: { x: number; y: number; w: number };
 }
 
 /**
  * Horizontal variant, viewBox 1100 × 470: decorative side view y 0–190,
- * top view y 200–470. Left side of the truck = top edge (serial rows y 200/217),
- * right side = bottom edge (serial rows y 437/454).
+ * top view y 200–470. Left side of the truck = top edge (serial rows y 200/218),
+ * right side = bottom edge (serial rows y 436/454). Wheel pills straddle the
+ * body outline edges (the edges are the axle lines), like the Excel.
  */
 export const TOP_VIEW_LAYOUT: Record<number, MarkerGeom> = {
-  // Steer axle — single tires.
-  1: { x: 100, y: 236, w: 40, h: 20, serial: { x: 65, y: 200, w: 110 } },
-  2: { x: 100, y: 414, w: 40, h: 20, serial: { x: 65, y: 437, w: 110 } },
-  // Drive tandem — one wide dual-pair rect per axle per side.
-  3: { x: 255, y: 236, w: 90, h: 20, serial: { x: 245, y: 200, w: 110 } },
-  4: { x: 340, y: 236, w: 90, h: 20, serial: { x: 330, y: 217, w: 110 } },
-  5: { x: 340, y: 414, w: 90, h: 20, serial: { x: 330, y: 454, w: 110 } },
-  6: { x: 255, y: 414, w: 90, h: 20, serial: { x: 245, y: 437, w: 110 } },
-  // Spares — vertical stack at the catwalk, serials to the right
+  // Steer axle — tall single pills centered on the body's top/bottom edges.
+  1: { x: 132, y: 236, w: 16, h: 44, serial: { x: 92, y: 200, w: 110 } },
+  2: { x: 132, y: 390, w: 16, h: 44, serial: { x: 92, y: 454, w: 110 } },
+  // Drive tandem — dual pairs (two pills per position) on the axle edges.
+  3: { x: 288, y: 240, w: 16, h: 38, pair: { dx: 20 }, serial: { x: 246, y: 200, w: 110 } },
+  4: { x: 388, y: 240, w: 16, h: 38, pair: { dx: 20 }, serial: { x: 356, y: 218, w: 110 } },
+  5: { x: 388, y: 392, w: 16, h: 38, pair: { dx: 20 }, serial: { x: 356, y: 436, w: 110 } },
+  6: { x: 288, y: 392, w: 16, h: 38, pair: { dx: 20 }, serial: { x: 246, y: 454, w: 110 } },
+  // Spares — vertical pill stack at the catwalk, serials to the right
   // (overlapping the trailer front, like the Excel).
-  7: { x: 480, y: 270, w: 20, h: 20, circle: true, serial: { x: 505, y: 272, w: 110 } },
-  8: { x: 480, y: 310, w: 20, h: 20, circle: true, serial: { x: 505, y: 312, w: 110 } },
-  9: { x: 480, y: 350, w: 20, h: 20, circle: true, serial: { x: 505, y: 352, w: 110 } },
-  10: { x: 480, y: 390, w: 20, h: 20, circle: true, serial: { x: 505, y: 392, w: 110 } },
-  // Trailer axles 1–3 — individual duals; serials staggered in two rows so the
-  // 68-unit boxes over 70-unit axle spacing never collide.
-  11: { x: 822, y: 236, w: 24, h: 20, serial: { x: 800, y: 200, w: 68 } },
-  12: { x: 854, y: 236, w: 24, h: 20, serial: { x: 832, y: 217, w: 68 } },
-  13: { x: 854, y: 414, w: 24, h: 20, serial: { x: 832, y: 437, w: 68 } },
-  14: { x: 822, y: 414, w: 24, h: 20, serial: { x: 800, y: 454, w: 68 } },
-  15: { x: 892, y: 236, w: 24, h: 20, serial: { x: 870, y: 200, w: 68 } },
-  16: { x: 924, y: 236, w: 24, h: 20, serial: { x: 902, y: 217, w: 68 } },
-  17: { x: 924, y: 414, w: 24, h: 20, serial: { x: 902, y: 437, w: 68 } },
-  18: { x: 892, y: 414, w: 24, h: 20, serial: { x: 870, y: 454, w: 68 } },
-  19: { x: 962, y: 236, w: 24, h: 20, serial: { x: 940, y: 200, w: 68 } },
-  20: { x: 994, y: 236, w: 24, h: 20, serial: { x: 972, y: 217, w: 68 } },
-  21: { x: 994, y: 414, w: 24, h: 20, serial: { x: 972, y: 437, w: 68 } },
-  22: { x: 962, y: 414, w: 24, h: 20, serial: { x: 940, y: 454, w: 68 } },
+  7: { x: 472, y: 264, w: 20, h: 26, serial: { x: 505, y: 266, w: 110 } },
+  8: { x: 472, y: 296, w: 20, h: 26, serial: { x: 505, y: 298, w: 110 } },
+  9: { x: 472, y: 328, w: 20, h: 26, serial: { x: 505, y: 330, w: 110 } },
+  10: { x: 472, y: 360, w: 20, h: 26, serial: { x: 505, y: 362, w: 110 } },
+  // Trailer axles 1–3 — one pill per marker (individual duals, per the locked
+  // position semantics): outer dual straddles the slab edge, inner sits just
+  // inside. Serial columns w 72 at x 764/844/924 leave 8-unit gaps.
+  11: { x: 792, y: 238, w: 16, h: 36, serial: { x: 764, y: 200, w: 72 } },
+  12: { x: 792, y: 278, w: 16, h: 36, serial: { x: 764, y: 218, w: 72 } },
+  13: { x: 792, y: 356, w: 16, h: 36, serial: { x: 764, y: 436, w: 72 } },
+  14: { x: 792, y: 396, w: 16, h: 36, serial: { x: 764, y: 454, w: 72 } },
+  15: { x: 872, y: 238, w: 16, h: 36, serial: { x: 844, y: 200, w: 72 } },
+  16: { x: 872, y: 278, w: 16, h: 36, serial: { x: 844, y: 218, w: 72 } },
+  17: { x: 872, y: 356, w: 16, h: 36, serial: { x: 844, y: 436, w: 72 } },
+  18: { x: 872, y: 396, w: 16, h: 36, serial: { x: 844, y: 454, w: 72 } },
+  19: { x: 952, y: 238, w: 16, h: 36, serial: { x: 924, y: 200, w: 72 } },
+  20: { x: 952, y: 278, w: 16, h: 36, serial: { x: 924, y: 218, w: 72 } },
+  21: { x: 952, y: 356, w: 16, h: 36, serial: { x: 924, y: 436, w: 72 } },
+  22: { x: 952, y: 396, w: 16, h: 36, serial: { x: 924, y: 454, w: 72 } },
 };
 
 /**

@@ -240,25 +240,60 @@
 }
 .tbp-tab { flex: 0 0 auto; white-space: nowrap; }
 
-/* ── Responsive ladder (owner spec): 1440px = 6 cột · 768px = 4 · 390px = 2 ── */
+/* ── Responsive: the DATA TABLE scrolls inside its own wrapper at every
+   width (see .tbp-table-scroll below) — the sheet itself never scrolls
+   horizontally, so the drawing, tabs and legend stay put. ── */
 @media (max-width: 1023px) {
   .tbp { padding: 12px; }
   .tbp-wrap { padding: 14px; }
-
-  /* The data table is a desktop artifact: horizontal scroll inside the sheet
-     from tablet down ("cuộn ngang hoặc chế card ở mobile" — scroll chosen;
-     no card rewrite). Never truncates cell text. */
-  .tbp-wrap { overflow-x: auto; }
-  .tbp-table { min-width: 980px; }
-  .tbp-history { min-width: 980px; }
 }
 
 @media (max-width: 640px) {
+  .tbp { padding: 16px 16px 24px; }
+
   /* Avoid iOS focus-zoom: inputs at ≥16px keep the viewport static.
      The in-SVG serial editors are excluded — their px are SVG user units
      (font-size must stay 11px so the text fits its 16-unit box).
      (In-SVG inputs may still iOS-zoom on focus — accepted quirk.) */
   .tbp-cell-input:not(.tbp-svg-serial) { font-size: 16px; }
   .tbp-modal-field input { font-size: 16px; }
+}
+
+/* ── Data tables: sheet-local horizontal scroll + sticky first column ──── */
+/* The wrapper (not the sheet) owns the overflow, so the drawing never gets
+   pushed into a page-level scrollbar. History table is narrow — no min
+   width, no scroll. */
+.tbp-table-scroll { overflow-x: auto; }
+.tbp-table { min-width: 960px; }
+.tbp-history .tbp-table { min-width: 0; }
+
+/* First column (STT / Ngày thay) stays visible while the rest scrolls.
+   Solid backgrounds: border-collapse lets the wrapper's background bleed
+   through otherwise. Row hover already covers td:first-child (higher
+   specificity rule above) and stays in sync. */
+.tbp-table th:first-child,
+.tbp-table td:first-child {
+  position: sticky;
+  left: 0;
+}
+.tbp-table th:first-child { background: #12284b; }
+.tbp-table td:first-child { background: #fff; }
+
+/* ── Position numerals on the drawing: bare red digits with a white halo
+   (paint-order keeps 4.5:1 contrast on the gray pills) ────────────────── */
+.tbp-svg-numeral {
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+/* Keyboard focus ring on the inline cells (table + in-SVG twins). The
+   existing :focus rules keep their solid backgrounds; this adds the
+   3:1-visible outline on top. */
+.tbp-cell-input:focus-visible,
+.tbp-svg-serial:focus-visible {
+  outline: 2px solid #1a56db;
+  outline-offset: 1px;
 }
 

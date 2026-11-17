@@ -157,57 +157,61 @@ export default function TyreBoardPage() {
               Số seri sửa trực tiếp trên sơ đồ · Ô vàng đứt = dự phòng · Nút "Thay lốp" ở bảng dưới lưu lịch sử (ngày, seri cũ → mới)
             </div>
 
-            <table className="tbp-table">
-              <thead>
-                <tr>
-                  <th>STT</th><th>Nhãn hiệu</th><th>Cỡ lốp</th><th>Loại gai</th><th>Số seri</th>
-                  <th>Model</th><th>Ngày thay</th><th>Tuổi lốp</th><th>Ghi chú</th><th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {slots.map((slot) => {
-                  const age = tyreAgeDays(slot.lastChangedAt);
-                  return (
-                    <tr key={slot.position}>
-                      <td className="tbp-td-stt">{slot.position}</td>
-                      <td><InlineCell value={slot.brand} onCommit={(v) => commitCell(slot.position, { brand: v })} /></td>
-                      <td><InlineCell value={slot.size} onCommit={(v) => commitCell(slot.position, { size: v })} /></td>
-                      <td><InlineCell value={slot.treadType} onCommit={(v) => commitCell(slot.position, { treadType: v })} /></td>
-                      <td className="tbp-td-serial"><InlineCell value={slot.serial} onCommit={(v) => commitCell(slot.position, { serial: v })} /></td>
-                      <td><InlineCell value={slot.model} onCommit={(v) => commitCell(slot.position, { model: v })} /></td>
-                      <td><InlineCell type="date" value={slot.lastChangedAt} onCommit={(v) => commitCell(slot.position, { lastChangedAt: v })} /></td>
-                      <td className="tbp-age">{age != null ? `${age} ngày` : ""}</td>
-                      <td><InlineCell value={slot.note} onCommit={(v) => commitCell(slot.position, { note: v })} /></td>
-                      <td>
-                        <button type="button" className="tbp-btn" onClick={() => openChange(slot)}>
-                          Thay lốp
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="tbp-table-scroll">
+              <table className="tbp-table">
+                <thead>
+                  <tr>
+                    <th>STT</th><th>Nhãn hiệu</th><th>Cỡ lốp</th><th>Loại gai</th><th>Số seri</th>
+                    <th>Model</th><th>Ngày thay</th><th>Tuổi lốp</th><th>Ghi chú</th><th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {slots.map((slot) => {
+                    const age = tyreAgeDays(slot.lastChangedAt);
+                    return (
+                      <tr key={slot.position}>
+                        <td className="tbp-td-stt">{slot.position}</td>
+                        <td><InlineCell value={slot.brand} onCommit={(v) => commitCell(slot.position, { brand: v })} /></td>
+                        <td><InlineCell value={slot.size} onCommit={(v) => commitCell(slot.position, { size: v })} /></td>
+                        <td><InlineCell value={slot.treadType} onCommit={(v) => commitCell(slot.position, { treadType: v })} /></td>
+                        <td className="tbp-td-serial"><InlineCell value={slot.serial} onCommit={(v) => commitCell(slot.position, { serial: v })} /></td>
+                        <td><InlineCell value={slot.model} onCommit={(v) => commitCell(slot.position, { model: v })} /></td>
+                        <td><InlineCell type="date" value={slot.lastChangedAt} onCommit={(v) => commitCell(slot.position, { lastChangedAt: v })} /></td>
+                        <td className="tbp-age">{age != null ? `${age} ngày` : ""}</td>
+                        <td><InlineCell value={slot.note} onCommit={(v) => commitCell(slot.position, { note: v })} /></td>
+                        <td>
+                          <button type="button" className="tbp-btn" onClick={() => openChange(slot)}>
+                            Thay lốp
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
             {changes.length > 0 && (
               <section className="tbp-history">
                 <h2>Lịch sử thay lốp</h2>
-                <table className="tbp-table">
-                  <thead>
-                    <tr><th>Ngày thay</th><th>Ô</th><th>Vị trí</th><th>Seri cũ</th><th>Seri mới</th></tr>
-                  </thead>
-                  <tbody>
-                    {changes.map((c) => (
-                      <tr key={c.id}>
-                        <td>{fmtDate(c.changedAt)}</td>
-                        <td>{c.position}</td>
-                        <td>{SLOT_GROUP_BY_POSITION[c.position]}</td>
-                        <td>{c.oldSerial ?? "—"}</td>
-                        <td className="tbp-td-serial">{c.newSerial}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="tbp-table-scroll">
+                  <table className="tbp-table">
+                    <thead>
+                      <tr><th>Ngày thay</th><th>Ô</th><th>Vị trí</th><th>Seri cũ</th><th>Seri mới</th></tr>
+                    </thead>
+                    <tbody>
+                      {changes.map((c) => (
+                        <tr key={c.id}>
+                          <td>{fmtDate(c.changedAt)}</td>
+                          <td>{c.position}</td>
+                          <td>{SLOT_GROUP_BY_POSITION[c.position]}</td>
+                          <td>{c.oldSerial ?? "—"}</td>
+                          <td className="tbp-td-serial">{c.newSerial}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </section>
             )}
           </>
