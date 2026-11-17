@@ -357,12 +357,30 @@ function isLegacyServiceFeeRevenueRow(row: LedgerRow): boolean {
  * to the note-prefix convention (advance.service separates FORWARDER_ADVANCE
  * families the same way). */
 const CHI_HO_NOTE_RE = /chi hộ/i;
-function isChiHoLedgerRow(row: LedgerRow): boolean {
+function isChiHoLedgerRow(row: Pick<LedgerRow, 'txnTable' | 'txnType' | 'note' | 'txnId'>): boolean {
   if (row.txnTable === 'trip_expenses') return true;
   if (row.txnTable != null) return false;
   if (row.txnType === TxnType.SERVICE_FEE) return true;
   if (row.txnType !== TxnType.UNLOCK_REVERSAL && row.txnType !== TxnType.ADJUSTMENT) return false;
   return CHI_HO_NOTE_RE.test(row.note ?? '');
+}
+
+/** NEPO-48 QA wave 3 — orphan chi-hộ reference: a SERVICE_FEE/ADJUSTMENT row
+ * whose txn_id does not resolve to a LIVE trip_expenses row. The edit cycle
+ * deletes and re-creates fees; the append-only ledger keeps the old posting
+ * whose fee row is gone (QA demo: TRP-202607-0044 chi-hộ posts referencing
+ * dead expense ids 382/383/384 while only 377/378/380 live) — the row then
+ * renders without any trip context and inflates the balance. It hides from
+ * every surface and every total. A live-fee row whose expense belongs to
+ * another trip resolves to THAT trip at enrichment (tripId = fee.tripId) and
+ * the foreign-chi-hộ filter re-scopes it, so the dead reference is the only
+ * orphan shape. Stamp-less rows without txn_id stay — nothing proves them
+ * dead. */
+export function isOrphanChiHoRow(
+  row: Pick<LedgerRow, 'txnTable' | 'txnType' | 'note' | 'txnId'>,
+  liveFeeIds: { has(feeId: number): boolean },
+): boolean {
+  return isChiHoLedgerRow(row) && row.txnId != null && !liveFeeIds.has(row.txnId);
 }
 
 /** NEPO-50 — true when the row's txn_id references trips.id (revenue, salary,
@@ -448,6 +466,26 @@ function computeAgingFor(
  * derive balances/totals/aging from the returned set, never from the raw
  * rows, so Σ dòng always reconciles against đầu/cuối kỳ.
  */
+/** NEPO-48 QA wave 3 — charge families eligible for duplicate-posting
+ * collapse in visibleLedgerRows. Money-transfer rows (payments received,
+ * vendor payments, forwarder settlements) are real movements: two identical
+ * receipts are two bank lines, never posting noise. UNLOCK_REVERSAL rows
+ * leave the set before this pass runs. */
+const DEDUPABLE_CHARGE_TYPES: Readonly<Partial<Record<TxnType, true>>> = {
+  [TxnType.TRIP_REVENUE]: true,
+  [TxnType.SERVICE_FEE]: true,
+  [TxnType.ADJUSTMENT]: true,
+  [TxnType.PENALTY]: true,
+  [TxnType.MANAGEMENT_FEE]: true,
+  [TxnType.DRIVER_SALARY]: true,
+  [TxnType.VENDOR_EXPENSE]: true,
+  [TxnType.FUEL_EXPENSE]: true,
+  [TxnType.EXTERNAL_CARRIER_COST]: true,
+  [TxnType.FORWARDER_ADVANCE]: true,
+  [TxnType.COMMISSION]: true,
+  [TxnType.DRIVER_PAYOUT]: true,
+};
+
 export function visibleLedgerRows(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
   // Bucket matchable original rows by entity|txn family|side:amount so a
   // reversal matches at most one original row (1:1), any instant. entityType/
@@ -502,6 +540,46 @@ export function visibleLedgerRows(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[
     if (key === null) return;
     const originalIndex = originalBuckets.get(key)?.shift();
     if (originalIndex !== undefined) dropped.add(originalIndex);
+  });
+
+  // NEPO-48 QA wave 3 — duplicate-posting collapse. An edit cycle whose
+  // unlock reversal is missing (dead fee refs, restored rows) leaves two
+  // postings for one source field and the book double-counts it (QA demo:
+  // TRP-202607-0031/0060/0072 revenue ×2, TRP-202610-0016 13.000.000 +
+  // 10.000.000). Identical-source charge rows collapse to their newest
+  // posting — key entity|txn_table|txn_id|txn_type|side, plus the amount for
+  // every family whose source legitimately holds several same-sign rows
+  // (trip adjustments, penalties). TRIP_REVENUE alone drops the amount from
+  // the key: trips.revenue is single-valued, so the newest posting IS the
+  // current one. Rows the reversal pass already removed don't re-enter.
+  const newestBySource = new Map<string, number>();
+  rows.forEach((row, index) => {
+    if (dropped.has(index) || !DEDUPABLE_CHARGE_TYPES[row.txnType]) return;
+    const debit = Number(row.debit ?? 0);
+    const credit = Number(row.credit ?? 0);
+    // Zero rows and rows carrying both sides are malformed — leave them alone.
+    if ((debit > 0) === (credit > 0)) return;
+    const side = debit > 0 ? 'd' : 'c';
+    const amount = side === 'd' ? debit : credit;
+    // Same txn_table resolution as the reversal pairing above, so a collapsed
+    // pair and a duplicate can never disagree about which family a row is in.
+    const tablePart = row.txnTable ?? (isChiHoLedgerRow(row) ? `fee:${row.txnId}` : String(row.txnId));
+    const amountPart = row.txnType === TxnType.TRIP_REVENUE && row.txnId != null ? '' : `|${amount}`;
+    const key = `${row.entityType}|${row.entityId}|${tablePart}|${row.txnId ?? 'null'}|${row.txnType}|${side}${amountPart}`;
+    const kept = newestBySource.get(key);
+    if (kept === undefined) {
+      newestBySource.set(key, index);
+      return;
+    }
+    const keptRow = rows[kept];
+    const rowMs = new Date(row.timestamp).getTime();
+    const keptMs = new Date(keptRow.timestamp).getTime();
+    if (rowMs > keptMs || (rowMs === keptMs && row.id > keptRow.id)) {
+      dropped.add(kept);
+      newestBySource.set(key, index);
+    } else {
+      dropped.add(index);
+    }
   });
 
   if (dropped.size === 0) return rows;
@@ -1044,13 +1122,17 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     return owner !== undefined && owner !== customerId;
   };
 
-  // NEPO-48 — the visible ledger: foreign chi-hộ rows out, then every
-  // UNLOCK_REVERSAL row out (together with the original each one mirrors).
-  // The receivable projection is rebuilt on the visible set so the running
+  // NEPO-48 — the visible ledger: foreign chi-hộ rows out, orphan chi-hộ
+  // refs (dead trip_expenses ids) out, then every UNLOCK_REVERSAL row out
+  // (together with the original each one mirrors), then duplicate postings
+  // without a reversal explanation collapse to their newest posting. The
+  // receivable projection is rebuilt on the visible set so the running
   // balance, period totals and FIFO allocation all read the same book —
   // never "balance on raw, filter for display".
   const ledgerRows = withReceivableProjectionBalances(
-    visibleLedgerRows(enrichedLedgerRows.filter((r) => !isForeignChiHoRow(r))),
+    visibleLedgerRows(enrichedLedgerRows.filter((r) =>
+      !isForeignChiHoRow(r) && !isOrphanChiHoRow(r, serviceFeeMap)
+    )),
   );
 
   // Debt owed TODAY, independent of the period filter. `totalOutstanding`

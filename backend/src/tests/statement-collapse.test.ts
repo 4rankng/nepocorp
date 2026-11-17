@@ -14,7 +14,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { visibleLedgerRows } from '../services/statement.service';
+import { visibleLedgerRows, isOrphanChiHoRow } from '../services/statement.service';
 import type { EnrichedLedgerRow } from '../services/statement.service';
 import { TxnType } from '@tingting/shared';
 
@@ -296,5 +296,114 @@ describe('visibleLedgerRows', () => {
     const collapsed = visibleLedgerRows(rows);
     assert.deepEqual(collapsed.map((r) => r.txnType), [TxnType.PAYMENT_RECEIVED]);
     assert.equal(net(rows) - net(collapsed), -250000 - 1188000, 'only the lone reversal credits left the book');
+  });
+});
+
+describe('duplicate posting collapse (NEPO-48 QA wave 3)', () => {
+  const july = (day: string) => new Date(`2026-07-${day}T04:55:00.000Z`);
+  const chiHoCharge = (over: Partial<EnrichedLedgerRow> = {}) => row({
+    txnType: TxnType.SERVICE_FEE,
+    txnTable: 'trip_expenses',
+    entityId: 11,
+    debit: '1404000',
+    note: 'Phí chi hộ TRP-202607-0044',
+    ...over,
+  });
+
+  it('shows a twice-posted revenue once — the newest posting survives', () => {
+    const rows = [
+      revenue({ txnId: 125, entityId: 11, debit: '7728000', timestamp: july('17') }),
+      revenue({ txnId: 125, entityId: 11, debit: '7728000', timestamp: july('18') }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(collapsed[0].id, rows[1].id);
+    assert.equal(net(collapsed), 7728000);
+  });
+
+  it('collapses re-priced revenue generations to the newest amount (QA: 13tr + 10tr)', () => {
+    const rows = [
+      revenue({ txnId: 370, entityId: 20, debit: '13000000', timestamp: july('06') }),
+      revenue({ txnId: 370, entityId: 20, debit: '10000000', timestamp: july('07') }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(Number(collapsed[0].debit), 10000000, 'the newest posting is the current trips.revenue');
+  });
+
+  it('never merges revenues of different trips, customers, or posting sides', () => {
+    const rows = [
+      revenue({ txnId: 125, entityId: 11, timestamp: july('17') }),
+      revenue({ txnId: 154, entityId: 11, timestamp: july('17') }),
+      revenue({ txnId: 125, entityId: 20, timestamp: july('17') }),
+      revenue({ txnId: 126, entityId: 11, credit: '500000', timestamp: july('17') }),
+    ];
+    assert.equal(visibleLedgerRows(rows).length, 4);
+  });
+
+  it('collapses an exact double-posted chi hộ charge (same fee, same amount)', () => {
+    const rows = [
+      chiHoCharge({ txnId: 378, timestamp: july('29') }),
+      chiHoCharge({ txnId: 378, timestamp: new Date('2026-08-10T04:40:00.000Z') }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(collapsed[0].id, rows[1].id, 'the re-posted charge renders once');
+  });
+
+  it('keeps a same-fee chi hộ pair whose amounts differ (owner rule keys on amount)', () => {
+    const rows = [
+      chiHoCharge({ txnId: 378 }),
+      chiHoCharge({ txnId: 378, debit: '1500000', timestamp: new Date('2026-08-10T04:40:00.000Z') }),
+    ];
+    assert.equal(visibleLedgerRows(rows).length, 2);
+  });
+
+  it('keeps distinct same-trip adjustments (different amounts)', () => {
+    const rows = [
+      row({ txnType: TxnType.ADJUSTMENT, txnTable: 'trips', txnId: 5, entityId: 11, debit: '3000000' }),
+      row({ txnType: TxnType.ADJUSTMENT, txnTable: 'trips', txnId: 5, entityId: 11, debit: '2000000' }),
+    ];
+    assert.equal(visibleLedgerRows(rows).length, 2);
+  });
+
+  it('never collapses payments — two identical receipts are two bank lines', () => {
+    const rows = [
+      row({ txnType: TxnType.PAYMENT_RECEIVED, txnId: 125, entityId: 11, credit: '28200000', receiptId: 'PT-1' }),
+      row({ txnType: TxnType.PAYMENT_RECEIVED, txnId: 125, entityId: 11, credit: '28200000', receiptId: 'PT-2' }),
+    ];
+    assert.equal(visibleLedgerRows(rows).length, 2);
+  });
+
+  it('a reversal-explained generation still nets out and leaves only the re-post', () => {
+    const rows = [
+      revenue({ txnId: 125, entityId: 11, debit: '7728000', timestamp: july('17') }),
+      row({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 125, entityId: 11, credit: '7728000', timestamp: july('17') }),
+      revenue({ txnId: 125, entityId: 11, debit: '7728000', timestamp: july('18') }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(collapsed[0].id, rows[2].id);
+  });
+});
+
+describe('isOrphanChiHoRow (NEPO-48 QA wave 3)', () => {
+  const live = new Set([377, 378, 380]);
+  const chiHo = (over: Partial<EnrichedLedgerRow> = {}) => row({
+    txnType: TxnType.SERVICE_FEE, txnTable: 'trip_expenses', txnId: 382, note: 'Phí chi hộ TRP-202607-0044', ...over,
+  });
+
+  it('flags a chi hộ charge whose fee id no longer exists', () => {
+    assert.equal(isOrphanChiHoRow(chiHo({ txnId: 382 }), live), true);
+    assert.equal(isOrphanChiHoRow(chiHo({ txnId: 378 }), live), false);
+  });
+
+  it('flags legacy stamp-less chi hộ rows by the fee reference, not by a stamp', () => {
+    assert.equal(isOrphanChiHoRow(chiHo({ txnTable: null, txnId: 383 }), live), true);
+  });
+
+  it('never flags non-chi-hộ rows or rows without a txn_id', () => {
+    assert.equal(isOrphanChiHoRow(revenue({ txnId: 9999 }), live), false);
+    assert.equal(isOrphanChiHoRow(chiHo({ txnId: null }), live), false);
   });
 });
