@@ -137,12 +137,15 @@ describe('COMPLETED-trip edit cycle ledger gating', () => {
     assert.equal(newVendorRows.length, 2);
     assert.deepEqual(newVendorRows.map(r => Number(r.debit) || Number(r.credit)).sort((a, b) => a - b), [250_000, 250_000]);
 
-    // 3. Statement: the new pair has different amounts, so nothing collapses;
-    //    the net moves exactly by the revenue delta.
+    // 3. Statement: the old-amount pair (original revenue + its reversal,
+    //    same 1,000,000 mirrored) collapses across instants (NEPO-50 r3 —
+    //    reverted rows never render), leaving only the re-posted charge; the
+    //    net is exactly the corrected revenue.
     const statement = await getStatementData(customer.id);
     assert.ok(statement);
     const statementTripRows = statement.ledgerRows.filter(r => r.txnType === TxnType.TRIP_REVENUE || r.txnType === TxnType.UNLOCK_REVERSAL);
-    assert.equal(statementTripRows.length, 3);
+    assert.equal(statementTripRows.length, 1, 'old-amount pair collapses; only the re-posted charge renders');
+    assert.equal(Number(statementTripRows[0].debit), 2_000_000);
     assert.equal(statement.totalOutstanding, 2_000_000);
   });
 

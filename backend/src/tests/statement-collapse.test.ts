@@ -1,11 +1,16 @@
 /**
  * Cover for the statement detail edit-cycle collapse (NEPO-43, generalized in
- * NEPO-44): legacy UNLOCK_REVERSAL + original pairs that share entityType,
- * txnId, mirrored amount (debit↔credit) and instant are hidden from the chi
- * tiết table (net 0 ₫) — TRIP_REVENUE, EXTERNAL_CARRIER_COST, DRIVER_SALARY,
- * fuel/VENDOR_EXPENSE, FORWARDER_ADVANCE alike — while a genuinely lone
- * UNLOCK_REVERSAL stays visible. Aging/balances are computed upstream and
- * untouched — this function only filters the display rows.
+ * NEPO-44, any-instant pairing in NEPO-50): UNLOCK_REVERSAL + original pairs
+ * that share entityType, txnId family and mirrored amount (debit↔credit) are
+ * hidden from the chi tiết table (net 0 ₫) — TRIP_REVENUE,
+ * EXTERNAL_CARRIER_COST, DRIVER_SALARY, fuel/VENDOR_EXPENSE,
+ * FORWARDER_ADVANCE alike — regardless of posting instant, so a reverted
+ * charge never renders even when the cycle spans two saves. Chi-hộ rows pair
+ * inside a `fee:` namespace so trip_expenses ids never cross-pair a
+ * same-numbered trip's rows, and a genuinely lone UNLOCK_REVERSAL (no
+ * original anywhere) stays visible. Aging/balances are computed upstream and
+ * untouched — this function only filters display rows, every dropped pair
+ * nets to exactly 0 ₫.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -62,13 +67,16 @@ describe('collapseEditCyclePairs', () => {
     assert.equal(collapsed[0].txnType, TxnType.UNLOCK_REVERSAL);
   });
 
-  it('keeps pairs whose instant differs (real unlock then later re-lock)', () => {
+  it('hides an old-amount correction pair across instants and leaves the new charge only', () => {
     const rows = [
       revenue(),
       reversal({ timestamp: new Date('2026-10-09T08:00:00.000Z') }),
       revenue({ timestamp: new Date('2026-10-09T08:00:00.000Z'), debit: '7000000', credit: '0' }),
     ];
-    assert.equal(collapseEditCyclePairs(rows).length, 3);
+    const collapsed = collapseEditCyclePairs(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(Number(collapsed[0].debit), 7000000, 'the re-posted (current) amount survives');
+    assert.equal(net(rows), net(collapsed), 'running net preserved');
   });
 
   it('keeps pairs whose amount differs (revenue actually changed)', () => {
@@ -164,7 +172,7 @@ describe('collapseEditCyclePairs', () => {
     const collapsed = collapseEditCyclePairs(rows);
     assert.equal(collapsed.length, 1);
     assert.equal(collapsed[0].txnType, TxnType.EXTERNAL_CARRIER_COST);
-    assert.equal(collapsed[0].id, rows[0].id, 'the original live charge survives');
+    assert.equal(collapsed[0].id, rows[4].id, 'the newest re-posted charge survives');
     assert.equal(net(rows), net(collapsed), 'running net preserved');
   });
 
@@ -198,11 +206,51 @@ describe('collapseEditCyclePairs', () => {
     assert.equal(net(rows), 0);
   });
 
-  it('keeps a lone carrier reversal (genuine unlock — no same-instant repost)', () => {
+  it('hides a carrier charge undone later with no re-post — net 0 leaves nothing to display', () => {
     const rows = [carrierCost(), carrierReversal({ timestamp: new Date('2026-09-22T08:00:00.000Z') })];
     const collapsed = collapseEditCyclePairs(rows);
-    assert.equal(collapsed.length, 2);
-    assert.equal(collapsed[1].txnType, TxnType.UNLOCK_REVERSAL);
+    assert.equal(collapsed.length, 0);
+    assert.equal(net(rows), net(collapsed), 'running net preserved');
+  });
+
+  // ── r3 (NEPO-50): any-instant pairing + chi-hộ fee namespace ──
+
+  const chiHoFee = (over: Partial<EnrichedLedgerRow> = {}) => row({
+    txnType: TxnType.SERVICE_FEE,
+    txnId: 222,
+    debit: '1782000',
+    note: 'Phí chi hộ chuyến TRP-202607-0002',
+    ...over,
+  });
+
+  const chiHoReversal = (over: Partial<EnrichedLedgerRow> = {}) => row({
+    txnType: TxnType.UNLOCK_REVERSAL,
+    txnId: 222,
+    credit: '1782000',
+    note: 'Phí chi hộ chuyến TRP-202607-0002 (Hoàn tác)',
+    ...over,
+  });
+
+  it('hides a chi-hộ fee pair across instants and keeps the re-posted charge', () => {
+    const rows = [
+      chiHoFee({ timestamp: new Date('2026-07-29T10:18:54.000Z') }),
+      chiHoReversal({ timestamp: new Date('2026-08-12T03:42:14.000Z') }),
+      chiHoFee({ timestamp: new Date('2026-08-12T03:42:14.000Z') }),
+    ];
+    const collapsed = collapseEditCyclePairs(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(collapsed[0].txnType, TxnType.SERVICE_FEE);
+    assert.equal(net(rows), net(collapsed), 'running net preserved');
+  });
+
+  it('never cross-pairs the fee and trip id namespaces (fee: key prefix)', () => {
+    const rows = [
+      chiHoFee(),
+      reversal({ txnId: 222, credit: '1782000', note: 'Doanh thu chuyến TRP-202608-0030 (Hoàn tác)' }),
+    ];
+    const collapsed = collapseEditCyclePairs(rows);
+    assert.equal(collapsed.length, 2, 'trip 222 revenue reversal must not consume fee 222 charge');
+    assert.equal(net(rows), net(collapsed));
   });
 
   it('never cross-pairs ledgers: same txnId/amount/instant on a different entityType stays', () => {

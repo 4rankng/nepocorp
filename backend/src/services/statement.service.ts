@@ -346,6 +346,19 @@ function isLegacyServiceFeeRevenueRow(row: LedgerRow): boolean {
   return row.note.includes('Tạm ứng/nộp hộ') || row.note.includes('Phí chi hộ');
 }
 
+/** NEPO-50 — the chi-hộ AR family: SERVICE_FEE postings plus their
+ * UNLOCK_REVERSAL and advance-settlement ADJUSTMENT siblings. All three carry
+ * trip_expenses.id in txnId and must resolve their trip through the fee map —
+ * never by reading txnId as a trip id. Note matching follows the repo-wide
+ * convention of separating reversal families by note prefix (advance.service
+ * separates FORWARDER_ADVANCE the same way). */
+const CHI_HO_NOTE_RE = /chi hộ/i;
+function isChiHoLedgerRow(row: LedgerRow): boolean {
+  if (row.txnType === TxnType.SERVICE_FEE) return true;
+  if (row.txnType !== TxnType.UNLOCK_REVERSAL && row.txnType !== TxnType.ADJUSTMENT) return false;
+  return CHI_HO_NOTE_RE.test(row.note ?? '');
+}
+
 const VENDOR_TXN_LABELS: Record<string, string> = {
   VENDOR_EXPENSE: 'Ghi nhận chi phí',
   VENDOR_PAYMENT: 'Thanh toán công nợ',
@@ -391,49 +404,55 @@ function computeAgingFor(
 }
 
 /**
- * Collapse legacy edit-cycle noise from statement detail tables (NEPO-43, r2:
- * every entity, every surface). While a trip was COMPLETED, updateTripFigures
+ * Collapse edit-cycle noise from statement detail tables (NEPO-43 r2, NEPO-50
+ * r3: every entity, every surface). While a trip was COMPLETED, updateTripFigures
  * ran a full postTripUnlock + postTripLock cycle on every save even when
- * nothing ledger-relevant changed. The UNLOCK_REVERSAL and the re-posted
- * original land in the SAME transaction — identical instant, same entityType
- * and txnId, mirrored amount (debit↔credit) — a net-0 pair that only clutters
- * the chi tiết table, so both rows are hidden here.
+ * nothing ledger-relevant changed, minting an UNLOCK_REVERSAL + re-posted
+ * original — a net-0 pair that only clutters the chi tiết table. NEPO-50 r3:
+ * a reversal pairs its original REGARDLESS of instant (same entityType and
+ * txnId, mirrored amount debit↔credit), so a reverted charge never renders —
+ * the cycle may span two saves, and a same-amount cycle leaves exactly the
+ * re-posted row while an amount-changed cycle leaves the new amount only. A
+ * reversal with NO matching original (nothing proves it was undone on this
+ * book) still shows, and payments, penalties etc. are never dropped.
  *
  * Matching is generic across every pair the lock can mint — CUSTOMER↔
  * TRIP_REVENUE / SERVICE_FEE, CARRIER↔EXTERNAL_CARRIER_COST,
  * DRIVER↔DRIVER_SALARY, VENDOR↔fuel (FUEL_EXPENSE / VENDOR_EXPENSE),
- * FORWARDER↔FORWARDER_ADVANCE. A reversal with no same-instant match (a trip
- * genuinely reopened or canceled) still shows, and payments, penalties etc.
- * are never dropped. Aging, balances and period summary are computed upstream
- * on the uncollapsed rows and stay untouched — this only filters display rows.
+ * FORWARDER↔FORWARDER_ADVANCE. Chi-hộ rows (SERVICE_FEE family, fee id in
+ * txnId) carry a `fee:` key prefix: trip_expenses.id and trips.id share one
+ * numeric space, so a chi-hộ reversal must never pair a same-numbered trip's
+ * revenue rows. Aging, balances and period summary are computed upstream on
+ * the uncollapsed rows and stay untouched — this only filters display rows,
+ * and every dropped pair nets to exactly 0 ₫ so Σ dòng reconciles against
+ * đầu/cuối kỳ unchanged.
  */
 export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
-  // Bucket matchable original rows by entity|txn|side:amount|instant so a
-  // reversal matches at most one original row (1:1). entityType/entityId are
-  // part of the key: statement builders merge ledgers (e.g. the carrier
-  // payable merges historical CUSTOMER rows with CARRIER rows), and rows from
-  // different ledgers must never cross-pair.
+  // Bucket matchable original rows by entity|txn family|side:amount so a
+  // reversal matches at most one original row (1:1), any instant. entityType/
+  // entityId are part of the key: statement builders merge ledgers (e.g. the
+  // carrier payable merges historical CUSTOMER rows with CARRIER rows), and
+  // rows from different ledgers must never cross-pair.
   const originalBuckets = new Map<string, number[]>();
-  const bucketKey = (row: EnrichedLedgerRow, side: 'd' | 'c', amount: number, instant: number) =>
-    `${row.entityType}|${row.entityId}|${row.txnId}|${side}${amount}|${instant}`;
+  const bucketKey = (row: EnrichedLedgerRow, side: 'd' | 'c', amount: number) =>
+    `${row.entityType}|${row.entityId}|${isChiHoLedgerRow(row) ? `fee:${row.txnId}` : row.txnId}|${side}${amount}`;
 
   rows.forEach((row, index) => {
     if (row.txnType === TxnType.UNLOCK_REVERSAL || row.txnId == null) return;
     const debit = Number(row.debit ?? 0);
     const credit = Number(row.credit ?? 0);
-    const instant = new Date(row.timestamp).getTime();
     for (const side of ['d', 'c'] as const) {
       const amount = side === 'd' ? debit : credit;
       if (amount <= 0) continue;
-      const key = bucketKey(row, side, amount, instant);
+      const key = bucketKey(row, side, amount);
       const bucket = originalBuckets.get(key);
       if (bucket) bucket.push(index);
       else originalBuckets.set(key, [index]);
     }
   });
 
-  // Pair oldest-first (ascending id) so N identical same-instant pairs collapse
-  // in posting order and a surplus original or reversal stays visible.
+  // Pair oldest-first (ascending id) so N identical pairs collapse in posting
+  // order and a surplus original or reversal stays visible.
   for (const bucket of originalBuckets.values()) {
     bucket.sort((a, b) => rows[a].id - rows[b].id);
   }
@@ -443,13 +462,12 @@ export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedge
     if (row.txnType !== TxnType.UNLOCK_REVERSAL || row.txnId == null) return;
     const debit = Number(row.debit ?? 0);
     const credit = Number(row.credit ?? 0);
-    const instant = new Date(row.timestamp).getTime();
     // A reversal mirrors exactly one original side: its credit cancels an
     // original debit, its debit cancels an original credit.
     const key = debit > 0
-      ? bucketKey(row, 'c', debit, instant)
+      ? bucketKey(row, 'c', debit)
       : credit > 0
-        ? bucketKey(row, 'd', credit, instant)
+        ? bucketKey(row, 'd', credit)
         : null;
     if (key === null) return;
     const originalIndex = originalBuckets.get(key)?.shift();
@@ -820,51 +838,30 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   const [customer] = await db.select().from(s.customers).where(eq(s.customers.id, customerId)).limit(1);
   if (!customer) return null;
 
-  const allLedgerRows = withReceivableProjectionBalances(
-    (await LedgerService.getEntriesByEntity('CUSTOMER', customerId))
-      .filter(row =>
-        row.txnType !== TxnType.EXTERNAL_CARRIER_COST
-        && row.txnType !== TxnType.VENDOR_PAYMENT
-        && !(
-          row.txnType === TxnType.UNLOCK_REVERSAL
-          && row.note?.startsWith('Cước thuê ngoài')
-        )
-      ),
-  );
-  const ledgerRows = allLedgerRows;
+  const allLedgerRows = (await LedgerService.getEntriesByEntity('CUSTOMER', customerId))
+    .filter(row =>
+      row.txnType !== TxnType.EXTERNAL_CARRIER_COST
+      && row.txnType !== TxnType.VENDOR_PAYMENT
+      && !(
+        row.txnType === TxnType.UNLOCK_REVERSAL
+        && row.note?.startsWith('Cước thuê ngoài')
+      )
+    );
 
   const now = new Date();
-  // Debt owed TODAY, independent of the period filter. `totalOutstanding`
-  // below is derived from the period-filtered rows, so a scoped request would
-  // otherwise report the period's net movement as if it were the live balance.
-  const currentTotalOutstanding = computeAgingFor(allLedgerRows, 'CUSTOMER', now).total;
-  const agingAsOfPeriodEnd = dateTo
-    ? computeAgingFor(
-      allLedgerRows.filter((r) => new Date(r.timestamp).getTime() <= new Date(`${dateTo}T23:59:59.999`).getTime()),
-      'CUSTOMER',
-      new Date(`${dateTo}T23:59:59.999`),
-    ).buckets
-    : null;
-
-  // Period summary (đầu kỳ / phát sinh / cuối kỳ) is computed AFTER trip
-  // enrichment on the voucher-date key (NEPO-48) so its đầu/cuối kỳ reconcile
-  // against the lines the sổ actually shows.
-
-  // Latest activity across the WHOLE ledger (pre-filter) — the detail pages
-  // use it to default the period filter to the month that actually has data
-  // instead of the current month (which is often empty).
-  const latestActivityDate = ledgerRows.length > 0
-    ? ledgerRows.reduce((max, r) => r.timestamp > max ? r.timestamp : max, ledgerRows[0].timestamp).toISOString().slice(0, 10)
-    : null;
 
   // Fetch routes/container numbers for trip-backed ledger rows. SERVICE_FEE
   // rows store trip_expenses.id in txnId, so resolve those fee ids back to
   // their trip and configured billing label first. EXTERNAL_CARRIER_COST
   // (cước thuê ngoài) also stores the trip id in txnId, so it gets the same
-  // route/container enrichment as a regular trip revenue row.
+  // route/container enrichment as a regular trip revenue row. NEPO-50: chi-hộ
+  // UNLOCK_REVERSAL / ADJUSTMENT rows carry the SAME fee id in txnId, so they
+  // resolve through the fee map below and must never enter the direct-trip
+  // set — txnId-as-trip-id joined the wrong trip (fee id 222 joined trip 222
+  // of another customer).
   const directlyLinkedTripIds = Array.from(new Set(
-    ledgerRows
-      .filter((r) => r.txnId && (
+    allLedgerRows
+      .filter((r) => r.txnId && !isChiHoLedgerRow(r) && (
         r.txnType === TxnType.TRIP_REVENUE
         || r.txnType === TxnType.UNLOCK_REVERSAL
         || r.txnType === TxnType.PAYMENT_RECEIVED
@@ -874,8 +871,8 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   ));
 
   const serviceFeeIds = Array.from(new Set(
-    ledgerRows
-      .filter((r) => r.txnId && r.txnType === TxnType.SERVICE_FEE)
+    allLedgerRows
+      .filter((r) => r.txnId && isChiHoLedgerRow(r))
       .map((r) => r.txnId as number)
   ));
 
@@ -937,13 +934,14 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     }
   }
 
-  const tripDetailsMap = new Map<number, { tripCode: string | null; routeName: string | null; containerNumbers: string[]; departureDate: string | null }>();
+  const tripDetailsMap = new Map<number, { tripCode: string | null; routeName: string | null; containerNumbers: string[]; departureDate: string | null; customerId: number }>();
   if (tripIds.length > 0) {
     const tripRows = await db.select({
       tripId: s.trips.id,
       tripCode: s.trips.tripCode,
       routeName: s.routes.name,
       departureDate: s.trips.departureDate,
+      customerId: s.trips.customerId,
     }).from(s.trips)
       .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
       .where(inArray(s.trips.id, tripIds));
@@ -969,15 +967,17 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
         routeName: t.routeName,
         containerNumbers: containersByTrip.get(t.tripId) ?? [],
         departureDate: t.departureDate ?? null,
+        customerId: t.customerId,
       });
     }
   }
 
-  const enrichedLedgerRows = ledgerRows.map((r) => {
-    const feeDetails = r.txnType === TxnType.SERVICE_FEE && r.txnId
+  const enrichedLedgerRows = allLedgerRows.map((r) => {
+    const chiHoFeeRow = isChiHoLedgerRow(r);
+    const feeDetails = chiHoFeeRow && r.txnId
       ? serviceFeeMap.get(r.txnId)
       : undefined;
-    const directTripId = r.txnId && (
+    const directTripId = r.txnId && !chiHoFeeRow && (
       r.txnType === TxnType.TRIP_REVENUE
       || r.txnType === TxnType.UNLOCK_REVERSAL
       || r.txnType === TxnType.PAYMENT_RECEIVED
@@ -1003,6 +1003,46 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     };
   });
 
+  // NEPO-50 (AC1) — a chi-hộ row belongs to the book of the customer its TRIP
+  // belongs to (trips.customer_id), not to whichever ledger entity it was
+  // posted under: a trip reassigned between lock and unlock leaves its fee
+  // charge on the old customer's book and the '(Hoàn tác)' reversal on the new
+  // one. Drop chi-hộ rows whose resolved trip points at another customer; rows
+  // whose trip cannot be resolved stay — nothing proves them foreign.
+  // 'Doanh thu chuyến' rows keep their ledger-entity customer (AC3).
+  const customerOfTrip = (tripId: number | null | undefined): number | undefined =>
+    tripId != null ? tripDetailsMap.get(tripId)?.customerId : undefined;
+  const isForeignChiHoRow = (r: EnrichedLedgerRow): boolean => {
+    if (!isChiHoLedgerRow(r)) return false;
+    const owner = customerOfTrip(r.tripId);
+    return owner !== undefined && owner !== customerId;
+  };
+
+  // Projection rebuilt AFTER the scope filter so the running balance never
+  // carries the dropped foreign rows.
+  const ledgerRows = withReceivableProjectionBalances(
+    enrichedLedgerRows.filter((r) => !isForeignChiHoRow(r)),
+  );
+
+  // Debt owed TODAY, independent of the period filter. `totalOutstanding`
+  // below is derived from the period-filtered rows, so a scoped request would
+  // otherwise report the period's net movement as if it were the live balance.
+  const currentTotalOutstanding = computeAgingFor(ledgerRows, 'CUSTOMER', now).total;
+  const agingAsOfPeriodEnd = dateTo
+    ? computeAgingFor(
+      ledgerRows.filter((r) => new Date(r.timestamp).getTime() <= new Date(`${dateTo}T23:59:59.999`).getTime()),
+      'CUSTOMER',
+      new Date(`${dateTo}T23:59:59.999`),
+    ).buckets
+    : null;
+
+  // Latest activity across the WHOLE ledger (pre-filter) — the detail pages
+  // use it to default the period filter to the month that actually has data
+  // instead of the current month (which is often empty).
+  const latestActivityDate = ledgerRows.length > 0
+    ? ledgerRows.reduce((max, r) => r.timestamp > max ? r.timestamp : max, ledgerRows[0].timestamp).toISOString().slice(0, 10)
+    : null;
+
   const tripDepartureByTripId = new Map<number, string>();
   for (const [tripId, details] of tripDetailsMap) {
     if (details.departureDate) tripDepartureByTripId.set(tripId, details.departureDate);
@@ -1019,7 +1059,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     const departure = r.tripId != null ? tripDepartureByTripId.get(r.tripId) : undefined;
     return departure ?? ledgerDay(r.timestamp);
   };
-  const withVoucherDay = enrichedLedgerRows.map((r) => ({ row: r, day: voucherDayOf(r) }));
+  const withVoucherDay = ledgerRows.map((r) => ({ row: r, day: voucherDayOf(r) }));
 
   // Opening balance derives from every voucher dated strictly before the
   // period — same convention as computePeriodSummary, keyed by voucher day.
@@ -1036,7 +1076,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     ? withVoucherDay
       .filter(({ day }) => (!dateFrom || day >= dateFrom) && (!dateTo || day <= dateTo))
       .map(({ row }) => row)
-    : enrichedLedgerRows;
+    : ledgerRows;
 
   const { aging, openInvoices } = computeFifoAging(
     inPeriodRows.map((r) => ({
@@ -1109,7 +1149,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   if (!periodFrom || !periodTo) {
     let minTs: Date | null = null;
     let maxTs: Date | null = null;
-    for (const r of allLedgerRows) {
+    for (const r of ledgerRows) {
       if (!minTs || r.timestamp < minTs) minTs = r.timestamp;
       if (!maxTs || r.timestamp > maxTs) maxTs = r.timestamp;
     }
