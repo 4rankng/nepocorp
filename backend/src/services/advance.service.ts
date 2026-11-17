@@ -984,7 +984,10 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
         entityId: link.customerId,
         debit: delta > 0 ? delta : 0,
         credit: delta < 0 ? Math.abs(delta) : 0,
-        note: `Điều chỉnh phí chi hộ chuyến ${link.tripCode ?? ''}`.trim(),
+        // NEPO-48 wording — 'Điều chỉnh phí chi hộ <trip>' keeps the
+        // txn-table mapping prefix, never 'chuyến'; display normalizes the
+        // 'Điều chỉnh' away.
+        note: `Điều chỉnh phí chi hộ ${link.tripCode ?? ''}`.trim(),
       });
       postedThisRun.set(link.expenseId, (postedThisRun.get(link.expenseId) ?? 0) + delta);
     }

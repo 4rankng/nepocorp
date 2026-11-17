@@ -12,8 +12,8 @@
  * payment flow — aging, FIFO openInvoices and unpaidTrips are computed on the
  *   collapsed rows, so the THANH TOÁN amount never counts a reverted charge;
  * AC3 — 'Doanh thu chuyến' rows keep their ledger-entity customer;
- * trace — a reversal with no mirrored original still renders, annotated with
- *   a reversalTrace explaining where its original went.
+ * lone reversal — never renders either (NEPO-48 owner decision: hidden on
+ *   every surface so it cannot skew the book; the reversalTrace is gone).
  */
 import { after, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -164,7 +164,10 @@ describe('statement chi-hộ scope, Hoàn tác collapse + payment FIFO (NEPO-50)
     assert.equal(chiHoLinesA[0].docNo, tripA.tripCode, 'chi-hộ line joins its fee trip, not txnId-as-trip-id');
     assert.equal(chiHoLinesA[0].debit, 1_782_000);
     assert.ok(!/Hoàn tác/i.test(chiHoLinesA[0].description), 'no Hoàn tác marker on the live charge');
+    assert.ok(!chiHoLinesA[0].description.includes('chuyến') && !chiHoLinesA[0].description.includes('Điều chỉnh'),
+      `chi-hộ wording reads 'Phí chi hộ …' (NEPO-48), got '${chiHoLinesA[0].description}'`);
     assert.ok(!bookA.statementLines.some((l) => /Hoàn tác/i.test(l.description)), 'no reverted row renders on A book');
+    assert.ok(!bookA.ledgerRows.some((r) => r.txnType === TxnType.UNLOCK_REVERSAL), 'no reversal row renders anywhere on A book');
     assert.ok(!bookA.statementLines.some((l) => l.docNo === tripB.tripCode), 'foreign trip rows never render on A book');
     assert.equal(bookA.statementTotals.debitTotal, 1_782_000 + 27_664_524, 'totals exclude the dropped foreign charge');
     assert.equal(
@@ -203,7 +206,7 @@ describe('statement chi-hộ scope, Hoàn tác collapse + payment FIFO (NEPO-50)
     assert.ok(!bookB.statementLines.some((l) => l.docNo === tripA.tripCode), 'A rows never render on B book');
   });
 
-  test('txn_table gate — a trip planted at a fee id never captures the fee rows; lone reversals stay with a trace', async () => {
+  test('txn_table gate — a trip planted at a fee id never captures the fee rows; lone reversals never render', async () => {
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const [customerA] = await db.insert(s.customers).values({ name: `Gate A ${suffix}` }).returning();
     const [customerB] = await db.insert(s.customers).values({ name: `Gate B ${suffix}` }).returning();
@@ -257,8 +260,9 @@ describe('statement chi-hộ scope, Hoàn tác collapse + payment FIFO (NEPO-50)
       debit: '500000', credit: '0', balance: '500000',
       note: `Phí chi hộ chuyến ${tripA.tripCode}`, timestamp: new Date('2026-07-10T00:00:00Z'),
     });
-    // A lone reversal: credit with NO mirrored original anywhere — must stay
-    // visible (nothing proves it was undone) and carry a reversalTrace.
+    // A lone reversal: credit with NO mirrored original anywhere — NEPO-48
+    // owner decision: it must NOT render on any surface (it would only skew
+    // the book); no reversalTrace exists anymore.
     await db.insert(s.ledger).values({
       txnType: TxnType.UNLOCK_REVERSAL, txnId: feeA.id, txnTable: 'trip_expenses', entityType: 'CUSTOMER', entityId: customerA.id,
       debit: '0', credit: '777777', balance: '-277777',
@@ -282,11 +286,10 @@ describe('statement chi-hộ scope, Hoàn tác collapse + payment FIFO (NEPO-50)
       }
     }
 
-    // Lone reversal: still rendered (its credit is real on this book), with a
-    // reversalTrace explaining the missing original.
+    // Lone reversal: dropped from every surface (NEPO-48 owner decision).
     const loneReversals = bookA.ledgerRows.filter((r) => r.txnType === TxnType.UNLOCK_REVERSAL);
-    assert.equal(loneReversals.length, 1, 'an unpaired reversal stays visible');
-    assert.match(loneReversals[0].reversalTrace ?? '', /Không tìm thấy dòng gốc đối ứng/, 'trace explains the missing original');
+    assert.equal(loneReversals.length, 0, 'an unpaired reversal never renders');
+    assert.ok(bookA.statementLines.every((l) => !/Hoàn tác/i.test(l.description)), 'no Hoàn tác text anywhere on the book');
 
     // B's book: the trap trip belongs to B but carries no ledger rows of A.
     const bookB = await getStatementData(customerB.id);

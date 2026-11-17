@@ -1,20 +1,20 @@
 /**
- * Cover for the statement detail edit-cycle collapse (NEPO-43, generalized in
- * NEPO-44, any-instant pairing in NEPO-50): UNLOCK_REVERSAL + original pairs
- * that share entityType, txnId family and mirrored amount (debit↔credit) are
- * hidden from the chi tiết table (net 0 ₫) — TRIP_REVENUE,
+ * Cover for the VISIBLE ledger derivation (NEPO-43/44/50 pairing + NEPO-48
+ * owner decision): every UNLOCK_REVERSAL '(Hoàn tác)' row leaves the
+ * statement on every surface — paired or not — and the original row each
+ * reversal mirrors (same entityType, txnId family, mirrored amount
+ * debit↔credit, any instant) leaves with it: TRIP_REVENUE,
  * EXTERNAL_CARRIER_COST, DRIVER_SALARY, fuel/VENDOR_EXPENSE,
- * FORWARDER_ADVANCE alike — regardless of posting instant, so a reverted
- * charge never renders even when the cycle spans two saves. Chi-hộ rows pair
+ * FORWARDER_ADVANCE alike, regardless of posting instant. Chi-hộ rows pair
  * inside a `fee:` namespace so trip_expenses ids never cross-pair a
- * same-numbered trip's rows, and a genuinely lone UNLOCK_REVERSAL (no
- * original anywhere) stays visible. Aging/balances are computed upstream and
- * untouched — this function only filters display rows, every dropped pair
- * nets to exactly 0 ₫.
+ * same-numbered trip's rows. Unpaired originals and non-reversal rows
+ * (payments, penalties, odd-sign revenue) stay. Dropping a lone reversal
+ * changes the net by design — callers must derive balances/totals/aging
+ * from the returned set, never from the raw rows.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { collapseEditCyclePairs } from '../services/statement.service';
+import { visibleLedgerRows } from '../services/statement.service';
 import type { EnrichedLedgerRow } from '../services/statement.service';
 import { TxnType } from '@tingting/shared';
 
@@ -53,19 +53,18 @@ const reversal = (over: Partial<EnrichedLedgerRow> = {}) => row({
 
 const net = (rows: EnrichedLedgerRow[]) => rows.reduce((sum, r) => sum + Number(r.debit) - Number(r.credit), 0);
 
-describe('collapseEditCyclePairs', () => {
+describe('visibleLedgerRows', () => {
   it('hides a same-instant same-amount pair and keeps the net', () => {
     const rows = [revenue(), reversal()];
-    const collapsed = collapseEditCyclePairs(rows);
+    const collapsed = visibleLedgerRows(rows);
     assert.equal(collapsed.length, 0);
     assert.equal(net(rows), 0);
   });
 
-  it('keeps a lone UNLOCK_REVERSAL (trip genuinely reopened)', () => {
+  it('drops a lone UNLOCK_REVERSAL even with no mirrored original anywhere (NEPO-48)', () => {
     const rows = [reversal()];
-    const collapsed = collapseEditCyclePairs(rows);
-    assert.equal(collapsed.length, 1);
-    assert.equal(collapsed[0].txnType, TxnType.UNLOCK_REVERSAL);
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 0, 'the owner decision: reversal rows never render, unpaired included');
   });
 
   it('hides an old-amount correction pair across instants and leaves the new charge only', () => {
@@ -74,44 +73,50 @@ describe('collapseEditCyclePairs', () => {
       reversal({ timestamp: new Date('2026-10-09T08:00:00.000Z') }),
       revenue({ timestamp: new Date('2026-10-09T08:00:00.000Z'), debit: '7000000', credit: '0' }),
     ];
-    const collapsed = collapseEditCyclePairs(rows);
+    const collapsed = visibleLedgerRows(rows);
     assert.equal(collapsed.length, 1);
     assert.equal(Number(collapsed[0].debit), 7000000, 'the re-posted (current) amount survives');
     assert.equal(net(rows), net(collapsed), 'running net preserved');
   });
 
-  it('keeps pairs whose amount differs (revenue actually changed)', () => {
+  it('drops the lone reversal and keeps the unpaired original when amounts differ', () => {
     const rows = [revenue({ debit: '7000000' }), reversal()];
-    assert.equal(collapseEditCyclePairs(rows).length, 2);
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(collapsed[0].txnType, TxnType.TRIP_REVENUE, 'the real charge stays');
+    assert.equal(net(rows) - net(collapsed), -6480000, 'only the reversal amount left the book');
   });
 
-  it('keeps pairs whose txnId differs', () => {
+  it('drops the lone reversal and keeps the original when txnIds differ', () => {
     const rows = [revenue({ txnId: 297 }), reversal({ txnId: 296 })];
-    assert.equal(collapseEditCyclePairs(rows).length, 2);
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1);
+    assert.equal(collapsed[0].txnType, TxnType.TRIP_REVENUE);
   });
 
-  it('collapses only UNLOCK_REVERSAL pairs — payments, penalties, odd-sign revenue untouched', () => {
+  it('drops only UNLOCK_REVERSAL rows — payments, penalties, odd-sign revenue untouched', () => {
     const rows = [
       row({ txnType: TxnType.PAYMENT_RECEIVED, credit: '6480000' }),
       row({ txnType: TxnType.PENALTY, debit: '500000' }),
       row({ txnType: TxnType.TRIP_REVENUE, credit: '6480000' }), // odd sign, not a matchable debit
       reversal({ txnType: TxnType.UNLOCK_REVERSAL }),
     ];
-    assert.equal(collapseEditCyclePairs(rows).length, 4);
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 3, 'the lone reversal drops; payments/penalties/odd-sign revenue stay');
+    assert.ok(!collapsed.some((r) => r.txnType === TxnType.UNLOCK_REVERSAL));
   });
 
-  it('matches 1:1 — one revenue row absorbs one reversal, the extra reversal stays', () => {
+  it('matches 1:1 — one reversal absorbs one original; every reversal row drops regardless', () => {
     const instant = new Date('2026-10-08T07:24:17.897Z');
     const rows = [revenue({ timestamp: instant }), reversal({ timestamp: instant }), reversal({ timestamp: instant })];
-    const collapsed = collapseEditCyclePairs(rows);
-    assert.equal(collapsed.length, 1);
-    assert.equal(collapsed[0].txnType, TxnType.UNLOCK_REVERSAL);
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 0, 'both reversal rows drop; the absorbed original drops with the first');
   });
 
   it('is order-independent within the same instant', () => {
     const instant = new Date('2026-10-08T07:24:17.897Z');
     const rows = [reversal({ timestamp: instant }), revenue({ timestamp: instant })];
-    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(visibleLedgerRows(rows).length, 0);
   });
 
   it('collapses multiple legacy pairs and preserves the running net', () => {
@@ -124,7 +129,7 @@ describe('collapseEditCyclePairs', () => {
       reversal({ txnId: 296, timestamp: new Date('2026-10-08T07:35:29.237Z') }),
       row({ txnType: TxnType.PAYMENT_RECEIVED, credit: '10000000' }),
     ];
-    const collapsed = collapseEditCyclePairs(rows);
+    const collapsed = visibleLedgerRows(rows);
     assert.equal(collapsed.length, 1);
     assert.equal(collapsed[0].txnType, TxnType.PAYMENT_RECEIVED);
     assert.equal(net(rows), net(collapsed));
@@ -132,10 +137,10 @@ describe('collapseEditCyclePairs', () => {
 
   it('returns the same array when nothing matches (no allocation churn)', () => {
     const rows = [revenue(), revenue({ txnId: 297 })];
-    assert.equal(collapseEditCyclePairs(rows), rows);
+    assert.equal(visibleLedgerRows(rows), rows);
   });
 
-  // ── r2 (NEPO-44): generalized pairing — every entity the lock posts to ──
+  // ── generalized pairing — every entity the lock posts to ──
 
   const carrierCost = (over: Partial<EnrichedLedgerRow> = {}) => row({
     entityType: 'CARRIER',
@@ -158,7 +163,7 @@ describe('collapseEditCyclePairs', () => {
   it('collapses an EXTERNAL_CARRIER_COST churn pair (payable-statement noise)', () => {
     const instant = new Date('2026-09-21T10:36:10.000Z');
     const rows = [carrierCost({ timestamp: instant }), carrierReversal({ timestamp: instant })];
-    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(visibleLedgerRows(rows).length, 0);
     assert.equal(net(rows), 0);
   });
 
@@ -170,7 +175,7 @@ describe('collapseEditCyclePairs', () => {
       carrierReversal({ timestamp: new Date('2026-09-21T10:36:22.000Z') }),
       carrierCost({ timestamp: new Date('2026-09-21T10:36:22.000Z') }),
     ];
-    const collapsed = collapseEditCyclePairs(rows);
+    const collapsed = visibleLedgerRows(rows);
     assert.equal(collapsed.length, 1);
     assert.equal(collapsed[0].txnType, TxnType.EXTERNAL_CARRIER_COST);
     assert.equal(collapsed[0].id, rows[4].id, 'the newest re-posted charge survives');
@@ -183,7 +188,7 @@ describe('collapseEditCyclePairs', () => {
       row({ entityType: 'DRIVER', entityId: 5, txnType: TxnType.DRIVER_SALARY, credit: '4500000', timestamp: instant }),
       row({ entityType: 'DRIVER', entityId: 5, txnType: TxnType.UNLOCK_REVERSAL, debit: '4500000', timestamp: instant }),
     ];
-    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(visibleLedgerRows(rows).length, 0);
     assert.equal(net(rows), 0);
   });
 
@@ -193,7 +198,7 @@ describe('collapseEditCyclePairs', () => {
       row({ entityType: 'VENDOR', entityId: 3, txnType: TxnType.FUEL_EXPENSE, credit: '1620000', timestamp: instant }),
       row({ entityType: 'VENDOR', entityId: 3, txnType: TxnType.UNLOCK_REVERSAL, debit: '1620000', timestamp: instant }),
     ];
-    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(visibleLedgerRows(rows).length, 0);
     assert.equal(net(rows), 0);
   });
 
@@ -203,18 +208,18 @@ describe('collapseEditCyclePairs', () => {
       row({ entityType: 'FORWARDER', entityId: 6, txnType: TxnType.FORWARDER_ADVANCE, credit: '50000000', timestamp: instant }),
       row({ entityType: 'FORWARDER', entityId: 6, txnType: TxnType.UNLOCK_REVERSAL, debit: '50000000', timestamp: instant }),
     ];
-    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(visibleLedgerRows(rows).length, 0);
     assert.equal(net(rows), 0);
   });
 
   it('hides a carrier charge undone later with no re-post — net 0 leaves nothing to display', () => {
     const rows = [carrierCost(), carrierReversal({ timestamp: new Date('2026-09-22T08:00:00.000Z') })];
-    const collapsed = collapseEditCyclePairs(rows);
+    const collapsed = visibleLedgerRows(rows);
     assert.equal(collapsed.length, 0);
     assert.equal(net(rows), net(collapsed), 'running net preserved');
   });
 
-  // ── r3 (NEPO-50): any-instant pairing + chi-hộ fee namespace ──
+  // ── any-instant pairing + chi-hộ fee namespace ──
 
   const chiHoFee = (over: Partial<EnrichedLedgerRow> = {}) => row({
     txnType: TxnType.SERVICE_FEE,
@@ -238,7 +243,7 @@ describe('collapseEditCyclePairs', () => {
       chiHoReversal({ timestamp: new Date('2026-08-12T03:42:14.000Z') }),
       chiHoFee({ timestamp: new Date('2026-08-12T03:42:14.000Z') }),
     ];
-    const collapsed = collapseEditCyclePairs(rows);
+    const collapsed = visibleLedgerRows(rows);
     assert.equal(collapsed.length, 1);
     assert.equal(collapsed[0].txnType, TxnType.SERVICE_FEE);
     assert.equal(net(rows), net(collapsed), 'running net preserved');
@@ -249,9 +254,9 @@ describe('collapseEditCyclePairs', () => {
       chiHoFee(),
       reversal({ txnId: 222, credit: '1782000', note: 'Doanh thu chuyến TRP-202608-0030 (Hoàn tác)' }),
     ];
-    const collapsed = collapseEditCyclePairs(rows);
-    assert.equal(collapsed.length, 2, 'trip 222 revenue reversal must not consume fee 222 charge');
-    assert.equal(net(rows), net(collapsed));
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1, 'the trip-222 revenue reversal cannot consume the fee-222 charge; it drops alone');
+    assert.equal(collapsed[0].txnType, TxnType.SERVICE_FEE, 'the live fee charge survives');
   });
 
   it('never cross-pairs ledgers: same txnId/amount/instant on a different entityType stays', () => {
@@ -260,7 +265,9 @@ describe('collapseEditCyclePairs', () => {
       carrierCost({ timestamp: instant }),
       carrierReversal({ entityType: 'CUSTOMER', entityId: 7, timestamp: instant }),
     ];
-    assert.equal(collapseEditCyclePairs(rows).length, 2);
+    const collapsed = visibleLedgerRows(rows);
+    assert.equal(collapsed.length, 1, 'the cross-ledger reversal drops alone; the cost row stays');
+    assert.equal(collapsed[0].txnType, TxnType.EXTERNAL_CARRIER_COST);
   });
 
   it('pairs each row at most once, oldest-first, when identical pairs repeat at one instant', () => {
@@ -271,7 +278,23 @@ describe('collapseEditCyclePairs', () => {
       carrierReversal({ timestamp: instant }),
       carrierReversal({ timestamp: instant }),
     ];
-    assert.equal(collapseEditCyclePairs(rows).length, 0);
+    assert.equal(visibleLedgerRows(rows).length, 0);
     assert.equal(net(rows), 0);
+  });
+
+  it('mixed book: paired original + lone reversal + payment → only the payment renders', () => {
+    // The demo TRP-202607-0044 shape (NEPO-48): chi-hộ reversals with no
+    // mirrored original on this book sat next to real rows and skewed the
+    // totals. The visible ledger is exactly the rows a book should show.
+    const rows = [
+      row({ txnType: TxnType.SERVICE_FEE, txnId: 11, debit: '1404000', note: 'Phí chi hộ TRP-202607-0044' }),
+      row({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 11, credit: '1404000', note: 'Phí chi hộ TRP-202607-0044 (Hoàn tác)' }),
+      row({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 12, credit: '250000', note: 'Phí chi hộ TRP-202607-0044 (Hoàn tác)' }),
+      row({ txnType: TxnType.UNLOCK_REVERSAL, txnId: 13, credit: '1188000', note: 'Phí chi hộ TRP-202607-0044 (Hoàn tác)' }),
+      row({ txnType: TxnType.PAYMENT_RECEIVED, credit: '90978520', receiptId: 'PT-9214' }),
+    ];
+    const collapsed = visibleLedgerRows(rows);
+    assert.deepEqual(collapsed.map((r) => r.txnType), [TxnType.PAYMENT_RECEIVED]);
+    assert.equal(net(rows) - net(collapsed), -250000 - 1188000, 'only the lone reversal credits left the book');
   });
 });

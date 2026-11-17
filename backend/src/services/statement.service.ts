@@ -10,7 +10,6 @@ import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
 import { getCompanyInfo } from './company-info.service';
 import { CustomerAgingListItem } from './aging.service';
-import { txnTableFor } from '../lib/ledger-txn-table';
 
 type LedgerRow = typeof s.ledger.$inferSelect;
 // Ledger rows enriched with related trip context for customer and supplier displays.
@@ -20,10 +19,6 @@ export type EnrichedLedgerRow = LedgerRow & {
   tripId?: number | null;
   tripCode?: string | null;
   serviceFeeLabel?: string | null;
-  /** NEPO-50 — present on surviving '(Hoàn tác)' reversals only: explains why
-   * the reversal still renders (its mirrored original sits on another ledger or
-   * is missing entirely). */
-  reversalTrace?: string | null;
   fuelDetails?: {
     departureDate: string;
     truckPlate: string | null;
@@ -427,30 +422,33 @@ function computeAgingFor(
 }
 
 /**
- * Collapse edit-cycle noise from statement detail tables (NEPO-43 r2, NEPO-50
- * r3: every entity, every surface). While a trip was COMPLETED, updateTripFigures
- * ran a full postTripUnlock + postTripLock cycle on every save even when
- * nothing ledger-relevant changed, minting an UNLOCK_REVERSAL + re-posted
- * original — a net-0 pair that only clutters the chi tiết table. NEPO-50 r3:
- * a reversal pairs its original REGARDLESS of instant (same entityType and
- * txnId, mirrored amount debit↔credit), so a reverted charge never renders —
- * the cycle may span two saves, and a same-amount cycle leaves exactly the
- * re-posted row while an amount-changed cycle leaves the new amount only. A
- * reversal with NO matching original (nothing proves it was undone on this
- * book) still shows, and payments, penalties etc. are never dropped.
+ * Derives the VISIBLE ledger from the raw rows — the only ledger every
+ * statement figure (display rows, running balance, period totals, FIFO
+ * payment allocation) may be computed on (NEPO-48 owner decision):
  *
- * Matching is generic across every pair the lock can mint — CUSTOMER↔
- * TRIP_REVENUE / SERVICE_FEE, CARRIER↔EXTERNAL_CARRIER_COST,
- * DRIVER↔DRIVER_SALARY, VENDOR↔fuel (FUEL_EXPENSE / VENDOR_EXPENSE),
- * FORWARDER↔FORWARDER_ADVANCE. Chi-hộ rows (SERVICE_FEE family, fee id in
- * txnId) carry a `fee:` key prefix: trip_expenses.id and trips.id share one
- * numeric space, so a chi-hộ reversal must never pair a same-numbered trip's
- * revenue rows. Aging, balances and period summary are computed upstream on
- * the uncollapsed rows and stay untouched — this only filters display rows,
- * and every dropped pair nets to exactly 0 ₫ so Σ dòng reconciles against
- * đầu/cuối kỳ unchanged.
+ * 1. EVERY UNLOCK_REVERSAL '(Hoàn tác)' row is dropped — paired or not. The
+ *    accountants never book the unlock and the re-post as one entry, so the
+ *    reversal rows only skew the book (they leaked into TỔNG PHÁT SINH and
+ *    the FIFO allocation on demo data TRP-202607-0044).
+ * 2. An original row mirrored by a dropped reversal (same entity, same txn
+ *    namespace, mirrored amount debit↔credit, any instant) is dropped with
+ *    it — the net-0 pair the reversal existed to cancel.
+ * 3. Unpaired originals stay: the charge is real on this book.
+ *
+ * Pairing is 1:1 (oldest original first) and generic across every pair the
+ * lock can mint — CUSTOMER↔TRIP_REVENUE / SERVICE_FEE,
+ * CARRIER↔EXTERNAL_CARRIER_COST, DRIVER↔DRIVER_SALARY, VENDOR↔fuel
+ * (FUEL_EXPENSE / VENDOR_EXPENSE), FORWARDER↔FORWARDER_ADVANCE. Chi-hộ rows
+ * (SERVICE_FEE family, fee id in txnId) carry a `fee:` key prefix:
+ * trip_expenses.id and trips.id share one numeric space, so a chi-hộ
+ * reversal must never pair a same-numbered trip's revenue rows.
+ *
+ * Dropping a lone reversal changes the net by design — that is the owner
+ * decision (the credit was never a real customer payment). Callers MUST
+ * derive balances/totals/aging from the returned set, never from the raw
+ * rows, so Σ dòng always reconciles against đầu/cuối kỳ.
  */
-export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
+export function visibleLedgerRows(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
   // Bucket matchable original rows by entity|txn family|side:amount so a
   // reversal matches at most one original row (1:1), any instant. entityType/
   // entityId are part of the key: statement builders merge ledgers (e.g. the
@@ -486,11 +484,16 @@ export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedge
 
   const dropped = new Set<number>();
   rows.forEach((row, index) => {
-    if (row.txnType !== TxnType.UNLOCK_REVERSAL || row.txnId == null) return;
+    // NEPO-48 owner decision — every reversal row leaves the visible ledger,
+    // even when no mirrored original exists on this book.
+    if (row.txnType !== TxnType.UNLOCK_REVERSAL) return;
+    dropped.add(index);
+    if (row.txnId == null) return;
     const debit = Number(row.debit ?? 0);
     const credit = Number(row.credit ?? 0);
     // A reversal mirrors exactly one original side: its credit cancels an
-    // original debit, its debit cancels an original credit.
+    // original debit, its debit cancels an original credit. The mirrored
+    // original leaves with it; a surplus original stays visible.
     const key = debit > 0
       ? bucketKey(row, 'c', debit)
       : credit > 0
@@ -498,9 +501,7 @@ export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedge
         : null;
     if (key === null) return;
     const originalIndex = originalBuckets.get(key)?.shift();
-    if (originalIndex === undefined) return;
-    dropped.add(index);
-    dropped.add(originalIndex);
+    if (originalIndex !== undefined) dropped.add(originalIndex);
   });
 
   if (dropped.size === 0) return rows;
@@ -575,17 +576,22 @@ const stripDocNoFromNote = (note: string, docNo: string | null): string => {
     .trim();
 };
 
-/** Advance-settlement chi-hộ adjustments post 'Điều chỉnh phí chi hộ chuyến
- * <code>' rows (SERVICE_FEE). The sổ already carries the code in its Số hiệu
- * column, and 'Điều chỉnh …' reads like a correction banner rather than the
- * fee itself (NEPO-48): normalize to 'Phí chi hộ' — the same label plain
- * chi-hộ rows get — keeping any trailing marker ('(Hoàn tác)') intact. */
-const normalizeChiHoAdjust = (note: string): string =>
-  note.replace(/^Điều chỉnh\s+phí chi hộ(?:\s+chuyến)?\s*/, 'Phí chi hộ ').trim();
+/** Advance-settlement chi-hộ adjustments post 'Điều chỉnh phí chi hộ
+ * <code>' rows, plain charges post 'Phí chi hộ chuyến <code>' (legacy data);
+ * the sổ carries the code in its Số hiệu column (NEPO-46) and 'Điều chỉnh …'
+ * reads like a correction banner (NEPO-48): normalize every chi-hộ note to
+ * 'Phí chi hộ' — no 'Điều chỉnh', no 'chuyến' — keeping any trailing marker
+ * ('(Hoàn tác)') intact. The same normalization is applied to the chi-hộ
+ * notes at row enrichment, so the raw chi tiết list reads the same wording. */
+const normalizeChiHoNote = (note: string): string =>
+  note
+    .replace(/^Điều chỉnh\s+phí chi hộ(?:\s+chuyến)?(?=\s|$)/, 'Phí chi hộ')
+    .replace(/^Phí chi hộ\s+chuyến(?=\s|$)/, 'Phí chi hộ')
+    .trim();
 
 /**
  * Builds the MISA 'Sổ chi tiết' lines (NEPO-46) from the statement's display
- * rows (already voucher-date-filtered + collapseEditCyclePairs'd, NEPO-48) and
+ * rows (already voucher-date-filtered + visibleLedgerRows'd, NEPO-48) and
  * the period opening balance. Lines come out ascending by voucher date (ngày
  * đi chuyến / ngày nhận), the order the Fast book renders.
  *
@@ -683,7 +689,7 @@ export function buildStatementLines(
       docNo: isPayment ? (r.receiptId ?? null) : (r.tripCode ?? null),
       description: isPayment
         ? paymentLineDescription(customerName, method)
-        : normalizeChiHoAdjust(stripDocNoFromNote(r.note ?? 'Ghi nhận công nợ', r.tripCode ?? null)),
+        : normalizeChiHoNote(stripDocNoFromNote(r.note ?? 'Ghi nhận công nợ', r.tripCode ?? null)),
       method,
       counterAccount: counterAccountFor(r, isPayment),
       debit,
@@ -1009,6 +1015,10 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     const feeContainerNumber = feeDetails?.containerNumber ?? legacyFeeDetails?.containerNumber ?? null;
     return {
       ...r,
+      // NEPO-48 — chi-hộ notes normalize once here so every surface that
+      // renders the row (raw chi tiết list, sổ lines, exports) reads
+      // 'Phí chi hộ …' without 'Điều chỉnh'/'chuyến'.
+      note: chiHoFeeRow ? normalizeChiHoNote(r.note ?? '') : r.note,
       routeName: details?.routeName ?? null,
       containerNumbers: feeContainerNumber
         ? [feeContainerNumber]
@@ -1034,10 +1044,13 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     return owner !== undefined && owner !== customerId;
   };
 
-  // Projection rebuilt AFTER the scope filter so the running balance never
-  // carries the dropped foreign rows.
+  // NEPO-48 — the visible ledger: foreign chi-hộ rows out, then every
+  // UNLOCK_REVERSAL row out (together with the original each one mirrors).
+  // The receivable projection is rebuilt on the visible set so the running
+  // balance, period totals and FIFO allocation all read the same book —
+  // never "balance on raw, filter for display".
   const ledgerRows = withReceivableProjectionBalances(
-    enrichedLedgerRows.filter((r) => !isForeignChiHoRow(r)),
+    visibleLedgerRows(enrichedLedgerRows.filter((r) => !isForeignChiHoRow(r))),
   );
 
   // Debt owed TODAY, independent of the period filter. `totalOutstanding`
@@ -1075,19 +1088,18 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     const departure = r.tripId != null ? tripDepartureByTripId.get(r.tripId) : undefined;
     return departure ?? ledgerDay(r.timestamp);
   };
-  const withVoucherDay = ledgerRows.map((r) => ({ row: r, day: voucherDayOf(r) }));
+  const visibleWithDay = ledgerRows.map((r) => ({ row: r, day: voucherDayOf(r) }));
 
-  // NEPO-50 (kế toán feedback 17/11) — collapse runs on the FULL voucher set
+  // NEPO-50 — the visible-ledger derivation ran on the FULL voucher set
   // BEFORE any period math: a charge and its '(Hoàn tác)' reversal always
-  // share their trip's voucher day, so pairing can never be split by a period
-  // window. Everything downstream — period summary, aging, the per-trip FIFO
-  // that feeds the THANH TOÁN flow, the sổ lines — reads the collapsed set, so
-  // a payment is never computed against a reverted (net-0) charge. Net-0
-  // pairs render on NO surface; a reversal that survives pairing has no
-  // mirrored original on this book and stays visible with a `reversalTrace`
-  // explaining where its original went.
-  const collapsedRows = collapseEditCyclePairs(withVoucherDay.map(({ row }) => row));
-  const collapsedWithDay = collapsedRows.map((row) => ({ row, day: voucherDayOf(row) }));
+  // share their trip's voucher day, so pairing can never be split by a
+  // period window. Everything downstream — period summary, aging, the
+  // per-trip FIFO that feeds the THANH TOÁN flow, the sổ lines — reads the
+  // same visible set, so a payment is never computed against a reverted
+  // charge and no '(Hoàn tác)' row renders on any surface (NEPO-48 owner
+  // decision: the accountants never book the unlock together with the
+  // re-post, so the reversal rows only skew the book).
+  const collapsedWithDay = visibleWithDay;
 
   // Opening balance derives from every voucher dated strictly before the
   // period — same convention as computePeriodSummary, keyed by voucher day.
@@ -1104,7 +1116,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     ? collapsedWithDay
       .filter(({ day }) => (!dateFrom || day >= dateFrom) && (!dateTo || day <= dateTo))
       .map(({ row }) => row)
-    : collapsedRows;
+    : collapsedWithDay.map(({ row }) => row);
 
   const { aging, openInvoices } = computeFifoAging(
     inPeriodRows.map((r) => ({
@@ -1155,62 +1167,12 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   const unpaidTrips = Array.from(tripOutstanding.values())
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // NEPO-46 sổ chi tiết: build from the already-collapsed display rows the
+  // NEPO-46 sổ chi tiết: build from the already-visible display rows the
   // response renders, seeded by the period opening balance (0 for the
-  // unscoped whole-ledger statement — the book starts at zero).
-  let displayRows = inPeriodRows;
-
-  // NEPO-50 — surviving '(Hoàn tác)' reversals carry a trace: pairing already
-  // consumed every mirrored original on this book, so a survivor's original
-  // either sits on another customer's ledger (trip reassigned between lock and
-  // unlock) or never existed (legacy/anomalous data). One grouped query
-  // resolves both cases for the badge tooltip.
-  const survivingReversals = displayRows.filter((r) => r.txnType === TxnType.UNLOCK_REVERSAL && r.txnId != null);
-  if (survivingReversals.length > 0) {
-    const reversalTxnIds = survivingReversals.map((r) => r.txnId as number);
-    const candidates = await db.select({
-      id: s.ledger.id,
-      txnId: s.ledger.txnId,
-      txnTable: s.ledger.txnTable,
-      txnType: s.ledger.txnType,
-      entityType: s.ledger.entityType,
-      entityId: s.ledger.entityId,
-      debit: s.ledger.debit,
-      credit: s.ledger.credit,
-      note: s.ledger.note,
-    })
-      .from(s.ledger)
-      .where(and(inArray(s.ledger.txnId, reversalTxnIds), ne(s.ledger.txnType, TxnType.UNLOCK_REVERSAL)));
-
-    const traceByRowId = new Map<number, string>();
-    for (const reversal of survivingReversals) {
-      const reversalTable = reversal.txnTable ?? txnTableFor(reversal.txnType, reversal.txnId, reversal.note);
-      const mirroredCredit = Number(reversal.credit ?? 0);
-      const mirroredDebit = Number(reversal.debit ?? 0);
-      const originals = candidates.filter((c) => {
-        if (c.txnId !== reversal.txnId) return false;
-        const candidateTable = c.txnTable ?? txnTableFor(c.txnType, c.txnId, c.note);
-        if (candidateTable !== reversalTable) return false;
-        return mirroredCredit > 0 ? Number(c.debit) === mirroredCredit : Number(c.credit) === mirroredDebit;
-      });
-      if (originals.length === 0) {
-        traceByRowId.set(reversal.id, 'Không tìm thấy dòng gốc đối ứng cùng số tiền — dòng gốc đã bị xóa hoặc chưa từng tồn tại (dữ liệu cũ).');
-        continue;
-      }
-      const onOtherBook = originals.find((c) => !(c.entityType === reversal.entityType && c.entityId === reversal.entityId));
-      traceByRowId.set(
-        reversal.id,
-        onOtherBook
-          ? `Dòng gốc đối ứng nằm trên sổ khác: ${onOtherBook.entityType} #${onOtherBook.entityId} (ledger #${onOtherBook.id}).`
-          : `Dòng gốc đối ứng: ledger #${originals[0].id} (cùng sổ, khác số tiền hoặc đã đối ứng ở kỳ khác).`,
-      );
-    }
-
-    displayRows = displayRows.map((r) => {
-      const trace = traceByRowId.get(r.id);
-      return trace ? { ...r, reversalTrace: trace } : r;
-    });
-  }
+  // unscoped whole-ledger statement — the book starts at zero). No
+  // '(Hoàn tác)' row survives into displayRows (visibleLedgerRows drops
+  // every reversal), so the NEPO-50 reversal trace is gone with them.
+  const displayRows = inPeriodRows;
 
   const { lines: statementLines, totals: statementTotals } = buildStatementLines(
     displayRows,
@@ -1320,7 +1282,10 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
   if (!supplier) throw new ApiError(404, 'Không tìm thấy nhà cung cấp');
 
   const allLedgerRows: EnrichedLedgerRow[] = await LedgerService.getEntriesByEntity('VENDOR', supplierId);
-  let ledgerRows = allLedgerRows;
+  // NEPO-48 — everything on this statement (display rows, period summary,
+  // aging, FIFO) reads the visible ledger: UNLOCK_REVERSAL rows out, the
+  // original each one mirrors out with them.
+  let ledgerRows = visibleLedgerRows(allLedgerRows);
 
   // Whole-ledger facts computed before any date filtering: the fuel-supplier
   // marker (drives the "Bảng kê xăng dầu" button) and the latest activity
@@ -1334,10 +1299,10 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
   // The debt the supplier is owed TODAY, independent of the period filter —
   // `/payables/:id` used to show the period's net movement under a "TỔNG CÔNG NỢ"
   // heading instead, which made September read 265tr against a real 1.04bn.
-  const currentTotalOutstanding = computeAgingFor(allLedgerRows, 'VENDOR', now).total;
+  const currentTotalOutstanding = computeAgingFor(ledgerRows, 'VENDOR', now).total;
   const agingAsOfPeriodEnd = dateTo
     ? computeAgingFor(
-      allLedgerRows.filter((r) => new Date(r.timestamp).getTime() <= new Date(`${dateTo}T23:59:59.999`).getTime()),
+      ledgerRows.filter((r) => new Date(r.timestamp).getTime() <= new Date(`${dateTo}T23:59:59.999`).getTime()),
       'VENDOR',
       new Date(`${dateTo}T23:59:59.999`),
     ).buckets
@@ -1446,9 +1411,9 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
 
   return {
     supplier,
-    // Display rows only — totalOutstanding/currentTotalOutstanding/aging and
-    // periodSummary above are computed from the uncollapsed rows (r1 rule).
-    ledgerRows: collapseEditCyclePairs(ledgerRows),
+    // Display rows — the same visible set every figure above is computed
+    // from, so Σ dòng always reconciles against đầu/cuối kỳ.
+    ledgerRows,
     totalOutstanding,
     currentTotalOutstanding,
     agingAsOfPeriodEnd,
@@ -2052,11 +2017,16 @@ export async function getCarrierPayableStatement(
     row => !(isCarrierRow(row) && row.txnId != null && tripsOnCarrierLedger.has(row.txnId)),
   );
 
-  let ledgerRows: EnrichedLedgerRow[] = [...historicalRowsDeduped, ...currentRows]
-    .filter(row =>
+  // NEPO-48 — the visible ledger: '(Hoàn tác)' reversal rows drop (the cost
+  // row each one mirrors drops with them) BEFORE the projection balances,
+  // period summary and FIFO aging are computed, so no figure on this
+  // statement reads the raw ledger.
+  let ledgerRows: EnrichedLedgerRow[] = visibleLedgerRows(
+    [...historicalRowsDeduped, ...currentRows].filter(row =>
       isCarrierRow(row)
       || row.txnType === TxnType.VENDOR_PAYMENT
-    );
+    ),
+  );
 
   const tripIds = Array.from(new Set(
     ledgerRows
@@ -2108,9 +2078,9 @@ export async function getCarrierPayableStatement(
 
   return {
     supplier: carrier,
-    // Display rows only — totalOutstanding/agingBuckets/periodSummary are
-    // computed from the uncollapsed rows (r1 rule).
-    ledgerRows: collapseEditCyclePairs(ledgerRows),
+    // Display rows — the same visible set every figure above is computed
+    // from, so Σ dòng always reconciles against đầu/cuối kỳ.
+    ledgerRows,
     totalOutstanding,
     agingBuckets: [
       { range: '0-30 ngày', amount: aging.current },

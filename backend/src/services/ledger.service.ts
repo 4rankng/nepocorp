@@ -484,7 +484,8 @@ export class LedgerService {
         entityId: trip.customerId,
         debit: sellAmt,
         credit: 0,
-        note: label ? `Phí chi hộ chuyến ${label}` : 'Phí chi hộ',
+        // NEPO-48 wording — 'Phí chi hộ <trip>', never 'Phí chi hộ chuyến'.
+        note: label ? `Phí chi hộ ${label}` : 'Phí chi hộ',
       });
     }
 
@@ -610,7 +611,8 @@ export class LedgerService {
         entityId: trip.customerId,
         debit: 0,
         credit: sellAmt,
-        note: label ? `Phí chi hộ chuyến ${label} (Hoàn tác)` : 'Phí chi hộ (Hoàn tác)',
+        // NEPO-48 wording — 'Phí chi hộ <trip> (Hoàn tác)', never 'chuyến'.
+        note: label ? `Phí chi hộ ${label} (Hoàn tác)` : 'Phí chi hộ (Hoàn tác)',
       });
     }
 

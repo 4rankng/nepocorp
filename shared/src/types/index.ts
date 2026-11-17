@@ -483,14 +483,11 @@ export interface LedgerEntry {
   } | null;
   expenseDetails?: {
     expenseDate: string;
-    vehiclePlate: string | null;
+    vehiclePlate: string;
     vehicleComponent: 'TRUCK' | 'TRAILER' | null;
     categoryName: string;
     amount: string;
   } | null;
-  /** NEPO-50 — '(Hoàn tác)' reversals that survive pairing explain why they
-   * still render (original on another ledger, or original missing). */
-  reversalTrace?: string | null;
 }
 
 export interface Penalty {

@@ -246,20 +246,25 @@ describe('buildStatementLines — diễn giải strips the duplicated trip code'
     assert.equal(lines[1].description, 'Điều chỉnh theo TRP-202609-0001', 'a different trip reference survives');
   });
 
-  test('chi-hộ adjustments read Phí chi hộ — Điều chỉnh + chuyến dropped (NEPO-48)', () => {
+  test('chi-hộ lines read Phí chi hộ — Điều chỉnh + chuyến dropped everywhere (NEPO-48)', () => {
     const rows = [
       row({ ts: '2026-10-28T00:00:00Z', txnType: TxnType.SERVICE_FEE, debit: 1_000_000, note: 'Điều chỉnh phí chi hộ chuyến TRP-202610-0070', txnId: 70, tripId: 70, tripCode: 'TRP-202610-0070', routeName: 'Hải Phòng — Hà Nội' }),
-      // A plain chi-hộ fee row keeps its own wording — only the Điều chỉnh family normalizes.
+      // Plain (legacy) chi-hộ notes normalize the same way — every chi-hộ
+      // line reads 'Phí chi hộ', never 'chuyến'.
       row({ ts: '2026-10-28T00:00:00Z', txnType: TxnType.SERVICE_FEE, debit: 1_965_600, note: 'Phí chi hộ chuyến TRP-202610-0035', txnId: 35, tripId: 35, tripCode: 'TRP-202610-0035' }),
+      // Future postings already say 'Phí chi hộ <trip>' — idempotent.
+      row({ ts: '2026-10-28T00:00:00Z', txnType: TxnType.SERVICE_FEE, debit: 500_000, note: 'Phí chi hộ TRP-202610-0011', txnId: 11, tripId: 11, tripCode: 'TRP-202610-0011' }),
     ];
     const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(lines[0].description, 'Phí chi hộ');
-    assert.equal(lines[1].description, 'Phí chi hộ chuyến');
+    assert.equal(lines[1].description, 'Phí chi hộ');
+    assert.equal(lines[2].description, 'Phí chi hộ');
 
     // The Fast voucher line renders the normalized label + route detail.
-    const { vouchers } = buildFastStatement(lines, { openingBalance: 0, debitTotal: 2_965_600, creditTotal: 0, closingBalance: 2_965_600 });
+    const { vouchers } = buildFastStatement(lines, { openingBalance: 0, debitTotal: 3_465_600, creditTotal: 0, closingBalance: 3_465_600 });
     assert.equal(vouchers[0].lines[0].description, 'Phí chi hộ — Hải Phòng — Hà Nội');
-    assert.equal(vouchers[1].lines[0].description, 'Phí chi hộ chuyến');
+    assert.equal(vouchers[1].lines[0].description, 'Phí chi hộ');
+    assert.equal(vouchers[2].lines[0].description, 'Phí chi hộ');
   });
 });
 
