@@ -219,7 +219,7 @@ describe('debt detail period and tab state are stable across reloads (kanban 091
     gate.resolve(periodStatement);
     expect(await screen.findByText('1 khoản phát sinh')).toBeTruthy();
     // The sổ renders the Fast layout: opening row + the voucher table.
-    expect(await screen.findByText('SỐ DƯ ĐẦU KỲ')).toBeTruthy();
+    expect(await screen.findByText('SỐ DƯ ĐẦU KỲ:')).toBeTruthy();
     expect(screen.getByText('TRIP-0805')).toBeTruthy();
     // The per-entry ledger stays one click away and renders its rows.
     fireEvent.click(screen.getByRole('tab', { name: /Chi tiết công nợ/ }));
