@@ -11,25 +11,29 @@ import {
   type MarkerGeom,
 } from "./tyrePositions";
 
-const TIRE_STROKE = "#9aa3ad";
-const RED = "#d62828";
-const MUTED = "#8a99b0";
-const OUTLINE = "#c9ccd4";
-const PINK_FILL = "#fdeaea";
-const PINK_STROKE = "#e5b5b5";
-const SLAB_FILL = "#ececf0";
+/* Palette lifted verbatim from the owner's board mockups
+   (Bảng theo dõi lốp – 15H-168.73.html): sheet grays, pink tractor, blue
+   axle lines, big watermark section numerals, red position numerals. */
+const BOX_FILL = "#f6f6f6";
+const BOX_LINE = "#cfcfcf";
+const WHEEL_GRAY = "#c9c9c9";
+const BODY_FILL = "#fde9e7";
+const BODY_STROKE = "#f3b3ad";
+const AXLE_GRAY = "#ccd2d9";
+const BIG_GRAY = "#c4c7c3";
+const NUM_RED = "#d64545";
 
 const STATUS_STYLE: Record<TyreStatus, { fill: string; stroke: string; label: string }> = {
-  good: { fill: "#cfe8d5", stroke: "#3f8f5a", label: "tốt" },
-  warn: { fill: "#f6e3b4", stroke: "#c98a12", label: "cần chú ý" },
-  bad: { fill: "#f5c9c4", stroke: "#c0392b", label: "cần thay" },
-  empty: { fill: "#dcdcdc", stroke: "#a9a9a9", label: "chưa lắp" },
+  good: { fill: "#dcf2e3", stroke: "#2e9e5b", label: "tốt" },
+  warn: { fill: "#fff3cd", stroke: "#d3940b", label: "cần chú ý" },
+  bad: { fill: "#fde2e0", stroke: "#d64545", label: "cần thay" },
+  empty: { fill: "#e8eaed", stroke: "#9aa0a6", label: "chưa lắp" },
 };
 
-/** Pill fill/stroke + status label for one slot. Spares keep their yellow
- *  dashed look regardless of age. */
+/** Pill fill/stroke + status label for one slot. Spares use a neutral gray
+ *  dashed outline — "not installed yet" reserve, no wear color. */
 function pillStyle(slot: TyreBoardSlot | undefined, spare: boolean) {
-  if (spare) return { fill: "#fffbe9", stroke: "#b5a13a", dash: "4 3", label: "dự phòng" };
+  if (spare) return { fill: "#f1f3f5", stroke: "#9aa0a6", dash: "5 3", label: "dự phòng" };
   const st = tyreStatus(slot);
   return { ...STATUS_STYLE[st], dash: undefined };
 }
@@ -40,33 +44,40 @@ interface Props {
   onSerialCommit: (position: number, raw: string) => void;
 }
 
-/** Decorative side-view wheel: dark donut, white hub, axle dot. */
-function Wheel({ cx, cy, r }: { cx: number; cy: number; r: number }) {
+/** Donut wheel from the mockup: wide gray ring + small blue hub dot. */
+function Wheel({ x, y }: { x: number; y: number }) {
   return (
-    <g>
-      <circle cx={cx} cy={cy} r={r} fill="#adb5be" stroke="#969ea8" strokeWidth={1} />
-      <circle cx={cx} cy={cy} r={Math.round(r * 0.42)} fill="#fff" />
-      <circle cx={cx} cy={cy} r={3} fill={MUTED} />
+    <g transform={`translate(${x}, ${y})`}>
+      <circle r={32} fill="none" stroke={WHEEL_GRAY} strokeWidth={20} />
+      <circle r={4.5} fill="#8a99b0" />
     </g>
   );
 }
 
-/** Gray numeral annotation on the decorative side view (no badge circle). */
-function Callout({ x, y, n }: { x: number; y: number; n: string }) {
+/** Big gray watermark numeral (side-view part labels, section braces).
+ *  `counterRotate` keeps the text horizontal inside the portrait's rotated
+ *  scene group (the mockup's own mobile transform). */
+function BigNum({ x, y, n, counterRotate = false }: { x: number; y: number; n: string; counterRotate?: boolean }) {
   return (
-    <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="16" fill={MUTED} fontWeight={600}>
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      fontSize="40"
+      fontWeight={300}
+      fill={BIG_GRAY}
+      transform={counterRotate ? `rotate(-90 ${x} ${y})` : undefined}
+    >
       {n}
     </text>
   );
 }
 
 /**
- * One numbered tire unit: tire pill(s) + bare red position numeral (halo
- * keeps 4.5:1 on the gray pill) + the serial editor embedded in the drawing
- * via <foreignObject>. Dual pairs draw a second pill offset `pair.dx`; the
- * numeral centers between the two pills. Spare tires (ô 7–10) are yellow
- * with a dashed outline; other pills color by tyre age (tốt/cần chú ý/cần
- * thay/chưa lắp); empty slots render at reduced opacity. The full data
+ * One numbered tire unit, mockup style: a status-colored pill with the
+ * serial ON the pill (editable via <foreignObject> hitbox) and the red
+ * position numeral OUTSIDE the pill at the mockup's numeral coordinates.
+ * Spare tires (ô 7–10) stay yellow with a dashed outline. The full data
  * lives in the <title> tooltip.
  */
 function TireMarker({ position, geom, slot, onSerialCommit }: {
@@ -85,9 +96,10 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
     slot?.note,
   ].filter(Boolean).join(" · ");
 
-  const opacity = slot?.serial ? 1 : 0.45;
-  const cx = geom.x + geom.w / 2 + (geom.pair?.dx ?? 0) / 2;
-  const cy = geom.y + geom.h / 2 + (geom.pair?.dy ?? 0) / 2;
+  const cx = geom.x + geom.w / 2;
+  const cy = geom.y + geom.h / 2;
+  const numX = geom.num?.x ?? cx;
+  const numY = geom.num?.y ?? cy;
   const pill = (px: number, py: number) => (
     <rect
       x={px}
@@ -98,7 +110,6 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
       fill={style.fill}
       stroke={style.stroke}
       strokeDasharray={style.dash}
-      opacity={opacity}
     />
   );
 
@@ -107,13 +118,12 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
       <title>{title}</title>
       {geom.circle ? (
         <circle
-          cx={geom.x + geom.w / 2}
+          cx={cx}
           cy={cy}
           r={Math.min(geom.w, geom.h) / 2}
           fill={style.fill}
           stroke={style.stroke}
           strokeDasharray={style.dash}
-          opacity={opacity}
         />
       ) : (
         <>
@@ -123,28 +133,34 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
       )}
       <text
         className="tbp-svg-numeral"
-        x={cx}
-        y={cy}
+        x={numX}
+        y={numY}
         textAnchor="middle"
         dominantBaseline="central"
-        fontSize="12"
-        fill={RED}
+        fontSize="15"
+        fontWeight={700}
+        fill={NUM_RED}
       >
         {position}
       </text>
       {/* Serial display: native svg text always paints (Chromium will not
           render text of an unfocused <input> inside foreignObject). The
-          input below stays a transparent hitbox until focused. */}
-      <text
-        className="tbp-svg-serial-text"
-        x={geom.serial.x}
-        y={geom.serial.y + 12}
-        fontSize="11"
-        fontWeight={700}
-        fill={slot?.serial ? "#12284b" : "#8a99b0"}
-      >
-        {slot?.serial || "—"}
-      </text>
+          input below stays a transparent hitbox until focused. Empty slots
+          show nothing — a row of "—" dashes reads as noise. */}
+      {slot?.serial && (
+        <text
+          className="tbp-svg-serial-text"
+          x={geom.serial.x + geom.serial.w / 2}
+          y={geom.serial.y + SERIAL_H / 2 + 4}
+          textAnchor="middle"
+          fontSize="11"
+          fontWeight={700}
+          fontFamily="ui-monospace, Menlo, Consolas, monospace"
+          fill="#1d2421"
+        >
+          {slot.serial}
+        </text>
+      )}
       <foreignObject x={geom.serial.x} y={geom.serial.y} width={geom.serial.w} height={SERIAL_H}>
         <div className="tbp-svg-serial-box">
           <InlineCell
@@ -160,131 +176,139 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
   );
 }
 
-/** Chassis outlines the tire markers sit on (horizontal top view). */
-function TopViewOutlineHorizontal() {
+/**
+ * Horizontal top view outline, copied from the owner's mockup: pink tractor
+ * body with windshield lanes and fuel-tank boxes, gray trailer slab, blue
+ * axle runs with hub circles, kingpin feet, section braces as staple paths.
+ * `counterRotate` is set when the whole group is drawn inside the portrait's
+ * rotate(90) scene, so watermark numerals stay horizontal.
+ */
+function TopViewOutlineHorizontal({ counterRotate = false }: { counterRotate?: boolean }) {
   return (
-    <g fill="none" stroke={OUTLINE}>
-      {/* Tractor body */}
-      <rect x={60} y={258} width={400} height={154} rx={10} fill="#fff" />
-      {/* Cab zone + windshield band (pink, like the Excel) */}
-      <rect x={60} y={258} width={140} height={154} rx={10} fill={PINK_FILL} stroke={PINK_STROKE} />
-      <rect x={62} y={262} width={34} height={150} rx={8} fill="#f8dcdc" stroke="none" />
-      {/* Drive well */}
-      <rect x={240} y={268} width={210} height={134} rx={6} fill="#f4f7fb" stroke="none" />
-      {/* Catwalk: chassis rail + landing-gear feet toward the trailer */}
-      <line x1={460} y1={400} x2={520} y2={400} />
-      <line x1={470} y1={394} x2={470} y2={408} strokeWidth={2} />
-      <line x1={506} y1={394} x2={506} y2={408} strokeWidth={2} />
-      {/* Trailer slab */}
-      <rect x={520} y={252} width={540} height={166} rx={4} fill={SLAB_FILL} stroke={OUTLINE} />
-      {/* Axle lines through the dual columns (under the pills, like the Excel) */}
-      <g stroke="#b8cdf5" strokeWidth={2}>
-        <line x1={284} y1={259} x2={428} y2={259} />
-        <line x1={284} y1={411} x2={428} y2={411} />
-        <line x1={800} y1={246} x2={800} y2={424} />
-        <line x1={880} y1={246} x2={880} y2={424} />
-        <line x1={960} y1={246} x2={960} y2={424} />
+    <g>
+      {/* Section braces: 2 over the trailer, 1 under the tractor */}
+      <g fill="none" stroke={BOX_LINE} strokeWidth={3}>
+        <path d="M381,650 V640 q0,-18 18,-18 H786 q16,0 16,-17 q0,17 16,17 H1206 q18,0 18,18 V650" />
+        <path d="M55,860 V870 q0,18 18,18 H304 q16,0 16,17 q0,-17 16,-17 H567 q18,0 18,-18 V860" />
       </g>
+      <BigNum x={802} y={590} n="2" counterRotate={counterRotate} />
+      <BigNum x={320} y={950} n="1" counterRotate={counterRotate} />
+
+      {/* Trailer slab + kingpin feet */}
+      <rect x={381} y={657} width={843} height={193} fill={BOX_FILL} stroke={BOX_LINE} strokeWidth={3} />
+      <path d="M620,688 H680 M620,818 H680" stroke={WHEEL_GRAY} strokeWidth={3} fill="none" />
+      <rect x={618} y={681} width={14} height={14} fill={WHEEL_GRAY} />
+      <rect x={618} y={811} width={14} height={14} fill={WHEEL_GRAY} />
+
+      {/* Tractor: cab block, drive box, windshield lanes, fuel-tank boxes */}
+      <g fill={BODY_FILL} stroke={BODY_STROKE} strokeWidth={2}>
+        <rect x={70} y={655} width={255} height={195} rx={26} />
+        <rect x={326} y={710} width={259} height={87} />
+        <rect x={178} y={686} width={72} height={136} fill="none" />
+        <rect x={252} y={686} width={72} height={136} fill="none" />
+      </g>
+      <g fill={BOX_FILL} stroke={BOX_LINE} strokeWidth={2.5}>
+        <rect x={190} y={655} width={97} height={43} />
+        <rect x={190} y={808} width={97} height={43} />
+      </g>
+
+      {/* Watermark part numerals */}
+      <BigNum x={92} y={768} n="3" />
+      <BigNum x={212} y={737} n="4" />
+      <BigNum x={288} y={739} n="5" />
+      <BigNum x={232} y={689} n="7" />
+      <BigNum x={232} y={840} n="7" />
+      <BigNum x={789} y={768} n="9" />
+      <BigNum x={655} y={765} n="10" />
+      <BigNum x={1035} y={765} n="11" />
+
+      {/* Axle runs through the pill columns */}
+      <g stroke={AXLE_GRAY} strokeWidth={7} strokeLinecap="round" fill="none">
+        <path d="M125,690 V820 M125,752 H533 M435,712 V795 M533,712 V795" />
+        <path d="M983,705 V800 M1080,705 V800 M1176,705 V800" />
+      </g>
+      <circle cx={435} cy={752} r={14} fill={AXLE_GRAY} />
+      <circle cx={533} cy={752} r={14} fill={AXLE_GRAY} />
     </g>
   );
 }
 
-/** Same for the portrait (nose-up) variant. */
-function TopViewOutlineVertical() {
+/** Portrait renders the SAME top view rotated 90° — the mockup's own mobile
+ *  transform (side view hidden, watermark numerals counter-rotated, tire
+ *  markers drawn upright from the precomputed rotated slot table). */
+function PortraitScene() {
   return (
-    <g fill="none" stroke={OUTLINE}>
-      <rect x={150} y={20} width={170} height={90} rx={10} fill={PINK_FILL} stroke={PINK_STROKE} />
-      <rect x={154} y={22} width={162} height={30} rx={8} fill="#f8dcdc" stroke="none" />
-      <rect x={160} y={110} width={150} height={170} rx={6} fill="#fff" />
-      <rect x={175} y={155} width={120} height={115} rx={6} fill="#f4f7fb" stroke="none" />
-      <rect x={210} y={285} width={50} height={100} rx={4} fill="#f4f7fb" stroke="none" />
-      <rect x={140} y={390} width={190} height={440} rx={4} fill={SLAB_FILL} stroke={OUTLINE} />
-      {/* Axle lines through the pill columns (under the pills) */}
-      <g stroke="#b8cdf5" strokeWidth={2}>
-        <line x1={137} y1={52} x2={333} y2={52} />
-        <line x1={147} y1={156} x2={343} y2={156} />
-        <line x1={147} y1={240} x2={343} y2={240} />
-        <line x1={128} y1={690} x2={342} y2={690} />
-        <line x1={128} y1={750} x2={342} y2={750} />
-        <line x1={128} y1={810} x2={342} y2={810} />
-      </g>
+    <g transform="rotate(90)">
+      <TopViewOutlineHorizontal counterRotate />
     </g>
   );
 }
 
 /**
- * Decorative side view (horizontal variant only) replicating the Excel
- * figure: pink tractor (hood, cab, exhaust, fuel tank), dark donut wheels,
- * gray trailer slab with corrugations, landing gear, section braces 1 (under
- * the tractor) and 2 (over the trailer) with numerals outside the apexes.
- * Gray strokes/muted numerals only — no data, not clickable. The numbered
- * callouts are the Excel figure's part labels, NOT tyre positions.
+ * Side view, copied from the owner's mockup: gray trailer slab with brace,
+ * kingpin V, pink tractor (hood, cab, roof fairing, windshield lanes,
+ * exhaust with inner slats, fuel-tank step box), donut wheels, watermark
+ * numerals. Decorative only — no data, not clickable.
  */
 function SideView() {
   return (
-    <g fill="none" strokeWidth={1.5}>
-      {/* Ground line */}
-      <line x1={40} y1={182} x2={1060} y2={182} stroke={OUTLINE} />
-      {/* Chassis rail cab → trailer (painted before wheels/tank overlap it) */}
-      <line x1={260} y1={158} x2={520} y2={158} stroke={OUTLINE} />
-      {/* Fuel tank (under the cab, behind the drive wheels) */}
-      <rect x={238} y={138} width={54} height={20} rx={4} fill="#e3e6ea" stroke={TIRE_STROKE} />
-      {/* Exhaust stack behind the cab, rising above the roof */}
-      <rect x={256} y={52} width={8} height={66} fill={PINK_FILL} stroke={PINK_STROKE} strokeWidth={1.2} />
-      {/* Tractor profile — pink body, like the Excel */}
-      <rect x={60} y={118} width={90} height={40} rx={14} fill={PINK_FILL} stroke={PINK_STROKE} />
-      <line x1={150} y1={118} x2={162} y2={80} stroke={PINK_STROKE} />
-      <rect x={150} y={70} width={110} height={88} rx={8} fill={PINK_FILL} stroke={PINK_STROKE} />
-      <rect x={162} y={84} width={42} height={26} rx={3} fill="#f8dcdc" stroke={PINK_STROKE} strokeWidth={1.2} />
-      {/* Trailer box — filled slab, corrugations, bottom rail */}
-      <rect x={520} y={48} width={540} height={102} rx={4} fill={SLAB_FILL} stroke={OUTLINE} />
-      {[560, 620, 680, 740, 800, 860, 920, 980].map((x) => (
-        <line key={x} x1={x} y1={56} x2={x} y2={134} stroke="#d5d8de" strokeWidth={1.2} />
-      ))}
-      <line x1={524} y1={138} x2={1056} y2={138} stroke={OUTLINE} />
-      {/* Landing gear under the trailer front (V legs + feet, like the Excel) */}
-      <line x1={543} y1={150} x2={553} y2={178} stroke={OUTLINE} strokeWidth={1.2} />
-      <line x1={567} y1={150} x2={557} y2={178} stroke={OUTLINE} strokeWidth={1.2} />
-      <line x1={548} y1={178} x2={562} y2={178} stroke={OUTLINE} strokeWidth={1.2} />
-      {/* Wheels — steer, drive tandem, trailer tridem */}
-      <Wheel cx={100} cy={156} r={22} />
-      <Wheel cx={330} cy={158} r={24} />
-      <Wheel cx={380} cy={158} r={24} />
-      <Wheel cx={880} cy={158} r={24} />
-      <Wheel cx={940} cy={158} r={24} />
-      <Wheel cx={1000} cy={158} r={24} />
-      {/* Section braces: 1 under the tractor (apex down), 2 over the trailer (apex up) */}
-      <path
-        d="M 60 184 C 60 187 63 188 68 188 H 255 C 261 188 263 190 263 193 C 263 190 265 188 271 188 H 462 C 467 188 470 187 470 184"
-        stroke="#b9c2cc"
-        strokeWidth={1.5}
-      />
-      <path
-        d="M 520 46 C 520 43 523 42 528 42 H 781 C 787 42 789 40 789 37 C 789 40 791 42 797 42 H 1052 C 1057 42 1060 43 1060 46"
-        stroke="#b9c2cc"
-        strokeWidth={1.5}
-      />
-      <Callout x={265} y={208} n="1" />
-      <Callout x={790} y={30} n="2" />
-      {/* Part callouts (Excel figure labels, not tyre positions) */}
-      <Callout x={105} y={140} n="3" />
-      <Callout x={170} y={118} n="4" />
-      <Callout x={225} y={118} n="5" />
-      <Callout x={205} y={60} n="6" />
-      <Callout x={265} y={148} n="7" />
-      <Callout x={545} y={144} n="8" />
-      <Callout x={790} y={102} n="9" />
-      <Callout x={568} y={170} n="10" />
-      <Callout x={940} y={112} n="11" />
+    <g>
+      {/* Section braces: 2 over the trailer, 1 under the tractor */}
+      <g fill="none" stroke={BOX_LINE} strokeWidth={3}>
+        <path d="M381,160 V145 q0,-18 18,-18 H786 q16,0 16,-17 q0,17 16,17 H1206 q18,0 18,18 V160" />
+        <path d="M55,462 V472 q0,18 18,18 H304 q16,0 16,17 q0,-17 16,-17 H567 q18,0 18,-18 V462" />
+      </g>
+      <BigNum x={802} y={88} n="2" />
+      <BigNum x={320} y={553} n="1" />
+
+      {/* Trailer slab + kingpin V */}
+      <rect x={381} y={163} width={843} height={210} fill={BOX_FILL} stroke={BOX_LINE} strokeWidth={3} />
+      <path d="M600,373 L626,402 L680,373 M626,402 V432" fill="none" stroke={BOX_LINE} strokeWidth={3} />
+
+      {/* Tractor: hood, cab, roof fairing, windshield lanes, chassis rail */}
+      <g fill={BODY_FILL} stroke={BODY_STROKE} strokeWidth={2}>
+        <path d="M55,420 V340 Q55,323 75,321 L173,316 V420 Z" />
+        <rect x={173} y={238} width={152} height={182} />
+        <path d="M205,238 Q210,176 262,165 L322,163 V238 Z" />
+        <rect x={326} y={388} width={259} height={32} />
+        <rect x={178} y={242} width={72} height={150} fill="none" />
+        <rect x={252} y={242} width={72} height={150} fill="none" />
+      </g>
+
+      {/* Exhaust stack + inner slats */}
+      <rect x={330} y={220} width={17} height={164} rx={7} fill="none" stroke={BOX_LINE} strokeWidth={3} />
+      <rect x={334} y={288} width={12} height={62} fill={WHEEL_GRAY} opacity={0.7} />
+
+      {/* Fuel-tank step box */}
+      <rect x={190} y={378} width={100} height={38} fill={BOX_FILL} stroke={BOX_LINE} strokeWidth={2.5} />
+
+      {/* Watermark part numerals */}
+      <BigNum x={92} y={362} n="3" />
+      <BigNum x={212} y={347} n="4" />
+      <BigNum x={288} y={348} n="5" />
+      <BigNum x={276} y={217} n="6" />
+      <BigNum x={232} y={410} n="7" />
+      <BigNum x={789} y={272} n="9" />
+      <BigNum x={482} y={360} n="8" />
+      <BigNum x={1060} y={360} n="11" />
+      <BigNum x={655} y={432} n="10" />
+
+      {/* Wheels: steer, drive tandem, trailer tridem */}
+      <Wheel x={125} y={422} />
+      <Wheel x={435} y={422} />
+      <Wheel x={533} y={422} />
+      <Wheel x={980} y={422} />
+      <Wheel x={1078} y={422} />
+      <Wheel x={1176} y={422} />
     </g>
   );
 }
 
 /**
- * Annotated truck drawing for /fleet/tyre-board (NEPO-49): decorative side
- * view + top view carrying all 22 numbered positions and their editable
- * serials (horizontal), or the portrait top view only (vertical, ≤640px).
- * Geometry comes from the layout tables in tyrePositions.ts.
+ * Annotated truck drawing for /fleet/tyre-board (NEPO-49): side view + top
+ * view carrying all 22 numbered positions and their editable serials
+ * (horizontal), or the portrait top view only (vertical, ≤640px). Geometry
+ * follows the owner's board mockups; slot colors follow tyreStatus.
  */
 export function TyreTruckDiagram({ slots, vertical, onSerialCommit }: Props) {
   const byPosition = new Map(slots.map((s) => [s.position, s]));
@@ -293,7 +317,7 @@ export function TyreTruckDiagram({ slots, vertical, onSerialCommit }: Props) {
   return (
     <svg
       key={vertical ? "portrait" : "horizontal"}
-      viewBox={vertical ? "0 0 470 850" : "0 0 1100 470"}
+      viewBox={vertical ? "0 0 390 1250" : "30 55 1270 905"}
       width="100%"
       role="img"
       aria-label={vertical
@@ -301,7 +325,7 @@ export function TyreTruckDiagram({ slots, vertical, onSerialCommit }: Props) {
         : "Sơ đồ xe: side view + top view, 22 ô lốp kèm số seri, sửa trực tiếp trên sơ đồ"}
     >
       {!vertical && <SideView />}
-      {vertical ? <TopViewOutlineVertical /> : <TopViewOutlineHorizontal />}
+      {vertical ? <PortraitScene /> : <TopViewOutlineHorizontal />}
       {ALL_POSITIONS.map((position) => (
         <TireMarker
           key={position}

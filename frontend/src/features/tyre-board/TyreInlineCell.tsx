@@ -1,8 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 
+/** ISO 'YYYY-MM-DD' → 'dd/MM/yyyy' ('' / null stays '—'). */
+function fmtISO(iso: string | null): string {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return y && m && d ? `${d}/${m}/${y}` : iso;
+}
+
 /**
  * Inline-editable cell. Saves on blur/Enter only when the draft differs from
  * the server value; Esc reverts. Data entry only — writes no history row.
+ *
+ * Date cells render as quiet text ("25/06/2025" / "—") and swap to the real
+ * <input type=date> only while editing — an always-on native date input
+ * paints a wide "dd/mm/yyyy" placeholder per empty row.
  *
  * Moved verbatim out of TyreBoardPage so the SVG diagram (TyreTruckDiagram)
  * can embed the same editor inside <foreignObject>.
@@ -24,6 +35,21 @@ export function InlineCell({ value, onCommit, type = "text", placeholder, classN
     if (!editing) setDraft(value ?? "");
   }, [value, editing]);
 
+  if (type === "date" && !editing) {
+    return (
+      <span
+        className={className ? `tbp-cell-input tbp-cell-quiet ${className}` : "tbp-cell-input tbp-cell-quiet"}
+        tabIndex={0}
+        aria-label={ariaLabel}
+        title="Bấm để chọn ngày thay"
+        onClick={() => setEditing(true)}
+        onFocus={() => setEditing(true)}
+      >
+        {fmtISO(value)}
+      </span>
+    );
+  }
+
   return (
     <input
       type={type}
@@ -31,8 +57,8 @@ export function InlineCell({ value, onCommit, type = "text", placeholder, classN
       value={draft}
       placeholder={placeholder}
       aria-label={ariaLabel}
+      autoFocus={type === "date"}
       onChange={(e) => setDraft(e.target.value)}
-      onFocus={() => setEditing(true)}
       onBlur={() => {
         if (escRef.current) {
           escRef.current = false;

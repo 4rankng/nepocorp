@@ -56,6 +56,9 @@ export interface MarkerGeom {
    * `dy` (portrait view) — always along the travel axis; the position numeral
    * centers between the two pills. */
   pair?: { dx?: number; dy?: number };
+  /** Red position numeral anchor, outside the pill (horizontal mockup).
+   * Omitted → numeral centers on the pill (portrait). */
+  num?: { x: number; y: number };
   serial: { x: number; y: number; w: number };
 }
 

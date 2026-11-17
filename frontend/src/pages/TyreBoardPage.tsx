@@ -150,15 +150,20 @@ export default function TyreBoardPage() {
               <TyreTruckDiagram slots={slots} vertical={isNarrow} onSerialCommit={(position, raw) => commitCell(position, { serial: raw })} />
             </div>
             <div className="tbp-legend">
-              Màu lốp theo tuổi: <b>{statusCounts.good}</b> tốt · <b>{statusCounts.warn}</b> cần chú ý · <b>{statusCounts.bad}</b> cần thay · <b>{statusCounts.empty}</b> chưa lắp — ô vàng đứt là dự phòng. Số seri sửa trực tiếp trên sơ đồ; nút "Thay lốp" lưu lịch sử (ngày, seri cũ → mới).
+              Màu lốp theo tuổi: <b>{statusCounts.good}</b> tốt · <b>{statusCounts.warn}</b> cần chú ý · <b>{statusCounts.bad}</b> cần thay · <b>{statusCounts.empty}</b> chưa lắp — ô nét đứt là dự phòng. Số seri sửa trực tiếp trên sơ đồ; nút "Thay lốp" lưu lịch sử (ngày, seri cũ → mới).
             </div>
 
             <div className="tbp-table-scroll">
               <table className="tbp-table">
                 <thead>
                   <tr>
-                    <th>STT</th><th>Nhãn hiệu</th><th>Cỡ lốp</th><th>Loại gai</th><th>Số seri</th>
-                    <th>Model</th><th>Ngày thay</th><th>Tuổi lốp</th><th>Ghi chú</th><th></th>
+                    <th>STT</th>
+                    <th>Nhãn hiệu · Model</th>
+                    <th>Cỡ lốp · Loại gai</th>
+                    <th>Số seri</th>
+                    <th>Ngày thay · Tuổi</th>
+                    <th>Ghi chú</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -167,14 +172,20 @@ export default function TyreBoardPage() {
                     return (
                       <tr key={slot.position}>
                         <td className="tbp-td-stt">{slot.position}</td>
-                        <td><InlineCell value={slot.brand} onCommit={(v) => commitCell(slot.position, { brand: v })} /></td>
-                        <td><InlineCell value={slot.size} onCommit={(v) => commitCell(slot.position, { size: v })} /></td>
-                        <td><InlineCell value={slot.treadType} onCommit={(v) => commitCell(slot.position, { treadType: v })} /></td>
+                        <td className="tbp-td-stack">
+                          <InlineCell value={slot.brand} onCommit={(v) => commitCell(slot.position, { brand: v })} ariaLabel={`Nhãn hiệu ô ${slot.position}`} />
+                          <InlineCell value={slot.model} onCommit={(v) => commitCell(slot.position, { model: v })} className="tbp-cell-sub" ariaLabel={`Model ô ${slot.position}`} />
+                        </td>
+                        <td className="tbp-td-stack">
+                          <InlineCell value={slot.size} onCommit={(v) => commitCell(slot.position, { size: v })} ariaLabel={`Cỡ lốp ô ${slot.position}`} />
+                          <InlineCell value={slot.treadType} onCommit={(v) => commitCell(slot.position, { treadType: v })} className="tbp-cell-sub" ariaLabel={`Loại gai ô ${slot.position}`} />
+                        </td>
                         <td className="tbp-td-serial"><InlineCell value={slot.serial} onCommit={(v) => commitCell(slot.position, { serial: v })} /></td>
-                        <td><InlineCell value={slot.model} onCommit={(v) => commitCell(slot.position, { model: v })} /></td>
-                        <td><InlineCell type="date" value={slot.lastChangedAt} onCommit={(v) => commitCell(slot.position, { lastChangedAt: v })} /></td>
-                        <td className="tbp-age">{age != null ? `${age} ngày` : ""}</td>
-                        <td><InlineCell value={slot.note} onCommit={(v) => commitCell(slot.position, { note: v })} /></td>
+                        <td className="tbp-td-stack">
+                          <InlineCell type="date" value={slot.lastChangedAt} onCommit={(v) => commitCell(slot.position, { lastChangedAt: v })} ariaLabel={`Ngày thay ô ${slot.position}`} />
+                          <span className="tbp-age">{age != null ? `${age} ngày` : ""}</span>
+                        </td>
+                        <td><InlineCell value={slot.note} onCommit={(v) => commitCell(slot.position, { note: v })} ariaLabel={`Ghi chú ô ${slot.position}`} /></td>
                         <td>
                           <button type="button" className="tbp-btn" onClick={() => openChange(slot)}>
                             Thay lốp

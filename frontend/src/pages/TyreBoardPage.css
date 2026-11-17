@@ -280,8 +280,19 @@
    pushed into a page-level scrollbar. History table is narrow — no min
    width, no scroll. */
 .tbp-table-scroll { overflow-x: auto; }
-.tbp-table { min-width: 960px; }
+.tbp-table { min-width: 660px; }
 .tbp-history .tbp-table { min-width: 0; }
+
+/* Combined cells: two related values on two lines (brand over model,
+   size over tread, date over age) so the table fits without scrolling. */
+.tbp-td-stack { display: flex; flex-direction: column; gap: 2px; }
+.tbp-cell-sub { font-size: 11px; color: var(--ink-3, #6b7a90); }
+.tbp-cell-input.tbp-cell-quiet {
+  display: inline-block;
+  min-width: 72px;
+  cursor: pointer;
+  white-space: nowrap;
+}
 
 /* First column (STT / Ngày thay) stays visible while the rest scrolls.
    Solid backgrounds: border-collapse lets the wrapper's background bleed
@@ -295,13 +306,9 @@
 .tbp-table th:first-child { background: #12284b; }
 .tbp-table td:first-child { background: #fff; }
 
-/* ── Position numerals on the drawing: bare red digits with a white halo
-   (paint-order keeps 4.5:1 contrast on the gray pills) ────────────────── */
+/* Position numerals on the drawing: bare red digits (mockup .num style). */
 .tbp-svg-numeral {
-  font-weight: 800;
-  paint-order: stroke;
-  stroke: #fff;
-  stroke-width: 3px;
+  font-weight: 700;
 }
 
 /* Keyboard focus ring on the inline cells (table + in-SVG twins). The
