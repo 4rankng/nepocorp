@@ -637,6 +637,7 @@ export async function updateTripFigures(
           .from(s.ledger)
           .where(and(
             eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+            eq(s.ledger.txnTable, 'trips'),
             eq(s.ledger.txnId, tripId),
             eq(s.ledger.entityType, 'CUSTOMER'),
             eq(s.ledger.entityId, trip.customerId),

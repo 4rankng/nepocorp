@@ -482,6 +482,15 @@ export const ledger = pgTable('ledger', {
   timestamp: timestamp('timestamp').defaultNow().notNull(),
   txnType: txnTypeEnum('txn_type').notNull(),
   txnId: integer('txn_id'),
+  // NEPO-50 — which table txn_id points into ('trips' | 'trip_expenses' |
+  // 'advance_requests' | 'advance_settlements' | 'penalties' | 'expenses' |
+  // 'debt_offsets' | 'billing_documents'). txn_type alone is ambiguous
+  // (UNLOCK_REVERSAL/ADJUSTMENT/FORWARDER_ADVANCE each span two id spaces), so
+  // every txn_id join must pair with this column, the same way entity_id pairs
+  // with entity_type. Null on rows without a txn_id. Backfilled by migration
+  // 0131 per the central mapping in src/lib/ledger-txn-table.ts; new inserts
+  // always set it (postEntry derives it via the same mapping).
+  txnTable: varchar('txn_table', { length: 32 }),
   receiptId: varchar('receipt_id', { length: 100 }),
   // Payment channel of a customer receipt: 'BANK' (chuyển khoản → TK 1121) or
   // 'CASH' (tiền mặt → TK 1111). Null = legacy receipt, channel unknown.

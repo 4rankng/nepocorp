@@ -425,6 +425,7 @@ async function insertLedgerEntry(customerId: number, amount: number, tripId: num
   await db.insert(s.ledger).values({
     txnType: 'TRIP_REVENUE',
     txnId: tripId,
+    txnTable: 'trips',
     entityType: 'CUSTOMER',
     entityId: customerId,
     debit: vnd(amount),

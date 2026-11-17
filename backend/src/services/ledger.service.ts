@@ -4,6 +4,7 @@ import { eq, and, desc, like, count, sql } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import type { Tx } from './trip-shared';
 import { ledgerInputsChanged } from './trip-ledger-inputs';
+import { txnTableFor } from '../lib/ledger-txn-table';
 
 /** Common trip shape for ledger lock/unlock operations */
 interface TripLedgerParams {
@@ -40,6 +41,11 @@ interface TripLedgerParams {
 export interface LedgerPostRequest {
   txnType: TxnType;
   txnId?: number;
+  /** NEPO-50 — table txn_id points into ('trips' | 'trip_expenses' | …).
+   * Required to state explicitly for ambiguous families (UNLOCK_REVERSAL /
+   * ADJUSTMENT / FORWARDER_ADVANCE); other types derive from the central
+   * mapping in lib/ledger-txn-table.ts when omitted. */
+  txnTable?: string;
   receiptId?: string;
   /** Receipt channel 'BANK' | 'CASH'; only meaningful for PAYMENT_RECEIVED rows. */
   paymentMethod?: string;
@@ -138,7 +144,7 @@ export class LedgerService {
       .limit(1);
 
     const prevBalance = lastEntry ? Number(lastEntry.balance) : 0;
-    
+
     // Sign convention rules:
     // Customer: Debit increases outstanding balance, Credit decreases outstanding balance
     // Driver/Vendor: Credit increases payable balance, Debit decreases payable balance
@@ -152,6 +158,10 @@ export class LedgerService {
     const [inserted] = await tx.insert(s.ledger).values({
       txnType: request.txnType,
       txnId: request.txnId ?? null,
+      // NEPO-50 — every row names the table txn_id points into. Ambiguous
+      // families (UNLOCK_REVERSAL/ADJUSTMENT/FORWARDER_ADVANCE) pass an
+      // explicit txnTable; everything else derives from the central mapping.
+      txnTable: request.txnTable ?? txnTableFor(request.txnType, request.txnId, request.note),
       receiptId: request.receiptId ?? null,
       paymentMethod: request.paymentMethod ?? null,
       entityType: request.entityType,
@@ -274,6 +284,7 @@ export class LedgerService {
       .from(s.ledger)
       .where(and(
         eq(s.ledger.txnType, TxnType.FUEL_EXPENSE),
+        eq(s.ledger.txnTable, 'trips'),
         eq(s.ledger.txnId, tripId),
         eq(s.ledger.entityType, 'VENDOR'),
         eq(s.ledger.entityId, supplierId),
@@ -282,6 +293,7 @@ export class LedgerService {
       .from(s.ledger)
       .where(and(
         eq(s.ledger.txnType, TxnType.UNLOCK_REVERSAL),
+        eq(s.ledger.txnTable, 'trips'),
         eq(s.ledger.txnId, tripId),
         eq(s.ledger.entityType, 'VENDOR'),
         eq(s.ledger.entityId, supplierId),
@@ -311,6 +323,7 @@ export class LedgerService {
       .from(s.ledger)
       .where(and(
         eq(s.ledger.txnType, TxnType.EXTERNAL_CARRIER_COST),
+        eq(s.ledger.txnTable, 'trips'),
         eq(s.ledger.txnId, tripId),
         eq(s.ledger.entityType, 'CARRIER'),
         eq(s.ledger.entityId, carrierId),
@@ -319,6 +332,7 @@ export class LedgerService {
       .from(s.ledger)
       .where(and(
         eq(s.ledger.txnType, TxnType.UNLOCK_REVERSAL),
+        eq(s.ledger.txnTable, 'trips'),
         eq(s.ledger.txnId, tripId),
         eq(s.ledger.entityType, 'CARRIER'),
         eq(s.ledger.entityId, carrierId),
@@ -588,6 +602,9 @@ export class LedgerService {
       await this.postEntry(tx, {
         txnType: TxnType.UNLOCK_REVERSAL,
         txnId: fee.id,
+        // NEPO-50 — ambiguous family: txnId is a trip_expenses.id, not a trip
+        // id. Stated explicitly so no join can read it as a trip reference.
+        txnTable: 'trip_expenses',
         entityType: 'CUSTOMER',
         entityId: trip.customerId,
         debit: 0,

@@ -349,14 +349,32 @@ function isLegacyServiceFeeRevenueRow(row: LedgerRow): boolean {
 /** NEPO-50 — the chi-hộ AR family: SERVICE_FEE postings plus their
  * UNLOCK_REVERSAL and advance-settlement ADJUSTMENT siblings. All three carry
  * trip_expenses.id in txnId and must resolve their trip through the fee map —
- * never by reading txnId as a trip id. Note matching follows the repo-wide
- * convention of separating reversal families by note prefix (advance.service
- * separates FORWARDER_ADVANCE the same way). */
+ * never by reading txnId as a trip id.
+ *
+ * Classification is authoritative on ledger.txn_table (the (txn_table, txn_id)
+ * discriminator, migration 0131): a row stamped 'trip_expenses' is chi-hộ, a
+ * row stamped any other table is not. Only legacy rows with no stamp fall back
+ * to the note-prefix convention (advance.service separates FORWARDER_ADVANCE
+ * families the same way). */
 const CHI_HO_NOTE_RE = /chi hộ/i;
 function isChiHoLedgerRow(row: LedgerRow): boolean {
+  if (row.txnTable === 'trip_expenses') return true;
+  if (row.txnTable != null) return false;
   if (row.txnType === TxnType.SERVICE_FEE) return true;
   if (row.txnType !== TxnType.UNLOCK_REVERSAL && row.txnType !== TxnType.ADJUSTMENT) return false;
   return CHI_HO_NOTE_RE.test(row.note ?? '');
+}
+
+/** NEPO-50 — true when the row's txn_id references trips.id (revenue, salary,
+ * fuel, carrier cost, their reversals, per-trip payments). Authoritative on
+ * txn_table; legacy stamp-less rows fall back to txn_type + note exclusion. */
+function rowJoinsTrips(row: LedgerRow): boolean {
+  if (row.txnTable != null) return row.txnTable === 'trips';
+  if (isChiHoLedgerRow(row)) return false;
+  return row.txnType === TxnType.TRIP_REVENUE
+    || row.txnType === TxnType.UNLOCK_REVERSAL
+    || row.txnType === TxnType.PAYMENT_RECEIVED
+    || row.txnType === TxnType.EXTERNAL_CARRIER_COST;
 }
 
 const VENDOR_TXN_LABELS: Record<string, string> = {
@@ -434,8 +452,12 @@ export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedge
   // carrier payable merges historical CUSTOMER rows with CARRIER rows), and
   // rows from different ledgers must never cross-pair.
   const originalBuckets = new Map<string, number[]>();
+  // NEPO-50 — the txn namespace is the stamped txn_table when present
+  // ('trips' vs 'trip_expenses' never cross-pair, even when a fee id collides
+  // with a trip id); legacy stamp-less rows fall back to the fee: marker from
+  // the note-based chi-hộ classification.
   const bucketKey = (row: EnrichedLedgerRow, side: 'd' | 'c', amount: number) =>
-    `${row.entityType}|${row.entityId}|${isChiHoLedgerRow(row) ? `fee:${row.txnId}` : row.txnId}|${side}${amount}`;
+    `${row.entityType}|${row.entityId}|${row.txnTable ?? (isChiHoLedgerRow(row) ? `fee:${row.txnId}` : row.txnId)}|${side}${amount}`;
 
   rows.forEach((row, index) => {
     if (row.txnType === TxnType.UNLOCK_REVERSAL || row.txnId == null) return;
@@ -478,6 +500,17 @@ export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedge
 
   if (dropped.size === 0) return rows;
   return rows.filter((_, index) => !dropped.has(index));
+}
+
+/** NEPO-50 r2 — a '(Hoàn tác)' reversal never renders on a debt table. r3
+ * pairing already removes every charge+reversal pair; a reversal surviving
+ * pairing has no matching original on this book (a data anomaly, or an
+ * original living on another ledger) and rendering it would show a credit for
+ * a charge the book never displays. Display-only: the ledger stays immutable,
+ * aging/balances are computed upstream on the uncollapsed rows. */
+function dropHoanTacReversals(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
+  const left = rows.filter((row) => row.txnType !== TxnType.UNLOCK_REVERSAL);
+  return left.length === rows.length ? rows : left;
 }
 
 /** VND is integer-only (NEPO money law): round every parsed component. */
@@ -854,19 +887,13 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   // rows store trip_expenses.id in txnId, so resolve those fee ids back to
   // their trip and configured billing label first. EXTERNAL_CARRIER_COST
   // (cước thuê ngoài) also stores the trip id in txnId, so it gets the same
-  // route/container enrichment as a regular trip revenue row. NEPO-50: chi-hộ
-  // UNLOCK_REVERSAL / ADJUSTMENT rows carry the SAME fee id in txnId, so they
-  // resolve through the fee map below and must never enter the direct-trip
-  // set — txnId-as-trip-id joined the wrong trip (fee id 222 joined trip 222
-  // of another customer).
+  // route/container enrichment as a regular trip revenue row. NEPO-50: only
+  // rows whose txn_table says 'trips' may join txn_id → trips.id — chi-hộ
+  // UNLOCK_REVERSAL / ADJUSTMENT rows carry trip_expenses.id (fee ids collide
+  // with trip ids) and resolve through the fee map below instead.
   const directlyLinkedTripIds = Array.from(new Set(
     allLedgerRows
-      .filter((r) => r.txnId && !isChiHoLedgerRow(r) && (
-        r.txnType === TxnType.TRIP_REVENUE
-        || r.txnType === TxnType.UNLOCK_REVERSAL
-        || r.txnType === TxnType.PAYMENT_RECEIVED
-        || r.txnType === TxnType.EXTERNAL_CARRIER_COST
-      ))
+      .filter((r) => r.txnId && rowJoinsTrips(r))
       .map((r) => r.txnId as number)
   ));
 
@@ -977,12 +1004,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     const feeDetails = chiHoFeeRow && r.txnId
       ? serviceFeeMap.get(r.txnId)
       : undefined;
-    const directTripId = r.txnId && !chiHoFeeRow && (
-      r.txnType === TxnType.TRIP_REVENUE
-      || r.txnType === TxnType.UNLOCK_REVERSAL
-      || r.txnType === TxnType.PAYMENT_RECEIVED
-      || r.txnType === TxnType.EXTERNAL_CARRIER_COST
-    )
+    const directTripId = r.txnId && rowJoinsTrips(r)
       ? r.txnId
       : null;
     const legacyFeeDetails = directTripId && isLegacyServiceFeeRevenueRow(r)
@@ -1130,7 +1152,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   // NEPO-46 sổ chi tiết: build from the same collapsed display rows the
   // response renders, seeded by the period opening balance (0 for the
   // unscoped whole-ledger statement — the book starts at zero).
-  const displayRows = collapseEditCyclePairs(inPeriodRows);
+  const displayRows = dropHoanTacReversals(collapseEditCyclePairs(inPeriodRows));
   const { lines: statementLines, totals: statementTotals } = buildStatementLines(
     displayRows,
     periodSummary?.openingBalance ?? 0,
@@ -1367,7 +1389,7 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
     supplier,
     // Display rows only — totalOutstanding/currentTotalOutstanding/aging and
     // periodSummary above are computed from the uncollapsed rows (r1 rule).
-    ledgerRows: collapseEditCyclePairs(ledgerRows),
+    ledgerRows: dropHoanTacReversals(collapseEditCyclePairs(ledgerRows)),
     totalOutstanding,
     currentTotalOutstanding,
     agingAsOfPeriodEnd,
@@ -2029,7 +2051,7 @@ export async function getCarrierPayableStatement(
     supplier: carrier,
     // Display rows only — totalOutstanding/agingBuckets/periodSummary are
     // computed from the uncollapsed rows (r1 rule).
-    ledgerRows: collapseEditCyclePairs(ledgerRows),
+    ledgerRows: dropHoanTacReversals(collapseEditCyclePairs(ledgerRows)),
     totalOutstanding,
     agingBuckets: [
       { range: '0-30 ngày', amount: aging.current },

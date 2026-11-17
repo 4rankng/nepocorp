@@ -314,6 +314,7 @@ async function seed() {
     const newBalance = prevBalance + amount;
     await db.insert(schema.ledger).values({
       txnType: 'VENDOR_EXPENSE',
+      txnTable: 'expenses',
       entityType: 'VENDOR',
       entityId: exp.supplierId,
       debit: '0',

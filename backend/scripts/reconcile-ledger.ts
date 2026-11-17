@@ -97,6 +97,7 @@ async function reconcileBalances(): Promise<Discrepancy[]> {
 
         await db.insert(s.ledger).values({
           txnType: TxnType.ADJUSTMENT,
+          txnTable: null, // entity-level balance correction — no txn reference
           entityType: row.entityType,
           entityId: row.entityId,
           debit: String(compensatingDebit),

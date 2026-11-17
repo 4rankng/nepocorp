@@ -24,6 +24,7 @@ const row = (over: Partial<EnrichedLedgerRow> & Pick<EnrichedLedgerRow, 'txnType
   id: nextRowId++,
   timestamp: new Date('2026-10-08T07:24:17.897Z'),
   txnId: 296,
+  txnTable: null,
   receiptId: null,
   entityType: 'CUSTOMER',
   entityId: 7,

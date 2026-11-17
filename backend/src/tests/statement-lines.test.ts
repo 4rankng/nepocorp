@@ -35,6 +35,7 @@ const row = (opts: {
   createdAt: new Date(opts.ts),
   txnType: opts.txnType,
   txnId: opts.txnId ?? null,
+  txnTable: null,
   receiptId: opts.receiptId ?? null,
   paymentMethod: opts.paymentMethod ?? null,
   entityType: 'CUSTOMER',

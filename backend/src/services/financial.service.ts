@@ -520,6 +520,7 @@ export async function createAdjustment(input: AdjustmentInput) {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
       txnId: input.tripId,
+      txnTable: 'trips',
       entityType: 'CUSTOMER',
       entityId: trip.customerId,
       debit: isDebit ? input.amount : 0,
@@ -534,7 +535,7 @@ export async function createAdjustment(input: AdjustmentInput) {
  */
 export async function getTripAdjustments(tripId: number) {
   return db.select().from(s.ledger)
-    .where(and(eq(s.ledger.txnType, TxnType.ADJUSTMENT), eq(s.ledger.txnId, tripId)))
+    .where(and(eq(s.ledger.txnType, TxnType.ADJUSTMENT), eq(s.ledger.txnTable, 'trips'), eq(s.ledger.txnId, tripId)))
     .orderBy(desc(s.ledger.id));
 }
 
@@ -655,6 +656,7 @@ export async function cancelPenalty(penaltyId: number, reason?: string) {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
       txnId: penalty.id,
+      txnTable: 'penalties',
       entityType: 'DRIVER',
       entityId: penalty.driverId,
       debit: 0,

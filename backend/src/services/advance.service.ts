@@ -278,6 +278,7 @@ export async function approveAdvanceRequest(id: number, approvedBy: number) {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.FORWARDER_ADVANCE,
       txnId: request.id,
+      txnTable: 'advance_requests',
       entityType: 'FORWARDER',
       entityId: request.requesterId,
       debit: 0,
@@ -409,6 +410,7 @@ export async function deleteAdvanceRequest(id: number, requesterId: number) {
       await LedgerService.lockEntity(tx, 'FORWARDER', request.requesterId);
       await tx.delete(s.ledger).where(and(
         eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+        eq(s.ledger.txnTable, 'advance_requests'),
         eq(s.ledger.txnId, request.id),
         eq(s.ledger.entityType, 'FORWARDER'),
         eq(s.ledger.entityId, request.requesterId),
@@ -956,7 +958,7 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
           txnId: s.ledger.txnId,
           posted: sql<string>`coalesce(sum(${s.ledger.debit} - ${s.ledger.credit}), 0)`,
         }).from(s.ledger)
-          .where(and(eq(s.ledger.txnType, TxnType.SERVICE_FEE), inArray(s.ledger.txnId, feeExpenseIds)))
+          .where(and(eq(s.ledger.txnType, TxnType.SERVICE_FEE), eq(s.ledger.txnTable, 'trip_expenses'), inArray(s.ledger.txnId, feeExpenseIds)))
           .groupBy(s.ledger.txnId)
       : [];
     const postedByExpense = new Map(feeSums.map((r) => [r.txnId, Number(r.posted)]));
@@ -972,6 +974,8 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
       await LedgerService.postEntry(tx, {
         txnType: hadExistingFee ? TxnType.ADJUSTMENT : TxnType.SERVICE_FEE,
         txnId: link.expenseId,
+        // NEPO-50 — txnId is a trip_expenses.id (fee id), stated explicitly.
+        txnTable: 'trip_expenses',
         entityType: 'CUSTOMER',
         entityId: link.customerId,
         debit: delta > 0 ? delta : 0,
@@ -1010,6 +1014,7 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
       await LedgerService.postEntry(tx, {
         txnType: TxnType.FORWARDER_ADVANCE,
         txnId: carryForward.id,
+        txnTable: 'advance_requests',
         entityType: 'FORWARDER',
         entityId: updated.forwarderId,
         debit: 0,

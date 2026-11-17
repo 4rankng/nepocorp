@@ -17,6 +17,7 @@ function ledgerRow(overrides: Partial<EnrichedLedgerRow>): EnrichedLedgerRow {
     timestamp: new Date('2026-07-24T00:00:00.000Z'),
     txnType: TxnType.FUEL_EXPENSE,
     txnId: 61,
+    txnTable: null,
     receiptId: null,
     entityType: 'VENDOR',
     entityId: 3,
