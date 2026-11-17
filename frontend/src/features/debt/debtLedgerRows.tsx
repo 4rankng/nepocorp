@@ -79,7 +79,14 @@ export function ReceivableLedgerRow({ row, onEdit, onDelete }: { row: LedgerEntr
         <strong>{primaryContent}</strong>
         {secondaryContent && <small>{secondaryContent}</small>}
       </td>
-      <td><span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span></td>
+      <td>
+        <span
+          className={receivablePill(row.txnType)}
+          title={row.reversalTrace ?? undefined}
+        >
+          {rowTypeLabel(row)}
+        </span>
+      </td>
       <td className={`dd-num ${debit > 0 ? 'dd-num--debit' : 'dd-num--dash'}`}>
         {debit > 0 ? money(debit) : '—'}
       </td>
@@ -116,7 +123,7 @@ export function ReceivableLedgerCard({ row, onEdit, onDelete }: { row: LedgerEnt
     <li className="dd-ledger-mobile-card d-card d-card-border bg-base-100">
       <div className="dd-ledger-mobile-card__head">
         <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
-        <span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span>
+        <span className={receivablePill(row.txnType)} title={row.reversalTrace ?? undefined}>{rowTypeLabel(row)}</span>
         <PaymentRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
       </div>
       <div className="dd-ledger-mobile-card__body">

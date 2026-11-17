@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, desc, like, count, sql } from 'drizzle-orm';
+import { eq, and, desc, like, count, isNull, or, sql } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import type { Tx } from './trip-shared';
 import { ledgerInputsChanged } from './trip-ledger-inputs';
@@ -144,7 +144,7 @@ export class LedgerService {
       .limit(1);
 
     const prevBalance = lastEntry ? Number(lastEntry.balance) : 0;
-
+    
     // Sign convention rules:
     // Customer: Debit increases outstanding balance, Credit decreases outstanding balance
     // Driver/Vendor: Credit increases payable balance, Debit decreases payable balance
@@ -284,7 +284,8 @@ export class LedgerService {
       .from(s.ledger)
       .where(and(
         eq(s.ledger.txnType, TxnType.FUEL_EXPENSE),
-        eq(s.ledger.txnTable, 'trips'),
+        // NULL stamp = legacy/fixture row; its txn_id is still a trip id.
+        or(isNull(s.ledger.txnTable), eq(s.ledger.txnTable, 'trips')),
         eq(s.ledger.txnId, tripId),
         eq(s.ledger.entityType, 'VENDOR'),
         eq(s.ledger.entityId, supplierId),
@@ -293,7 +294,7 @@ export class LedgerService {
       .from(s.ledger)
       .where(and(
         eq(s.ledger.txnType, TxnType.UNLOCK_REVERSAL),
-        eq(s.ledger.txnTable, 'trips'),
+        or(isNull(s.ledger.txnTable), eq(s.ledger.txnTable, 'trips')),
         eq(s.ledger.txnId, tripId),
         eq(s.ledger.entityType, 'VENDOR'),
         eq(s.ledger.entityId, supplierId),
@@ -323,7 +324,7 @@ export class LedgerService {
       .from(s.ledger)
       .where(and(
         eq(s.ledger.txnType, TxnType.EXTERNAL_CARRIER_COST),
-        eq(s.ledger.txnTable, 'trips'),
+        or(isNull(s.ledger.txnTable), eq(s.ledger.txnTable, 'trips')),
         eq(s.ledger.txnId, tripId),
         eq(s.ledger.entityType, 'CARRIER'),
         eq(s.ledger.entityId, carrierId),
@@ -332,7 +333,7 @@ export class LedgerService {
       .from(s.ledger)
       .where(and(
         eq(s.ledger.txnType, TxnType.UNLOCK_REVERSAL),
-        eq(s.ledger.txnTable, 'trips'),
+        or(isNull(s.ledger.txnTable), eq(s.ledger.txnTable, 'trips')),
         eq(s.ledger.txnId, tripId),
         eq(s.ledger.entityType, 'CARRIER'),
         eq(s.ledger.entityId, carrierId),

@@ -3,7 +3,7 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, sql, desc, lte, ne, inArray } from 'drizzle-orm';
+import { eq, and, isNull, or, sql, desc, lte, ne, inArray } from 'drizzle-orm';
 import { TripStatus, FuelMode, Role, TxnType } from '@tingting/shared';
 import type { TripFuelAllocationInput, TripLegInput } from '@tingting/shared';
 import { resolveTripDriverSalary, computeTripTotals, type ComputeTripTotalsOutput } from '@tingting/shared';
@@ -637,7 +637,9 @@ export async function updateTripFigures(
           .from(s.ledger)
           .where(and(
             eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
-            eq(s.ledger.txnTable, 'trips'),
+            // NEPO-50 — txn_table stamped 'trips' on every posting-path row; a
+            // NULL stamp is a legacy/fixture row whose txn_id is still a trip id.
+            or(isNull(s.ledger.txnTable), eq(s.ledger.txnTable, 'trips')),
             eq(s.ledger.txnId, tripId),
             eq(s.ledger.entityType, 'CUSTOMER'),
             eq(s.ledger.entityId, trip.customerId),

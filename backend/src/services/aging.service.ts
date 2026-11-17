@@ -105,7 +105,7 @@ async function fetchLedgerGrouped(
     // counterpart are the only record of that charge and stay.
     conditions.push(sql`not (
       ${s.ledger.entityType} = 'CUSTOMER'
-      and ${s.ledger.txnTable} = 'trips'
+      and (${s.ledger.txnTable} = 'trips' OR ${s.ledger.txnTable} IS NULL)
       and (
         ${s.ledger.txnType} = ${TxnType.EXTERNAL_CARRIER_COST}
         or (
@@ -116,7 +116,7 @@ async function fetchLedgerGrouped(
       and exists (
         select 1 from ${s.ledger} c
         where c.entity_type = 'CARRIER'
-          and c.txn_table = 'trips'
+          and (c.txn_table = 'trips' OR c.txn_table IS NULL)
           and c.txn_id = ${s.ledger.txnId}
           and (
             c.txn_type = ${TxnType.EXTERNAL_CARRIER_COST}

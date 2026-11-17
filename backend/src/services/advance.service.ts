@@ -410,7 +410,7 @@ export async function deleteAdvanceRequest(id: number, requesterId: number) {
       await LedgerService.lockEntity(tx, 'FORWARDER', request.requesterId);
       await tx.delete(s.ledger).where(and(
         eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
-        eq(s.ledger.txnTable, 'advance_requests'),
+        or(isNull(s.ledger.txnTable), eq(s.ledger.txnTable, 'advance_requests')),
         eq(s.ledger.txnId, request.id),
         eq(s.ledger.entityType, 'FORWARDER'),
         eq(s.ledger.entityId, request.requesterId),
@@ -958,7 +958,11 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
           txnId: s.ledger.txnId,
           posted: sql<string>`coalesce(sum(${s.ledger.debit} - ${s.ledger.credit}), 0)`,
         }).from(s.ledger)
-          .where(and(eq(s.ledger.txnType, TxnType.SERVICE_FEE), eq(s.ledger.txnTable, 'trip_expenses'), inArray(s.ledger.txnId, feeExpenseIds)))
+          .where(and(
+            eq(s.ledger.txnType, TxnType.SERVICE_FEE),
+            or(isNull(s.ledger.txnTable), eq(s.ledger.txnTable, 'trip_expenses')),
+            inArray(s.ledger.txnId, feeExpenseIds),
+          ))
           .groupBy(s.ledger.txnId)
       : [];
     const postedByExpense = new Map(feeSums.map((r) => [r.txnId, Number(r.posted)]));

@@ -80,7 +80,7 @@ const NOTE_TABLE_RULES: Array<{ prefixes: string[]; table: LedgerTxnTable }> = [
  * have no table. Note matching is ASCII-safe prefix matching on the posting
  * note — identical to the migration's SQL CASE. */
 export function txnTableFor(
-  txnType: TxnType,
+  txnType: TxnType | string,
   txnId: number | null | undefined,
   note?: string | null,
 ): LedgerTxnTable | null {
@@ -88,5 +88,7 @@ export function txnTableFor(
   for (const rule of NOTE_TABLE_RULES) {
     if (note != null && rule.prefixes.some((p) => note.startsWith(p))) return rule.table;
   }
-  return TXN_TYPE_TABLES[txnType] ?? null;
+  // drizzle's pgEnum hands back the same string union the TS enum defines —
+  // the compiler just can't unify the two nominal shapes.
+  return TXN_TYPE_TABLES[txnType as TxnType] ?? null;
 }

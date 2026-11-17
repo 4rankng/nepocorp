@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import type { Writable } from 'stream';
 import ExcelJS from 'exceljs';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
@@ -10,6 +10,7 @@ import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
 import { getCompanyInfo } from './company-info.service';
 import { CustomerAgingListItem } from './aging.service';
+import { txnTableFor } from '../lib/ledger-txn-table';
 
 type LedgerRow = typeof s.ledger.$inferSelect;
 // Ledger rows enriched with related trip context for customer and supplier displays.
@@ -19,6 +20,10 @@ export type EnrichedLedgerRow = LedgerRow & {
   tripId?: number | null;
   tripCode?: string | null;
   serviceFeeLabel?: string | null;
+  /** NEPO-50 — present on surviving '(Hoàn tác)' reversals only: explains why
+   * the reversal still renders (its mirrored original sits on another ledger or
+   * is missing entirely). */
+  reversalTrace?: string | null;
   fuelDetails?: {
     departureDate: string;
     truckPlate: string | null;
@@ -500,17 +505,6 @@ export function collapseEditCyclePairs(rows: EnrichedLedgerRow[]): EnrichedLedge
 
   if (dropped.size === 0) return rows;
   return rows.filter((_, index) => !dropped.has(index));
-}
-
-/** NEPO-50 r2 — a '(Hoàn tác)' reversal never renders on a debt table. r3
- * pairing already removes every charge+reversal pair; a reversal surviving
- * pairing has no matching original on this book (a data anomaly, or an
- * original living on another ledger) and rendering it would show a credit for
- * a charge the book never displays. Display-only: the ledger stays immutable,
- * aging/balances are computed upstream on the uncollapsed rows. */
-function dropHoanTacReversals(rows: EnrichedLedgerRow[]): EnrichedLedgerRow[] {
-  const left = rows.filter((row) => row.txnType !== TxnType.UNLOCK_REVERSAL);
-  return left.length === rows.length ? rows : left;
 }
 
 /** VND is integer-only (NEPO money law): round every parsed component. */
@@ -1083,10 +1077,22 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   };
   const withVoucherDay = ledgerRows.map((r) => ({ row: r, day: voucherDayOf(r) }));
 
+  // NEPO-50 (kế toán feedback 17/11) — collapse runs on the FULL voucher set
+  // BEFORE any period math: a charge and its '(Hoàn tác)' reversal always
+  // share their trip's voucher day, so pairing can never be split by a period
+  // window. Everything downstream — period summary, aging, the per-trip FIFO
+  // that feeds the THANH TOÁN flow, the sổ lines — reads the collapsed set, so
+  // a payment is never computed against a reverted (net-0) charge. Net-0
+  // pairs render on NO surface; a reversal that survives pairing has no
+  // mirrored original on this book and stays visible with a `reversalTrace`
+  // explaining where its original went.
+  const collapsedRows = collapseEditCyclePairs(withVoucherDay.map(({ row }) => row));
+  const collapsedWithDay = collapsedRows.map((row) => ({ row, day: voucherDayOf(row) }));
+
   // Opening balance derives from every voucher dated strictly before the
   // period — same convention as computePeriodSummary, keyed by voucher day.
   const periodSummary = computePeriodSummary(
-    withVoucherDay.map(({ row, day }) => ({ ...row, timestamp: new Date(`${day}T00:00:00`) })),
+    collapsedWithDay.map(({ row, day }) => ({ ...row, timestamp: new Date(`${day}T00:00:00`) })),
     dateFrom,
     dateTo,
     'CUSTOMER',
@@ -1095,10 +1101,10 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   // Optional date range filter — used by frontend /debt/:id "Bộ lọc khoảng thời gian"
   // (Flow 04 §2.4.1 + PRODUCT-SPECS §4.10: "Bộ lọc khoảng thời gian: 2 ô date picker")
   const inPeriodRows = (dateFrom || dateTo)
-    ? withVoucherDay
+    ? collapsedWithDay
       .filter(({ day }) => (!dateFrom || day >= dateFrom) && (!dateTo || day <= dateTo))
       .map(({ row }) => row)
-    : ledgerRows;
+    : collapsedRows;
 
   const { aging, openInvoices } = computeFifoAging(
     inPeriodRows.map((r) => ({
@@ -1149,10 +1155,63 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   const unpaidTrips = Array.from(tripOutstanding.values())
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // NEPO-46 sổ chi tiết: build from the same collapsed display rows the
+  // NEPO-46 sổ chi tiết: build from the already-collapsed display rows the
   // response renders, seeded by the period opening balance (0 for the
   // unscoped whole-ledger statement — the book starts at zero).
-  const displayRows = dropHoanTacReversals(collapseEditCyclePairs(inPeriodRows));
+  let displayRows = inPeriodRows;
+
+  // NEPO-50 — surviving '(Hoàn tác)' reversals carry a trace: pairing already
+  // consumed every mirrored original on this book, so a survivor's original
+  // either sits on another customer's ledger (trip reassigned between lock and
+  // unlock) or never existed (legacy/anomalous data). One grouped query
+  // resolves both cases for the badge tooltip.
+  const survivingReversals = displayRows.filter((r) => r.txnType === TxnType.UNLOCK_REVERSAL && r.txnId != null);
+  if (survivingReversals.length > 0) {
+    const reversalTxnIds = survivingReversals.map((r) => r.txnId as number);
+    const candidates = await db.select({
+      id: s.ledger.id,
+      txnId: s.ledger.txnId,
+      txnTable: s.ledger.txnTable,
+      txnType: s.ledger.txnType,
+      entityType: s.ledger.entityType,
+      entityId: s.ledger.entityId,
+      debit: s.ledger.debit,
+      credit: s.ledger.credit,
+      note: s.ledger.note,
+    })
+      .from(s.ledger)
+      .where(and(inArray(s.ledger.txnId, reversalTxnIds), ne(s.ledger.txnType, TxnType.UNLOCK_REVERSAL)));
+
+    const traceByRowId = new Map<number, string>();
+    for (const reversal of survivingReversals) {
+      const reversalTable = reversal.txnTable ?? txnTableFor(reversal.txnType, reversal.txnId, reversal.note);
+      const mirroredCredit = Number(reversal.credit ?? 0);
+      const mirroredDebit = Number(reversal.debit ?? 0);
+      const originals = candidates.filter((c) => {
+        if (c.txnId !== reversal.txnId) return false;
+        const candidateTable = c.txnTable ?? txnTableFor(c.txnType, c.txnId, c.note);
+        if (candidateTable !== reversalTable) return false;
+        return mirroredCredit > 0 ? Number(c.debit) === mirroredCredit : Number(c.credit) === mirroredDebit;
+      });
+      if (originals.length === 0) {
+        traceByRowId.set(reversal.id, 'Không tìm thấy dòng gốc đối ứng cùng số tiền — dòng gốc đã bị xóa hoặc chưa từng tồn tại (dữ liệu cũ).');
+        continue;
+      }
+      const onOtherBook = originals.find((c) => !(c.entityType === reversal.entityType && c.entityId === reversal.entityId));
+      traceByRowId.set(
+        reversal.id,
+        onOtherBook
+          ? `Dòng gốc đối ứng nằm trên sổ khác: ${onOtherBook.entityType} #${onOtherBook.entityId} (ledger #${onOtherBook.id}).`
+          : `Dòng gốc đối ứng: ledger #${originals[0].id} (cùng sổ, khác số tiền hoặc đã đối ứng ở kỳ khác).`,
+      );
+    }
+
+    displayRows = displayRows.map((r) => {
+      const trace = traceByRowId.get(r.id);
+      return trace ? { ...r, reversalTrace: trace } : r;
+    });
+  }
+
   const { lines: statementLines, totals: statementTotals } = buildStatementLines(
     displayRows,
     periodSummary?.openingBalance ?? 0,
@@ -1389,7 +1448,7 @@ export async function getSupplierStatement(supplierId: number, dateFrom?: string
     supplier,
     // Display rows only — totalOutstanding/currentTotalOutstanding/aging and
     // periodSummary above are computed from the uncollapsed rows (r1 rule).
-    ledgerRows: dropHoanTacReversals(collapseEditCyclePairs(ledgerRows)),
+    ledgerRows: collapseEditCyclePairs(ledgerRows),
     totalOutstanding,
     currentTotalOutstanding,
     agingAsOfPeriodEnd,
@@ -2051,7 +2110,7 @@ export async function getCarrierPayableStatement(
     supplier: carrier,
     // Display rows only — totalOutstanding/agingBuckets/periodSummary are
     // computed from the uncollapsed rows (r1 rule).
-    ledgerRows: dropHoanTacReversals(collapseEditCyclePairs(ledgerRows)),
+    ledgerRows: collapseEditCyclePairs(ledgerRows),
     totalOutstanding,
     agingBuckets: [
       { range: '0-30 ngày', amount: aging.current },

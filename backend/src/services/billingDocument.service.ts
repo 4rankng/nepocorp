@@ -750,6 +750,7 @@ async function postDebitNoteDelta(
   await LedgerService.postEntry(tx, {
     txnType: TxnType.ADJUSTMENT,
     txnId: input.documentId,
+    txnTable: 'billing_documents',
     receiptId: `GBN:${input.documentId}`,
     entityType: 'CUSTOMER',
     entityId: input.customerId,

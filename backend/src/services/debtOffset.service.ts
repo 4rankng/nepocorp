@@ -136,6 +136,7 @@ export async function approveDebtOffset(
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
       txnId: id,
+      txnTable: 'debt_offsets',
       entityType: 'CUSTOMER',
       entityId: offset.customerId,
       debit: 0,
@@ -147,6 +148,7 @@ export async function approveDebtOffset(
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
       txnId: id,
+      txnTable: 'debt_offsets',
       entityType: 'VENDOR',
       entityId: offset.supplierId,
       debit: amount,

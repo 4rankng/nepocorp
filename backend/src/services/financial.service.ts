@@ -6,7 +6,7 @@
  */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, inArray, sql, desc, isNull, gte, lte } from 'drizzle-orm';
+import { eq, and, inArray, sql, desc, isNull, gte, lte, or } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -535,7 +535,11 @@ export async function createAdjustment(input: AdjustmentInput) {
  */
 export async function getTripAdjustments(tripId: number) {
   return db.select().from(s.ledger)
-    .where(and(eq(s.ledger.txnType, TxnType.ADJUSTMENT), eq(s.ledger.txnTable, 'trips'), eq(s.ledger.txnId, tripId)))
+    .where(and(
+      eq(s.ledger.txnType, TxnType.ADJUSTMENT),
+      or(isNull(s.ledger.txnTable), eq(s.ledger.txnTable, 'trips')),
+      eq(s.ledger.txnId, tripId),
+    ))
     .orderBy(desc(s.ledger.id));
 }
 

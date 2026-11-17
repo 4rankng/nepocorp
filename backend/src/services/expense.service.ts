@@ -109,6 +109,7 @@ export async function createExpense(tx: Tx, data: ExpenseCreateInput, userId?: n
     await LedgerService.postEntry(tx, {
       txnType: TxnType.VENDOR_EXPENSE,
       txnId: expense.id,
+      txnTable: 'expenses',
       entityType: 'VENDOR',
       entityId: data.supplierId,
       debit: 0,
@@ -145,6 +146,7 @@ export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
       txnId: id,
+      txnTable: 'expenses',
       entityType: 'VENDOR',
       entityId: existing.supplierId,
       debit: originalAmount,
@@ -174,6 +176,7 @@ export async function updateExpense(tx: Tx, id: number, data: ExpenseUpdateInput
     await LedgerService.postEntry(tx, {
       txnType: TxnType.VENDOR_EXPENSE,
       txnId: id,
+      txnTable: 'expenses',
       entityType: 'VENDOR',
       entityId: newSupplierId,
       debit: 0,
@@ -224,6 +227,7 @@ export async function deleteExpense(tx: Tx, id: number, _userId?: number) {
     await LedgerService.postEntry(tx, {
       txnType: TxnType.ADJUSTMENT,
       txnId: id,
+      txnTable: 'expenses',
       entityType: 'VENDOR',
       entityId: existing.supplierId,
       debit: Number(existing.amount),
