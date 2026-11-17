@@ -49,7 +49,7 @@ const fastFixture = (overrides: Partial<FastStatementDetail> = {}): FastStatemen
         kind: 'payment',
         docDate: '2026-10-15',
         docNo: 'R1',
-        lines: [paymentLine('KH trả 12.000.000 ₫ ngày 15/10/2026 (chuyển khoản)', 12_000_000)],
+        lines: [paymentLine('Công ty TNHH Vận tải Test thanh toán (chuyển khoản)', 12_000_000)],
         debit: 0,
         credit: 12_000_000,
       },
@@ -124,10 +124,10 @@ describe('StatementLedger (NEPO-47 SỔ CHI TIẾT CÔNG NỢ mẫu Fast)', () =
     expect(chiHoCells[4].textContent).toBe('2.000.000'); // NỢ của dòng chi hộ
   });
 
-  it('payment voucher reads KH trả … right after DIỄN GIẢI in the 6-column layout', () => {
+  it('payment voucher reads Công ty … thanh toán right after DIỄN GIẢI in the 6-column layout', () => {
     const { getByTestId, queryByText } = render(<StatementLedger fast={fastFixture()} />);
     const paymentRow = getByTestId('so-ke-payment-row');
-    expect(within(paymentRow).getByText('KH trả 12.000.000 ₫ ngày 15/10/2026 (chuyển khoản)')).toBeTruthy();
+    expect(within(paymentRow).getByText('Công ty TNHH Vận tải Test thanh toán (chuyển khoản)')).toBeTruthy();
     expect(within(paymentRow).getByText('R1')).toBeTruthy();
     expect(queryByText('Thanh toán')).toBeNull(); // không badge
     expect(queryByText('1121')).toBeNull(); // cột TK Đ.ỨNG đã bỏ

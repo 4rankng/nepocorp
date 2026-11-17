@@ -42,7 +42,7 @@ const config = {
     line(2, { description: 'Phí chi hộ', debit: 2_000_000, txnType: TxnType.SERVICE_FEE, counterAccount: '5111' }),
     line(3, {
       kind: 'payment', month: '2026-10', postedDate: '2026-10-15', docDate: '2026-10-15', docNo: 'RB1',
-      description: 'KH trả 8.000.000 ₫ ngày 15/10/2026 (chuyển khoản)', credit: 8_000_000, txnType: TxnType.PAYMENT_RECEIVED,
+      description: 'Công ty CỔ PHẦN VẬN TẢI TEST thanh toán (chuyển khoản)', credit: 8_000_000, txnType: TxnType.PAYMENT_RECEIVED,
       tripId: null, rowCount: 1, counterAccount: '1121',
     }),
   ],

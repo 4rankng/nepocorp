@@ -89,8 +89,8 @@ describe('payment received date (Ngày nhận)', () => {
       'ledger timestamp (what ledger rows display and aging ages) is the received date',
     );
     assert.ok(
-      row.timestamp.toISOString().endsWith('17:00:00.000Z'),
-      `stored at midnight Indochina time, got ${row.timestamp.toISOString()}`,
+      row.timestamp.toISOString().endsWith('00:00:00.000Z'),
+      `stored at UTC midnight of the received day (Indochina wall time at offset 0 — what toISOString().slice(0,10) displays), got ${row.timestamp.toISOString()}`,
     );
   });
 

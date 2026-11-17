@@ -480,17 +480,19 @@ export interface StatementLinesResult {
 }
 
 /** The MISA payment line text — both call sites (draft creation + fold)
- * MUST produce the identical format: 'KH trả X ₫ ngày dd/mm/yyyy'. The
+ * MUST produce the identical format: 'Công ty <tên khách> thanh toán'
+ * (NEPO-48 — ngày + số tiền đã có cột NGÀY / SỐ PHÁT SINH CÓ riêng). The
  * channel suffix names the TK đối ứng for the accountant: BANK →
  * ' (chuyển khoản)' (TK 1121), CASH → ' (tiền mặt)' (TK 1111); legacy rows
  * with no recorded channel keep the bare text. */
 const paymentLineDescription = (
-  debit: number,
-  credit: number,
-  postedDate: string,
+  customerName: string,
   method?: string | null,
 ): string => {
-  const base = `KH trả ${(credit - debit).toLocaleString('vi-VN')} ₫ ngày ${postedDate.slice(8, 10)}/${postedDate.slice(5, 7)}/${postedDate.slice(0, 4)}`;
+  // Names already carrying the legal form ('Công ty …', 'CÔNG TY …') don't
+  // get the prefix doubled — 'Công ty <tên> thanh toán' still reads whole.
+  const name = customerName.trim();
+  const base = /^công ty/i.test(name) ? `${name} thanh toán` : `Công ty ${name} thanh toán`;
   if (method === 'BANK') return `${base} (chuyển khoản)`;
   if (method === 'CASH') return `${base} (tiền mặt)`;
   return base;
@@ -535,9 +537,10 @@ const stripDocNoFromNote = (note: string, docNo: string | null): string => {
  * đi chuyến / ngày nhận), the order the Fast book renders.
  *
  * Payment folding: one bank receipt = one document. PAYMENT_RECEIVED rows
- * sharing a receiptId fold into a single aggregate line — 'KH trả X ₫ ngày
- * dd/mm' — because recordPayment FIFO-splits the received total across trips
- * at posting time, and the accountant must read the receipt, not the split.
+ * sharing a receiptId fold into a single aggregate line — 'Công ty <tên
+ * khách> thanh toán' — because recordPayment FIFO-splits the received total
+ * across trips at posting time, and the accountant must read the receipt,
+ * not the split.
  * Rows without a receipt (legacy) stand alone. Folding is presentational:
  * the running balance is opening + Σ(debit − credit) over whatever lines are
  * on screen, so the sổ always closes at the same dư cuối the period summary
@@ -552,6 +555,7 @@ const stripDocNoFromNote = (note: string, docNo: string | null): string => {
 export function buildStatementLines(
   rows: EnrichedLedgerRow[],
   openingBalance: number,
+  customerName: string,
   tripDepartureByTripId?: Map<number, string>,
 ): StatementLinesResult {
   const opening = Math.round(openingBalance);
@@ -603,10 +607,11 @@ export function buildStatementLines(
           draft.credit += credit;
           draft.rowCount += 1;
           // The aggregate amount changes with every folded row — the
-          // 'KH trả X ₫ ngày dd/mm' text must track the running receipt
-          // total, not the first FIFO slice. method/counterAccount stay the
-          // first row's: every slice of one receipt posts the same channel.
-          draft.description = paymentLineDescription(draft.debit, draft.credit, draft.postedDate, draft.method);
+          // 'Công ty … thanh toán' text stays constant per receipt; the
+          // money lives in the SỐ PHÁT SINH column. method/counterAccount
+          // stay the first row's: every slice of one receipt posts the same
+          // channel.
+          draft.description = paymentLineDescription(customerName, draft.method);
           continue;
         }
       }
@@ -624,7 +629,7 @@ export function buildStatementLines(
         : (r.tripId != null ? tripDepartureByTripId?.get(r.tripId) ?? null : null),
       docNo: isPayment ? (r.receiptId ?? null) : (r.tripCode ?? null),
       description: isPayment
-        ? paymentLineDescription(debit, credit, postedDate, method)
+        ? paymentLineDescription(customerName, method)
         : stripDocNoFromNote(r.note ?? 'Ghi nhận công nợ', r.tripCode ?? null),
       method,
       counterAccount: counterAccountFor(r, isPayment),
@@ -1081,6 +1086,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   const { lines: statementLines, totals: statementTotals } = buildStatementLines(
     displayRows,
     periodSummary?.openingBalance ?? 0,
+    customer.name,
     tripDepartureByTripId,
   );
 

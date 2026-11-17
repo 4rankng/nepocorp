@@ -6,12 +6,12 @@ import { buildStatementLines, buildFastStatement, computePeriodSummary } from '.
 
 /**
  * Unit tests for the NEPO-46 sổ chi tiết builder (MISA-style customer
- * statement lines): payment receipts fold into ONE aggregate line ('KH trả
- * X ₫ ngày dd/mm'), trips + chi hộ stay per-document, every line carries
- * integer-VND debit/credit plus the running dư cuối, and the totals validate
- * by TOTAL (closing = opening + Σnợ − Σcó) — never against per-trip
- * component sums, because the balance legitimately carries non-trip rows
- * (trả trước credits, adjustments).
+ * statement lines): payment receipts fold into ONE aggregate line ('Công ty
+ * <tên khách> thanh toán', NEPO-48), trips + chi hộ stay per-document, every
+ * line carries integer-VND debit/credit plus the running dư cuối, and the
+ * totals validate by TOTAL (closing = opening + Σnợ − Σcó) — never against
+ * per-trip component sums, because the balance legitimately carries non-trip
+ * rows (trả trước credits, adjustments).
  */
 
 type LineRow = Parameters<typeof buildStatementLines>[0][number];
@@ -58,7 +58,7 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
       row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 7_500_000, receiptId: 'R1', txnId: 11, note: 'Thanh toán chuyến TRP-202607-0001' }),
       row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 4_500_000, receiptId: 'R1', txnId: 21, note: 'Thanh toán chuyến TRP-202607-0001' }),
     ];
-    const { lines, totals } = buildStatementLines(rows, 0);
+    const { lines, totals } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
 
     assert.equal(lines.length, 3, '2 transaction documents + 1 aggregate payment');
     const payment = lines[lines.length - 1];
@@ -66,10 +66,24 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
     assert.equal(payment.docNo, 'R1');
     assert.equal(payment.credit, 12_000_000, 'FIFO split rows sum into the receipt total');
     assert.equal(payment.rowCount, 2);
-    assert.match(payment.description, /KH trả 12\.000\.000 ₫ ngày 15\/10\/2026/);
+    assert.match(payment.description, /Công ty TNHH Test thanh toán/);
     assert.equal(totals.closingBalance, 0);
     assert.equal(totals.debitTotal, 12_000_000);
     assert.equal(totals.creditTotal, 12_000_000);
+  });
+
+  test('payment line reads Công ty <tên khách> thanh toán — no date, no amount in text (NEPO-48)', () => {
+    const rows = [
+      row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 15_584_000, receiptId: 'R1', paymentMethod: 'BANK', note: 'Thanh toán chuyến TRP-202606-0040' }),
+    ];
+    const { lines } = buildStatementLines(rows, 0, 'TEST- Sao kê Fast NEPO-48');
+
+    const payment = lines[0];
+    assert.equal(payment.description, 'Công ty TEST- Sao kê Fast NEPO-48 thanh toán (chuyển khoản)');
+    assert.doesNotMatch(payment.description, /ngày|₫/);
+    // A name already carrying the legal form doesn't double the prefix.
+    const { lines: prefixed } = buildStatementLines(rows, 0, 'CÔNG TY CP VẬN TẢI ABC');
+    assert.equal(prefixed[0].description, 'CÔNG TY CP VẬN TẢI ABC thanh toán (chuyển khoản)');
   });
 
   test('payments without a receipt stand alone and do not merge', () => {
@@ -77,7 +91,7 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
       row({ ts: '2026-10-01T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 1_000_000 }),
       row({ ts: '2026-10-02T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 2_000_000 }),
     ];
-    const { lines } = buildStatementLines(rows, 0);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(lines.length, 2);
     assert.ok(lines.every(l => l.kind === 'payment' && l.docNo === null));
   });
@@ -87,7 +101,7 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
       row({ ts: '2026-08-01T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 3_000_000, tripCode: 'T1' }),
       row({ ts: '2026-08-20T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 1_000_000, receiptId: 'R9' }),
     ];
-    const { lines, totals } = buildStatementLines(rows, 5_000_000);
+    const { lines, totals } = buildStatementLines(rows, 5_000_000, 'Công ty TNHH Test');
     assert.equal(lines[0].balance, 8_000_000);
     assert.equal(lines[1].balance, 7_000_000);
     assert.deepEqual(totals, { openingBalance: 5_000_000, debitTotal: 3_000_000, creditTotal: 1_000_000, closingBalance: 7_000_000 });
@@ -99,7 +113,7 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
       row({ ts: '2026-10-10T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 500_000, receiptId: 'R2' }),
       row({ ts: '2026-09-01T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 700_000, tripCode: 'T0' }),
     ];
-    const { lines } = buildStatementLines(rows, 0);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(lines[0].month, '2026-09');
     assert.equal(lines[1].month, '2026-10');
     assert.equal(lines[1].balance, 200_000);
@@ -110,7 +124,7 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
     const rows = [
       row({ ts: '2026-11-01T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 7_000_000, receiptId: 'R3' }),
     ];
-    const { lines, totals } = buildStatementLines(rows, 0);
+    const { lines, totals } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(totals.closingBalance, -7_000_000);
     assert.equal(lines[0].balance, -7_000_000);
     assert.equal(totals.creditTotal - totals.debitTotal, -totals.closingBalance);
@@ -121,7 +135,7 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
       row({ ts: '2026-07-01T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 1_234.6 }),
       row({ ts: '2026-07-02T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: '99.4' as unknown as number }),
     ];
-    const { totals } = buildStatementLines(rows, 0);
+    const { totals } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(totals.debitTotal, 1_334, '1.234,6 → 1.235 + 99,4 → 99');
     assert.ok(Number.isInteger(totals.debitTotal) && Number.isInteger(totals.closingBalance));
   });
@@ -132,7 +146,7 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
       row({ ts: '2026-07-02T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 1_500_000, receiptId: 'R4' }),
     ];
     const summary = computePeriodSummary(rows, '2026-07-01', '2026-07-31', 'CUSTOMER');
-    const { totals } = buildStatementLines(rows, summary!.openingBalance);
+    const { totals } = buildStatementLines(rows, summary!.openingBalance, 'Công ty TNHH Test');
     assert.equal(totals.closingBalance, summary!.closingBalance);
     assert.equal(totals.debitTotal, summary!.debitTotal);
     assert.equal(totals.creditTotal, summary!.creditTotal);
@@ -143,7 +157,7 @@ describe('buildStatementLines — payment folding (NEPO-46)', () => {
       row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 10_000_000, txnId: 33, tripId: 33, tripCode: 'TRP-202607-0033', routeName: 'Hải Phòng — Hà Nội' }),
     ];
     const departures = new Map([[33, '2026-07-04']]);
-    const { lines } = buildStatementLines(rows, 0, departures);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test', departures);
     assert.equal(lines[0].docNo, 'TRP-202607-0033');
     assert.equal(lines[0].docDate, '2026-07-04');
     assert.equal(lines[0].routeName, 'Hải Phòng — Hà Nội');
@@ -159,7 +173,7 @@ describe('buildStatementLines — TK đối ứng (MISA counter account)', () =>
       row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 7_500_000, receiptId: 'RB', paymentMethod: 'BANK', txnId: 11 }),
       row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 4_500_000, receiptId: 'RB', paymentMethod: 'BANK', txnId: 21 }),
     ];
-    const { lines, totals } = buildStatementLines(rows, 1_000_000);
+    const { lines, totals } = buildStatementLines(rows, 1_000_000, 'Công ty TNHH Test');
 
     const payment = lines[lines.length - 1];
     assert.equal(payment.kind, 'payment');
@@ -174,7 +188,7 @@ describe('buildStatementLines — TK đối ứng (MISA counter account)', () =>
       row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 5_000_000, tripCode: 'T1' }),
       row({ ts: '2026-07-20T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 5_000_000, receiptId: 'RC', paymentMethod: 'CASH', txnId: 1 }),
     ];
-    const { lines } = buildStatementLines(rows, 0);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     const payment = lines[1];
     assert.equal(payment.counterAccount, '1111');
     assert.match(payment.description, /\(tiền mặt\)$/);
@@ -185,11 +199,11 @@ describe('buildStatementLines — TK đối ứng (MISA counter account)', () =>
       row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 5_000_000, tripCode: 'T1' }),
       row({ ts: '2026-07-20T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 5_000_000, receiptId: 'RL', txnId: 1 }),
     ];
-    const { lines } = buildStatementLines(rows, 0);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     const payment = lines[1];
     assert.equal(payment.counterAccount, null);
     assert.doesNotMatch(payment.description, /\(chuyển khoản\)|\(tiền mặt\)/);
-    assert.match(payment.description, /KH trả 5\.000\.000 ₫ ngày 20\/07\/2026/);
+    assert.match(payment.description, /^Công ty TNHH Test thanh toán$/);
   });
 
   test('TRIP_REVENUE clears against 5111; ADJUSTMENT carries no counter account', () => {
@@ -197,7 +211,7 @@ describe('buildStatementLines — TK đối ứng (MISA counter account)', () =>
       row({ ts: '2026-07-01T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 3_000_000, tripCode: 'T1' }),
       row({ ts: '2026-07-02T00:00:00Z', txnType: TxnType.ADJUSTMENT, debit: 500_000, note: 'Điều chỉnh' }),
     ];
-    const { lines } = buildStatementLines(rows, 0);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(lines[0].counterAccount, '5111');
     assert.equal(lines[1].counterAccount, null);
   });
@@ -208,7 +222,7 @@ describe('buildStatementLines — diễn giải strips the duplicated trip code'
     const rows = [
       row({ ts: '2026-10-23T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 22_000_000, note: 'Doanh thu chuyến TRP-202610-0057', txnId: 57, tripId: 57, tripCode: 'TRP-202610-0057' }),
     ];
-    const { lines } = buildStatementLines(rows, 0);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(lines[0].docNo, 'TRP-202610-0057');
     assert.equal(lines[0].description, 'Doanh thu chuyến');
   });
@@ -217,7 +231,7 @@ describe('buildStatementLines — diễn giải strips the duplicated trip code'
     const rows = [
       row({ ts: '2026-10-23T00:00:00Z', txnType: TxnType.TRIP_REVENUE, credit: 6_480_000, note: 'Doanh thu chuyến TRP-202610-0020 (Hoàn tác)', txnId: 20, tripId: 20, tripCode: 'TRP-202610-0020' }),
     ];
-    const { lines } = buildStatementLines(rows, 0);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(lines[0].description, 'Doanh thu chuyến (Hoàn tác)');
   });
 
@@ -226,7 +240,7 @@ describe('buildStatementLines — diễn giải strips the duplicated trip code'
       row({ ts: '2026-10-24T00:00:00Z', txnType: TxnType.SERVICE_FEE, debit: 500_000, note: 'Phí chi hộ', txnId: 21 }),
       row({ ts: '2026-10-25T00:00:00Z', txnType: TxnType.ADJUSTMENT, debit: 100_000, note: 'Điều chỉnh theo TRP-202609-0001', tripCode: 'TRP-202610-0057' }),
     ];
-    const { lines } = buildStatementLines(rows, 0);
+    const { lines } = buildStatementLines(rows, 0, 'Công ty TNHH Test');
     assert.equal(lines[0].description, 'Phí chi hộ');
     assert.equal(lines[1].description, 'Điều chỉnh theo TRP-202609-0001', 'a different trip reference survives');
   });
@@ -256,7 +270,7 @@ describe('buildFastStatement — NEPO-47 Fast SỔ CHI TIẾT CÔNG NỢ', () =>
     postedDate: posted,
     docDate: posted,
     docNo,
-    description: `KH trả ${credit.toLocaleString('vi-VN')} ₫ ngày ${posted.slice(8, 10)}/${posted.slice(5, 7)}/${posted.slice(0, 4)}`,
+    description: 'Công ty TNHH Vận tải Test thanh toán (chuyển khoản)',
     counterAccount: '1121',
     debit: 0,
     credit,
@@ -358,7 +372,7 @@ describe('buildFastStatement — NEPO-47 Fast SỔ CHI TIẾT CÔNG NỢ', () =>
       row({ ts: '2026-07-05T00:00:00Z', txnType: TxnType.TRIP_REVENUE, debit: 10_000_000, txnId: 41, tripId: 41, tripCode: 'TRP-202607-0041' }),
       row({ ts: '2026-10-15T00:00:00Z', txnType: TxnType.PAYMENT_RECEIVED, credit: 4_000_000, receiptId: 'RB41', paymentMethod: 'BANK', txnId: 41 }),
     ];
-    const { vouchers } = buildFastStatement(buildStatementLines(rows, 0).lines, { openingBalance: 0, debitTotal: 10_000_000, creditTotal: 4_000_000, closingBalance: 6_000_000 });
+    const { vouchers } = buildFastStatement(buildStatementLines(rows, 0, 'Công ty TNHH Test').lines, { openingBalance: 0, debitTotal: 10_000_000, creditTotal: 4_000_000, closingBalance: 6_000_000 });
     assert.deepEqual(vouchers[0].lines.map((l) => l.contraAccount), ['5111']);
     assert.deepEqual(vouchers[1].lines.map((l) => l.contraAccount), ['1121']);
   });

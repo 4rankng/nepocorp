@@ -26,9 +26,11 @@ export interface PaymentInput {
 
 /**
  * Validate a "Ngày nhận" and convert it to the ledger timestamp the entry
- * carries: midnight Indochina time, the same convention carrier payments use.
- * The ledger row's timestamp is what the statement ledger rows display and
- * what FIFO aging buckets age against, so one field covers display + aging.
+ * carries: UTC midnight of the received day — Indochina wall time at
+ * UTC-offset 0, the repo-wide ledger convention — so every reader that
+ * slices `toISOString()` (ledger display, FIFO aging buckets, statement
+ * period filter) sees exactly the received date. One field covers display
+ * + aging.
  *
  * Validated here (not only in the route schema) because the service is also
  * called directly — by tests and any future internal consumers.
@@ -42,7 +44,7 @@ function receivedDateToTimestamp(receivedDate: string | undefined): Date | undef
   if (receivedDate > today) {
     throw new ApiError(422, 'Ngày nhận không được lớn hơn ngày hôm nay');
   }
-  return new Date(`${receivedDate}T00:00:00+07:00`);
+  return new Date(`${receivedDate}T00:00:00Z`);
 }
 
 /**
