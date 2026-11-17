@@ -31,6 +31,8 @@ overrides:
   browserslist@<=4.28.6: ">=4.28.7 <5"
   qs@<6.16.0: ">=6.16.0 <7"
   systeminformation@<5.33.16: ">=5.33.16 <6"
+  glob@10: "^14.0.2"
+  minimatch@>=7 <11: "^11.0.1"
 
 # Native/postinstall builds that are allowed to run (pnpm 10 blocks the rest).
 onlyBuiltDependencies:
