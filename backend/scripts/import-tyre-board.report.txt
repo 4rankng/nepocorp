@@ -1,0 +1,13 @@
+[report] 15C-136.31 (sheet '136.31'): 21/22 slot rows imported; fully-empty slots (skipped): 5; slots without serial: 5
+[report] 15C-180.99 (sheet '180.99'): 22/22 slot rows imported
+[report] 15C-139.82 (sheet '139.82'): 22/22 slot rows imported
+[unmapped] 15C-139.82 sheet row 62: serial='2551952503' model='SAILUN' date='2025-10-30' note='' (no STT — not imported)
+[unmapped] 15C-139.82 sheet row 63: serial='32422057379' model='BS171' date='2024-09-11' note='Thay từ xe 070.63 sang ngày 02/6/26' (no STT — not imported)
+[unmapped] 15C-139.82 sheet row 64: serial='32512013049' model='BA267' date='2025-08-30' note='Thay cho quả nổ seri 201202011271 không có trong danh sách' (no STT — not imported)
+[unmapped] 15C-139.82 sheet row 65: serial='32515062121' model='BD171' date='2025-09-20' note='Thay quả treo dự phòng 132223058 thanh lý' (no STT — not imported)
+[unmapped] 15C-139.82 sheet row 66: serial='2552679050' model='SAILUN' date='2026-08-06' note='' (no STT — not imported)
+[unmapped] 15C-139.82 sheet row 67: serial='065204048' model='GS111' date='2025-07-17' note='Thay từ xe 070.63 sang ngày 02/6/26' (no STT — not imported)
+[report] 15H-168.73 (sheet '168.73'): 22/22 slot rows imported; slots without serial: 5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
+[unmapped] 15H-168.73 sheet row 66: serial='295204002' model='GS111' date='2025-10-05' note='gửi bảo hành ngày 03/6 thay bằng 525113013' (no STT — not imported)
+[unmapped] 15H-168.73 sheet row 67: serial='295304044' model='GS111' date='2025-10-05' note='Chuyển xe 15C-136.31 ngày 12/6' (no STT — not imported)
+[warning] 15C-180.99: serial 195127031 appears at positions [13, 18]
