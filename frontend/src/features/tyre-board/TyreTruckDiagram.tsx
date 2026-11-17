@@ -86,12 +86,12 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
   ].filter(Boolean).join(" · ");
 
   const opacity = slot?.serial ? 1 : 0.45;
-  const cx = geom.x + geom.w / 2 + (geom.pair ? geom.pair.dx / 2 : 0);
-  const cy = geom.y + geom.h / 2;
-  const pill = (px: number) => (
+  const cx = geom.x + geom.w / 2 + (geom.pair?.dx ?? 0) / 2;
+  const cy = geom.y + geom.h / 2 + (geom.pair?.dy ?? 0) / 2;
+  const pill = (px: number, py: number) => (
     <rect
       x={px}
-      y={geom.y}
+      y={py}
       width={geom.w}
       height={geom.h}
       rx={geom.h / 2}
@@ -117,8 +117,8 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
         />
       ) : (
         <>
-          {pill(geom.x)}
-          {geom.pair ? pill(geom.x + geom.pair.dx) : null}
+          {pill(geom.x, geom.y)}
+          {geom.pair ? pill(geom.x + (geom.pair.dx ?? 0), geom.y + (geom.pair.dy ?? 0)) : null}
         </>
       )}
       <text
@@ -199,6 +199,15 @@ function TopViewOutlineVertical() {
       <rect x={175} y={155} width={120} height={115} rx={6} fill="#f4f7fb" stroke="none" />
       <rect x={210} y={285} width={50} height={100} rx={4} fill="#f4f7fb" stroke="none" />
       <rect x={140} y={390} width={190} height={440} rx={4} fill={SLAB_FILL} stroke={OUTLINE} />
+      {/* Axle lines through the pill columns (under the pills) */}
+      <g stroke="#b8cdf5" strokeWidth={2}>
+        <line x1={137} y1={52} x2={333} y2={52} />
+        <line x1={147} y1={156} x2={343} y2={156} />
+        <line x1={147} y1={240} x2={343} y2={240} />
+        <line x1={128} y1={690} x2={342} y2={690} />
+        <line x1={128} y1={750} x2={342} y2={750} />
+        <line x1={128} y1={810} x2={342} y2={810} />
+      </g>
     </g>
   );
 }

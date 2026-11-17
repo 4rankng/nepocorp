@@ -249,7 +249,23 @@
 }
 
 @media (max-width: 640px) {
-  .tbp { padding: 16px 16px 24px; }
+  /* Edge-to-edge: no side gutters — sheet and drawing span the screen. */
+  .tbp { padding: 0 0 24px; }
+  .tbp-back { margin: 4px 0 6px 12px; }
+  .tbp-wrap { border-radius: 0; padding: 12px; }
+  .tbp-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .tbp-head h1 { font-size: 17px; }
+  .tbp-plate { padding: 4px 10px; font-size: 13px; }
+
+  /* The portrait drawing fills the screen width edge to edge — the height
+     cap + auto width letterboxed it and wasted half the phone screen. The
+     -20px cancels the sheet padding (12) and the app shell gutter (8). */
+  .tbp-diagram { margin: 10px -20px 8px; padding: 0; border: none; border-radius: 0; background: transparent; }
+  .tbp-diagram--portrait svg {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
 
   /* Avoid iOS focus-zoom: inputs at ≥16px keep the viewport static.
      The in-SVG serial editors are excluded — their px are SVG user units
