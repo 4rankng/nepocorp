@@ -530,8 +530,9 @@ const stripDocNoFromNote = (note: string, docNo: string | null): string => {
 
 /**
  * Builds the MISA 'Sổ chi tiết' lines (NEPO-46) from the statement's display
- * rows (already period-filtered + collapseEditCyclePairs'd) and the period
- * opening balance.
+ * rows (already voucher-date-filtered + collapseEditCyclePairs'd, NEPO-48) and
+ * the period opening balance. Lines come out ascending by voucher date (ngày
+ * đi chuyến / ngày nhận), the order the Fast book renders.
  *
  * Payment folding: one bank receipt = one document. PAYMENT_RECEIVED rows
  * sharing a receiptId fold into a single aggregate line — 'KH trả X ₫ ngày
@@ -644,9 +645,18 @@ export function buildStatementLines(
   let balance = opening;
   let debitTotal = 0;
   let creditTotal = 0;
-  const orderedDrafts = [...drafts.values()].sort((a, b) =>
-    a.timestamp !== b.timestamp ? a.timestamp - b.timestamp : a.id - b.id,
-  );
+  // NEPO-48 — the sổ reads in voucher-date order (ngày chứng từ: ngày đi
+  // chuyến for trip documents, ngày nhận for payment receipts), ascending
+  // within the period. Posted order scrambles the book when a trip locks
+  // days/weeks after its departure or a payment is backdated. Ties break by
+  // posted instant then id so STT order stays deterministic.
+  const orderedDrafts = [...drafts.values()].sort((a, b) => {
+    const dayA = a.docDate ?? a.postedDate;
+    const dayB = b.docDate ?? b.postedDate;
+    if (dayA !== dayB) return dayA.localeCompare(dayB);
+    if (a.timestamp !== b.timestamp) return a.timestamp - b.timestamp;
+    return a.id - b.id;
+  });
   for (const d of orderedDrafts) {
     balance += d.debit - d.credit;
     debitTotal += d.debit;
@@ -808,7 +818,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
         )
       ),
   );
-  let ledgerRows = allLedgerRows;
+  const ledgerRows = allLedgerRows;
 
   const now = new Date();
   // Debt owed TODAY, independent of the period filter. `totalOutstanding`
@@ -823,9 +833,9 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     ).buckets
     : null;
 
-  // Period summary (đầu kỳ / phát sinh / cuối kỳ) is computed BEFORE the
-  // date filter so we can read the stored `balance` of the last pre-period row.
-  const periodSummary = computePeriodSummary(ledgerRows, dateFrom, dateTo, 'CUSTOMER');
+  // Period summary (đầu kỳ / phát sinh / cuối kỳ) is computed AFTER trip
+  // enrichment on the voucher-date key (NEPO-48) so its đầu/cuối kỳ reconcile
+  // against the lines the sổ actually shows.
 
   // Latest activity across the WHOLE ledger (pre-filter) — the detail pages
   // use it to default the period filter to the month that actually has data
@@ -833,19 +843,6 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   const latestActivityDate = ledgerRows.length > 0
     ? ledgerRows.reduce((max, r) => r.timestamp > max ? r.timestamp : max, ledgerRows[0].timestamp).toISOString().slice(0, 10)
     : null;
-
-  // Optional date range filter — used by frontend /debt/:id "Bộ lọc khoảng thời gian"
-  // (Flow 04 §2.4.1 + PRODUCT-SPECS §4.10: "Bộ lọc khoảng thời gian: 2 ô date picker")
-  if (dateFrom || dateTo) {
-    const fromTs = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
-    const toTs = dateTo ? new Date(dateTo + 'T23:59:59.999').getTime() : null;
-    ledgerRows = ledgerRows.filter((r) => {
-      const t = new Date(r.timestamp).getTime();
-      if (fromTs !== null && t < fromTs) return false;
-      if (toTs !== null && t > toTs) return false;
-      return true;
-    });
-  }
 
   // Fetch routes/container numbers for trip-backed ledger rows. SERVICE_FEE
   // rows store trip_expenses.id in txnId, so resolve those fee ids back to
@@ -993,8 +990,43 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     };
   });
 
+  const tripDepartureByTripId = new Map<number, string>();
+  for (const [tripId, details] of tripDetailsMap) {
+    if (details.departureDate) tripDepartureByTripId.set(tripId, details.departureDate);
+  }
+
+  // NEPO-48 — the period key of the sổ is the VOUCHER date (ngày chứng từ /
+  // ngày ghi sổ), not the posting instant: trip documents carry their ngày đi
+  // chuyến, payment receipts carry ngày nhận (the ledger timestamp). A trip
+  // departing 28/8 that only locks in October belongs to the August book, not
+  // the October one. The filter below and computePeriodSummary key on the
+  // same day, so Σ dòng always reconciles against đầu/cuối kỳ.
+  const voucherDayOf = (r: EnrichedLedgerRow): string => {
+    if (r.txnType === TxnType.PAYMENT_RECEIVED) return ledgerDay(r.timestamp);
+    const departure = r.tripId != null ? tripDepartureByTripId.get(r.tripId) : undefined;
+    return departure ?? ledgerDay(r.timestamp);
+  };
+  const withVoucherDay = enrichedLedgerRows.map((r) => ({ row: r, day: voucherDayOf(r) }));
+
+  // Opening balance derives from every voucher dated strictly before the
+  // period — same convention as computePeriodSummary, keyed by voucher day.
+  const periodSummary = computePeriodSummary(
+    withVoucherDay.map(({ row, day }) => ({ ...row, timestamp: new Date(`${day}T00:00:00`) })),
+    dateFrom,
+    dateTo,
+    'CUSTOMER',
+  );
+
+  // Optional date range filter — used by frontend /debt/:id "Bộ lọc khoảng thời gian"
+  // (Flow 04 §2.4.1 + PRODUCT-SPECS §4.10: "Bộ lọc khoảng thời gian: 2 ô date picker")
+  const inPeriodRows = (dateFrom || dateTo)
+    ? withVoucherDay
+      .filter(({ day }) => (!dateFrom || day >= dateFrom) && (!dateTo || day <= dateTo))
+      .map(({ row }) => row)
+    : enrichedLedgerRows;
+
   const { aging, openInvoices } = computeFifoAging(
-    enrichedLedgerRows.map((r) => ({
+    inPeriodRows.map((r) => ({
       timestamp: r.timestamp.toISOString(),
       debit: r.debit ?? '0',
       credit: r.credit ?? '0',
@@ -1003,7 +1035,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   );
   const totalOutstanding = aging.current + aging.d30 + aging.d60 + aging.over90;
 
-  const revenueEntries = enrichedLedgerRows.filter((r) => r.txnType === TxnType.TRIP_REVENUE);
+  const revenueEntries = inPeriodRows.filter((r) => r.txnType === TxnType.TRIP_REVENUE);
   const tripNotes = new Map<number, string>();
   for (const entry of revenueEntries) {
     if (entry.txnId && !tripNotes.has(entry.txnId)) {
@@ -1045,11 +1077,7 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   // NEPO-46 sổ chi tiết: build from the same collapsed display rows the
   // response renders, seeded by the period opening balance (0 for the
   // unscoped whole-ledger statement — the book starts at zero).
-  const displayRows = collapseEditCyclePairs(enrichedLedgerRows);
-  const tripDepartureByTripId = new Map<number, string>();
-  for (const [tripId, details] of tripDetailsMap) {
-    if (details.departureDate) tripDepartureByTripId.set(tripId, details.departureDate);
-  }
+  const displayRows = collapseEditCyclePairs(inPeriodRows);
   const { lines: statementLines, totals: statementTotals } = buildStatementLines(
     displayRows,
     periodSummary?.openingBalance ?? 0,
