@@ -23,7 +23,7 @@ export function useTyreBoardChanges(truckId: number | null) {
   });
 }
 
-function useInvalidateTyreBoard(truckId: number | null) {
+function useInvalidateTyreBoard(_truckId: number | null) {
   const queryClient = useQueryClient();
   return () => {
     // Board + history both move on every write; invalidate the broad prefixes

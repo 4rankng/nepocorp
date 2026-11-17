@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import type { LedgerCellContext, LedgerCellPatch } from './ledgerColumns';
+import type { LedgerCellContext, LedgerCellPatch } from './ledgerCellTypes';
 import type { LedgerRow } from '@tingting/shared';
 
 /** Colored dot for the container reconciliation state (sheet cell colors).

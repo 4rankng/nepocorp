@@ -10,32 +10,7 @@ import {
 } from '@tingting/shared';
 import { formatCurrency, formatDatePadded, formatNumber, shortCompanyName } from '../../lib/format';
 import { StatusPill } from '../../components/UI';
-
-// ─── Cell patch descriptors ──────────────────────────────────────────────────
-// Every editable column describes which group endpoint its save goes through;
-// the page executes the PATCH and repaints the row from the response.
-
-export type LedgerCellPatch =
-  | { kind: 'plan'; body: Record<string, unknown> }
-  | { kind: 'money'; body: Record<string, unknown> }
-  | { kind: 'expense'; expenseId: number; body: Record<string, unknown> };
-
-export interface LedgerCellContext {
-  canPlan: boolean;
-  canMoney: boolean;
-  /** Catalog options for select-type cells (khách hàng). */
-  customerOptions: Array<{ value: string; label: string }>;
-  /** Currently-editing cell (rowId:colId) with its draft value. */
-  editing: { key: string; draft: string } | null;
-  savingKey: string | null;
-  /** Expand/collapse the per-container cross-check panel of a row. */
-  onToggleExpand(rowId: number): void;
-  onStartEdit(rowId: number, colId: string, initial: string): void;
-  onDraftChange(draft: string): void;
-  /** Commit; returns an error message or null. */
-  onCommit(row: LedgerRow, colId: string, patch: LedgerCellPatch, draft: string): string | null;
-  onCancelEdit(): void;
-}
+import { type LedgerCellContext, type LedgerCellPatch } from './ledgerCellTypes';
 
 // ─── Value helpers ───────────────────────────────────────────────────────────
 

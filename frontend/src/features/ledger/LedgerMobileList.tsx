@@ -4,7 +4,7 @@ import { TRIP_STATUS_LABELS, TripStatus, type LedgerRow } from '@tingting/shared
 import { formatCurrency, formatDatePadded, shortCompanyName } from '../../lib/format';
 import { StatusPill } from '../../components/UI';
 import { ContainerStatusDot, LedgerCell } from './LedgerEditableCell';
-import type { LedgerCellContext, LedgerCellPatch } from './ledgerColumns';
+import type { LedgerCellContext, LedgerCellPatch } from './ledgerCellTypes';
 import { containerReconStatus } from './ledgerColumns';
 
 const STATUS_PILL_VARIANT: Record<TripStatus, 'success' | 'warn' | 'danger' | 'info' | 'neutral'> = {
