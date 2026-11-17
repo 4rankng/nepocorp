@@ -1,5 +1,6 @@
 /* NEPO-49 — Bảng theo dõi lốp (/fleet/tyre-board).
-   Visual standard: docs/design/tyre-board-mockup-APPROVED.html (owner-approved).
+   Visual standard: the accountant's Excel drawing (docs/design/THEO-DOI-LOP.xlsx
+   + reference diagram) — annotated truck drawing with serials on the drawing.
    Class prefix tbp- so nothing leaks into the app's global table/button CSS. */
 
 .tbp {
@@ -76,49 +77,6 @@
   padding: 10px;
   margin: 12px 0;
 }
-
-/* ── 22-ô grid ─────────────────────────────────────────────────────────── */
-.tbp-map {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px 14px;
-  margin: 10px 2px 16px;
-}
-.tbp-slot {
-  border: 1.5px solid #c9d4e8;
-  border-radius: 8px;
-  padding: 6px 8px 5px;
-  background: #fff;
-}
-.tbp-slot-num {
-  display: inline-block;
-  background: #d62828;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 800;
-  border-radius: 4px;
-  padding: 1px 6px;
-  margin-bottom: 3px;
-}
-.tbp-slot-seri-input {
-  width: 100%;
-  border: none;
-  background: transparent;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #12284b;
-  padding: 0;
-  word-break: break-all;
-}
-.tbp-slot-meta {
-  font-size: 10.5px;
-  color: #6b7a90;
-  margin-top: 2px;
-  line-height: 1.35;
-  /* Quan tắc Cam: never truncate — meta wraps instead of ellipsizing. */
-  overflow-wrap: anywhere;
-}
-.tbp-slot--spare { border-style: dashed; background: #fffbe9; }
 
 .tbp-legend {
   font-size: 11px;
@@ -233,14 +191,46 @@
   height: auto;
   min-height: 90px;
 }
-/* Mobile: mũi xe hướng lên — cap the tall drawing so it never dominates the page. */
-.tbp-diagram--vertical { display: flex; justify-content: center; }
-.tbp-diagram--vertical svg {
+/* Mobile (≤640px): portrait drawing — cap the tall svg so it never dominates. */
+.tbp-diagram--portrait { display: flex; justify-content: center; }
+.tbp-diagram--portrait svg {
   width: auto;
   max-width: 100%;
-  height: min(46vh, 420px);
+  height: min(72vh, 780px);
   min-height: 0;
 }
+
+/* ── Serial editor inside the SVG <foreignObject> ──────────────────────── */
+/* The serial VALUE is painted by native svg <text> (.tbp-svg-serial-text —
+   Chromium never renders the text of an unfocused <input> inside
+   foreignObject). The input is a transparent hitbox: its own text only
+   becomes visible while focused, and the svg text hides for the duration
+   (g:has(input:focus)). !important on font-size: the global iOS-focus rule
+   (#root input…, ≤768px) would otherwise force 16px into these 16-unit
+   boxes — it must not touch in-SVG editors at any width. */
+.tbp-svg-serial-box { width: 100%; height: 100%; }
+.tbp-svg-serial {
+  display: block;
+  width: 100%;
+  height: 16px; /* = SERIAL_H svg user units */
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  font-weight: 700;
+  color: transparent;
+  caret-color: #12284b;
+  padding: 0;
+}
+.tbp-svg-serial:focus {
+  outline: none;
+  border-color: #1a56db;
+  background: #f2f7ff;
+  color: #12284b;
+}
+.tbp-svg-marker:has(input:focus) .tbp-svg-serial-text { visibility: hidden; }
 
 /* ── Vehicle tabs: horizontal scroll when they overflow (never wrap-shrink) ── */
 .tbp-tabs {
@@ -252,7 +242,6 @@
 
 /* ── Responsive ladder (owner spec): 1440px = 6 cột · 768px = 4 · 390px = 2 ── */
 @media (max-width: 1023px) {
-  .tbp-map { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .tbp { padding: 12px; }
   .tbp-wrap { padding: 14px; }
 
@@ -265,10 +254,11 @@
 }
 
 @media (max-width: 640px) {
-  .tbp-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
-  /* Avoid iOS focus-zoom: inputs at ≥16px keep the viewport static. */
-  .tbp-cell-input,
-  .tbp-slot-seri-input { font-size: 16px; }
+  /* Avoid iOS focus-zoom: inputs at ≥16px keep the viewport static.
+     The in-SVG serial editors are excluded — their px are SVG user units
+     (font-size must stay 11px so the text fits its 16-unit box).
+     (In-SVG inputs may still iOS-zoom on focus — accepted quirk.) */
+  .tbp-cell-input:not(.tbp-svg-serial) { font-size: 16px; }
   .tbp-modal-field input { font-size: 16px; }
 }
+
