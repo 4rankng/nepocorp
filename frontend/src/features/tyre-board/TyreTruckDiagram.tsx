@@ -224,11 +224,16 @@ function TopViewOutlineHorizontal({ counterRotate = false }: { counterRotate?: b
 
       {/* Axle runs through the pill columns */}
       <g stroke={AXLE_GRAY} strokeWidth={7} strokeLinecap="round" fill="none">
-        <path d="M125,690 V820 M125,752 H533 M435,712 V795 M533,712 V795" />
+        <path d="M125,690 V820 M435,712 V795 M533,712 V795" />
         <path d="M983,705 V800 M1080,705 V800 M1176,705 V800" />
       </g>
-      <circle cx={435} cy={752} r={14} fill={AXLE_GRAY} />
-      <circle cx={533} cy={752} r={14} fill={AXLE_GRAY} />
+      {/* Dual-pair hubs on the drive axle — donut wheels like the side view */}
+      {[435, 533].map((cx) => (
+        <g key={cx}>
+          <circle cx={cx} cy={752} r={16} fill="none" stroke={WHEEL_GRAY} strokeWidth={8} />
+          <circle cx={cx} cy={752} r={4.5} fill="#8a99b0" />
+        </g>
+      ))}
     </g>
   );
 }

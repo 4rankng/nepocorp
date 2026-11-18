@@ -122,7 +122,7 @@ export default function TyreBoardPage() {
 
       <div className="tbp-wrap">
         <div className="tbp-head">
-          <h1>🛞 Bảng theo dõi lốp — Quản lý đội xe</h1>
+          <h1>🛞 Bảng theo dõi lốp</h1>
           <div className="tbp-plate">Số xe: {board?.truckPlate ?? "…"}</div>
         </div>
 
