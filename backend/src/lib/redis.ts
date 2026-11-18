@@ -17,7 +17,14 @@ export function getRedis(): Redis {
       maxRetriesPerRequest: 1,
       lazyConnect: true,
       connectTimeout: 3000,
-      retryStrategy: (times) => (times > 1 ? null : 100),
+      // NEPO-53: returning null from retryStrategy puts the client into
+      // terminal 'end' status — every later command throws "Connection is
+      // closed" and fail-closed callers (isTokenBlacklisted) 401 the whole
+      // system until backend restart. Retry forever with capped backoff
+      // instead: recovery after Redis returns is bounded by the 5s cap, and
+      // maxRetriesPerRequest: 1 still rejects commands fast while Redis is
+      // down so fail-closed semantics are unchanged.
+      retryStrategy: (times) => Math.min(times * 500, 5000),
     });
     redis.on('error', (err) => {
       console.error('[Redis] connection error:', err.message);
