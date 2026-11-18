@@ -54,20 +54,10 @@ function Wheel({ x, y }: { x: number; y: number }) {
   );
 }
 
-/** Big gray watermark numeral (side-view part labels, section braces).
- *  `counterRotate` keeps the text horizontal inside the portrait's rotated
- *  scene group (the mockup's own mobile transform). */
-function BigNum({ x, y, n, counterRotate = false }: { x: number; y: number; n: string; counterRotate?: boolean }) {
+/** Big gray watermark numeral (side-view part labels, section braces). */
+function BigNum({ x, y, n, size = 40 }: { x: number; y: number; n: string; size?: number }) {
   return (
-    <text
-      x={x}
-      y={y}
-      textAnchor="middle"
-      fontSize="40"
-      fontWeight={300}
-      fill={BIG_GRAY}
-      transform={counterRotate ? `rotate(-90 ${x} ${y})` : undefined}
-    >
+    <text x={x} y={y} textAnchor="middle" fontSize={size} fontWeight={300} fill={BIG_GRAY}>
       {n}
     </text>
   );
@@ -80,11 +70,14 @@ function BigNum({ x, y, n, counterRotate = false }: { x: number; y: number; n: s
  * Spare tires (ô 7–10) stay yellow with a dashed outline. The full data
  * lives in the <title> tooltip.
  */
-function TireMarker({ position, geom, slot, onSerialCommit }: {
+function TireMarker({ position, geom, slot, onSerialCommit, numFontSize = 15 }: {
   position: number;
   geom: MarkerGeom;
   slot: TyreBoardSlot | undefined;
   onSerialCommit: Props["onSerialCommit"];
+  /** Position numeral size — the compact portrait uses 12, the horizontal
+   *  mockup scale 15. */
+  numFontSize?: number;
 }) {
   const spare = SPARE_POSITIONS[position] === true;
   const style = pillStyle(slot, spare);
@@ -106,7 +99,7 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
       y={py}
       width={geom.w}
       height={geom.h}
-      rx={geom.h / 2}
+      rx={geom.rx ?? geom.h / 2}
       fill={style.fill}
       stroke={style.stroke}
       strokeDasharray={style.dash}
@@ -137,7 +130,7 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
         y={numY}
         textAnchor="middle"
         dominantBaseline="central"
-        fontSize="15"
+        fontSize={numFontSize}
         fontWeight={700}
         fill={NUM_RED}
       >
@@ -180,10 +173,8 @@ function TireMarker({ position, geom, slot, onSerialCommit }: {
  * Horizontal top view outline, copied from the owner's mockup: pink tractor
  * body with windshield lanes and fuel-tank boxes, gray trailer slab, blue
  * axle runs with hub circles, kingpin feet, section braces as staple paths.
- * `counterRotate` is set when the whole group is drawn inside the portrait's
- * rotate(90) scene, so watermark numerals stay horizontal.
  */
-function TopViewOutlineHorizontal({ counterRotate = false }: { counterRotate?: boolean }) {
+function TopViewOutlineHorizontal() {
   return (
     <g>
       {/* Section braces: 2 over the trailer, 1 under the tractor */}
@@ -191,8 +182,8 @@ function TopViewOutlineHorizontal({ counterRotate = false }: { counterRotate?: b
         <path d="M381,650 V640 q0,-18 18,-18 H786 q16,0 16,-17 q0,17 16,17 H1206 q18,0 18,18 V650" />
         <path d="M55,860 V870 q0,18 18,18 H304 q16,0 16,17 q0,-17 16,-17 H567 q18,0 18,-18 V860" />
       </g>
-      <BigNum x={802} y={590} n="2" counterRotate={counterRotate} />
-      <BigNum x={320} y={950} n="1" counterRotate={counterRotate} />
+      <BigNum x={802} y={590} n="2" />
+      <BigNum x={320} y={950} n="1" />
 
       {/* Trailer slab + kingpin feet */}
       <rect x={381} y={657} width={843} height={193} fill={BOX_FILL} stroke={BOX_LINE} strokeWidth={3} />
@@ -238,15 +229,35 @@ function TopViewOutlineHorizontal({ counterRotate = false }: { counterRotate?: b
   );
 }
 
-/** Portrait renders the SAME top view rotated 90° — the mockup's own mobile
- *  transform (side view hidden, watermark numerals counter-rotated, tire
- *  markers drawn upright from the precomputed rotated slot table).
- *  translate(975,0) lands the rotated group at x ∈ [5, 385] — the same
- *  mapping (x,y) → (964−y, x) the rotated slot table was computed with. */
-function PortraitScene() {
+/** Portrait outline — compact top view drawn upright for phones (cab at top,
+ *  trailer below), matching PORTRAIT_LAYOUT: pink cab with windshield lanes,
+ *  catwalk spare zone, gray trailer slab with kingpin feet, gray axle runs
+ *  with hub dots at the dual-pair centers, small watermark section numerals.
+ *  viewBox 0 0 390 730. */
+function PortraitOutline() {
   return (
-    <g transform="translate(975, 0) rotate(90)">
-      <TopViewOutlineHorizontal counterRotate />
+    <g>
+      {/* Cab block + windshield lanes */}
+      <rect x={88} y={8} width={214} height={188} rx={16} fill={BODY_FILL} stroke={BODY_STROKE} strokeWidth={2} />
+      <rect x={132} y={28} width={50} height={60} fill="none" stroke={BODY_STROKE} strokeWidth={2} />
+      <rect x={208} y={28} width={50} height={60} fill="none" stroke={BODY_STROKE} strokeWidth={2} />
+      <BigNum x={195} y={200} n="1" size={13} />
+
+      {/* Trailer slab + kingpin feet (slab front-left, clear of the numeral) */}
+      <rect x={88} y={300} width={214} height={412} fill={BOX_FILL} stroke={BOX_LINE} strokeWidth={2.5} />
+      <rect x={102} y={307} width={14} height={13} fill={WHEEL_GRAY} />
+      <rect x={122} y={307} width={14} height={13} fill={WHEEL_GRAY} />
+      <BigNum x={195} y={324} n="2" size={13} />
+
+      {/* Axle runs through the pill columns + hub dots at dual-pair centers */}
+      <g stroke={AXLE_GRAY} strokeWidth={5} strokeLinecap="round" fill="none">
+        <path d="M106,45 H284" />
+        <path d="M123,125 H267" />
+        <path d="M123,357 H267 M123,485 H267 M123,613 H267" />
+      </g>
+      {[125, 267].flatMap((cx) => [125, 357, 485, 613].map((cy) => (
+        <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={4.5} fill="#8a99b0" />
+      )))}
     </g>
   );
 }
@@ -314,8 +325,8 @@ function SideView() {
 /**
  * Annotated truck drawing for /fleet/tyre-board (NEPO-49): side view + top
  * view carrying all 22 numbered positions and their editable serials
- * (horizontal), or the portrait top view only (vertical, ≤640px). Geometry
- * follows the owner's board mockups; slot colors follow tyreStatus.
+ * (horizontal), or the compact portrait top view only (vertical, ≤640px).
+ * Geometry follows the owner's board mockups; slot colors follow tyreStatus.
  */
 export function TyreTruckDiagram({ slots, vertical, onSerialCommit }: Props) {
   const byPosition = new Map(slots.map((s) => [s.position, s]));
@@ -324,7 +335,7 @@ export function TyreTruckDiagram({ slots, vertical, onSerialCommit }: Props) {
   return (
     <svg
       key={vertical ? "portrait" : "horizontal"}
-      viewBox={vertical ? "0 0 390 1250" : "30 55 1270 905"}
+      viewBox={vertical ? "0 0 390 730" : "30 55 1270 905"}
       width="100%"
       role="img"
       aria-label={vertical
@@ -332,7 +343,7 @@ export function TyreTruckDiagram({ slots, vertical, onSerialCommit }: Props) {
         : "Sơ đồ xe: side view + top view, 22 ô lốp kèm số seri, sửa trực tiếp trên sơ đồ"}
     >
       {!vertical && <SideView />}
-      {vertical ? <PortraitScene /> : <TopViewOutlineHorizontal />}
+      {vertical ? <PortraitOutline /> : <TopViewOutlineHorizontal />}
       {ALL_POSITIONS.map((position) => (
         <TireMarker
           key={position}
@@ -340,6 +351,7 @@ export function TyreTruckDiagram({ slots, vertical, onSerialCommit }: Props) {
           geom={layout[position]}
           slot={byPosition.get(position)}
           onSerialCommit={onSerialCommit}
+          numFontSize={vertical ? 12 : 15}
         />
       ))}
     </svg>

@@ -52,6 +52,10 @@ export interface MarkerGeom {
   h: number;
   /** Draw the tire as a circle inscribed in the bbox (spare stack). */
   circle?: boolean;
+  /** Pill corner radius; defaults to h/2 (full stadium — horizontal mockup).
+   *  Portrait pills use a modest 9 so a 30×54 tire reads as a rounded tire,
+   *  not an egg. */
+  rx?: number;
   /** Dual pair: draw a second identical pill offset `dx` (horizontal view) or
    * `dy` (portrait view) — always along the travel axis; the position numeral
    * centers between the two pills. */
@@ -93,38 +97,39 @@ export const TOP_VIEW_LAYOUT: Record<number, MarkerGeom> = {
 };
 
 /**
- * Portrait variant — the same mockup slots rotated 90 degrees (the mockup's
- * own mobile transform): pill 22x84 at (964-yc, x0), viewBox 0 0 390 1250.
- * Serials sit in the readable gaps below/beside their pill rows (horizontal
- * text); numerals stay centered on the pills.
+ * Portrait variant — purpose-built compact mobile drawing (viewBox 0 0 390 730),
+ * NOT a rotation of the horizontal mockup: rotating it mapped the truck's
+ * length onto ~1250 units of scroll and turned every tire into a 22×84
+ * stadium "egg". Same slot mapping (portrait x = 964 − horizontal y): the
+ * truck's LEFT side is the RIGHT column here. Pills 30×54 (spares 30×48,
+ * rx 9), serial boxes (w 84) staggered under their row: outer serials first,
+ * inner ones 18 units lower so neighbors never collide.
  */
 export const PORTRAIT_LAYOUT: Record<number, MarkerGeom> = {
-  // Steer row — serials below the pills.
-  1: { x: 294, y: 83, w: 22, h: 84, serial: { x: 263, y: 171, w: 84 } },
-  2: { x: 126, y: 83, w: 22, h: 84, serial: { x: 95, y: 171, w: 84 } },
-  // Drive tandem row — serials staggered on two sub-rows above the pills
-// (pill pitch 27 < serial width 84, so neighbors alternate height).
-  3: { x: 294, y: 393, w: 22, h: 84, serial: { x: 263, y: 371, w: 84 } },
-  4: { x: 267, y: 393, w: 22, h: 84, serial: { x: 236, y: 352, w: 84 } },
-  5: { x: 154, y: 393, w: 22, h: 84, serial: { x: 123, y: 371, w: 84 } },
-  6: { x: 126, y: 393, w: 22, h: 84, serial: { x: 95, y: 352, w: 84 } },
-  // Spares row — serials staggered on two sub-rows below the pills.
-  7: { x: 294, y: 491, w: 22, h: 84, serial: { x: 263, y: 579, w: 84 } },
-  8: { x: 267, y: 491, w: 22, h: 84, serial: { x: 236, y: 598, w: 84 } },
-  9: { x: 154, y: 491, w: 22, h: 84, serial: { x: 123, y: 579, w: 84 } },
-  10: { x: 126, y: 491, w: 22, h: 84, serial: { x: 95, y: 598, w: 84 } },
-  // Trailer axles — serials stacked in the left lane, one per pill, ordered
-  // top-to-bottom to match the pills right-to-left.
-  11: { x: 294, y: 941, w: 22, h: 84, serial: { x: 4, y: 949, w: 118 } },
-  12: { x: 267, y: 941, w: 22, h: 84, serial: { x: 4, y: 969, w: 118 } },
-  13: { x: 154, y: 941, w: 22, h: 84, serial: { x: 4, y: 989, w: 118 } },
-  14: { x: 126, y: 941, w: 22, h: 84, serial: { x: 4, y: 1009, w: 118 } },
-  15: { x: 294, y: 1038, w: 22, h: 84, serial: { x: 4, y: 1046, w: 118 } },
-  16: { x: 267, y: 1038, w: 22, h: 84, serial: { x: 4, y: 1066, w: 118 } },
-  17: { x: 154, y: 1038, w: 22, h: 84, serial: { x: 4, y: 1086, w: 118 } },
-  18: { x: 126, y: 1038, w: 22, h: 84, serial: { x: 4, y: 1106, w: 118 } },
-  19: { x: 294, y: 1133, w: 22, h: 84, serial: { x: 4, y: 1141, w: 118 } },
-  20: { x: 267, y: 1133, w: 22, h: 84, serial: { x: 4, y: 1161, w: 118 } },
-  21: { x: 154, y: 1133, w: 22, h: 84, serial: { x: 4, y: 1181, w: 118 } },
-  22: { x: 126, y: 1133, w: 22, h: 84, serial: { x: 4, y: 1201, w: 118 } },
+  // Steer row — serials directly under the pills.
+  1: { x: 269, y: 18, w: 30, h: 54, rx: 9, serial: { x: 242, y: 74, w: 84 } },
+  2: { x: 91, y: 18, w: 30, h: 54, rx: 9, serial: { x: 64, y: 74, w: 84 } },
+  // Drive tandem row — four pills across, serials staggered on two sub-rows.
+  3: { x: 269, y: 98, w: 30, h: 54, rx: 9, serial: { x: 242, y: 154, w: 84 } },
+  4: { x: 235, y: 98, w: 30, h: 54, rx: 9, serial: { x: 208, y: 172, w: 84 } },
+  5: { x: 125, y: 98, w: 30, h: 54, rx: 9, serial: { x: 98, y: 172, w: 84 } },
+  6: { x: 91, y: 98, w: 30, h: 54, rx: 9, serial: { x: 64, y: 154, w: 84 } },
+  // Spares row (catwalk between cab and trailer) — dashed pills.
+  7: { x: 269, y: 204, w: 30, h: 48, rx: 9, serial: { x: 242, y: 254, w: 84 } },
+  8: { x: 235, y: 204, w: 30, h: 48, rx: 9, serial: { x: 208, y: 272, w: 84 } },
+  9: { x: 125, y: 204, w: 30, h: 48, rx: 9, serial: { x: 98, y: 272, w: 84 } },
+  10: { x: 91, y: 204, w: 30, h: 48, rx: 9, serial: { x: 64, y: 254, w: 84 } },
+  // Trailer axles, 128-unit pitch — serials staggered under each pill.
+  11: { x: 269, y: 330, w: 30, h: 54, rx: 9, serial: { x: 242, y: 384, w: 84 } },
+  12: { x: 235, y: 330, w: 30, h: 54, rx: 9, serial: { x: 208, y: 402, w: 84 } },
+  13: { x: 125, y: 330, w: 30, h: 54, rx: 9, serial: { x: 98, y: 402, w: 84 } },
+  14: { x: 91, y: 330, w: 30, h: 54, rx: 9, serial: { x: 64, y: 384, w: 84 } },
+  15: { x: 269, y: 458, w: 30, h: 54, rx: 9, serial: { x: 242, y: 512, w: 84 } },
+  16: { x: 235, y: 458, w: 30, h: 54, rx: 9, serial: { x: 208, y: 530, w: 84 } },
+  17: { x: 125, y: 458, w: 30, h: 54, rx: 9, serial: { x: 98, y: 530, w: 84 } },
+  18: { x: 91, y: 458, w: 30, h: 54, rx: 9, serial: { x: 64, y: 512, w: 84 } },
+  19: { x: 269, y: 586, w: 30, h: 54, rx: 9, serial: { x: 242, y: 640, w: 84 } },
+  20: { x: 235, y: 586, w: 30, h: 54, rx: 9, serial: { x: 208, y: 658, w: 84 } },
+  21: { x: 125, y: 586, w: 30, h: 54, rx: 9, serial: { x: 98, y: 658, w: 84 } },
+  22: { x: 91, y: 586, w: 30, h: 54, rx: 9, serial: { x: 64, y: 640, w: 84 } },
 };

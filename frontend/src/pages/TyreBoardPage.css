@@ -92,7 +92,7 @@
   border-radius: 4px;
   background: transparent;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink, #1a2b42);
   padding: 3px 5px;
 }
@@ -108,14 +108,14 @@
 .tbp-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .tbp-table th {
   background: #12284b;
   color: #fff;
   padding: 8px 7px;
   text-align: left;
-  font-size: 11.5px;
+  font-size: 11px;
   white-space: nowrap;
 }
 .tbp-table td {
@@ -125,7 +125,8 @@
 }
 .tbp-table tbody tr:hover td { background: #f2f7ff; }
 .tbp-td-stt { font-weight: 700; }
-.tbp-age { color: #d62828; font-weight: 700; white-space: nowrap; }
+.tbp-age { color: #d62828; font-weight: 700; font-size: 11px; white-space: nowrap; }
+.tbp-cell-bold { font-weight: 700; }
 
 .tbp-btn {
   background: #e8eefc;
@@ -191,12 +192,12 @@
   height: auto;
   min-height: 90px;
 }
-/* Mobile (≤640px): portrait drawing — cap the tall svg so it never dominates. */
+/* Mobile (≤640px): compact portrait drawing — full width, natural aspect
+   (viewBox 390×730 ≈ 1.9× on a phone, no letterboxing, no giant scroll). */
 .tbp-diagram--portrait { display: flex; justify-content: center; }
 .tbp-diagram--portrait svg {
-  width: auto;
-  max-width: 100%;
-  height: min(72vh, 780px);
+  width: 100%;
+  height: auto;
   min-height: 0;
 }
 
@@ -257,23 +258,83 @@
   .tbp-head h1 { font-size: 17px; }
   .tbp-plate { padding: 4px 10px; font-size: 13px; }
 
-  /* The portrait drawing fills the screen width edge to edge — the height
-     cap + auto width letterboxed it and wasted half the phone screen. The
-     -20px cancels the sheet padding (12) and the app shell gutter (8). */
+  /* The portrait drawing fills the screen width edge to edge — the compact
+     viewBox (390×730) keeps it under ~1.9 screens tall. The -20px cancels
+     the sheet padding (12) and the app shell gutter (8). */
   .tbp-diagram { margin: 10px -20px 8px; padding: 0; border: none; border-radius: 0; background: transparent; }
-  .tbp-diagram--portrait svg {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-  }
 
-  /* Avoid iOS focus-zoom: inputs at ≥16px keep the viewport static.
-     The in-SVG serial editors are excluded — their px are SVG user units
-     (font-size must stay 11px so the text fits its 16-unit box).
-     (In-SVG inputs may still iOS-zoom on focus — accepted quirk.) */
-  .tbp-cell-input:not(.tbp-svg-serial) { font-size: 16px; }
+  /* No wide table on mobile: the desktop table is hidden, the compact
+     slot list below carries the same fields inline. */
+  .tbp-table-scroll--main { display: none; }
+
+  /* Modal form inputs stay 16px (iOS focus-zoom); the data-dense table /
+     slot-list inputs stay 12px per the owner's density call — focusing one
+     may zoom the viewport (accepted quirk). */
   .tbp-modal-field input { font-size: 16px; }
 }
+
+/* ── Mobile slot list (rendered <641px instead of the wide table) ──────── */
+/* One card per slot, 11/12px data-dense, same inline cells + Thay lốp. */
+.tbp-slotlist { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 14px; }
+.tbp-slot {
+  border: 1px solid #e3e8f0;
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #fff;
+}
+.tbp-slot.st-good { border-left-color: #2e9e5b; }
+.tbp-slot.st-warn { border-left-color: #d3940b; }
+.tbp-slot.st-bad { border-left-color: #d64545; }
+.tbp-slot.st-empty { border-left-color: #e8eaed; }
+.tbp-slot.is-spare { background: #fafbfc; border-style: dashed; border-left-style: solid; }
+.tbp-slot-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.tbp-slot-pos {
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.tbp-slot.st-good .tbp-slot-pos { background: #2e9e5b; }
+.tbp-slot.st-warn .tbp-slot-pos { background: #d3940b; }
+.tbp-slot.st-bad .tbp-slot-pos { background: #d64545; }
+.tbp-slot.st-empty .tbp-slot-pos { background: #e8eaed; color: #4a5568; }
+.tbp-slot.is-spare .tbp-slot-pos { background: #f1f3f5; color: #6b7a90; border: 1px dashed #9aa0a6; }
+.tbp-slot-group {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: #6b7a90;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tbp-slot-line { display: flex; align-items: baseline; gap: 6px; padding: 1px 0; }
+.tbp-slot-k {
+  flex: 0 0 66px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a97a8;
+}
+.tbp-slot-v {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.tbp-slot-v .tbp-cell-input { min-width: 0; }
 
 /* ── Data tables: sheet-local horizontal scroll + sticky first column ──── */
 /* The wrapper (not the sheet) owns the overflow, so the drawing never gets

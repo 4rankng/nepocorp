@@ -12,7 +12,7 @@ import { daysBetween, todayISO } from "../features/tires/tireUtils";
 import { InlineCell } from "../features/tyre-board/TyreInlineCell";
 import { TyreTruckDiagram } from "../features/tyre-board/TyreTruckDiagram";
 import { tyreStatus, type TyreStatus } from "../features/tyre-board/tyreStatus";
-import { SLOT_GROUP_BY_POSITION } from "../features/tyre-board/tyrePositions";
+import { SLOT_GROUP_BY_POSITION, SPARE_POSITIONS } from "../features/tyre-board/tyrePositions";
 import { useTrucksAndDrivers } from "../hooks/useCatalogQueries";
 import { useTyreBoard, useTyreBoardChanges, useUpdateTyreSlot, useChangeTyre } from "../hooks/useTyreBoardQueries";
 import "./TyreBoardPage.css";
@@ -23,8 +23,9 @@ import "./TyreBoardPage.css";
  * Replicates the accountant's Excel sheet (docs/design/THEO-DOI-LOP.xlsx):
  * head with the "Số xe" badge, vehicle tabs, one annotated truck drawing
  * (decorative side view + top view carrying all 22 numbered positions with
- * their serials — portrait variant on ≤640px), and the full data table with a
- * "Thay lốp" button per row. Serials are editable in place on the drawing
+ * their serials — compact portrait variant on ≤640px), and the full data
+ * table with a "Thay lốp" button per row (≤640px: a data-dense 11/12px slot
+ * list instead — no wide table on phones). Serials are editable in place on the drawing
  * (plain slot patch, no history row) and in the table; "Thay lốp" swaps the
  * serial on a given day and records history (ngày, seri cũ → seri mới) shown
  * in the section below the table.
@@ -164,8 +165,59 @@ export default function TyreBoardPage() {
               Màu lốp theo tuổi: <b>{statusCounts.good}</b> tốt · <b>{statusCounts.warn}</b> cần chú ý · <b>{statusCounts.bad}</b> cần thay · <b>{statusCounts.empty}</b> chưa lắp — ô nét đứt là dự phòng. Số seri sửa trực tiếp trên sơ đồ; nút "Thay lốp" lưu lịch sử (ngày, seri cũ → mới).
             </div>
 
-            <div className="tbp-table-scroll">
-              <table className="tbp-table">
+            {isNarrow ? (
+              /* Mobile: no wide table — one compact data-dense card per slot
+                 (11/12px), same inline cells + "Thay lốp" as the desktop row. */
+              <div className="tbp-slotlist">
+                {slots.map((slot) => {
+                  const age = daysBetween(slot.lastChangedAt, null);
+                  const st = tyreStatus(slot);
+                  const spare = SPARE_POSITIONS[slot.position] === true;
+                  return (
+                    <div key={slot.position} className={`tbp-slot st-${st}${spare ? " is-spare" : ""}`}>
+                      <div className="tbp-slot-head">
+                        <span className="tbp-slot-pos">{slot.position}</span>
+                        <span className="tbp-slot-group">{SLOT_GROUP_BY_POSITION[slot.position]}</span>
+                        <button type="button" className="tbp-btn" onClick={() => openChange(slot)}>
+                          Thay lốp
+                        </button>
+                      </div>
+                      <div className="tbp-slot-line">
+                        <span className="tbp-slot-k">Hãng · model</span>
+                        <span className="tbp-slot-v">
+                          <InlineCell wrap value={slot.brand} onCommit={(v) => commitCell(slot.position, { brand: v })} ariaLabel={`Nhãn hiệu ô ${slot.position}`} />
+                          <InlineCell wrap value={slot.model} onCommit={(v) => commitCell(slot.position, { model: v })} className="tbp-cell-sub" ariaLabel={`Model ô ${slot.position}`} />
+                        </span>
+                      </div>
+                      <div className="tbp-slot-line">
+                        <span className="tbp-slot-k">Cỡ · gai</span>
+                        <span className="tbp-slot-v">
+                          <InlineCell wrap value={slot.size} onCommit={(v) => commitCell(slot.position, { size: v })} ariaLabel={`Cỡ lốp ô ${slot.position}`} />
+                          <InlineCell wrap value={slot.treadType} onCommit={(v) => commitCell(slot.position, { treadType: v })} className="tbp-cell-sub" ariaLabel={`Loại gai ô ${slot.position}`} />
+                        </span>
+                      </div>
+                      <div className="tbp-slot-line">
+                        <span className="tbp-slot-k">Seri</span>
+                        <span className="tbp-slot-v"><InlineCell className="tbp-cell-bold" value={slot.serial} onCommit={(v) => commitCell(slot.position, { serial: v })} /></span>
+                      </div>
+                      <div className="tbp-slot-line">
+                        <span className="tbp-slot-k">Ngày thay</span>
+                        <span className="tbp-slot-v">
+                          <InlineCell type="date" value={slot.lastChangedAt} onCommit={(v) => commitCell(slot.position, { lastChangedAt: v })} ariaLabel={`Ngày thay ô ${slot.position}`} />
+                          {age != null && <span className="tbp-age">{age} ngày</span>}
+                        </span>
+                      </div>
+                      <div className="tbp-slot-line">
+                        <span className="tbp-slot-k">Ghi chú</span>
+                        <span className="tbp-slot-v"><InlineCell wrap value={slot.note} onCommit={(v) => commitCell(slot.position, { note: v })} ariaLabel={`Ghi chú ô ${slot.position}`} /></span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="tbp-table-scroll tbp-table-scroll--main">
+                <table className="tbp-table">
                 <thead>
                   <tr>
                     <th>STT</th>
@@ -212,8 +264,9 @@ export default function TyreBoardPage() {
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
+                </table>
+              </div>
+            )}
 
             {changes.length > 0 && (
               <section className="tbp-history">
