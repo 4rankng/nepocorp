@@ -180,4 +180,96 @@ describe('statement period keys on voucher date (NEPO-48)', () => {
     assert.equal(october.periodSummary?.creditTotal, 10_000_000);
     assert.equal(october.statementTotals.closingBalance, 0);
   });
+
+  test('the flat ledgerRows the chi tiết tab renders carry docDate and read ascending by voucher day (NEPO-979)', async () => {
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const [customer] = await db.insert(s.customers).values({ name: `Chi tiết voucher-day ${suffix}` }).returning();
+    createdCustomerIds.push(customer.id);
+    const [route] = await db.insert(s.routes).values({ name: `Chi tiết voucher-day route ${suffix}` }).returning();
+    createdRouteIds.push(route.id);
+    const [cargoType] = await db.insert(s.cargoTypes).values({ name: `Chi tiết voucher-day cargo ${suffix}` }).returning();
+    createdCargoTypeIds.push(cargoType.id);
+
+    const trip = async (tripCode: string, departureDate: string, revenue: number) => {
+      const [t] = await db.insert(s.trips).values({
+        tripCode,
+        customerId: customer.id,
+        routeId: route.id,
+        cargoTypeId: cargoType.id,
+        status: TripStatus.COMPLETED,
+        departureDate,
+        revenue: String(revenue),
+        carrierType: 'OWN',
+      }).returning();
+      createdTripIds.push(t.id);
+      return t;
+    };
+
+    // Posting order = REVERSE voucher order, the QA repro shape: the 30/7
+    // trip locks late (posted 25/8) and posts first; the tab used to open
+    // the July book on that August posted date.
+    const lateTrip = await trip(`CD-LATE-${suffix}`.slice(0, 50), '2026-07-30', 5_000_000);
+    const earlyTrip = await trip(`CD-EARLY-${suffix}`.slice(0, 50), '2026-07-02', 3_000_000);
+
+    await db.insert(s.ledger).values([
+      {
+        txnType: TxnType.TRIP_REVENUE,
+        txnId: lateTrip.id,
+        entityType: 'CUSTOMER',
+        entityId: customer.id,
+        debit: '5000000',
+        credit: '0',
+        balance: '5000000',
+        note: `Doanh thu chuyến ${lateTrip.tripCode}`,
+        timestamp: new Date('2026-08-25T00:00:00Z'),
+      },
+      {
+        txnType: TxnType.TRIP_REVENUE,
+        txnId: earlyTrip.id,
+        entityType: 'CUSTOMER',
+        entityId: customer.id,
+        debit: '3000000',
+        credit: '0',
+        balance: '8000000',
+        note: `Doanh thu chuyến ${earlyTrip.tripCode}`,
+        timestamp: new Date('2026-07-05T00:00:00Z'),
+      },
+      {
+        txnType: TxnType.PAYMENT_RECEIVED,
+        txnId: earlyTrip.id,
+        entityType: 'CUSTOMER',
+        entityId: customer.id,
+        receiptId: `CD-R-${suffix}`.slice(0, 50),
+        paymentMethod: 'BANK',
+        debit: '0',
+        credit: '2000000',
+        balance: '6000000',
+        note: 'Thanh toán',
+        timestamp: new Date('2026-07-18T00:00:00Z'),
+      },
+    ]);
+
+    const july = await getStatementData(customer.id, '2026-07-01', '2026-07-31');
+    assert.ok(july);
+    const rows = july.ledgerRows;
+    assert.equal(rows.length, 3);
+    assert.deepEqual(
+      rows.map((r) => r.docDate),
+      ['2026-07-02', '2026-07-18', '2026-07-30'],
+      'chi tiết reads ascending by ngày chứng từ',
+    );
+    for (const r of rows) {
+      assert.ok(r.docDate && r.docDate >= '2026-07-01' && r.docDate <= '2026-07-31', 'every row sits inside the July book');
+    }
+    const lateRow = rows.find((r) => r.tripId === lateTrip.id);
+    assert.ok(lateRow, 'late-locked trip stays in its July book');
+    assert.equal(lateRow.docDate, '2026-07-30', 'late-locked trip shows its departure, not the 25/8 posting');
+    assert.ok(
+      new Date(lateRow.timestamp).toISOString().startsWith('2026-08-25'),
+      'sanity: the late trip really posted in August',
+    );
+    const payRow = rows.find((r) => r.txnType === TxnType.PAYMENT_RECEIVED);
+    assert.ok(payRow, 'payment renders in the July book');
+    assert.equal(payRow.docDate, '2026-07-18', 'payment dates by ngày nhận (= posted day)');
+  });
 });

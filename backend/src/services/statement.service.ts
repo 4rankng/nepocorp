@@ -1173,7 +1173,23 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
   // unscoped whole-ledger statement — the book starts at zero). No
   // '(Hoàn tác)' row survives into displayRows (visibleLedgerRows drops
   // every reversal), so the NEPO-50 reversal trace is gone with them.
-  const displayRows = reattributePaymentRows(inPeriodRows, voucherDayOf, tripDetailsMap);
+  const reattributedRows = reattributePaymentRows(inPeriodRows, voucherDayOf, tripDetailsMap);
+  // NEPO-979 — the 'Chi tiết công nợ' tab renders `ledgerRows` directly: each
+  // row carries its voucher day (docDate) and the book reads ASCENDING by it,
+  // same key as statementLines/the Fast sổ. The old listing was posting order
+  // (the projection's id-asc run reversed), so a charge posted 25/8 for a
+  // July trip opened the July book under an August date. Per-row `balance`
+  // stays the posting-order projection — untouched semantics (NEPO-45
+  // advance detection reads the latest posting's balance).
+  const displayRows = reattributedRows
+    .map((r) => ({ ...r, docDate: voucherDayOf(r) }))
+    .sort((a, b) => {
+      if (a.docDate !== b.docDate) return a.docDate! < b.docDate! ? -1 : 1;
+      const ta = new Date(a.timestamp).getTime();
+      const tb = new Date(b.timestamp).getTime();
+      if (ta !== tb) return ta - tb;
+      return a.id - b.id;
+    });
 
   const { lines: statementLines, totals: statementTotals } = buildStatementLines(
     displayRows,
@@ -2501,7 +2517,9 @@ async function buildStatementXlsx(config: StatementExportConfig, dateStr: string
     const balance = parseFloat(row.balance || '0');
 
     const dateCell = sheet.getCell(r, 1);
-    dateCell.value = row.timestamp ? new Date(row.timestamp).toISOString().slice(0, 10) : '';
+    // NEPO-979 — the export mirrors the tab: voucher day when the row
+    // carries one (customer statement), else the posted day.
+    dateCell.value = row.docDate ?? (row.timestamp ? new Date(row.timestamp).toISOString().slice(0, 10) : '');
     dateCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
     const routeCell = sheet.getCell(r, 2);

@@ -9,6 +9,10 @@ export type EnrichedLedgerRow = LedgerRow & {
   tripId?: number | null;
   tripCode?: string | null;
   serviceFeeLabel?: string | null;
+  /** Voucher day (yyyy-mm-dd) — set by the customer statement for the chi tiết
+   * tab (NEPO-979); vendor/supplier rows leave it unset (callers fall back to
+   * the posted timestamp). */
+  docDate?: string | null;
   fuelDetails?: {
     departureDate: string;
     truckPlate: string | null;

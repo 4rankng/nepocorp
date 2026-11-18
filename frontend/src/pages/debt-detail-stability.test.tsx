@@ -250,3 +250,57 @@ describe('debt detail period and tab state are stable across reloads (kanban 091
     expect(screen.getByText('1 khoản phát sinh')).toBeTruthy();
   });
 });
+
+describe('chi tiết công nợ tab reads the voucher-day book (NEPO-979)', () => {
+  it('dates rows by docDate in ascending voucher order — never the posted date', async () => {
+    // Server order: ascending by voucher day (the backend now guarantees
+    // this). The 30/7 trip posted 25/8 — the old bug surfaced the posted
+    // date and put the row first.
+    const julyBook: CustomerStatement = {
+      ...profile,
+      ledgerRows: [
+        ledgerRow({
+          id: 11,
+          tripId: 201,
+          tripCode: 'TRP-202607-0002',
+          note: 'Cước chuyến 2/7',
+          timestamp: '2026-07-05T03:00:00.000Z',
+          docDate: '2026-07-02',
+          debit: '3000000',
+          balance: '3000000',
+        }),
+        ledgerRow({
+          id: -1,
+          txnType: TxnType.PAYMENT_RECEIVED,
+          receiptId: 'PT-T2-1807-01',
+          note: 'Công ty CÔNG TY CỔ PHẦN NITODA thanh toán',
+          timestamp: '2026-07-18T03:00:00.000Z',
+          docDate: '2026-07-18',
+          debit: '0',
+          credit: '2000000',
+          balance: '1000000',
+        }),
+        ledgerRow({
+          id: 30,
+          tripId: 202,
+          tripCode: 'TRP-202607-0030',
+          note: 'Cước chuyến 30/7',
+          timestamp: '2026-08-25T03:00:00.000Z',
+          docDate: '2026-07-30',
+          debit: '5000000',
+          balance: '8000000',
+        }),
+      ],
+    };
+    mocks.getCustomerStatement.mockImplementation((_id: number, range?: { dateFrom?: string; dateTo?: string }) =>
+      range ? Promise.resolve(julyBook) : Promise.resolve(profile));
+
+    const { container } = mount();
+    await screen.findByText('3 khoản phát sinh');
+    fireEvent.click(screen.getByRole('tab', { name: /Chi tiết công nợ/ }));
+
+    const dates = [...container.querySelectorAll('.dd-td-date')].map((el) => el.textContent);
+    expect(dates).toEqual(['2/7/2026', '18/7/2026', '30/7/2026']);
+    expect(screen.queryByText('25/8/2026')).toBeNull();
+  });
+});

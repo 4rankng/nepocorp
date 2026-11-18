@@ -57,6 +57,10 @@ export function ReceivableLedgerRow({ row, onEdit, onDelete }: { row: LedgerEntr
   const debit = parseFloat(row.debit) || 0;
   const credit = parseFloat(row.credit) || 0;
   const balance = parseFloat(row.balance) || 0;
+  // NEPO-979 — the column is NGÀY CHỨNG TỪ (trip departure / receipt day),
+  // not the posting instant: a July trip that only locks in August must read
+  // its July day here.
+  const day = row.docDate ?? row.timestamp;
   const tripId = row.tripId ?? (
     row.txnType === TxnType.TRIP_REVENUE || row.txnType === TxnType.PAYMENT_RECEIVED
       ? row.txnId
@@ -69,7 +73,7 @@ export function ReceivableLedgerRow({ row, onEdit, onDelete }: { row: LedgerEntr
 
   return (
     <tr>
-      <td className="dd-td-date">{formatDate(row.timestamp)}</td>
+      <td className="dd-td-date">{formatDate(day)}</td>
       <td className="dd-reference">
         <strong>{row.tripCode || (tripId ? 'Chuyến chưa có mã' : row.receiptId || row.note || 'Giao dịch')}</strong>
         {containers.length > 0 && <small>Container {containers.join(', ')}</small>}
@@ -106,6 +110,9 @@ export function ReceivableLedgerCard({ row, onEdit, onDelete }: { row: LedgerEnt
   const debit = parseFloat(row.debit) || 0;
   const credit = parseFloat(row.credit) || 0;
   const balance = parseFloat(row.balance) || 0;
+  // NEPO-979 — voucher day first, posted timestamp as fallback (same
+  // contract as the desktop row).
+  const day = row.docDate ?? row.timestamp;
   const tripId = row.tripId ?? (
     row.txnType === TxnType.TRIP_REVENUE || row.txnType === TxnType.PAYMENT_RECEIVED
       ? row.txnId
@@ -119,7 +126,7 @@ export function ReceivableLedgerCard({ row, onEdit, onDelete }: { row: LedgerEnt
   return (
     <li className="dd-ledger-mobile-card d-card d-card-border bg-base-100">
       <div className="dd-ledger-mobile-card__head">
-        <time dateTime={row.timestamp}>{formatDate(row.timestamp)}</time>
+        <time dateTime={day}>{formatDate(day)}</time>
         <span className={receivablePill(row.txnType)}>{rowTypeLabel(row)}</span>
         <PaymentRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
       </div>

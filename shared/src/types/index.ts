@@ -467,6 +467,10 @@ export interface LedgerEntry {
   balance: string;
   note: string | null;
   createdAt: string;
+  /** Voucher day (yyyy-mm-dd): trip departure for trip documents, receipt day
+   * (= posted day) for payments. NEPO-979 — the chi tiết tab dates/sorts rows
+   * by this, not the posting instant; null/absent = fall back to `timestamp`. */
+  docDate?: string | null;
   routeName?: string | null;
   containerNumbers?: string[];
   tripId?: number | null;
