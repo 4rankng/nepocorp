@@ -18,22 +18,24 @@ import { db } from '../db';
 import * as s from '../db/schema';
 
 type NodeTestApi = typeof import('node:test');
-type RunnerApi = Pick<NodeTestApi, 'describe' | 'test' | 'after'>;
+type RunnerApi = Pick<NodeTestApi, 'describe' | 'test' | 'after' | 'before'>;
 
 let testApi: RunnerApi;
 if (process.env.VITEST) {
   // Vitest registers node:test definitions as "no test suite found", and it
   // has no `after` export (node:test's file-scoped teardown = afterAll).
-  const vitest = (await import('vitest')) as unknown as NodeTestApi & { afterAll: NodeTestApi['after'] };
-  testApi = { describe: vitest.describe, test: vitest.test, after: vitest.afterAll };
+  // `before` maps the same way (vitest beforeAll = node:test before).
+  const vitest = (await import('vitest')) as unknown as NodeTestApi & { afterAll: NodeTestApi['after']; beforeAll: NodeTestApi['before'] };
+  testApi = { describe: vitest.describe, test: vitest.test, after: vitest.afterAll, before: vitest.beforeAll };
 } else {
   const nodeTest = await import('node:test');
-  testApi = { describe: nodeTest.describe, test: nodeTest.test, after: nodeTest.after };
+  testApi = { describe: nodeTest.describe, test: nodeTest.test, after: nodeTest.after, before: nodeTest.before };
 }
 
 export const describe = testApi.describe;
 export const test = testApi.test;
 export const after = testApi.after;
+export const before = testApi.before;
 
 export interface SeededDebtCustomer {
   customerId: number;

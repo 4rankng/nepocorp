@@ -6,7 +6,7 @@
  */
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, inArray, sql, desc, isNull, gte, lte, or } from 'drizzle-orm';
+import { eq, and, inArray, notInArray, sql, desc, isNull, gte, lte, or } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
@@ -444,6 +444,186 @@ export async function updatePaymentEntry(
       amount: input.amount,
       receiptId: input.receiptId,
       receivedDate: input.receivedDate,
+      newBalance,
+    };
+  });
+}
+
+// ─── Receipt-group edit/delete (NEPO-52) ──────────────────────────────────────
+// The sổ chi tiết renders one receipt as a receipt GROUP: recordPayment
+// FIFO-splits the received total across trips at posting time (several
+// PAYMENT_RECEIVED slices sharing one receiptId), and NEPO-48's
+// reattributePaymentRows re-derives the per-trip allocation on the visible
+// voucher-day book, giving display rows synthetic negative ids that no longer
+// map back to single entries. The receipt — not the slice — is the business
+// document (one receipt number posts at most once per customer, see the
+// intake dedupe), so the accountant's Sửa/Xoa on any row of the group targets
+// the WHOLE receipt. These are the endpoints the sổ rows call; the per-entry
+// PUT/DELETE /payments/:id above stays for legacy no-receipt rows, which keep
+// their real entry ids on screen.
+
+export interface UpdatedPaymentReceipt {
+  /** The surviving (oldest) slice's id — the group collapses onto it. */
+  id: number;
+  customerId: number;
+  amount: number;
+  receiptId: string;
+  receivedDate: string;
+  /** Slices removed by the collapse (group had > 1 PAYMENT_RECEIVED rows). */
+  collapsedCount: number;
+  /** Customer's outstanding AR balance after the edit + recompute. */
+  newBalance: number;
+}
+
+/**
+ * Edit a whole receipt group — the receipt's TOTAL, code, "Ngày nhận" and
+ * channel — in one transaction (NEPO-52).
+ *
+ * A receipt may sit on the books as several FIFO slices (one per trip the
+ * intake allocated to). The receipt total is the business truth; the stored
+ * split is a posting detail the sổ re-derives for display anyway
+ * (reattributePaymentRows). So the edit collapses the group onto its oldest
+ * slice carrying the corrected total and deletes the sibling slices — the
+ * book ends with one PAYMENT_RECEIVED row per receipt, which is exactly the
+ * state a single-slice intake produces.
+ *
+ * Same guards as updatePaymentEntry, with the group's Σ credits backed out
+ * for the overpay check, and the receipt-clash check excluding the group's
+ * own slices (a rename must not collide with itself).
+ */
+export async function updatePaymentReceipt(
+  customerId: number,
+  receiptId: string,
+  input: { amount: number; receiptId: string; receivedDate: string; paymentMethod?: 'BANK' | 'CASH' },
+): Promise<UpdatedPaymentReceipt> {
+  return db.transaction(async (tx) => {
+    const group = await tx.select().from(s.ledger)
+      .where(and(
+        eq(s.ledger.entityType, 'CUSTOMER'),
+        eq(s.ledger.entityId, customerId),
+        eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+        eq(s.ledger.receiptId, receiptId),
+      ))
+      .orderBy(s.ledger.id);
+    if (group.length === 0) {
+      throw new ApiError(404, 'Không tìm thấy bản ghi thanh toán');
+    }
+
+    if (!Number.isFinite(input.amount) || input.amount <= 0) {
+      throw new ApiError(422, 'Số tiền phải là số dương');
+    }
+    // Validates format + no-future and converts to the ledger timestamp.
+    const postedAt = receivedDateToTimestamp(input.receivedDate);
+
+    // Serialize against concurrent payment intake / edits / deletes.
+    await LedgerService.lockEntity(tx, 'CUSTOMER', customerId);
+
+    // Receipt-id uniqueness among the customer's OTHER payment entries (the
+    // intake dedupe key). The group's own slices are excluded: renaming the
+    // receipt must not collide with itself.
+    const groupIds = group.map((g) => g.id);
+    if (input.receiptId !== receiptId) {
+      const [clash] = await tx.select({ id: s.ledger.id })
+        .from(s.ledger)
+        .where(and(
+          eq(s.ledger.entityType, 'CUSTOMER'),
+          eq(s.ledger.entityId, customerId),
+          eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+          eq(s.ledger.receiptId, input.receiptId),
+          notInArray(s.ledger.id, groupIds),
+        ))
+        .limit(1);
+      if (clash) {
+        throw new ApiError(409,
+          `Mã biên lai ${input.receiptId} đã được dùng cho bản ghi thanh toán khác của khách hàng này`);
+      }
+    }
+
+    // Overpay guard on the same total the intake uses, with the WHOLE group's
+    // current credit backed out (the edit replaces it, not adds to it).
+    const groupTotal = group.reduce((sum, g) => sum + Number(g.credit), 0);
+    const collectible = await collectTripRemainders(tx, customerId);
+    const totalRemainingWithout = collectible.reduce((sum, t) => sum + t.remaining, 0) + groupTotal;
+    if (input.amount > totalRemainingWithout + 1) {  // +1 to absorb rounding
+      throw new ApiError(422,
+        `Số tiền sửa vượt quá tổng số còn có thể thu (Tổng còn có thể thu: ${totalRemainingWithout.toLocaleString('vi-VN')} ₫, nhập ${input.amount.toLocaleString('vi-VN')} ₫)`);
+    }
+
+    // Collapse: oldest slice survives with the corrected total; the sibling
+    // slices go (their split was a posting detail, re-derived for display).
+    const [keep] = group;
+    const siblingIds = groupIds.filter((gid) => gid !== keep.id);
+    await tx.update(s.ledger)
+      .set({
+        credit: String(input.amount),
+        receiptId: input.receiptId,
+        timestamp: postedAt,
+        // Only overwrite the channel when the caller sends one — a PUT without
+        // paymentMethod keeps the stored value instead of nulling it.
+        ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),
+      })
+      .where(eq(s.ledger.id, keep.id));
+    if (siblingIds.length > 0) {
+      await tx.delete(s.ledger).where(inArray(s.ledger.id, siblingIds));
+    }
+
+    const newBalance = await LedgerService.recomputeEntityBalances(tx, 'CUSTOMER', customerId);
+
+    return {
+      id: keep.id,
+      customerId,
+      amount: input.amount,
+      receiptId: input.receiptId,
+      receivedDate: input.receivedDate,
+      collapsedCount: siblingIds.length,
+      newBalance,
+    };
+  });
+}
+
+export interface DeletedPaymentReceipt {
+  /** Ids removed — every PAYMENT_RECEIVED slice of the receipt. */
+  ids: number[];
+  customerId: number;
+  /** Σ credits of the removed slices — the receipt's posted total. */
+  amount: number;
+  receiptId: string;
+  /** Customer's outstanding AR balance after the deletion + recompute. */
+  newBalance: number;
+}
+
+/**
+ * Delete a whole receipt group — every PAYMENT_RECEIVED slice sharing the
+ * receipt — and recompute the customer's running balance (NEPO-52). The sổ's
+ * Sửa/Xoa on a receipted row targets the receipt, not one FIFO slice: leaving
+ * sibling slices behind would keep most of the receipt on the books.
+ */
+export async function deletePaymentReceipt(customerId: number, receiptId: string): Promise<DeletedPaymentReceipt> {
+  return db.transaction(async (tx) => {
+    const group = await tx.select().from(s.ledger)
+      .where(and(
+        eq(s.ledger.entityType, 'CUSTOMER'),
+        eq(s.ledger.entityId, customerId),
+        eq(s.ledger.txnType, TxnType.PAYMENT_RECEIVED),
+        eq(s.ledger.receiptId, receiptId),
+      ))
+      .orderBy(s.ledger.id);
+    if (group.length === 0) {
+      throw new ApiError(404, 'Không tìm thấy bản ghi thanh toán');
+    }
+
+    // Serialize against concurrent payment intake / deletes for this customer,
+    // then remove the rows and rebuild the running balance of the rows behind.
+    await LedgerService.lockEntity(tx, 'CUSTOMER', customerId);
+    const ids = group.map((g) => g.id);
+    await tx.delete(s.ledger).where(inArray(s.ledger.id, ids));
+    const newBalance = await LedgerService.recomputeEntityBalances(tx, 'CUSTOMER', customerId);
+
+    return {
+      ids,
+      customerId,
+      amount: group.reduce((sum, g) => sum + Number(g.credit), 0),
+      receiptId,
       newBalance,
     };
   });

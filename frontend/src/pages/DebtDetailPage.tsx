@@ -33,6 +33,7 @@ import { DebtAccountStrip, DebtAgingSummary } from '../features/debt/debtSummary
 import { DebtPaymentModal } from '../features/debt/debtPaymentModal';
 import { DebtPaymentEditModal } from '../features/debt/debtPaymentEditModal';
 import { ReceivableLedgerRow, ReceivableLedgerCard } from '../features/debt/debtLedgerRows';
+import { isReceiptedPaymentRow, paymentActionUrl, receiptGroupCredit as receiptGroupCreditFor } from '../features/debt/paymentGroupActions';
 import { DualEntityLookupError, LinkedSupplierPayableLedger } from '../features/debt/debtLinkedSupplierLedger';
 
 // Re-exported so existing imports from this page keep resolving after the
@@ -168,6 +169,19 @@ export default function DebtDetailPage() {
   // Same role gate and the same cache-invalidation path as delete; the
   // backend re-checks permissions on PUT /payments/:id.
   const canEditPayments = isFinancialRole(user?.role);
+
+  // NEPO-52 — receipted ledger rows are re-derived per-trip allocations
+  // (reattributePaymentRows folds a receipt's FIFO slices into rows with
+  // synthetic display ids), so Sửa/Xoa on any row of a receipt targets the
+  // WHOLE receipt, not one slice; legacy no-receipt rows keep per-entry
+  // actions. paymentGroupActions owns the routing decision and the group
+  // total (Σ over the FULL book — the period filter can hide sibling
+  // slices posted outside the kỳ).
+  const receiptGroupCredit = useCallback(
+    (row: LedgerEntry) => receiptGroupCreditFor(row, profileStatement?.ledgerRows ?? []),
+    [profileStatement],
+  );
+
   const [editTarget, setEditTarget] = useState<LedgerEntry | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [editReceipt, setEditReceipt] = useState('');
@@ -177,17 +191,19 @@ export default function DebtDetailPage() {
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const requestEditPayment = useCallback((row: LedgerEntry) => {
-    // Prefill from the row: credit is the amount, timestamp is the received
-    // date (stored at midnight Indochina time, so shift +07:00 for the
-    // YYYY-MM-DD the date input wants). Legacy rows with no recorded channel
-    // prefill BANK; the accountant confirms via the radio before saving.
-    setEditAmount(String(parseFloat(row.credit) || 0));
+    // Prefill from the row: for a receipted row the receipt TOTAL (the edit
+    // replaces the whole receipt, collapsing its FIFO slices); for a legacy
+    // row the entry's own credit. Timestamp is the received date (stored at
+    // midnight Indochina time, so shift +07:00 for the YYYY-MM-DD the date
+    // input wants). Legacy rows with no recorded channel prefill BANK; the
+    // accountant confirms via the radio before saving.
+    setEditAmount(String(receiptGroupCredit(row)));
     setEditReceipt(row.receiptId ?? '');
     setEditDate(new Date(new Date(row.timestamp).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10));
     setEditMethod(row.paymentMethod === 'CASH' ? 'CASH' : 'BANK');
     setEditError('');
     setEditTarget(row);
-  }, []);
+  }, [receiptGroupCredit]);
 
   // Agent "open/prefill" target: the bot can open this payment modal (and
   // prefill the amount) when the user is on this page — the "do it for you"
@@ -522,7 +538,10 @@ export default function DebtDetailPage() {
     if (!deleteTarget || deleteSubmitting) return;
     setDeleteSubmitting(true);
     try {
-      await api.delete(`/payments/${deleteTarget.id}`);
+      // NEPO-52 — a receipted row deletes the WHOLE receipt (every FIFO
+      // slice sharing the biên lai); legacy no-receipt rows keep per-entry
+      // deletes. The backend re-checks permissions either way.
+      await api.delete(paymentActionUrl('delete', Number(id), deleteTarget));
       setDeleteTarget(null);
       await invalidatePaymentCaches();
       showToast({ kind: 'success', message: 'Đã xóa bản ghi thanh toán. Số dư công nợ đã được tính lại.' });
@@ -564,7 +583,10 @@ export default function DebtDetailPage() {
     setEditSubmitting(true);
     try {
       const amount = parseFloat(editAmount.replace(/[.,\s]/g, ''));
-      await api.put(`/payments/${editTarget.id}`, {
+      // NEPO-52 — a receipted row edits the WHOLE receipt (the PUT replaces
+      // its posted total and collapses the FIFO slices); legacy no-receipt
+      // rows keep per-entry edits.
+      await api.put(paymentActionUrl('edit', Number(id), editTarget), {
         amount,
         receiptId: editReceipt.trim(),
         receivedDate: editDate,
@@ -901,11 +923,15 @@ export default function DebtDetailPage() {
         onCancel={() => setOverpayConfirm(null)}
       />
 
-      {/* Delete-payment confirmation (kanban 141026163920) */}
+      {/* Delete-payment confirmation (kanban 141026163920). Receipted rows
+          delete the whole receipt (NEPO-52), so the message names the biên
+          lai and its full total, not one visible slice. */}
       <ConfirmDialog
         isOpen={!!deleteTarget}
         variant="danger"
-        message={`Xóa bản ghi thanh toán này? Số dư công nợ sẽ được tính lại. (${money(parseFloat(deleteTarget?.credit || '0'))}${deleteTarget?.receiptId ? ` — ${deleteTarget.receiptId}` : ''})`}
+        message={deleteTarget && isReceiptedPaymentRow(deleteTarget)
+          ? `Xóa thanh toán theo biên lai ${deleteTarget.receiptId}? Toàn bộ ${money(receiptGroupCredit(deleteTarget))} của biên lai (mọi dòng cùng biên lai) sẽ được gỡ, số dư công nợ tính lại.`
+          : `Xóa bản ghi thanh toán này? Số dư công nợ sẽ được tính lại. (${money(parseFloat(deleteTarget?.credit || '0'))})`}
         confirmLabel={deleteSubmitting ? 'Đang xóa…' : 'Xóa'}
         cancelLabel="Hủy"
         onConfirm={() => { void confirmDeletePayment(); }}
@@ -931,7 +957,9 @@ export default function DebtDetailPage() {
       />
       <ConfirmDialog
         isOpen={editConfirmOpen}
-        message={`Xác nhận sửa bản ghi thanh toán này? Số tiền và ngày nhận sẽ được cập nhật, số dư công nợ tính lại. (${money(parseFloat(editAmount.replace(/[.,\s]/g, '')) || 0)} — ${editDate}${editReceipt.trim() ? ` — ${editReceipt.trim()}` : ''})`}
+        message={editTarget && isReceiptedPaymentRow(editTarget)
+          ? `Xác nhận sửa thanh toán theo biên lai ${editTarget.receiptId}? Số tiền (${money(parseFloat(editAmount.replace(/[.,\s]/g, '')) || 0)}) là TỔNG mới của biên lai — ngày nhận ${editDate}, số dư công nợ tính lại.`
+          : `Xác nhận sửa bản ghi thanh toán này? Số tiền và ngày nhận sẽ được cập nhật, số dư công nợ tính lại. (${money(parseFloat(editAmount.replace(/[.,\s]/g, '')) || 0)} — ${editDate}${editReceipt.trim() ? ` — ${editReceipt.trim()}` : ''})`}
         confirmLabel={editSubmitting ? 'Đang lưu…' : 'Xác nhận sửa'}
         cancelLabel="Hủy"
         onConfirm={() => { void confirmEditPayment(); }}

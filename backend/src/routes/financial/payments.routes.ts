@@ -50,6 +50,71 @@ router.post('/payments/receive', asyncHandler(async (req: Request, res: Response
   res.status(201).json({ ok: true, ...(result.overpaid ? { overpaid: result.overpaid } : {}) });
 }));
 
+// ─── Receipt-group edit/delete (NEPO-52) ─────────────────────────────────────
+// The sổ chi tiết's receipted payment rows carry synthetic display ids
+// (reattributePaymentRows folds a receipt's FIFO slices into re-derived
+// per-trip rows), so Sửa/Xoa from those rows cannot address one entry — it
+// addresses the RECEIPT. These endpoints apply the edit/delete to every
+// PAYMENT_RECEIVED slice of (customerId, receiptId); the per-entry
+// /payments/:id routes below stay for legacy no-receipt rows. Same
+// permission gate and audit path as the per-entry routes.
+
+router.put('/payments/by-receipt/:customerId/:receiptId', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const customerId = parseInt(req.params.customerId as string, 10);
+  const receiptId = (req.params.receiptId as string ?? '').trim();
+  if (!Number.isFinite(customerId) || customerId <= 0 || !receiptId) {
+    return res.status(400).json({ error: 'ID bản ghi thanh toán không hợp lệ' });
+  }
+  const data = updatePaymentSchema.parse(req.body);
+  const updated = await financialService.updatePaymentReceipt(customerId, receiptId, {
+    amount: data.amount,
+    receiptId: data.receiptId,
+    receivedDate: data.receivedDate,
+    paymentMethod: data.paymentMethod,
+  });
+  await invalidateReportCaches();
+  res.locals.auditEntityId = updated.id;
+  res.locals.auditEntityKey = `${updated.amount.toLocaleString('vi-VN')} ₫`
+    + `, biên lai ${updated.receiptId}`
+    + (updated.collapsedCount > 0 ? ` (gộp ${updated.collapsedCount + 1} dòng FIFO)` : '');
+  res.json({
+    ok: true,
+    updated: {
+      id: updated.id,
+      customer_id: updated.customerId,
+      amount: updated.amount,
+      receipt_id: updated.receiptId,
+      received_date: updated.receivedDate,
+      collapsed_count: updated.collapsedCount,
+    },
+    new_balance: updated.newBalance,
+  });
+}));
+
+router.delete('/payments/by-receipt/:customerId/:receiptId', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const customerId = parseInt(req.params.customerId as string, 10);
+  const receiptId = (req.params.receiptId as string ?? '').trim();
+  if (!Number.isFinite(customerId) || customerId <= 0 || !receiptId) {
+    return res.status(400).json({ error: 'ID bản ghi thanh toán không hợp lệ' });
+  }
+  const deleted = await financialService.deletePaymentReceipt(customerId, receiptId);
+  await invalidateReportCaches();
+  res.locals.auditEntityId = deleted.ids[0];
+  res.locals.auditEntityKey = `${deleted.amount.toLocaleString('vi-VN')} ₫`
+    + `, biên lai ${deleted.receiptId}`
+    + (deleted.ids.length > 1 ? ` (xóa ${deleted.ids.length} dòng FIFO)` : '');
+  res.json({
+    ok: true,
+    deleted: {
+      ids: deleted.ids,
+      customer_id: deleted.customerId,
+      amount: deleted.amount,
+      receipt_id: deleted.receiptId,
+    },
+    new_balance: deleted.newBalance,
+  });
+}));
+
 // ─── Delete a payment entry (kanban 141026163920) ────────────────────────────
 // Removes a PAYMENT_RECEIVED ledger row and recomputes the customer's running
 // balance. Escape hatch for duplicated/mis-posted payments. Casbin already
