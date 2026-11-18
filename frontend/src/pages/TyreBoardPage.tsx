@@ -172,18 +172,24 @@ export default function TyreBoardPage() {
                     return (
                       <tr key={slot.position}>
                         <td className="tbp-td-stt">{slot.position}</td>
-                        <td className="tbp-td-stack">
-                          <InlineCell value={slot.brand} onCommit={(v) => commitCell(slot.position, { brand: v })} ariaLabel={`Nhãn hiệu ô ${slot.position}`} />
-                          <InlineCell value={slot.model} onCommit={(v) => commitCell(slot.position, { model: v })} className="tbp-cell-sub" ariaLabel={`Model ô ${slot.position}`} />
+                        <td>
+                          <div className="tbp-td-stack">
+                            <InlineCell value={slot.brand} onCommit={(v) => commitCell(slot.position, { brand: v })} ariaLabel={`Nhãn hiệu ô ${slot.position}`} />
+                            <InlineCell value={slot.model} onCommit={(v) => commitCell(slot.position, { model: v })} className="tbp-cell-sub" ariaLabel={`Model ô ${slot.position}`} />
+                          </div>
                         </td>
-                        <td className="tbp-td-stack">
-                          <InlineCell value={slot.size} onCommit={(v) => commitCell(slot.position, { size: v })} ariaLabel={`Cỡ lốp ô ${slot.position}`} />
-                          <InlineCell value={slot.treadType} onCommit={(v) => commitCell(slot.position, { treadType: v })} className="tbp-cell-sub" ariaLabel={`Loại gai ô ${slot.position}`} />
+                        <td>
+                          <div className="tbp-td-stack">
+                            <InlineCell value={slot.size} onCommit={(v) => commitCell(slot.position, { size: v })} ariaLabel={`Cỡ lốp ô ${slot.position}`} />
+                            <InlineCell value={slot.treadType} onCommit={(v) => commitCell(slot.position, { treadType: v })} className="tbp-cell-sub" ariaLabel={`Loại gai ô ${slot.position}`} />
+                          </div>
                         </td>
                         <td className="tbp-td-serial"><InlineCell value={slot.serial} onCommit={(v) => commitCell(slot.position, { serial: v })} /></td>
-                        <td className="tbp-td-stack">
-                          <InlineCell type="date" value={slot.lastChangedAt} onCommit={(v) => commitCell(slot.position, { lastChangedAt: v })} ariaLabel={`Ngày thay ô ${slot.position}`} />
-                          <span className="tbp-age">{age != null ? `${age} ngày` : ""}</span>
+                        <td>
+                          <div className="tbp-td-stack">
+                            <InlineCell type="date" value={slot.lastChangedAt} onCommit={(v) => commitCell(slot.position, { lastChangedAt: v })} ariaLabel={`Ngày thay ô ${slot.position}`} />
+                            <span className="tbp-age">{age != null ? `${age} ngày` : ""}</span>
+                          </div>
                         </td>
                         <td><InlineCell value={slot.note} onCommit={(v) => commitCell(slot.position, { note: v })} ariaLabel={`Ghi chú ô ${slot.position}`} /></td>
                         <td>

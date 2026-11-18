@@ -235,10 +235,12 @@ function TopViewOutlineHorizontal({ counterRotate = false }: { counterRotate?: b
 
 /** Portrait renders the SAME top view rotated 90° — the mockup's own mobile
  *  transform (side view hidden, watermark numerals counter-rotated, tire
- *  markers drawn upright from the precomputed rotated slot table). */
+ *  markers drawn upright from the precomputed rotated slot table).
+ *  translate(975,0) lands the rotated group at x ∈ [5, 385] — the same
+ *  mapping (x,y) → (964−y, x) the rotated slot table was computed with. */
 function PortraitScene() {
   return (
-    <g transform="rotate(90)">
+    <g transform="translate(975, 0) rotate(90)">
       <TopViewOutlineHorizontal counterRotate />
     </g>
   );
