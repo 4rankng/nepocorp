@@ -23,6 +23,7 @@ import { and, eq, gte, inArray, like } from 'drizzle-orm';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import { Role } from '@tingting/shared';
+import { config } from '../config';
 import { initEnforcer } from '../casbin/enforcer';
 import { initAuditService } from '../services/audit.service';
 import { disconnectRedis } from '../lib/redis';
@@ -88,7 +89,10 @@ before(async () => {
     }).returning();
     createdUserIds.push(adm.id);
   }
-  adminToken = jwt.sign({ id: adm.id, role: adm.role, username: adm.username }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '1h' });
+  // Sign with the SAME secret the auth middleware verifies against
+  // (config.jwtSecret) — a runner env without JWT_SECRET used to diverge
+  // from the config fallback and 401 every request.
+  adminToken = jwt.sign({ id: adm.id, role: adm.role, username: adm.username }, config.jwtSecret, { expiresIn: '1h' });
 });
 
 after(async () => {
