@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import type { TyreBoardSlot, TyreBoardSlotUpdateInput } from "@tingting/shared";
 
 import { Modal } from "../components/UI";
+import { Banner } from "../components/shared/Banner";
 import { useToast } from "../components/shared/Toast";
 import { formatErrorMessage } from "../lib/api";
 import { routes } from "../lib/routes";
@@ -112,6 +113,8 @@ export default function TyreBoardPage() {
     acc[tyreStatus(s)] += 1;
     return acc;
   }, { good: 0, warn: 0, bad: 0, empty: 0 });
+  const badSlots = slots.filter((s) => tyreStatus(s) === "bad").map((s) => s.position);
+  const warnSlots = slots.filter((s) => tyreStatus(s) === "warn").map((s) => s.position);
 
   return (
     <div className="tbp">
@@ -125,6 +128,14 @@ export default function TyreBoardPage() {
           <h1>🛞 Bảng theo dõi lốp</h1>
           <div className="tbp-plate">Số xe: {board?.truckPlate ?? "…"}</div>
         </div>
+
+        {(badSlots.length > 0 || warnSlots.length > 0) && (
+          <Banner variant="warning" dismissKey={`tyre-aged-${truckId}`}>
+            {badSlots.length > 0 && (<>Lốp cần thay: ô <b>{badSlots.join(", ")}</b>.</>)}
+            {badSlots.length > 0 && warnSlots.length > 0 && " "}
+            {warnSlots.length > 0 && (<>Cần chú ý/bảo trì: ô <b>{warnSlots.join(", ")}</b>.</>)}
+        </Banner>
+        )}
 
         <div className="tbp-tabs" role="tablist" aria-label="Chọn xe">
           {trucks.map((t) => (
