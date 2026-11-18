@@ -18,7 +18,7 @@ function fmtISO(iso: string | null): string {
  * Moved verbatim out of TyreBoardPage so the SVG diagram (TyreTruckDiagram)
  * can embed the same editor inside <foreignObject>.
  */
-export function InlineCell({ value, onCommit, type = "text", placeholder, className, ariaLabel }: {
+export function InlineCell({ value, onCommit, type = "text", placeholder, className, ariaLabel, wrap }: {
   value: string | null;
   onCommit: (raw: string) => void;
   type?: "text" | "date";
@@ -26,6 +26,9 @@ export function InlineCell({ value, onCommit, type = "text", placeholder, classN
   className?: string;
   /** Accessible name — required for the serial editors embedded in the SVG. */
   ariaLabel?: string;
+  /** Quiet display that WRAPS (notes, long names) instead of truncating in a
+   *  fixed-width input; the real input appears only while editing. */
+  wrap?: boolean;
 }) {
   const [draft, setDraft] = useState(value ?? "");
   const [editing, setEditing] = useState(false);
@@ -35,19 +38,27 @@ export function InlineCell({ value, onCommit, type = "text", placeholder, classN
     if (!editing) setDraft(value ?? "");
   }, [value, editing]);
 
-  if (type === "date" && !editing) {
-    return (
-      <span
-        className={className ? `tbp-cell-input tbp-cell-quiet ${className}` : "tbp-cell-input tbp-cell-quiet"}
-        tabIndex={0}
-        aria-label={ariaLabel}
-        title="Bấm để chọn ngày thay"
-        onClick={() => setEditing(true)}
-        onFocus={() => setEditing(true)}
-      >
-        {fmtISO(value)}
-      </span>
-    );
+  const quiet = (text: string) => (
+    <span
+      className={[
+        "tbp-cell-input",
+        "tbp-cell-quiet",
+        wrap ? "tbp-cell-wrap" : "",
+        className ?? "",
+      ].filter(Boolean).join(" ")}
+      tabIndex={0}
+      aria-label={ariaLabel}
+      title="Bấm để sửa"
+      onClick={() => setEditing(true)}
+      onFocus={() => setEditing(true)}
+    >
+      {text}
+    </span>
+  );
+
+  if (!editing && (type === "date" || (wrap && type === "text"))) {
+    const display = type === "date" ? fmtISO(value) : (value != null && value !== "" ? value : (placeholder ?? "—"));
+    return quiet(display);
   }
 
   return (

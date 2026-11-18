@@ -293,6 +293,26 @@
   cursor: pointer;
   white-space: nowrap;
 }
+/* Every quiet value is editable: pencil hint + field styling on hover so the
+   affordance is visible (sub-lines look like plain text otherwise). */
+.tbp-cell-quiet:hover {
+  border-color: #b9cdf3;
+  background: #f2f7ff;
+}
+.tbp-cell-quiet:hover::after {
+  content: "✎";
+  margin-left: 6px;
+  color: #1a56db;
+  font-size: 11px;
+}
+/* Wrapping quiet cells (notes, long names): normal white-space so long text
+   wraps instead of truncating inside a fixed-width input. */
+.tbp-cell-quiet.tbp-cell-wrap {
+  white-space: normal;
+  word-break: break-word;
+  display: block;
+  min-width: 96px;
+}
 
 /* First column (STT / Ngày thay) stays visible while the rest scrolls.
    Solid backgrounds: border-collapse lets the wrapper's background bleed
