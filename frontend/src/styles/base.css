@@ -5,6 +5,10 @@
 html, body, #root {
   height: 100%;
   overflow: hidden;
+  /* Chrome Android font boosting inflates wide text blocks (12px -> ~17px)
+     on its own heuristics — sizes must be exactly what the CSS says. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   /* Bottom-gap armor (iOS standalone — consult Gemini+DeepSeek 23/10): all
      three canvas layers share the app background so any band that falls
      outside the reachable layout (WKWebView standalone viewport bug, rank-1

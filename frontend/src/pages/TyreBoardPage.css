@@ -274,8 +274,14 @@
 }
 
 /* ── Mobile slot list (rendered <641px instead of the wide table) ──────── */
-/* One card per slot, 11/12px data-dense, same inline cells + Thay lốp. */
-.tbp-slotlist { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 14px; }
+/* Data-dense: fields pair into two columns inside the card; the cards
+   themselves flow into 2 columns whenever ~280px fits (minmax auto-fit). */
+.tbp-slotlist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+  margin: 10px 0 14px;
+}
 .tbp-slot {
   border: 1px solid #e3e8f0;
   border-left-width: 3px;
@@ -289,6 +295,14 @@
 .tbp-slot.st-empty { border-left-color: #e8eaed; }
 .tbp-slot.is-spare { background: #fafbfc; border-style: dashed; border-left-style: solid; }
 .tbp-slot-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+/* Per-card container: pair fields into two columns only when the card is
+   wide enough to hold them (a 2-col card list keeps single-column fields). */
+.tbp-slot { container-type: inline-size; }
+.tbp-slot-grid { display: grid; grid-template-columns: 1fr; gap: 1px; }
+@container (min-width: 340px) {
+  .tbp-slot-grid { grid-template-columns: 1fr 1fr; gap: 1px 14px; }
+}
+.tbp-slot-line--wide { grid-column: 1 / -1; }
 .tbp-slot-pos {
   min-width: 20px;
   height: 18px;
