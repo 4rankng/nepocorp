@@ -166,10 +166,11 @@ export default function TyreBoardPage() {
             </div>
 
             {isNarrow ? (
-              /* Mobile: no wide table — one compact data-dense card per slot
-                 (11/12px), same inline cells + "Thay lốp" as the desktop row. */
+              /* Mobile: no wide table — dense cards for mounted tyres, and
+                 one dashed strip of position chips for the empty slots (tap
+                 a chip to install: Thay lốp sets serial + ngày). */
               <div className="tbp-slotlist">
-                {slots.map((slot) => {
+                {slots.filter((s) => s.serial || s.brand || s.model || s.size || s.treadType || s.note || s.lastChangedAt).map((slot) => {
                   const age = daysBetween(slot.lastChangedAt, null);
                   const st = tyreStatus(slot);
                   const spare = SPARE_POSITIONS[slot.position] === true;
@@ -182,40 +183,53 @@ export default function TyreBoardPage() {
                           Thay lốp
                         </button>
                       </div>
-                      <div className="tbp-slot-grid">
-                        <div className="tbp-slot-line">
-                          <span className="tbp-slot-k">Hãng · model</span>
-                          <span className="tbp-slot-v">
+                      <div className="tbp-slot-body">
+                        <div className="tbp-slot-row">
+                          <span className="tbp-slot-pair">
                             <InlineCell wrap value={slot.brand} onCommit={(v) => commitCell(slot.position, { brand: v })} ariaLabel={`Nhãn hiệu ô ${slot.position}`} />
                             <InlineCell wrap value={slot.model} onCommit={(v) => commitCell(slot.position, { model: v })} className="tbp-cell-sub" ariaLabel={`Model ô ${slot.position}`} />
                           </span>
-                        </div>
-                        <div className="tbp-slot-line">
-                          <span className="tbp-slot-k">Cỡ · gai</span>
-                          <span className="tbp-slot-v">
+                          <span className="tbp-slot-pair tbp-slot-pair--end">
                             <InlineCell wrap value={slot.size} onCommit={(v) => commitCell(slot.position, { size: v })} ariaLabel={`Cỡ lốp ô ${slot.position}`} />
                             <InlineCell wrap value={slot.treadType} onCommit={(v) => commitCell(slot.position, { treadType: v })} className="tbp-cell-sub" ariaLabel={`Loại gai ô ${slot.position}`} />
                           </span>
                         </div>
-                        <div className="tbp-slot-line">
-                          <span className="tbp-slot-k">Seri</span>
-                          <span className="tbp-slot-v"><InlineCell className="tbp-cell-bold" value={slot.serial} onCommit={(v) => commitCell(slot.position, { serial: v })} /></span>
-                        </div>
-                        <div className="tbp-slot-line">
-                          <span className="tbp-slot-k">Ngày thay</span>
-                          <span className="tbp-slot-v">
+                        <div className="tbp-slot-row">
+                          <InlineCell className="tbp-cell-bold" value={slot.serial} onCommit={(v) => commitCell(slot.position, { serial: v })} />
+                          <span className="tbp-slot-when">
                             <InlineCell type="date" value={slot.lastChangedAt} onCommit={(v) => commitCell(slot.position, { lastChangedAt: v })} ariaLabel={`Ngày thay ô ${slot.position}`} />
                             {age != null && <span className="tbp-age">{age} ngày</span>}
                           </span>
                         </div>
-                        <div className="tbp-slot-line tbp-slot-line--wide">
-                          <span className="tbp-slot-k">Ghi chú</span>
-                          <span className="tbp-slot-v"><InlineCell wrap value={slot.note} onCommit={(v) => commitCell(slot.position, { note: v })} ariaLabel={`Ghi chú ô ${slot.position}`} /></span>
-                        </div>
+                        {slot.note && (
+                          <div className="tbp-slot-row">
+                            <InlineCell wrap value={slot.note} onCommit={(v) => commitCell(slot.position, { note: v })} className="tbp-cell-sub" ariaLabel={`Ghi chú ô ${slot.position}`} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
+                {(() => {
+                  const empties = slots.filter((s) => !(s.serial || s.brand || s.model || s.size || s.treadType || s.note || s.lastChangedAt));
+                  return empties.length > 0 && (
+                    <div className="tbp-slot tbp-slot--empties">
+                      <span className="tbp-slot-empties-label">Chưa lắp</span>
+                      {empties.map((s) => (
+                        <button
+                          key={s.position}
+                          type="button"
+                          className="tbp-slot-chip"
+                          aria-label={`Thay lốp ô ${s.position}`}
+                          title={`Lắp lốp ô ${s.position}`}
+                          onClick={() => openChange(s)}
+                        >
+                          {s.position}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               <div className="tbp-table-scroll tbp-table-scroll--main">
@@ -337,7 +351,7 @@ export default function TyreBoardPage() {
         {changeError && <div className="tbp-modal-error">{changeError}</div>}
         <div className="tbp-modal-hint">
           Lưu lại sẽ ghi lịch sử: {changeTarget?.serial ?? "—"} → {newSerial.trim() || "…"} ngày {fmtDate(changedAt)}.
-          Các cột khác (nhãn hiệu, model…) sửa trực tiếp trên bảng bên dưới.
+          Các thông tin khác (nhãn hiệu, cỡ lốp…) sửa trực tiếp trên sơ đồ / danh sách.
         </div>
       </Modal>
     </div>

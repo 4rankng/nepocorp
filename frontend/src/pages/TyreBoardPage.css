@@ -16,7 +16,7 @@
   font-size: var(--fs-label);
   text-decoration: none;
 }
-.tbp-back:hover { color: #1a56db; }
+.tbp-back:hover { color: #2d5292; }
 
 /* ── Sheet container (the mockup's .wrap) ──────────────────────────────── */
 .tbp-wrap {
@@ -33,13 +33,13 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  border-bottom: 2px solid #1a56db;
+  border-bottom: 2px solid #2d5292;
   padding-bottom: 12px;
 }
 .tbp-head h1 { font-size: 21px; margin: 0; }
 
 .tbp-plate {
-  background: #1a56db;
+  background: #2d5292;
   color: #fff;
   padding: 6px 14px;
   border-radius: 8px;
@@ -58,13 +58,13 @@
   padding: 7px 16px;
   border: none;
   border-radius: 8px;
-  background: #e8eefc;
-  color: #1a56db;
+  background: #e9eef6;
+  color: #2d5292;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
 }
-.tbp-tab.active { background: #1a56db; color: #fff; }
+.tbp-tab.active { background: #2d5292; color: #fff; }
 .tbp-tabs-empty { font-size: var(--fs-label); color: var(--ink-3); padding: 6px 0; }
 
 .tbp-loading { padding: 24px 4px; color: var(--ink-3); font-size: var(--fs-label); }
@@ -96,11 +96,11 @@
   color: var(--ink, #1a2b42);
   padding: 3px 5px;
 }
-.tbp-cell-input:hover { border-color: #d7e0ef; }
+.tbp-cell-input:hover { border-color: #d4dce6; }
 .tbp-cell-input:focus {
   outline: none;
-  border-color: #1a56db;
-  background: #f2f7ff;
+  border-color: #2d5292;
+  background: #f3f6fa;
 }
 .tbp-td-serial .tbp-cell-input { font-weight: 700; }
 
@@ -111,7 +111,7 @@
   font-size: 12px;
 }
 .tbp-table th {
-  background: #12284b;
+  background: #1d2d45;
   color: #fff;
   padding: 8px 7px;
   text-align: left;
@@ -119,19 +119,19 @@
   white-space: nowrap;
 }
 .tbp-table td {
-  border-bottom: 1px solid #e5eaf2;
+  border-bottom: 1px solid #e6e8ee;
   padding: 4px 6px;
   vertical-align: middle;
 }
-.tbp-table tbody tr:hover td { background: #f2f7ff; }
+.tbp-table tbody tr:hover td { background: #f3f6fa; }
 .tbp-td-stt { font-weight: 700; }
-.tbp-age { color: #d62828; font-weight: 700; font-size: 11px; white-space: nowrap; }
+.tbp-age { color: #b5483d; font-weight: 700; font-size: 11px; white-space: nowrap; }
 .tbp-cell-bold { font-weight: 700; }
 
 .tbp-btn {
-  background: #e8eefc;
-  color: #1a56db;
-  border: 1px solid #b9cdf3;
+  background: #e9eef6;
+  color: #2d5292;
+  border: 1px solid #bcc9de;
   border-radius: 6px;
   padding: 3px 10px;
   font-size: 11px;
@@ -139,14 +139,14 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.tbp-btn:hover { background: #dbe7fd; }
+.tbp-btn:hover { background: #d9e2f0; }
 .tbp-btn:disabled { opacity: 0.5; cursor: default; }
 .tbp-btn--primary {
-  background: #1a56db;
-  border-color: #1a56db;
+  background: #2d5292;
+  border-color: #2d5292;
   color: #fff;
 }
-.tbp-btn--primary:hover { background: #1747b8; }
+.tbp-btn--primary:hover { background: #24457c; }
 
 /* ── History section ───────────────────────────────────────────────────── */
 .tbp-history { margin-top: 22px; }
@@ -165,15 +165,15 @@
   color: var(--ink-2);
 }
 .tbp-modal-field input {
-  border: 1px solid #c9d4e8;
+  border: 1px solid #ccd3dd;
   border-radius: 6px;
   padding: 7px 9px;
   font: inherit;
   font-size: 13px;
 }
-.tbp-modal-field input:focus { outline: none; border-color: #1a56db; }
+.tbp-modal-field input:focus { outline: none; border-color: #2d5292; }
 .tbp-modal-error {
-  color: #d62828;
+  color: #b5483d;
   font-size: var(--fs-caption);
   margin-bottom: 8px;
 }
@@ -222,14 +222,14 @@
   line-height: 1.2 !important;
   font-weight: 700;
   color: transparent;
-  caret-color: #12284b;
+  caret-color: #1d2d45;
   padding: 0;
 }
 .tbp-svg-serial:focus {
   outline: none;
-  border-color: #1a56db;
-  background: #f2f7ff;
-  color: #12284b;
+  border-color: #2d5292;
+  background: #f3f6fa;
+  color: #1d2d45;
 }
 .tbp-svg-marker:has(input:focus) .tbp-svg-serial-text { visibility: hidden; }
 
@@ -274,12 +274,14 @@
 }
 
 /* ── Mobile slot list (rendered <641px instead of the wide table) ──────── */
-/* Data-dense: fields pair into two columns inside the card; the cards
-   themselves flow into 2 columns whenever ~280px fits (minmax auto-fit). */
+/* Data-dense record cards: no label column — brand·model left, size·tread
+   right, serial bold under, date·age right. Cards flow into 2 columns
+   whenever ~280px fits; empty slots collapse to one dashed chip strip. */
 .tbp-slotlist {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 8px;
+  gap: 6px;
+  align-items: start;
   margin: 10px 0 14px;
 }
 .tbp-slot {
@@ -288,21 +290,14 @@
   border-radius: 8px;
   padding: 6px 8px;
   background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
-.tbp-slot.st-good { border-left-color: #2e9e5b; }
-.tbp-slot.st-warn { border-left-color: #d3940b; }
-.tbp-slot.st-bad { border-left-color: #d64545; }
+.tbp-slot.st-good { border-left-color: #3d8b62; }
+.tbp-slot.st-warn { border-left-color: #b98a2e; }
+.tbp-slot.st-bad { border-left-color: #c0564f; }
 .tbp-slot.st-empty { border-left-color: #e8eaed; }
 .tbp-slot.is-spare { background: #fafbfc; border-style: dashed; border-left-style: solid; }
-.tbp-slot-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
-/* Per-card container: pair fields into two columns only when the card is
-   wide enough to hold them (a 2-col card list keeps single-column fields). */
-.tbp-slot { container-type: inline-size; }
-.tbp-slot-grid { display: grid; grid-template-columns: 1fr; gap: 1px; }
-@container (min-width: 340px) {
-  .tbp-slot-grid { grid-template-columns: 1fr 1fr; gap: 1px 14px; }
-}
-.tbp-slot-line--wide { grid-column: 1 / -1; }
+.tbp-slot-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
 .tbp-slot-pos {
   min-width: 20px;
   height: 18px;
@@ -316,10 +311,10 @@
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
-.tbp-slot.st-good .tbp-slot-pos { background: #2e9e5b; }
-.tbp-slot.st-warn .tbp-slot-pos { background: #d3940b; }
-.tbp-slot.st-bad .tbp-slot-pos { background: #d64545; }
-.tbp-slot.st-empty .tbp-slot-pos { background: #e8eaed; color: #4a5568; }
+.tbp-slot.st-good .tbp-slot-pos { background: #3d8b62; }
+.tbp-slot.st-warn .tbp-slot-pos { background: #b98a2e; }
+.tbp-slot.st-bad .tbp-slot-pos { background: #c0564f; }
+.tbp-slot.st-empty .tbp-slot-pos { background: #eef0f3; color: #5c6a7d; }
 .tbp-slot.is-spare .tbp-slot-pos { background: #f1f3f5; color: #6b7a90; border: 1px dashed #9aa0a6; }
 .tbp-slot-group {
   flex: 1;
@@ -330,25 +325,49 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tbp-slot-line { display: flex; align-items: baseline; gap: 6px; padding: 1px 0; }
-.tbp-slot-k {
-  flex: 0 0 66px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #8a97a8;
-}
-.tbp-slot-v {
-  flex: 1;
-  min-width: 0;
+.tbp-slot-body { display: flex; flex-direction: column; gap: 3px; }
+.tbp-slot-row {
   display: flex;
   align-items: baseline;
-  gap: 4px 8px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  flex-wrap: nowrap;
   font-size: 12px;
 }
-.tbp-slot-v .tbp-cell-input { min-width: 0; }
+.tbp-slot-row .tbp-cell-input { min-width: 0; }
+.tbp-slot-pair {
+  display: flex;
+  align-items: baseline;
+  gap: 2px 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1 1 0;
+}
+.tbp-slot-pair--end { justify-content: flex-end; }
+.tbp-slot-when { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.tbp-slot--empties {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-style: dashed;
+  border-left-style: solid;
+}
+.tbp-slot-empties-label { font-size: 11px; font-weight: 600; color: #6b7a90; }
+.tbp-slot-chip {
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 11px;
+  border: 1px dashed #9aa0a6;
+  background: #f1f3f5;
+  color: #5c6a7d;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.tbp-slot-chip:hover { border-color: #2d5292; color: #2d5292; background: #e9eef6; }
 
 /* ── Data tables: sheet-local horizontal scroll + sticky first column ──── */
 /* The wrapper (not the sheet) owns the overflow, so the drawing never gets
@@ -371,13 +390,13 @@
 /* Every quiet value is editable: pencil hint + field styling on hover so the
    affordance is visible (sub-lines look like plain text otherwise). */
 .tbp-cell-quiet:hover {
-  border-color: #b9cdf3;
-  background: #f2f7ff;
+  border-color: #bcc9de;
+  background: #f3f6fa;
 }
 .tbp-cell-quiet:hover::after {
   content: "✎";
   margin-left: 6px;
-  color: #1a56db;
+  color: #2d5292;
   font-size: 11px;
 }
 /* Wrapping quiet cells (notes, long names): normal white-space so long text
@@ -398,7 +417,7 @@
   position: sticky;
   left: 0;
 }
-.tbp-table th:first-child { background: #12284b; }
+.tbp-table th:first-child { background: #1d2d45; }
 .tbp-table td:first-child { background: #fff; }
 
 /* Position numerals on the drawing: bare red digits (mockup .num style). */
@@ -411,7 +430,7 @@
    3:1-visible outline on top. */
 .tbp-cell-input:focus-visible,
 .tbp-svg-serial:focus-visible {
-  outline: 2px solid #1a56db;
+  outline: 2px solid #2d5292;
   outline-offset: 1px;
 }
 
