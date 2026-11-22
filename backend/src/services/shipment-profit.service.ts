@@ -83,6 +83,9 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
         )).groupBy(s.trips.shipmentId),
 
       // Giấy báo nợ chính per lô (1 lô = 1 báo nợ chính — NEPO-62 unique index).
+      // parentDocumentId IS NULL is what keeps supplements out: a -BS01 carries
+      // shipmentId like its main note, so without this guard the supplement was
+      // summed here AND in the parent-join aggregate below — counted twice.
       db.select({
         shipmentId: s.billingDocuments.shipmentId,
         revenue: sql<string>`coalesce(sum(${s.billingDocuments.totalInclVat}), 0)`,
@@ -91,6 +94,7 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
         eq(s.billingDocuments.type, 'DEBIT_NOTE'),
         isNull(s.billingDocuments.deletedAt),
         isNotNull(s.billingDocuments.shipmentId),
+        isNull(s.billingDocuments.parentDocumentId),
       )).groupBy(s.billingDocuments.shipmentId),
 
       // Chi phí lô chiều trả NCC (bỏ chờ hóa đơn — in không số tiền trên báo nợ).
@@ -102,7 +106,9 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
         eq(s.shipmentCosts.awaitingInvoice, false),
       )).groupBy(s.shipmentCosts.shipmentId),
 
-      // Phụ lục (-BS01) điểm qua parentDocumentId — shipmentId của chúng là NULL.
+      // Phụ lục (-BS01) đếm qua parentDocumentId join — chúng VẪN mang
+      // shipmentId của lô (createLotSupplement ghi sẵn), nên aggregate phía
+      // trên phải loại qua parentDocumentId IS NULL để không đếm hai lần.
       db.select({
         shipmentId: mainDocs.shipmentId,
         revenue: sql<string>`coalesce(sum(${s.billingDocuments.totalInclVat}), 0)`,

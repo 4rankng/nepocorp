@@ -32,8 +32,11 @@ function exactKey(method: string, path: string): string {
 /**
  * Register an audit event.
  * - Two args (method, path, event): exact match on full path.
- * - Four args (method, prefix, suffix, event): match paths starting with prefix
- *   and ending with the given suffix segment (e.g. '/lock' matches /api/trips/42/lock).
+ * - Four args (method, prefix, suffix, event): match paths starting with prefix.
+ *   A bare suffix ('/lock') must END the path — POST /api/trips/42/lock.
+ *   A suffix with a trailing slash ('/costs/') names a MIDDLE segment —
+ *   DELETE /api/shipments/42/costs/11 has the costId after it, so endsWith
+ *   alone can never match; only containment sees it.
  */
 export function registerAuditEvent(
   method: Method,
@@ -86,7 +89,13 @@ export function resolveAuditEvent(method: string, path: string): AuditEventType 
   let bestMatch: { event: AuditEventType; suffixLength: number } | null = null;
   for (const reg of suffixRegistry) {
     if (!path.startsWith(reg.prefix!.slice(methodKey.length + 1))) continue;
-    if (reg.suffix && !path.endsWith(reg.suffix)) continue;
+    // Trailing-slash suffix = middle segment (containment); bare suffix =
+    // final segment (endsWith). Without containment, DELETE/PUT on
+    // /api/shipments/:id/costs/:costId fell through to the generic
+    // ENTITY_* events and the audit log said "đã xóa lô hàng" for a fee line.
+    if (reg.suffix && !(reg.suffix.endsWith('/')
+      ? path.includes(reg.suffix)
+      : path.endsWith(reg.suffix))) continue;
     const suffixLength = reg.suffix ? reg.suffix.length : 0;
     if (!bestMatch || suffixLength > bestMatch.suffixLength) {
       bestMatch = { event: reg.event, suffixLength };

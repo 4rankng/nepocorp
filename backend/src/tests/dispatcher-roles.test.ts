@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 // Importing the routers populates the audit registry at module load —
 // the same registrations the running server uses.
 import '../routes/financial';
+import '../routes/shipments';
 import '../routes/trips';
 import { initEnforcer, getEnforcer } from '../casbin/enforcer';
 import { resolveAuditEvent } from '../services/audit-registry';
@@ -59,6 +60,27 @@ describe('debit-note edit audit trail', () => {
     // Other methods on the same surface keep their generic events.
     assert.equal(resolveAuditEvent('POST', '/api/finance/billing-documents'), 'ENTITY_CREATED');
     assert.equal(resolveAuditEvent('PUT', '/api/trips/9/pre-departure'), 'TRIP_UPDATED_PRE_DEPARTURE');
+  });
+
+  test('lot fee-line edits name the fee, not the lô hàng', () => {
+    // /costs/:costId has an id AFTER the segment — the audit registry must
+    // match '/costs/' by containment, or the mutation falls back to the
+    // generic ENTITY_* events and the log reads "đã xóa lô hàng: 11" for a
+    // fee line.
+    assert.equal(resolveAuditEvent('DELETE', '/api/shipments/4/costs/11'), 'SHIPMENT_COST_DELETED');
+    assert.equal(resolveAuditEvent('PUT', '/api/shipments/4/costs/11'), 'SHIPMENT_COST_UPDATED');
+    assert.equal(resolveAuditEvent('DELETE', '/api/shipments/4/documents/7'), 'SHIPMENT_DOCUMENT_DELETED');
+    assert.equal(resolveAuditEvent('POST', '/api/shipments/4/costs'), 'SHIPMENT_COST_CREATED');
+
+    const message = renderAuditMessage({
+      event: 'SHIPMENT_COST_DELETED',
+      entityType: 'shipments',
+      entityId: 11,
+      actorRole: 'ADMIN',
+      actorName: 'Bùi Thị Hùng',
+    } satisfies AuditPayload);
+    assert.match(message, /đã xóa chi phí của lô hàng/);
+    assert.doesNotMatch(message, /đã xóa lô hàng/);
   });
 
   test('the audit sentence names the issued note and the ledger adjustment', () => {

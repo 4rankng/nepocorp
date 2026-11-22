@@ -117,6 +117,17 @@ describe('shipment profit report', () => {
       totalInclVat: '5000000', deletedAt: new Date(),
     }).returning({ id: s.billingDocuments.id });
     billingDocIds.push(deadDoc.id);
+
+    // NEPO-63 regression pin: a -BS01 supplement carries shipmentId like its
+    // main note, so the report must count it exactly once — not in both the
+    // main-doc aggregate and the parent join (QA saw 67M where 44.5M was real).
+    const [supp] = await db.insert(s.billingDocuments).values({
+      type: 'DEBIT_NOTE', entityType: 'CUSTOMER', entityId: customer.id,
+      shipmentId: shipment.id, parentDocumentId: doc.id,
+      rangeFrom: periodStart, rangeTo: periodStart,
+      totalInclVat: '500000',
+    }).returning({ id: s.billingDocuments.id });
+    billingDocIds.push(supp.id);
   });
 
   after(async () => {
@@ -135,14 +146,14 @@ describe('shipment profit report', () => {
     const row = report.rows.find((r) => r.shipmentId === shipmentIds[0]);
     assert.ok(row, 'seeded lô must appear in its period report');
 
-    assert.equal(row.revenueInclVat, 10000000, 'Thu = alive báo nợ only');
+    assert.equal(row.revenueInclVat, 10500000, 'Thu = alive báo nợ, supplement counted exactly once');
     assert.equal(row.linkedTripCount, 2, 'canceled + out-of-period trips excluded');
     // 3.5M external freight + 350k hộ chi + 150k other fee + 1.2M lô cost.
     assert.equal(row.supplierCosts, 5200000);
     assert.equal(row.tripRunningCosts, 2000000, 'OWN in-period totalCost only');
     assert.equal(row.passportFeeMemo, 350000, 'hộ chi fee is the memo line only');
-    assert.equal(row.profit, 10000000 - 5200000 - 2000000);
-    assert.equal(row.billingDocumentCount, 1);
+    assert.equal(row.profit, 10500000 - 5200000 - 2000000);
+    assert.equal(row.billingDocumentCount, 2);
     assert.equal(row.unbilled, false);
   });
 
