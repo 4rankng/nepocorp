@@ -332,6 +332,8 @@ export async function createTrip(data: {
   externalDriverPhone?: string | null;
   fuelSupplierId?: number | null;
   fuelActualUnitPrice?: number | null;
+  // NEPO-61 — optional lô link at creation (validated below: existence + same customer).
+  shipmentId?: number | null;
 }) {
   return await db.transaction(async (tx) => {
     const containerCount = data.containerCount ?? 1;
@@ -402,6 +404,18 @@ export async function createTrip(data: {
     // 3. Atomic tripCode generation
     const tripCode = await generateTripCode(tx, data.departureDate);
 
+    // NEPO-61 — optional lô link: the lô must exist and belong to the same
+    // customer (the lô code encodes the customer; a cross-customer link would
+    // corrupt the lô profit rollup).
+    if (data.shipmentId != null) {
+      const [linkShipment] = await tx.select({ id: s.shipments.id, customerId: s.shipments.customerId })
+        .from(s.shipments).where(eq(s.shipments.id, data.shipmentId)).limit(1);
+      if (!linkShipment) throw new ApiError(404, 'Không tìm thấy lô hàng');
+      if (linkShipment.customerId !== data.customerId) {
+        throw new ApiError(400, 'Lô hàng không cùng khách hàng với chuyến');
+      }
+    }
+
     // 4. Create trip with snapshotted rates
     const [trip] = await tx.insert(s.trips).values({
       tripCode,
@@ -417,6 +431,7 @@ export async function createTrip(data: {
       containerCount,
       departureDate: data.departureDate,
       customerReference: data.customerReference ?? null,
+      shipmentId: data.shipmentId ?? null,
       status: TripStatus.CREATED,
       fuelSupplierId: data.fuelSupplierId ?? null,
       // Persist the chosen fuel mode (defaults to AUTO at the DB layer).
@@ -466,6 +481,38 @@ export async function createTrip(data: {
     // here would duplicate that row, so we deliberately skip it.
 
     return trip;
+  });
+}
+
+/**
+ * NEPO-61 — gắn/gỡ chuyến vào lô hàng (PATCH /api/trips/:id/shipment; null gỡ
+ * liên kết). The trip must not be LOCKED/CANCELED; a linked lô must belong to
+ * the same customer (createTrip enforces the same rule at creation).
+ */
+export async function setTripShipment(
+  tripId: number,
+  shipmentId: number | null,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [trip] = await tx.select({ id: s.trips.id, status: s.trips.status, customerId: s.trips.customerId })
+      .from(s.trips)
+      .where(and(eq(s.trips.id, tripId), isNull(s.trips.deletedAt)))
+      .limit(1);
+    if (!trip) throw new ApiError(404, 'Không tìm thấy chuyến đi');
+    if (trip.status === TripStatus.LOCKED || trip.status === TripStatus.CANCELED) {
+      throw new ApiError(400, 'Chuyến đi đã chốt hoặc đã hủy, không thể sửa');
+    }
+    if (shipmentId != null) {
+      const [linkShipment] = await tx.select({ id: s.shipments.id, customerId: s.shipments.customerId })
+        .from(s.shipments).where(eq(s.shipments.id, shipmentId)).limit(1);
+      if (!linkShipment) throw new ApiError(404, 'Không tìm thấy lô hàng');
+      if (linkShipment.customerId !== trip.customerId) {
+        throw new ApiError(400, 'Lô hàng không cùng khách hàng với chuyến');
+      }
+    }
+    await tx.update(s.trips)
+      .set({ shipmentId: shipmentId ?? null, updatedAt: new Date() })
+      .where(eq(s.trips.id, tripId));
   });
 }
 

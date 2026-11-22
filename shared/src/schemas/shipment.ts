@@ -46,12 +46,15 @@ export const shipmentCostSchema = z.object({
   serviceMode: z.enum(['SERVICE', 'ADVANCE']).default('SERVICE'),
   description: z.string().trim().min(1, 'Diễn giải là bắt buộc').max(500),
   currency: z.enum(['VND', 'USD']).default('VND'),
-  fxAmount: z.coerce.number().positive('Số tiền gốc phải dương').nullable().optional(),
-  exchangeRate: z.coerce.number().positive('Tỷ giá phải dương').nullable().optional(),
-  amount: z.coerce.number().min(0, 'Phải là số không âm'),
+  // Plain numbers, not coerce — coerce(undefined) becomes NaN and the VND rows
+  // legitimately omit the fx pair. Refinement below enforces per-currency shape.
+  fxAmount: z.number().positive('Số tiền gốc phải dương').nullable().optional(),
+  exchangeRate: z.number().positive('Tỷ giá phải dương').nullable().optional(),
+  // USD rows derive the VND integer server-side — amount is omitted there.
+  amount: z.number().min(0, 'Phải là số không âm').optional(),
   vatRate: z.coerce.number().min(0).max(0.5).default(0.08),
   awaitingInvoice: z.coerce.boolean().default(false),
-  incurredDate: shipmentDate,
+  incurredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phát sinh phải có dạng YYYY-MM-DD'),
   note: z.string().trim().max(500).optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.currency === 'USD') {
@@ -62,12 +65,21 @@ export const shipmentCostSchema = z.object({
         message: 'Dòng USD cần số tiền gốc và tỷ giá quy đổi',
       });
     }
-  } else if (data.fxAmount != null || data.exchangeRate != null) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['fxAmount'],
-      message: 'Chỉ dòng USD mới có số tiền gốc và tỷ giá',
-    });
+  } else {
+    if (data.fxAmount != null || data.exchangeRate != null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['fxAmount'],
+        message: 'Chỉ dòng USD mới có số tiền gốc và tỷ giá',
+      });
+    }
+    if (data.amount == null || data.amount <= 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['amount'],
+        message: 'Dòng VND cần số tiền không âm',
+      });
+    }
   }
 });
 

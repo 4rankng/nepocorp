@@ -57,8 +57,9 @@ describe('ledger column-group permissions', () => {
   });
 
   it('UI affordance and API gate share LEDGER_GROUP_ROLES as the single source', () => {
+    // NEPO-63 — DISPATCHER (điều xe) joins the PLAN columns: they plan trips.
     expect(LEDGER_GROUP_ROLES).toEqual({
-      [LedgerColumnGroup.PLAN]: [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT],
+      [LedgerColumnGroup.PLAN]: [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER],
       [LedgerColumnGroup.MONEY]: [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT],
       [LedgerColumnGroup.RESULT]: [],
     });

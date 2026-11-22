@@ -17,9 +17,12 @@ const TripListPage = lazyPage(() => import('./pages/TripListPage'));
 const TripCreatePage = lazyPage(() => import('./pages/TripCreatePage'));
 const TripDetailPage = lazyPage(() => import('./pages/TripDetailPage'));
 const TripEditPage = lazyPage(() => import('./pages/TripEditPage'));
+const ShipmentListPage = lazyPage(() => import('./pages/ShipmentListPage'));
+const ShipmentDetailPage = lazyPage(() => import('./pages/ShipmentDetailPage'));
 const BangKeHoachPage = lazyPage(() => import('./pages/BangKeHoachPage'));
 const FinancePage = lazyPage(() => import('./pages/FinancePage'));
 const DebtListPage = lazyPage(() => import('./pages/DebtListPage'));
+const SoaPage = lazyPage(() => import('./pages/SoaPage'));
 const DebtDetailPage = lazyPage(() => import('./pages/DebtDetailPage'));
 const PenaltyPage = lazyPage(() => import('./pages/PenaltyPage'));
 const ConfigPage = lazyPage(() => import('./pages/ConfigPage'));
@@ -111,6 +114,13 @@ function AppRoutes() {
   const managerOrAdminOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
   // /users is the single home for everyone; accountants get scoped (driver-only) access.
   const officeStaffOnly = (el: ReactElement) => (isAdmin || user?.role === Role.MANAGER || user?.role === Role.ACCOUNTANT ? el : <Navigate to={isPortalUser ? portalHome : adminHome} replace />);
+  // NEPO-61 — Lô hàng: office + Ops biển (FORWARDER) + điều xe (DISPATCHER, read).
+  const shipmentAccess = (el: ReactElement) => (
+    isAdmin || user?.role === Role.MANAGER || user?.role === Role.ACCOUNTANT
+      || user?.role === Role.FORWARDER || user?.role === Role.DISPATCHER
+      ? el
+      : <Navigate to={isPortalUser ? portalHome : adminHome} replace />
+  );
   // Strict ADMIN-only — chatbot monitoring exposes raw turns and must never
   // be reachable by MANAGER/ACCOUNTANT. Mirrors managerOrAdminOnly's shape:
   // admit only when the role matches, else bounce to the portal or staff home.
@@ -148,8 +158,11 @@ function AppRoutes() {
           <Route path="/finance" element={adminOnly(page(<FinancePage />))} />
           <Route path="/profit" element={adminOnly(page(<ProfitPage />))} />
           <Route path="/debt" element={adminOnly(page(<DebtListPage />))} />
+          <Route path="/debt/soa" element={adminOnly(page(<SoaPage />))} />
           <Route path="/debt/:id" element={adminOnly(page(<DebtDetailPage />))} />
           <Route path="/debt/:id/billing/new" element={adminOnly(page(<DebtDetailPage />))} />
+          <Route path="/shipments" element={shipmentAccess(page(<ShipmentListPage />))} />
+          <Route path="/shipments/:id" element={shipmentAccess(page(<ShipmentDetailPage />))} />
           <Route path="/penalties" element={adminOnly(page(<PenaltyPage />))} />
           <Route path="/advances" element={adminOnly(page(<AdminAdvancesPage />))} />
           <Route path="/admin/advance-settlements" element={officeStaffOnly(page(<AdminAdvanceSettlementsPage />))} />

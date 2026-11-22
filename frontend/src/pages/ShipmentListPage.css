@@ -1,0 +1,283 @@
+/* ============================================================================
+ * ShipmentListPage — Lô hàng: summary band + filter bar + data table
+ * NEPO-61 · Vantai design system
+ *
+ * Flat design: borders + surface ladder, no shadows. Mobile card list ≤640px,
+ * desktop table >640px (canonical split). Code/date cells use the mono font.
+ * ========================================================================== */
+
+.shipment-list-page__crumbs {
+  margin: 2px 0 10px;
+  color: var(--fg-3);
+  font-size: var(--fs-xs);
+}
+.shipment-list-page__crumbs ul { gap: 4px; }
+
+/* ─── Zone 1 — summary band (numbers only, one row ≤96px) ─────────────────── */
+
+.shipment-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 12px 18px;
+  margin-bottom: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.shipment-band__total {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.shipment-band__label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-3);
+}
+
+.shipment-band__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.shipment-band__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.shipment-band__chip--warn {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--line));
+  background: color-mix(in srgb, var(--warning) 8%, var(--surface));
+}
+
+.shipment-band__chip-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+
+/* ─── Zone 2 — data table ─────────────────────────────────────────────────── */
+
+.shipment-list-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.shipment-list-table thead th {
+  padding: 8px 12px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line-2);
+  white-space: nowrap;
+}
+
+.shipment-list-table tbody td {
+  padding: 9px 12px;
+  font-size: var(--fs-table);
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line-2);
+  overflow-wrap: anywhere;
+}
+
+.shipment-list-table tbody tr {
+  cursor: pointer;
+  transition: background 120ms var(--ease);
+}
+.shipment-list-table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent-soft) 38%, white);
+}
+
+/* Column widths — mã lô + customer own the flexible room. */
+.shipment-list-table thead th:nth-child(1) { width: 14%; }  /* Mã lô */
+.shipment-list-table thead th:nth-child(2) { width: 26%; }  /* Khách hàng */
+.shipment-list-table thead th:nth-child(3) { width: 15%; }  /* Booking */
+.shipment-list-table thead th:nth-child(4) { width: 13%; }  /* B/L */
+.shipment-list-table thead th:nth-child(5) { width: 11%; }  /* ETD */
+.shipment-list-table thead th:nth-child(6) { width: 17%; }  /* Tuyến */
+.shipment-list-table thead th:nth-child(7) { width: 4%; }   /* Sửa */
+
+/* Auto-hidden B/L variant — give the room back to customer + route. */
+.shipment-list-table--no-bl thead th:nth-child(1) { width: 15%; }
+.shipment-list-table--no-bl thead th:nth-child(2) { width: 30%; }
+.shipment-list-table--no-bl thead th:nth-child(3) { width: 17%; }
+.shipment-list-table--no-bl thead th:nth-child(4) { width: 12%; }
+.shipment-list-table--no-bl thead th:nth-child(5) { width: 20%; }
+.shipment-list-table--no-bl thead th:nth-child(6) { width: 6%; }
+
+.shipment-list-table__code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-size: var(--fs-table);
+  text-align: left;
+}
+.shipment-list-table__code:hover { text-decoration: underline; }
+
+.shipment-list-table__customer-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+}
+
+.shipment-list-table__date {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.shipment-list-table__route {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cut-off urgency rides the ETD cell as a small line. */
+.shipment-list-table__cutoff {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--danger);
+}
+
+/* Row action — Sửa (write roles only). */
+.shipment-list-table__edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Loading / empty / error ─────────────────────────────────────────────── */
+
+.shipment-list-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 16px;
+  color: var(--ink-2);
+}
+.shipment-list-loading__spin { animation: shipment-spin 0.9s linear infinite; }
+@keyframes shipment-spin { to { transform: rotate(360deg); } }
+
+.shipment-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--ink-2);
+}
+
+.shipment-list-error {
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--line));
+  border-radius: 10px;
+  color: var(--danger);
+  font-size: var(--fs-body);
+}
+
+/* ─── Mobile card list (≤640px) ───────────────────────────────────────────── */
+
+.shipment-mcard__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shipment-mcard__code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: var(--fs-body);
+  color: var(--ink);
+}
+
+.shipment-mcard__flow {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  flex: 0 0 auto;
+}
+
+.shipment-mcard__customer {
+  margin-top: 2px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.shipment-mcard__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--fs-body);
+  color: var(--ink-2);
+}
+
+.shipment-mcard__row-label { color: var(--ink-3); }
+
+.shipment-mcard__row-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.shipment-mcard__cutoff {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ─── Responsive — canonical breakpoints only ─────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .shipment-band { gap: 8px 14px; }
+}
+
+@media (max-width: 640px) {
+  .shipment-band {
+    padding: 10px 14px;
+    gap: 8px 10px;
+  }
+  .shipment-band__amount { font-size: var(--fs-lg); }
+}

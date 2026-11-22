@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { formatCurrency, moneyParts } from '../lib/format';
 import { oldestAgingBucketIdx } from '../lib/aging';
 import { api } from '../lib/api';
@@ -274,8 +274,11 @@ export default function DebtListPage() {
         iconName="receivables"
         action={
           <div className="page-actions">
-            <button 
-              className="btn btn--secondary btn--sm" 
+            <Link to="/debt/soa" className="btn btn--secondary btn--sm" style={{ textDecoration: 'none' }}>
+              Công nợ tháng (SOA)
+            </Link>
+            <button
+              className="btn btn--secondary btn--sm"
               onClick={handleExport}
               disabled={exporting}
             >

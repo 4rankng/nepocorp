@@ -8,7 +8,7 @@ import {
  * "(chưa VAT)" figure is the one "LN gộp" and the margin reconcile on, and the
  * "(gồm VAT)" column keeps the invoiced contract value accountants read.
  */
-export const TRIP_LIST_EXPORT_HEADERS = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng tiền đi đường lái xe nhận', 'Doanh thu (chưa VAT)', 'Thuế VAT đầu ra', 'Doanh thu (gồm VAT)', 'Tổng chi phí', 'Trả hàng 2 điểm', 'Lưu ca xe', 'LN gộp', 'Trạng thái'];
+export const TRIP_LIST_EXPORT_HEADERS = ['Mã', 'Khách hàng', 'Tuyến', 'Xe', 'Ngày khởi hành', 'KM', 'Loại cont', 'Số cont', 'Dầu (L)', 'Nhà CC Dầu', 'Giá trị dầu', 'Tổng tiền đi đường lái xe nhận', 'Doanh thu (chưa VAT)', 'Thuế VAT đầu ra', 'Doanh thu (gồm VAT)', 'Tổng chi phí', 'Trả hàng 2 điểm', 'Lưu ca xe', 'LN gộp', 'MÃ LÔ HÀNG', 'Trạng thái'];
 
 export function buildTripListExportRows(allTrips: TripListRow[]) {
   return allTrips.map((t) => {
@@ -35,6 +35,7 @@ export function buildTripListExportRows(allTrips: TripListRow[]) {
       t.twoPointDeliveryBonus ?? '',
       t.vehicleShiftAllowance ?? '',
       getTripDisplayGrossProfit(t),
+      t.shipmentCode ?? '',
       t.status,
     ];
   });

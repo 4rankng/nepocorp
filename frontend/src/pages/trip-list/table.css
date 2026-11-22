@@ -29,10 +29,13 @@
 /* Grid: trip | truck | route+km | container | tiêu hao | tiền đường | doanh thu | tổng CP | LN gộp | status */
 .trip-list-page .table-head {
   display: grid;
-  /* View grid 9 track vừa khít ~1130px, không scroll ngang (audit 23/10):
-     chuyến·mã · khách · xe · tuyến · container · tiêu hao · doanh thu · LN gộp
-     · trạng thái. road/totalCost chuyển sang lưới quick-edit. */
-  grid-template-columns: minmax(136px, 1fr) minmax(148px, 1.1fr) 102px minmax(164px, 1.2fr) 94px 102px 104px 104px 94px;
+  /* View grid 10 track vừa khít ~1130px, không scroll ngang (audit 23/10;
+     NEPO-61 thêm track Mã lô): chuyến·mã · khách · mã lô · xe · tuyến ·
+     container · tiêu hao · doanh thu · LN gộp · trạng thái.
+     road/totalCost chuyển sang lưới quick-edit. Khách 148→131 và tuyến
+     164→145 nhường theo tỉ lệ min gốc (148:164 ≈ 1.1:1.2) để tổng mặt bằng
+     vẫn ~1130px sau khi thêm track lô minmax(96px, 118px). */
+  grid-template-columns: minmax(136px, 1fr) minmax(131px, 1.1fr) minmax(96px, 118px) 102px minmax(145px, 1.2fr) 94px 102px 104px 104px 94px;
   padding: 14px 16px;
   gap: 10px;
   background: var(--surface-2);
@@ -58,8 +61,8 @@
 
 .trip-list-page .table-row {
   display: grid;
-  /* Cùng 9 track với .table-head (audit 23/10). */
-  grid-template-columns: minmax(136px, 1fr) minmax(148px, 1.1fr) 102px minmax(164px, 1.2fr) 94px 102px 104px 104px 94px;
+  /* Cùng 10 track với .table-head (audit 23/10 + NEPO-61 mã lô). */
+  grid-template-columns: minmax(136px, 1fr) minmax(131px, 1.1fr) minmax(96px, 118px) 102px minmax(145px, 1.2fr) 94px 102px 104px 104px 94px;
   /* Audit UX 23/10: nén mặt đồ - 8px padding + gap 8 giảm chiều cao row
    (~185px -> ~150px) mà không đổi cấu trúc card. */
   padding: 8px 14px;
@@ -453,6 +456,7 @@
 .trip-list-page .table-row > .col-route,
 .trip-list-page .table-row > .col-container,
 .trip-list-page .table-row > .col-customer,
+.trip-list-page .table-row > .col-shipment,
 .trip-list-page .table-row > .col-consumption,
 .trip-list-page .table-row > .col-road,
 .trip-list-page .table-row > .col-revenue,
@@ -568,6 +572,16 @@
 /* KM shown inline after destination — styles defined near bottom of file */
 
 /* Merged container cell — styles defined near bottom of file */
+
+/* Mã lô hàng — mono code cell; clamp 1 dòng trong track 118px, tooltip giữ
+   nguyên mã (link đích là trang lô). */
+.trip-list-page .trip-shipment-link {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .trip-list-page .container-tag {
   display: inline-block;

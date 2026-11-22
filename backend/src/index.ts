@@ -19,6 +19,7 @@ import authRoutes from './routes/auth';
 import configRoutes, { auditLogRouter, catalogBootstrapRouter, salaryPeriodsRouter, salaryPeriodsAdminRouter, tireLifecycleRouter } from './routes/config';
 import tyreBoardRoutes from './routes/tyre-board';
 import tripRoutes from './routes/trips';
+import shipmentRoutes from './routes/shipments';
 import { agentRoutes } from './routes/agent';
 import { initAgentSocket } from './agentSocket';
 import financialRoutes from './routes/financial';
@@ -159,6 +160,11 @@ app.use('/api/upload', authMiddleware, casbinAuthz('upload'), uploadRouter);
 app.use('/api/ocr', authMiddleware, casbinAuthz('ocr'), ocrRoutes);
 app.use('/api/notifications', authMiddleware, casbinAuthz('notifications'), notificationRoutes);
 app.use('/api/trips', authMiddleware, casbinAuthz('trips'), tripRoutes);
+// NEPO-61 — Lô hàng (sea shipments): documents + costs + lô profit. Mounted
+// before the catch-all /api; reads follow the `shipments` Casbin rows
+// (MANAGER/ACCOUNTANT/FORWARDER), writes are ADMIN/MANAGER/FORWARDER via
+// requireRoles inside the router (Ops biển = FORWARDER).
+app.use('/api/shipments', authMiddleware, casbinAuthz('shipments'), shipmentRoutes);
 // Command-and-insight assistant (bot). Acts as the caller; office roles only.
 // 503 while BOT_ENABLE is off. Mounts before the catch-all /api.
 app.use('/api/agent', authMiddleware, casbinAuthz('agent'), agentRoutes);

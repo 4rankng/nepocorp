@@ -85,7 +85,9 @@ describe('agent route-key set parity (catalog ↔ AGENT_ROUTE_KEYS)', () => {
     }
   });
 
-  it('agent set size is unchanged (37 keys)', () => {
-    expect(AGENT_ROUTE_KEYS).toHaveLength(37);
+  // NEPO-61 — +shipments/+shipmentDetail; NEPO-63 added their report page key.
+  // Count the tuple — the two parity tests above already guarantee catalog↔tuple agreement.
+  it('agent set size is unchanged (40 keys)', () => {
+    expect(AGENT_ROUTE_KEYS).toHaveLength(40);
   });
 });

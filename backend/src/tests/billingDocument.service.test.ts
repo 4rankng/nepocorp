@@ -163,3 +163,42 @@ test('carrier migration uses billing-line trip provenance instead of mutable car
   assert.match(migration, /customer_id/i);
   assert.doesNotMatch(migration, /is_carrier/i);
 });
+
+// ─── NEPO-62 — per-lot debit notes ───────────────────────────────────────────
+
+test('effectiveAmount — Chờ hóa đơn (blankAmount) contributes nothing', () => {
+  assert.equal(effectiveAmount(line({ baseAmount: 500000, renderData: { blankAmount: true } })), 0);
+  assert.equal(effectiveAmount(line({ baseAmount: 500000, renderData: { blankAmount: false } })), 500000);
+});
+
+test('docTotal — blank-amount lines never join the total', () => {
+  const lines = [
+    line({ baseAmount: 1200000 }),
+    line({ baseAmount: 300000, renderData: { blankAmount: true } }),
+  ];
+  assert.equal(docTotal(lines), 1200000);
+});
+
+test('documentLedgerAdjustment — SHIPMENT_COST posts its full amount', () => {
+  const lines = [
+    line({ sourceType: 'SHIPMENT_COST', baseAmount: 4500000 }),
+    line({ sourceType: 'TRIP', baseAmount: 2000000 }),
+  ];
+  // Trip base was already posted at completion → delta 0; lot cost posts in full.
+  assert.equal(documentLedgerAdjustment(lines), 4500000);
+});
+
+test('documentLedgerAdjustment — awaiting-invoice rows post nothing', () => {
+  const lines = [
+    line({ sourceType: 'SHIPMENT_COST', baseAmount: 4500000, renderData: { blankAmount: true } }),
+    line({ sourceType: 'SHIPMENT_COST', baseAmount: 800000 }),
+  ];
+  assert.equal(documentLedgerAdjustment(lines), 800000);
+});
+
+test('documentLedgerAdjustment — SHIPMENT_COST override delta counts', () => {
+  const lines = [
+    line({ sourceType: 'SHIPMENT_COST', baseAmount: 4500000, amountOverride: 5000000 }),
+  ];
+  assert.equal(documentLedgerAdjustment(lines), 5000000);
+});

@@ -1,0 +1,187 @@
+/* ============================================================================
+ * ShipmentDetailPage — Lô hàng detail: Thông tin lô + Bảng chi phí theo lô
+ * (NEPO-62) + Chuyến liên quan + Chứng từ + Giấy báo nợ (chuỗi -BS01).
+ * Flat design consistent with ShipmentListPage: borders + surface ladder.
+ * ========================================================================== */
+
+.shipment-detail__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1023px) {
+  .shipment-detail__grid { grid-template-columns: 1fr; }
+}
+
+.shipment-detail__card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.shipment-detail__card-title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+  margin: 0 0 10px;
+}
+
+.shipment-detail__info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 18px;
+}
+
+.shipment-detail__info-item { min-width: 0; }
+.shipment-detail__info-label {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.shipment-detail__info-value {
+  font-size: var(--fs-body);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* ─── Lot cost register ──────────────────────────────────────────────────── */
+
+.lot-register__group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+.lot-register__group-header:first-child { margin-top: 0; }
+
+.lot-register__group-totals {
+  display: flex;
+  gap: 12px;
+  font-weight: 600;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.lot-register__group-totals .is-collect { color: var(--positive, #047857); }
+.lot-register__group-totals .is-pay { color: var(--ink-2); }
+
+.lot-register__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+.lot-register__table th {
+  padding: 6px 10px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+}
+.lot-register__table td {
+  padding: 8px 10px;
+  font-size: var(--fs-table);
+  border-bottom: 1px solid var(--line-2);
+  vertical-align: middle;
+}
+.lot-register__table .is-money {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.lot-register__table .is-blank { color: var(--ink-3); }
+
+.lot-register__row-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.lot-register__tag {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.lot-register__tag--collect { color: var(--positive, #047857); border-color: color-mix(in srgb, var(--positive, #047857) 30%, var(--line)); }
+.lot-register__tag--pay { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
+
+.lot-register__fx {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.lot-register__totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 12px;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.lot-register__totals-item { display: flex; align-items: baseline; gap: 8px; }
+.lot-register__totals-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+}
+.lot-register__totals-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--ink);
+}
+.lot-register__totals-value.is-collect { color: var(--positive, #047857); }
+.lot-register__totals-value.is-pay { color: var(--danger); }
+
+/* ─── Billing docs card ──────────────────────────────────────────────────── */
+
+.lot-billing__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+.lot-billing__row:last-child { border-bottom: 0; }
+.lot-billing__number {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--ink);
+}
+.lot-billing__sub { font-size: var(--fs-xs); color: var(--ink-3); margin-top: 2px; }
+.lot-billing__actions { display: flex; gap: 6px; flex: 0 0 auto; }
+
+.lot-billing__empty { color: var(--ink-3); padding: 12px 0; }
+
+/* ─── Cost form modal ────────────────────────────────────────────────────── */
+
+.lot-cost-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.lot-cost-form__field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.lot-cost-form__field--full { grid-column: 1 / -1; }
+.lot-cost-form__label { font-size: var(--fs-xs); font-weight: 600; color: var(--ink-2); }
+.lot-cost-form__checkbox { display: flex; align-items: center; gap: 8px; font-size: var(--fs-body); color: var(--ink); }
+
+@media (max-width: 640px) {
+  .lot-cost-form { grid-template-columns: 1fr; }
+}

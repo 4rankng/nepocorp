@@ -91,6 +91,17 @@ export function TripMobileCard({ trip, warnThreshold, style, copyingPlan, onCopy
         )}
       </div>
 
+      {/* NEPO-61 — mã lô hàng, dòng mờ dưới tuyến; chỉ render khi chuyến đã
+          gắn lô (data-dense: null = không có dòng). */}
+      {trip.shipmentCode && (
+        <div
+          className="trip-mcard__shipment"
+          style={{ marginTop: 2, fontSize: 'var(--fs-xs)', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}
+        >
+          {trip.shipmentCode}
+        </div>
+      )}
+
       {tripContainers.length > 0 && (
         <div className="trip-mcard__containers" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>

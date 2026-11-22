@@ -1,0 +1,60 @@
+/* SoaPage — Bảng Tổng hợp Công nợ Tháng (NEPO-62). */
+
+.soa-page__table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 4px;
+}
+
+.soa-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.soa-table thead th {
+  padding: 8px 12px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: right;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line-2);
+  white-space: nowrap;
+}
+
+.soa-table thead th:first-child,
+.soa-table thead th[rowSpan] { text-align: left; }
+
+.soa-table tbody td {
+  padding: 8px 12px;
+  font-size: var(--fs-table);
+  border-bottom: 1px solid var(--line-2);
+  white-space: nowrap;
+}
+
+.soa-table .is-money {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.soa-table .is-charge { color: var(--danger); }
+.soa-table .is-pay { color: var(--positive, #047857); }
+.soa-table .is-strong { font-weight: 700; }
+
+.soa-page__loading,
+.soa-page__error,
+.soa-page__empty {
+  padding: 24px 16px;
+  color: var(--ink-2);
+  text-align: center;
+}
+.soa-page__error {
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--line));
+  border-radius: 10px;
+  color: var(--danger);
+  margin-bottom: 12px;
+}

@@ -29,6 +29,8 @@ interface Props {
   entityType: BillingDocumentEntityType;
   entityId: number;
   entityName: string;
+  /** NEPO-62 — stamp generated/saved notes with the lô (per-lot debit notes). */
+  shipmentId?: number;
   initialDoc?: BillingDocument | null;
   onSaved?: () => void;
 }
@@ -40,6 +42,7 @@ export default function BillingDocumentBuilder({
   entityType,
   entityId,
   entityName,
+  shipmentId,
   initialDoc,
   onSaved,
 }: Props) {
@@ -122,6 +125,7 @@ export default function BillingDocumentBuilder({
         entityId,
         rangeFrom: from,
         rangeTo: to,
+        ...(shipmentId != null ? { shipmentId } : {}),
       });
       setLines((draft.lines as BillingDocumentLine[]).map(normalizeLine));
       setSavedId(null);
@@ -189,6 +193,8 @@ export default function BillingDocumentBuilder({
     entityName,
     rangeFrom,
     rangeTo,
+    // NEPO-62 — saved note keeps the lô stamp (deduped per entity+shipment).
+    ...(shipmentId != null ? { shipmentId } : {}),
     note: note.trim() || null,
     debitNoteTemplateId: templateId,
     lines: lines.map((line, index) => ({

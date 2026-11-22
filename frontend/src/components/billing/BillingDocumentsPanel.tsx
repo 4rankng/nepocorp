@@ -2,6 +2,8 @@ import { useState, type CSSProperties } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, FileText, Download, History, Pencil, Plus, Receipt, Trash2 } from 'lucide-react';
 import { useToast } from '../shared/Toast';
+import { useAuth } from '../../hooks/useAuth';
+import { canManageBillingDocuments } from '../../features/shipments/shipmentDisplay';
 import { api } from '../../lib/api';
 import { downloadBlob } from '../../lib/download';
 import { formatCurrency } from '../../lib/format';
@@ -20,6 +22,8 @@ interface Props {
   entityName: string;
   /** Create-button label, e.g. "Tạo giấy báo nợ". */
   buttonLabel: string;
+  /** NEPO-62 — scope the list (and builder preset) to one lô's notes. */
+  shipmentId?: number;
   createBuilderOpen?: boolean;
   onOpenCreate?: () => void;
   onBuilderClose?: () => void;
@@ -31,20 +35,22 @@ export default function BillingDocumentsPanel({
   entityId,
   entityName,
   buttonLabel,
+  shipmentId,
   createBuilderOpen = false,
   onOpenCreate,
   onBuilderClose,
 }: Props) {
   const { toast: showToast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [localBuilderOpen, setLocalBuilderOpen] = useState(false);
   const [editing, setEditing] = useState<BillingDocument | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const queryKey = ['billing-docs', type, entityType, entityId];
+  const queryKey = ['billing-docs', type, entityType, entityId, shipmentId ?? null];
   const { data: docs = [] } = useQuery<BillingDocument[]>({
     queryKey,
-    queryFn: () => financialClient.listBillingDocuments(entityType, entityId, type),
+    queryFn: () => financialClient.listBillingDocuments(entityType, entityId, type, shipmentId),
     enabled: !!entityId,
   });
 
@@ -144,15 +150,21 @@ export default function BillingDocumentsPanel({
                   </strong>
                 </div>
                 <div className="billing-panel__actions">
-                  <button className="btn-icon" title="Sửa" aria-label="Sửa" onClick={() => openEdit(doc)} style={iconBtn}>
-                    <Pencil size={13} />
-                  </button>
+                  {/* NEPO-62 — editing/deleting a lô-scoped note is ADMIN-only
+                      (backend 403s others); export stays for everyone. */}
+                  {canManageBillingDocuments(user?.role) && (
+                    <button className="btn-icon" title="Sửa" aria-label="Sửa" onClick={() => openEdit(doc)} style={iconBtn}>
+                      <Pencil size={13} />
+                    </button>
+                  )}
                   <button className="btn-icon" title="Xuất Excel" aria-label="Xuất Excel" onClick={() => exportDoc(doc)} style={iconBtn}>
                     <Download size={13} />
                   </button>
-                  <button className="btn-icon" title="Xóa" aria-label="Xóa" onClick={() => removeDoc(doc)} style={{ ...iconBtn, color: 'var(--danger)' }}>
-                    <Trash2 size={13} />
-                  </button>
+                  {canManageBillingDocuments(user?.role) && (
+                    <button className="btn-icon" title="Xóa" aria-label="Xóa" onClick={() => removeDoc(doc)} style={{ ...iconBtn, color: 'var(--danger)' }}>
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -168,6 +180,7 @@ export default function BillingDocumentsPanel({
           entityType={entityType}
           entityId={entityId}
           entityName={entityName}
+          shipmentId={shipmentId}
           initialDoc={editing}
           onSaved={refresh}
         />

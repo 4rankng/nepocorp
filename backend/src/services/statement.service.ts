@@ -4,7 +4,7 @@ import { and, eq, gte, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import type { Writable } from 'stream';
 import ExcelJS from 'exceljs';
 import { TxnType, computeFifoAging, FORWARDER_EXPENSE_TYPE_DEFAULTS } from '@tingting/shared';
-import type { AgingBucket, FastStatementDetail, PeriodSummary, StatementVoucher, StatementVoucherLine, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, StatementLine, StatementPeriodTotals } from '@tingting/shared';
+import type { AgingBucket, FastStatementDetail, PeriodSummary, StatementVoucher, StatementVoucherLine, SupplierFuelStatement, SupplierFuelStatementRow, SupplierFuelStatementUnassignedTrip, StatementLine, StatementPeriodTotals, CustomerMonthlySoa, CustomerMonthlySoaRow } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { ApiError } from '../errors';
 import { escapeHtml } from '../lib/format';
@@ -2931,3 +2931,122 @@ export async function exportReceivablesAgingXlsx(data: CustomerAgingListItem[], 
 }
 
 // escapeHtml imported from lib/format
+
+// ─── NEPO-62 — Bảng Tổng hợp Công nợ Tháng (SOA) theo khách hàng ─────────────
+
+type SoaLedgerRow = {
+  entityId: number;
+  customerName: string | null;
+  timestamp: Date;
+  debit: string | null;
+  credit: string | null;
+};
+
+export function soaMonthList(from: string, to: string): string[] {
+  const months: string[] = [];
+  const [fy, fm] = from.split('-').map(Number);
+  const [ty, tm] = to.split('-').map(Number);
+  let year = fy;
+  let month = fm;
+  while (year < ty || (year === ty && month <= tm)) {
+    months.push(`${year}-${String(month).padStart(2, '0')}`);
+    month += 1;
+    if (month > 12) { month = 1; year += 1; }
+  }
+  return months;
+}
+
+/**
+ * Monthly receivables per customer across [from, to]: opening balance carried
+ * from before `from` (last ledger balance before the window), then per-month
+ * charges (debits) and payments (credits) with a rolling closing. Money is
+ * integer VND end to end — the ledger stores numeric(15,0).
+ */
+export async function getCustomerMonthlySoa(from: string, to: string): Promise<CustomerMonthlySoa> {
+  const months = soaMonthList(from, to);
+  const rows: SoaLedgerRow[] = await db.select({
+    entityId: s.ledger.entityId,
+    customerName: s.customers.name,
+    timestamp: s.ledger.timestamp,
+    debit: s.ledger.debit,
+    credit: s.ledger.credit,
+  }).from(s.ledger)
+    .leftJoin(s.customers, and(eq(s.ledger.entityType, 'CUSTOMER'), eq(s.ledger.entityId, s.customers.id)))
+    .where(and(
+      eq(s.ledger.entityType, 'CUSTOMER'),
+      gte(s.ledger.timestamp, new Date(`${from}T00:00:00`)),
+      lte(s.ledger.timestamp, new Date(`${to}T23:59:59.999`)),
+    ))
+    .orderBy(s.ledger.entityId, s.ledger.timestamp, s.ledger.id);
+
+  // Opening balance per customer = last balance posted before `from`. The raw
+  // param must be a string — the postgres-js raw path does not bind Dates.
+  const openings = await db.execute(sql`
+    select distinct on (entity_id) entity_id, balance
+    from ledger
+    where entity_type = 'CUSTOMER' and timestamp < ${`${from}T00:00:00Z`}
+    order by entity_id, timestamp desc, id desc
+  `);
+  const openingByCustomer = new Map<number, number>();
+  for (const row of (openings as unknown as Array<{ entity_id: number; balance: string }>)) {
+    openingByCustomer.set(Number(row.entity_id), Number(row.balance));
+  }
+
+  const byCustomer = new Map<number, { name: string; perMonth: Map<string, { charges: number; payments: number }> }>();
+  for (const row of rows) {
+    const entry = byCustomer.get(row.entityId)
+      ?? { name: row.customerName ?? `KH#${row.entityId}`, perMonth: new Map<string, { charges: number; payments: number }>() };
+    byCustomer.set(row.entityId, entry);
+    const month = `${row.timestamp.getFullYear()}-${String(row.timestamp.getMonth() + 1).padStart(2, '0')}`;
+    const cell = entry.perMonth.get(month) ?? { charges: 0, payments: 0 };
+    cell.charges += Math.round(Number(row.debit ?? 0));
+    cell.payments += Math.round(Number(row.credit ?? 0));
+    entry.perMonth.set(month, cell);
+  }
+
+  const resultRows: CustomerMonthlySoaRow[] = [...byCustomer.entries()].map(([customerId, entry]) => {
+    let opening = openingByCustomer.get(customerId) ?? 0;
+    const cells = months.map((month) => {
+      const cell = entry.perMonth.get(month) ?? { charges: 0, payments: 0 };
+      const closing = opening + cell.charges - cell.payments;
+      const result = { month, opening, charges: cell.charges, payments: cell.payments, closing };
+      opening = closing;
+      return result;
+    });
+    return {
+      customerId,
+      customerName: entry.name,
+      months: cells,
+      closing: opening,
+    };
+  }).sort((a, b) => a.customerName.localeCompare(b.customerName));
+
+  return { from, to, rows: resultRows };
+}
+
+/** XLSX export of the monthly SOA grid: one row per customer, months as columns. */
+export async function exportCustomerSoaXlsx(data: CustomerMonthlySoa, writable: Writable): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const ws = workbook.addWorksheet('Công nợ tháng');
+  const header = ['Khách hàng'];
+  for (const month of data.rows[0]?.months.map((c) => c.month) ?? []) {
+    header.push(
+      `Tồn đầu ${month}`, `Phát sinh ${month}`, `Thanh toán ${month}`, `Tồn cuối ${month}`,
+    );
+  }
+  ws.addRow(header);
+  ws.getRow(1).font = { bold: true };
+  for (const row of data.rows) {
+    const values: Array<string | number> = [row.customerName];
+    for (const cell of row.months) {
+      values.push(cell.opening, cell.charges, cell.payments, cell.closing);
+    }
+    ws.addRow(values);
+  }
+  for (let col = 2; col <= header.length; col++) {
+    ws.getColumn(col).numFmt = '#,##0';
+    ws.getColumn(col).width = 18;
+  }
+  ws.getColumn(1).width = 36;
+  await workbook.xlsx.write(writable);
+}

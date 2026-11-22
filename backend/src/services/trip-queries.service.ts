@@ -27,10 +27,13 @@ const TRIP_RELATION_FIELDS = {
   trailerId: s.trips.trailerId,
   trailerType: s.trips.trailerType,
   fuelSupplierName: s.suppliers.name,
+  // NEPO-61 — lô link for the trips list + detail (flat on the row).
+  shipmentId: s.trips.shipmentId,
+  shipmentCode: s.shipments.shipmentCode,
 };
 
 /** Minimal structural type for the leftJoin method so we can chain joins generically. */
-type WithLeftJoin = { leftJoin: (table: typeof s.customers | typeof s.drivers | typeof s.trucks | typeof s.routes | typeof s.trailers | typeof s.suppliers, on: SQL) => WithLeftJoin };
+type WithLeftJoin = { leftJoin: (table: typeof s.customers | typeof s.drivers | typeof s.trucks | typeof s.routes | typeof s.trailers | typeof s.suppliers | typeof s.shipments, on: SQL) => WithLeftJoin };
 
 /**
  * Apply the 6 standard relation LEFT JOINs to a trip select query.
@@ -42,10 +45,11 @@ const TRIP_RELATION_JOINS = <T extends WithLeftJoin>(query: T): T => (query as W
   .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
   .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
   .leftJoin(s.trailers, eq(s.trips.trailerId, s.trailers.id))
-  .leftJoin(s.suppliers, eq(s.trips.fuelSupplierId, s.suppliers.id)) as unknown as T;
+  .leftJoin(s.suppliers, eq(s.trips.fuelSupplierId, s.suppliers.id))
+  .leftJoin(s.shipments, eq(s.trips.shipmentId, s.shipments.id)) as unknown as T;
 
 /** Shape flat joined rows into nested relation objects. */
-function shapeTripRelations(item: Record<string, unknown>, extras?: { legs?: unknown[]; photoUrls?: string[] }) {
+function shapeTripRelations<T extends Record<string, unknown>>(item: T, extras?: { legs?: unknown[]; photoUrls?: string[] }) {
   return {
     ...item,
     customer: item.customerName ? { id: item.customerId, name: item.customerName, shortName: item.customerShortName ?? null } : null,
@@ -176,6 +180,7 @@ export async function getTrips(filters: TripListFilters) {
         sql`unaccent(${s.trips.customerReference}) ILIKE unaccent(${term})`,
         sql`unaccent(${s.trips.externalPlateNumber}) ILIKE unaccent(${term})`,
         sql`unaccent(${s.trips.externalDriverName}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.shipments.shipmentCode}) ILIKE unaccent(${term})`,
         sql`(${s.trips.carrierType} = 'EXTERNAL' AND 'xe ngoai' ILIKE unaccent(${term}))`,
         tripContainerExists(term, normalizedContainerTerm),
         tripExpenseContainerExists(term, normalizedContainerTerm),
@@ -193,6 +198,7 @@ export async function getTrips(filters: TripListFilters) {
         sql`unaccent(${s.trips.customerReference}) ILIKE unaccent(${term})`,
         sql`unaccent(${s.trips.externalPlateNumber}) ILIKE unaccent(${term})`,
         sql`unaccent(${s.trips.externalDriverName}) ILIKE unaccent(${term})`,
+        sql`unaccent(${s.shipments.shipmentCode}) ILIKE unaccent(${term})`,
         sql`(${s.trips.carrierType} = 'EXTERNAL' AND 'xe ngoai' ILIKE unaccent(${term}))`,
         tripContainerExists(term, normalizedContainerTerm),
         tripExpenseContainerExists(term, normalizedContainerTerm),

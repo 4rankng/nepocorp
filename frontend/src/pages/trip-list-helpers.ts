@@ -160,6 +160,7 @@ export function columnClass(columnId: string): string {
   if (columnId === 'truck') return 'col-truck';
   if (columnId === 'route') return 'col-route';
   if (columnId === 'customer') return 'col-customer';
+  if (columnId === 'shipment') return 'col-shipment';
   if (columnId === 'container') return 'col-container';
   if (columnId === 'consumption') return 'col-consumption';
   if (columnId === 'road') return 'col-road right';

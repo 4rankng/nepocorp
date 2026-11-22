@@ -267,6 +267,33 @@ export function buildTripColumns(
         );
       },
     } satisfies ColumnDef<TripDetail>] : []),
+    // NEPO-61 — Mã lô hàng rides beside its customer: the lô always belongs to
+    // the same customer as the trip (server-validated), so the link reads as
+    // the customer's booking. Quick-edit drops the track (figures grid stays
+    // tight); the lô code still surfaces on the mobile card.
+    ...(quickEdit?.enabled ? [] : [{
+      id: 'shipment',
+      header: 'MÃ LÔ HÀNG',
+      enableSorting: false,
+      accessorFn: (row) => row.shipmentCode ?? '',
+      cell: ({ row }: { row: { original: TripDetail } }) => {
+        const trip = row.original;
+        if (!trip.shipmentId || !trip.shipmentCode) {
+          return <span className="km-empty">—</span>;
+        }
+        return (
+          <Link
+            to={`/shipments/${trip.shipmentId}`}
+            className="trip-shipment-link"
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--fs-sm)', color: 'inherit', textDecoration: 'none' }}
+            title={`Mở lô ${trip.shipmentCode}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {trip.shipmentCode}
+          </Link>
+        );
+      },
+    } satisfies ColumnDef<TripDetail>]),
     {
       id: 'truck',
       header: 'Xe',

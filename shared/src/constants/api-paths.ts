@@ -181,9 +181,9 @@ export const FINANCIAL = {
   // NEPO-62 — per-lot debit note chain: phát hành + bổ sung -BS01.
   BILLING_DOCUMENT_ISSUE: (id: number) => `/finance/billing-documents/${id}/issue`,
   BILLING_DOCUMENT_SUPPLEMENT: (id: number) => `/finance/billing-documents/${id}/supplement`,
-  // NEPO-62 — Bảng Tổng hợp Công nợ Tháng (SOA) theo khách hàng.
-  CUSTOMER_SOA: '/finance/ledger/customers/soa',
-  CUSTOMER_SOA_EXPORT: '/finance/ledger/customers/soa/export',
+  // NEPO-62 — Bảng Tổng hợp Công nợ Tháng (SOA) theo khách hàng (ledger mount).
+  CUSTOMER_SOA: '/ledger/customers/soa',
+  CUSTOMER_SOA_EXPORT: '/ledger/customers/soa/export',
 } as const;
 
 // ─── Reports ────────────────────────────────────────────────────────────────────

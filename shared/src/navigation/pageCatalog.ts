@@ -141,6 +141,35 @@ export const PAGE_CATALOG = {
     requiresParams: ['id'],
     agent: { description: 'Sửa lệnh vận chuyển.' },
   },
+  shipments: {
+    title: 'Lô hàng',
+    path: '/shipments',
+    section: 'operations',
+    agent: {
+      description: 'Lô hàng — danh sách lô biển: booking, tờ khai hải quan, chứng từ, chi phí, giấy báo nợ.',
+      aliases: ['lô hàng', 'lo hang', 'shipment', 'lô', 'lô biển', 'lo bien'],
+    },
+  },
+  soa: {
+    title: 'Công nợ tháng (SOA)',
+    path: '/debt/soa',
+    section: 'financials',
+    agent: {
+      description: 'Bảng Tổng hợp Công nợ Tháng theo khách hàng: đầu kỳ, phát sinh, thanh toán, cuối kỳ từng tháng + xuất Excel.',
+      aliases: ['soa', 'công nợ tháng', 'cong no thang', 'tổng hợp công nợ', 'statement of account'],
+    },
+  },
+  shipmentDetail: {
+    title: 'Chi tiết lô hàng',
+    path: (p: Record<string, string | number>) => `/shipments/${p.id}`,
+    pathPattern: '/shipments/:id',
+    requiresParams: ['id'],
+    section: 'operations',
+    agent: {
+      description: 'Chi tiết một lô hàng: thông tin biển (hãng tàu, booking, B/L, tàu/chuyến, POL/POD, ETD/ETA, cut-off, số cont/seal), tờ khai hải quan, chứng từ, chi phí, chuyến liên quan, giấy báo nợ và lợi nhuận lô.',
+      aliases: ['chi tiết lô', 'chi tiet lo', 'shipment detail', 'booking'],
+    },
+  },
   finance: {
     title: 'Báo cáo lãi lỗ',
     path: '/finance',

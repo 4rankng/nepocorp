@@ -3,7 +3,8 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { LedgerService } from '../../services/ledger.service';
 import * as financialService from '../../services/financial.service';
-import { getStatementData, exportStatementXlsx, exportStatementHtml, attachmentDisposition, normalizeDateParam } from '../../services/statement.service';
+import { getStatementData, exportStatementXlsx, exportStatementHtml, attachmentDisposition, normalizeDateParam, getCustomerMonthlySoa, exportCustomerSoaXlsx } from '../../services/statement.service';
+import { customerSoaQuerySchema } from '@tingting/shared';
 import { formatLocalDate } from '../../lib/format';
 import { parsePagination } from '../utils/pagination';
 
@@ -32,6 +33,33 @@ router.get('/ledger/balances', asyncHandler(async (req: Request, res: Response) 
 }));
 
 // ─── Customer statement ──────────────────────────────────────────────────────
+
+// NEPO-62 — Bảng Tổng hợp Công nợ Tháng (SOA) theo khách hàng: per-month
+// opening / charges / payments / closing for every customer in the window.
+router.get('/ledger/customers/soa', asyncHandler(async (req: Request, res: Response) => {
+  const parsed = customerSoaQuerySchema.safeParse({
+    from: req.query.from as string | undefined,
+    to: req.query.to as string | undefined,
+  });
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Khoảng ngày không hợp lệ' });
+  }
+  res.json(await getCustomerMonthlySoa(parsed.data.from, parsed.data.to));
+}));
+
+router.get('/ledger/customers/soa/export', asyncHandler(async (req: Request, res: Response) => {
+  const parsed = customerSoaQuerySchema.safeParse({
+    from: req.query.from as string | undefined,
+    to: req.query.to as string | undefined,
+  });
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Khoảng ngày không hợp lệ' });
+  }
+  const data = await getCustomerMonthlySoa(parsed.data.from, parsed.data.to);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', attachmentDisposition(`SOA_cong_no_${parsed.data.from}_${parsed.data.to}.xlsx`));
+  await exportCustomerSoaXlsx(data, res);
+}));
 
 router.get('/ledger/customers/:id/statement', asyncHandler(async (req: Request, res: Response) => {
   const customerId = parseInt(req.params.id as string, 10);

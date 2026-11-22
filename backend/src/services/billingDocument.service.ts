@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, gte, lte, isNull, inArray, desc, type SQL } from 'drizzle-orm';
+import { eq, and, gte, lte, isNull, inArray, desc, sql, type SQL } from 'drizzle-orm';
 import { ApiError } from '../errors';
 import { getSupplierStatement } from './statement.service';
 import { LedgerService } from './ledger.service';
@@ -9,6 +9,9 @@ import {
   BILLABLE_TRIP_STATUSES,
   LoadingType,
   TxnType,
+  FeeGroup,
+  FEE_GROUP_LABELS,
+  LOT_DEBIT_NOTE_ORDER,
   defaultDebitNoteColumns,
   defaultPaymentStatementColumns,
 } from '@tingting/shared';
@@ -28,6 +31,7 @@ import type {
   DebitNoteTemplate,
   DebitNoteTemplateColumn,
   DebitNoteTemplateSnapshot,
+  ShipmentInfo,
 } from '@tingting/shared';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -43,9 +47,18 @@ export function joinContainers(list: string[] | null | undefined): string | null
   return list.filter(Boolean).join(', ');
 }
 
-/** Effective incl-VAT amount for a line: excluded → 0, else override ?? base. */
-export function effectiveAmount(line: { excluded?: boolean | null; baseAmount: number; amountOverride?: number | null }): number {
-  if (line.excluded) return 0;
+/**
+ * Effective incl-VAT amount for a line: excluded or awaiting-invoice
+ * (Chờ hóa đơn — NEPO-62) → 0; the note prints those rows amount-less and
+ * they never join the document total. Otherwise override ?? base.
+ */
+export function effectiveAmount(line: {
+  excluded?: boolean | null;
+  baseAmount: number;
+  amountOverride?: number | null;
+  renderData?: BillingLineRenderData | null;
+}): number {
+  if (line.excluded || line.renderData?.blankAmount) return 0;
   const override = line.amountOverride;
   return override != null ? Number(override) : Number(line.baseAmount);
 }
@@ -56,13 +69,20 @@ export function docTotal(lines: BillingDocumentLine[]): number {
 
 /**
  * Amount this debit note adds to (or removes from) AR beyond the amounts that
- * the trip lifecycle already posted. Source-backed rows contribute only their
- * override/exclusion delta; ad-hoc rows contribute their full effective value.
+ * the trip lifecycle already posted. Trip/expense rows contribute only their
+ * override/exclusion delta (the completion postings already booked the base);
+ * ADHOC and SHIPMENT_COST (NEPO-62 lô costs) rows were never posted before, so
+ * they contribute their full effective value. Awaiting-invoice rows
+ * (Chờ hóa đơn) contribute nothing — there is no collectible amount yet.
  */
 export function documentLedgerAdjustment(lines: BillingDocumentLine[]): number {
   return Math.round(lines.reduce((sum, line) => {
+    if (line.renderData?.blankAmount) return sum;
     const effective = effectiveAmount(line);
-    return sum + (line.sourceType === 'ADHOC' ? effective : effective - Number(line.baseAmount));
+    if (line.sourceType === 'ADHOC' || line.sourceType === 'SHIPMENT_COST') {
+      return sum + effective;
+    }
+    return sum + effective - Number(line.baseAmount);
   }, 0));
 }
 
@@ -656,15 +676,173 @@ async function loadApprovedFeesByTrip(tripIds: number[]): Promise<Map<number, Ap
   return map;
 }
 
+// ─── Per-lot debit note (NEPO-62: 1 lô hàng = 1 Báo nợ + bổ sung -BS01) ──────
+
+const LOT_SHIPMENT_SELECT = {
+  id: s.shipments.id,
+  shipmentCode: s.shipments.shipmentCode,
+  customerId: s.shipments.customerId,
+  customerName: s.customers.name,
+  flowType: s.shipments.flowType,
+  blNo: s.shipments.blNo,
+  vesselVoyage: s.shipments.vesselVoyage,
+  pol: s.shipments.pol,
+  pod: s.shipments.pod,
+  etd: s.shipments.etd,
+  eta: s.shipments.eta,
+  containerSeals: s.shipments.containerSeals,
+};
+
+type LotShipmentRow = Awaited<ReturnType<typeof loadLotShipment>>;
+
+async function loadLotShipment(shipmentId: number) {
+  const [row] = await db.select(LOT_SHIPMENT_SELECT).from(s.shipments)
+    .leftJoin(s.customers, eq(s.shipments.customerId, s.customers.id))
+    .where(and(eq(s.shipments.id, shipmentId), isNull(s.shipments.deletedAt)))
+    .limit(1);
+  if (!row) throw new ApiError(404, 'Không tìm thấy lô hàng');
+  return row;
+}
+
+/**
+ * Thông tin Lô hàng snapshot: booking fields + the linked trips' containers
+ * ("CONT / SEAL" pairs). Frozen onto each saved lot document so re-exports
+ * stay identical after the lô record changes.
+ */
+export async function buildLotShipmentInfo(shipmentId: number): Promise<ShipmentInfo> {
+  const shipment = await loadLotShipment(shipmentId);
+  const tripIds = (await db.select({ id: s.trips.id }).from(s.trips)
+    .where(and(eq(s.trips.shipmentId, shipmentId), isNull(s.trips.deletedAt))))
+    .map((r) => r.id);
+  const containerRows = await db.select({
+    containerNumber: s.tripContainers.containerNumber,
+    sealNumber: s.tripContainers.sealNumber,
+  }).from(s.tripContainers)
+    .where(tripIds.length > 0 ? inArray(s.tripContainers.tripId, tripIds) : sql`false`);
+  const containerNumbers = containerRows
+    .map((c) => c.containerNumber)
+    .filter((c): c is string => !!c)
+    .map((c) => c.trim());
+  return {
+    blNumber: shipment.blNo ?? null,
+    vesselVoyage: shipment.vesselVoyage ?? null,
+    polName: shipment.pol ?? null,
+    podName: shipment.pod ?? null,
+    etdDate: shipment.etd ?? null,
+    etaDate: shipment.eta ?? null,
+    containerNumbers,
+  };
+}
+
+/**
+ * One lô hàng = one Báo nợ. Lines: every billable linked trip's FREIGHT (road
+ * revenue) + the lô's collect-side (Thu khách) shipment cost rows, ordered per
+ * the flow-type fee order — MCT26026 sequence for Hàng Xuất, TMT26004 for Hàng
+ * Nhập. Supplier rows (Trả NCC) never reach a customer note. Awaiting-invoice
+ * rows (Chờ hóa đơn) print with a blank amount and never join the total.
+ */
+async function buildLotDebitLines(
+  shipmentId: number,
+  _from: string,
+  _to: string,
+): Promise<{ lines: BillingDraftLine[]; entityName: string }> {
+  const shipment = await loadLotShipment(shipmentId);
+  const trips = await db.select({
+    id: s.trips.id, tripCode: s.trips.tripCode, departureDate: s.trips.departureDate,
+    revenue: s.trips.revenue, routeName: s.routes.name, notes: s.trips.notes,
+    truckPlate: s.trucks.licensePlate, externalPlateNumber: s.trips.externalPlateNumber,
+  }).from(s.trips)
+    .leftJoin(s.routes, eq(s.trips.routeId, s.routes.id))
+    .leftJoin(s.trucks, eq(s.trips.truckId, s.trucks.id))
+    .where(and(
+      eq(s.trips.shipmentId, shipmentId),
+      inArray(s.trips.status, [...BILLABLE_TRIP_STATUSES]),
+      isNull(s.trips.deletedAt),
+    )).orderBy(s.trips.departureDate);
+
+  const tripIds = trips.map((t) => t.id);
+  const containersByTrip = await loadContainersByTrip(tripIds);
+  const legsByTrip = await loadLegRenderDataByTrip(tripIds);
+
+  const costs = await db.select().from(s.shipmentCosts)
+    .where(and(
+      eq(s.shipmentCosts.shipmentId, shipmentId),
+      eq(s.shipmentCosts.direction, 'CUSTOMER'),
+    ));
+
+  const order = shipment.flowType === 'NHAP'
+    ? LOT_DEBIT_NOTE_ORDER.NHAP
+    : LOT_DEBIT_NOTE_ORDER.XUAT;
+  const groupRank = (costType: string): number => {
+    const idx = order.indexOf(costType as FeeGroup);
+    return idx === -1 ? order.length : idx;
+  };
+  const sortedCosts = [...costs].sort((a, b) =>
+    (groupRank(a.costType) - groupRank(b.costType))
+    || a.incurredDate.localeCompare(b.incurredDate)
+    || (a.id - b.id));
+
+  const lines: BillingDraftLine[] = [];
+  let sortOrder = 0;
+  for (const trip of trips) {
+    const containerInfo = containersByTrip.get(trip.id) ?? [];
+    const containers = containerNumbers(containerInfo);
+    const unit = containerUnit(containerInfo);
+    const renderData = buildTripRenderData({
+      trip,
+      containers: containerInfo,
+      legs: legsByTrip.get(trip.id),
+      note: trip.notes ?? null,
+    });
+    lines.push({
+      sourceType: 'TRIP', sourceId: trip.id, lineType: 'FREIGHT',
+      description: `Cước vận chuyển${trip.routeName ? ` — ${trip.routeName}` : ''}`,
+      typeLabel: 'Cước bộ',
+      unit,
+      routeName: trip.routeName ?? null,
+      containerNumbers: containers,
+      renderData,
+      baseAmount: Number(trip.revenue ?? 0),
+      amountOverride: null, excluded: false, sortOrder: sortOrder++,
+    });
+  }
+  for (const cost of sortedCosts) {
+    const group = cost.costType as FeeGroup;
+    lines.push({
+      sourceType: 'SHIPMENT_COST', sourceId: cost.id, lineType: 'SERVICE_FEE',
+      description: cost.description,
+      typeLabel: FEE_GROUP_LABELS[group] ?? cost.costType,
+      unit: 'lần',
+      routeName: null,
+      containerNumbers: null,
+      renderData: cost.awaitingInvoice ? { blankAmount: true } : null,
+      baseAmount: Number(cost.amount),
+      amountOverride: null,
+      excluded: false,
+      sortOrder: sortOrder++,
+    });
+  }
+  return { lines, entityName: shipment.customerName ?? `KH#${shipment.customerId}` };
+}
+
+
 export async function generateDraft(input: GenerateBillingDocumentInput): Promise<BillingDocumentDraft> {
-  const { type, entityType, entityId, rangeFrom: from, rangeTo: to } = input;
+  const { type, entityType, entityId, rangeFrom: from, rangeTo: to, shipmentId } = input;
   assertBillingDocumentScope(type, entityType);
   await assertCarrierEligibility(entityType, entityId);
 
   let result: { lines: BillingDraftLine[]; entityName: string };
 
   if (type === 'DEBIT_NOTE' && entityType === 'CUSTOMER') {
-    result = await buildCustomerDebitLines(entityId, from, to);
+    // NEPO-62 — lô-scoped draft: one lô hàng = one Báo nợ. Lines = the linked
+    // trips' freight + the lô's collect-side cost rows (Thu khách), ordered
+    // per the flow-type fee order (MCT26026 Xuất / TMT26004 Nhập);
+    // awaiting-invoice rows ride along as blank-amount lines.
+    if (shipmentId != null) {
+      result = await buildLotDebitLines(shipmentId, from, to);
+    } else {
+      result = await buildCustomerDebitLines(entityId, from, to);
+    }
   } else if (type === 'PAYMENT_STATEMENT' && entityType === 'CUSTOMER') {
     result = await buildCustomerPaymentStatementLines(entityId, from, to);
   } else if (type === 'PAYMENT_STATEMENT' && entityType === 'CARRIER') {
@@ -701,6 +879,103 @@ async function postDebitNoteDelta(
   });
 }
 
+// ─── Document numbering + issue stamp (NEPO-62) ──────────────────────────────
+
+/**
+ * Main lot-note number DN{yy}{mm}{seq4} — global sequence per month under an
+ * advisory lock so concurrent saves cannot take the same number. Supplements
+ * reuse the main number with a -BS01 suffix (see createLotSupplement).
+ */
+async function nextLotDocumentNumber(tx: Tx, now = new Date()): Promise<string> {
+  const yy = String(now.getFullYear() % 100).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const prefix = `DN${yy}${mm}`;
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`billing_documents:${prefix}`}))`);
+  const [row] = await tx.select({ count: sql<number>`count(*)` }).from(s.billingDocuments)
+    .where(sql`${s.billingDocuments.documentNumber} LIKE ${`${prefix}%`}`);
+  return `${prefix}${String(Number(row?.count ?? 0) + 1).padStart(4, '0')}`;
+}
+
+/** Đóng dấu phát hành: an issued lot note is immutable — later fees land on a -BS01 supplement. */
+export async function issueDocument(id: number): Promise<BillingDocument> {
+  const doc = await getDocument(id);
+  if (doc.type !== 'DEBIT_NOTE') throw new ApiError(400, 'Chỉ Giấy báo nợ mới phát hành được');
+  if (doc.issuedAt) throw new ApiError(409, 'Giấy báo nợ đã phát hành');
+  if (!doc.shipmentId) throw new ApiError(400, 'Chỉ Báo nợ theo lô mới cần đóng dấu phát hành');
+  await db.update(s.billingDocuments).set({ issuedAt: new Date(), updatedAt: new Date() })
+    .where(eq(s.billingDocuments.id, id));
+  return getDocument(id);
+}
+
+/**
+ * Bổ sung -BS01: regenerate the lot's remaining collect-side lines (cost rows
+ * not yet on any live document of the chain) into a supplement note whose
+ * number extends the issued main note. The main note itself is never edited.
+ */
+export async function createLotSupplement(mainId: number, userId: number | null): Promise<BillingDocument> {
+  const main = await getDocument(mainId);
+  if (main.type !== 'DEBIT_NOTE' || !main.shipmentId) {
+    throw new ApiError(400, 'Bổ sung chỉ áp dụng cho Báo nợ theo lô');
+  }
+  if (!main.issuedAt) throw new ApiError(409, 'Chỉ bổ sung cho Báo nợ đã phát hành');
+
+  const chainIds = [main.id, ...(await db.select({ id: s.billingDocuments.id })
+    .from(s.billingDocuments)
+    .where(and(
+      eq(s.billingDocuments.parentDocumentId, main.id),
+      isNull(s.billingDocuments.deletedAt),
+    ))).map((r) => r.id)];
+  const covered = new Set((await db.select({ sourceType: s.billingDocumentLines.sourceType, sourceId: s.billingDocumentLines.sourceId })
+    .from(s.billingDocumentLines)
+    .where(inArray(s.billingDocumentLines.documentId, chainIds)))
+    .filter((l) => l.sourceType === 'SHIPMENT_COST' && l.sourceId != null)
+    .map((l) => `${l.sourceType}:${l.sourceId}`));
+
+  const draft = await buildLotDebitLines(main.shipmentId, main.rangeFrom, main.rangeTo);
+  const remaining = draft.lines.filter((line) =>
+    !(line.sourceType === 'SHIPMENT_COST' && line.sourceId != null && covered.has(`${line.sourceType}:${line.sourceId}`)));
+  if (remaining.length === 0) {
+    throw new ApiError(400, 'Không còn chi phí mới nào để bổ sung');
+  }
+
+  const supplementCount = chainIds.length - 1; // supplements already in the chain
+  const documentNumber = `${main.documentNumber ?? `DN-${main.id}`}-BS${String(supplementCount + 1).padStart(2, '0')}`;
+  const lines = remaining as BillingDocumentLine[];
+  const total = docTotal(lines);
+  const adjustment = documentLedgerAdjustment(lines);
+
+  const docId = await db.transaction(async (tx) => {
+    await LedgerService.lockEntity(tx, 'CUSTOMER', main.entityId);
+    const [doc] = await tx.insert(s.billingDocuments).values({
+      type: 'DEBIT_NOTE', entityType: 'CUSTOMER', entityId: main.entityId,
+      entityName: main.entityName ?? null,
+      shipmentId: main.shipmentId,
+      parentDocumentId: main.id,
+      documentNumber,
+      shipmentInfo: (await hydrateShipmentInfo(main.id)) ?? null,
+      rangeFrom: main.rangeFrom, rangeTo: main.rangeTo,
+      note: `Bổ sung chi phí cho Báo nợ ${main.documentNumber ?? main.id}`,
+      totalInclVat: String(total),
+      ledgerAdjustmentAmount: String(adjustment),
+      debitNoteTemplateId: main.debitNoteTemplateId ?? null,
+      debitNoteTemplateSnapshot: main.debitNoteTemplateSnapshot ?? null,
+      createdBy: userId,
+    }).returning({ id: s.billingDocuments.id });
+    if (!doc) throw new ApiError(500, 'Không lưu được tài liệu bổ sung');
+    await persistLines(tx, doc.id, lines);
+    await postDebitNoteDelta(tx, { documentId: doc.id, customerId: main.entityId, delta: adjustment });
+    return doc.id;
+  });
+  return getDocument(docId);
+}
+
+/** Frozen Thông tin Lô hàng stored on the document (read back from the doc row). */
+async function hydrateShipmentInfo(documentId: number): Promise<ShipmentInfo | null> {
+  const [row] = await db.select({ shipmentInfo: s.billingDocuments.shipmentInfo })
+    .from(s.billingDocuments).where(eq(s.billingDocuments.id, documentId)).limit(1);
+  return (row?.shipmentInfo as ShipmentInfo | null) ?? null;
+}
+
 export async function saveDocument(input: SaveBillingDocumentInput, userId: number | null): Promise<BillingDocument> {
   assertBillingDocumentScope(input.type, input.entityType);
   await assertCarrierEligibility(input.entityType, input.entityId);
@@ -731,6 +1006,9 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
         eq(s.billingDocuments.entityId, input.entityId),
         eq(s.billingDocuments.rangeFrom, input.rangeFrom),
         eq(s.billingDocuments.rangeTo, input.rangeTo),
+        // NEPO-61 — a lô-scoped save must not silently overwrite the monthly
+        // doc covering the same period: match on the shipment scope too.
+        sql`coalesce(${s.billingDocuments.shipmentId}, 0) = ${input.shipmentId ?? 0}`,
         isNull(s.billingDocuments.deletedAt),
       )).limit(1)
       : [undefined];
@@ -758,6 +1036,15 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
     const [doc] = await tx.insert(s.billingDocuments).values({
       type: input.type, entityType: input.entityType, entityId: input.entityId,
       entityName: input.entityName ?? null, rangeFrom: input.rangeFrom, rangeTo: input.rangeTo,
+      // NEPO-62 — stamp the lô scope + its frozen Thông tin Lô hàng block and
+      // issue a DN{yy}{mm}{seq} number for the main note of the lô.
+      shipmentId: input.shipmentId ?? null,
+      documentNumber: input.shipmentId != null && input.type === 'DEBIT_NOTE'
+        ? await nextLotDocumentNumber(tx)
+        : null,
+      shipmentInfo: input.shipmentId != null
+        ? await buildLotShipmentInfo(input.shipmentId)
+        : null,
       note: input.note ?? null, totalInclVat: String(total), createdBy: userId,
       ledgerAdjustmentAmount: String(desiredAdjustment),
       debitNoteTemplateId: template?.id ?? null,
@@ -846,7 +1133,7 @@ async function persistLines(tx: Tx, documentId: number, lines: BillingDocumentLi
   );
 }
 
-export async function listDocuments(entityType: BillingDocumentEntityType, entityId: number, type?: BillingDocumentType): Promise<BillingDocument[]> {
+export async function listDocuments(entityType: BillingDocumentEntityType, entityId: number, type?: BillingDocumentType, shipmentId?: number): Promise<BillingDocument[]> {
   // Keep document history isolated by explicit accounting role. A catalog
   // party may be both CUSTOMER and CARRIER without sharing saved documents.
   const conds: SQL<unknown>[] = [
@@ -855,6 +1142,8 @@ export async function listDocuments(entityType: BillingDocumentEntityType, entit
     isNull(s.billingDocuments.deletedAt),
   ];
   if (type) conds.push(eq(s.billingDocuments.type, type));
+  // NEPO-61 — scope the list to one lô's documents (lô detail page).
+  if (shipmentId != null) conds.push(eq(s.billingDocuments.shipmentId, shipmentId));
   const docs = await db.select().from(s.billingDocuments)
     .where(and(...conds))
     .orderBy(desc(s.billingDocuments.createdAt));
@@ -875,6 +1164,11 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
   return {
     id: doc.id, type: doc.type as BillingDocumentType, entityType: doc.entityType as BillingDocumentEntityType,
     entityId: doc.entityId, entityName: doc.entityName ?? undefined,
+    shipmentId: doc.shipmentId ?? null,
+    documentNumber: doc.documentNumber ?? null,
+    parentDocumentId: doc.parentDocumentId ?? null,
+    issuedAt: doc.issuedAt ? doc.issuedAt.toISOString() : null,
+    shipmentInfo: (doc.shipmentInfo as ShipmentInfo | null) ?? null,
     rangeFrom: doc.rangeFrom, rangeTo: doc.rangeTo, note: doc.note,
     totalInclVat: Number(doc.totalInclVat), createdBy: doc.createdBy,
     ledgerAdjustmentAmount: Number(doc.ledgerAdjustmentAmount),
@@ -1160,7 +1454,19 @@ export async function buildLegacyXlsx(doc: BillingDocument): Promise<Buffer> {
   const isDebitNote = doc.type === 'DEBIT_NOTE';
   const title = isDebitNote ? 'GIẤY BÁO NỢ' : 'BẢNG KÊ THANH TOÁN';
   const entityLabel = isDebitNote ? 'Khách hàng' : 'Đối tác';
-  const tableStart = doc.note ? 6 : 5;
+  // NEPO-62 — per-lot notes carry the frozen Thông tin Lô hàng block between
+  // the header and the fee table (6 rows: label line + B/L, tàu/chuyến,
+  // POL-POD, ETD/ETA, số cont/seal).
+  const lotRows = doc.shipmentInfo
+    ? [['THÔNG TIN LÔ HÀNG'], ...([
+      ['Số B/L', doc.shipmentInfo.blNumber ?? ''],
+      ['Tàu / Chuyến', doc.shipmentInfo.vesselVoyage ?? ''],
+      ['POL - POD', [doc.shipmentInfo.polName, doc.shipmentInfo.podName].filter(Boolean).join(' - ')],
+      ['ETD / ETA', [doc.shipmentInfo.etdDate, doc.shipmentInfo.etaDate].filter((v): v is string => !!v).map(formatVietnameseDate).join(' - ')],
+      ['Số container / Seal', (doc.shipmentInfo.containerNumbers ?? []).join(', ')],
+    ] as Array<[string, string]>)]
+    : [];
+  const tableStart = (doc.note ? 6 : 5) + lotRows.length;
   const dataStart = tableStart + 1;
 
   ws.properties.defaultRowHeight = 22;
@@ -1199,7 +1505,23 @@ export async function buildLegacyXlsx(doc: BillingDocument): Promise<Buffer> {
     ws.getRow(4).height = 30;
   }
 
-  for (let r = 1; r <= 5; r++) {
+  lotRows.forEach(([label, value], idx) => {
+    const rowNumber = 5 + idx;
+    const cell = ws.getCell(rowNumber, 1);
+    if (idx === 0) {
+      cell.value = label;
+      ws.mergeCells(rowNumber, 1, rowNumber, 4);
+      cell.font = { name: 'Arial', bold: true, size: 11, color: { argb: 'FF1F4E79' } };
+    } else {
+      cell.value = `${label}: ${value}`;
+      ws.mergeCells(rowNumber, 1, rowNumber, 4);
+      cell.font = { name: 'Arial', size: 10, color: { argb: 'FF374151' } };
+    }
+    cell.alignment = { horizontal: 'left', vertical: 'middle' };
+  });
+
+  const headerFillEnd = 4 + (doc.note ? 1 : 0) + lotRows.length;
+  for (let r = 1; r <= headerFillEnd; r++) {
     ws.getRow(r).eachCell({ includeEmpty: true }, (cell) => {
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
     });
@@ -1264,7 +1586,9 @@ export async function buildLegacyXlsx(doc: BillingDocument): Promise<Buffer> {
         exportDescription(line),
         (line.containerNumbers ?? []).join(', '),
         line.unit,
-        amt || 0,
+        // NEPO-62 — Chờ hóa đơn prints amount-less inside the note and never
+        // joins the TỔNG CỘNG (its real amount stays in the saved line data).
+        line.renderData?.blankAmount ? '' : (amt || 0),
       ];
       row.height = 24;
       row.font = { name: 'Arial', size: 10, color: { argb: 'FF111827' } };
@@ -1370,6 +1694,9 @@ function renderColumnValue(line: BillingDocumentLine, col: DebitNoteTemplateColu
     case 'lineTypeLabel': return line.typeLabel;
     case 'unit': return line.unit;
     case 'amount': {
+      // NEPO-62 — Chờ hóa đơn prints an empty amount cell and never joins
+      // the totals; the saved line keeps its real amount for later -BS01.
+      if (data.blankAmount) return null;
       const amount = effectiveAmount(line) || 0;
       if (col.id === 'don_gia') {
         const qty = Number(data.containerCount ?? line.containerNumbers?.length ?? 1);
@@ -1379,7 +1706,7 @@ function renderColumnValue(line: BillingDocumentLine, col: DebitNoteTemplateColu
     }
     case 'freightAmount': return data.freightAmount ?? null;
     case 'serviceFeeAmount': return data.serviceFeeAmount ?? null;
-    case 'totalAmount': return data.totalAmount ?? (effectiveAmount(line) || 0);
+    case 'totalAmount': return data.blankAmount ? null : (data.totalAmount ?? (effectiveAmount(line) || 0));
     case 'serviceFeeDescription': return data.serviceFeeDescription ?? null;
     case 'note': return data.note ?? null;
     case 'documentCode': return data.documentCode ?? null;
@@ -2065,8 +2392,30 @@ export async function renderTemplatedXlsx(
     cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: false };
   }
 
-  const headerTop = 18;
-  const headerBottom = 19;
+  // NEPO-62 — frozen Thông tin Lô hàng block between the intro text and the
+  // fee table on per-lot debit notes (Xuất/Nhập).
+  const lotIntroLines: string[] = [];
+  if (doc.shipmentInfo) {
+    const info = doc.shipmentInfo;
+    lotIntroLines.push('THÔNG TIN LÔ HÀNG');
+    lotIntroLines.push(`Số B/L: ${info.blNumber ?? ''}`);
+    lotIntroLines.push(`Tàu / Chuyến: ${info.vesselVoyage ?? ''}`);
+    lotIntroLines.push(`POL - POD: ${[info.polName, info.podName].filter(Boolean).join(' - ')}`);
+    lotIntroLines.push(`ETD / ETA: ${[info.etdDate, info.etaDate].filter((v): v is string => !!v).map(formatVietnameseDate).join(' - ')}`);
+    lotIntroLines.push(`Số container / Seal: ${(info.containerNumbers ?? []).join(', ')}`);
+  }
+  lotIntroLines.forEach((value, i) => {
+    const rowNumber = 17 + i;
+    const cell = ws.getCell(rowNumber, 1);
+    cell.value = value;
+    cell.font = i === 0
+      ? { name: baseFont.name, bold: true, size: baseFont.size, color: { argb: 'FF1F4E79' } }
+      : baseFont;
+    cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: false };
+  });
+
+  const headerTop = 17 + lotIntroLines.length + 1;
+  const headerBottom = headerTop + 1;
   const quantityIndexes = cols
     .map((col, idx) => ({ col, idx: idx + 1 }))
     .filter(({ col }) => col.variable === 'container20Count' || col.variable === 'container40Count');
@@ -2103,7 +2452,7 @@ export async function renderTemplatedXlsx(
     }
   }
 
-  const firstDataRow = 20;
+  const firstDataRow = headerBottom + 1;
   let row = firstDataRow;
   const dataRows: number[] = [];
   for (const line of dataLines) {

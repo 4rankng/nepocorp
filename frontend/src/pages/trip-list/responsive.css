@@ -50,6 +50,8 @@
   }
   .trip-list-page .table-head .col-container,
   .trip-list-page .table-row .col-container,
+  .trip-list-page .table-head .col-shipment,
+  .trip-list-page .table-row .col-shipment,
   .trip-list-page .table-head .col-road,
   .trip-list-page .table-row .col-road,
   .trip-list-page .table-head .col-total-cost,

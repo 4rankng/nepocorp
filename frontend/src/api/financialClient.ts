@@ -14,6 +14,7 @@ import type {
   BillingDocument,
   BillingDocumentDraft,
   BillingDocumentEntityType,
+  CustomerMonthlySoa,
   BillingDocumentType,
   SaveBillingDocumentInput,
   GenerateBillingDocumentInput,
@@ -147,9 +148,15 @@ export const financialClient = {
   updateBillingDocument: (id: number, data: SaveBillingDocumentInput) =>
     api.put<BillingDocument>(FINANCIAL.BILLING_DOCUMENT(id), data),
 
-  listBillingDocuments: (entityType: BillingDocumentEntityType, entityId: number, type?: BillingDocumentType) =>
+  // NEPO-62 — pass shipmentId to scope the list to one lô's debit notes.
+  listBillingDocuments: (
+    entityType: BillingDocumentEntityType,
+    entityId: number,
+    type?: BillingDocumentType,
+    shipmentId?: number,
+  ) =>
     api.get<BillingDocument[]>(
-      `${FINANCIAL.BILLING_DOCUMENTS}${toQuery({ entityType, entityId, type })}`,
+      `${FINANCIAL.BILLING_DOCUMENTS}${toQuery({ entityType, entityId, type, shipmentId })}`,
     ),
 
   getBillingDocument: (id: number) =>
@@ -157,6 +164,22 @@ export const financialClient = {
 
   deleteBillingDocument: (id: number) =>
     api.delete<{ ok: true }>(FINANCIAL.BILLING_DOCUMENT(id)),
+
+  // NEPO-62 — per-lot chain: đóng dấu phát hành + sinh Báo nợ bổ sung -BS01.
+  issueBillingDocument: (id: number) =>
+    api.post<BillingDocument>(FINANCIAL.BILLING_DOCUMENT_ISSUE(id), {}),
+
+  supplementBillingDocument: (id: number) =>
+    api.post<BillingDocument>(FINANCIAL.BILLING_DOCUMENT_SUPPLEMENT(id), {}),
+
+  /** Bảng Tổng hợp Công nợ Tháng (SOA) theo khách hàng. */
+  getCustomerSoa: (from: string, to: string) =>
+    api.get<CustomerMonthlySoa>(
+      `${FINANCIAL.CUSTOMER_SOA}${toQuery({ from, to })}`,
+    ),
+
+  getCustomerSoaExportUrl: (from: string, to: string) =>
+    `${FINANCIAL.CUSTOMER_SOA_EXPORT}${toQuery({ from, to })}`,
 
   /** Direct URL for authenticated blob download (used with fetch + auth header).
    *  Optional templateId overrides the doc's saved template for this export. */
