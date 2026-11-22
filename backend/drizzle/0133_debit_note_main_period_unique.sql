@@ -1,0 +1,2 @@
+DROP INDEX "billing_documents_active_period_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "billing_documents_active_period_unique" ON "billing_documents" USING btree ("type","entity_type","entity_id","range_from","range_to") WHERE "billing_documents"."deleted_at" IS NULL AND "billing_documents"."type" = 'DEBIT_NOTE' AND "billing_documents"."parent_document_id" IS NULL;

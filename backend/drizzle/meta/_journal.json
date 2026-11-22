@@ -911,6 +911,13 @@
       "when": 1795366446605,
       "tag": "0132_shipments_lot_costs",
       "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1795371297828,
+      "tag": "0133_debit_note_main_period_unique",
+      "breakpoints": true
     }
   ]
 }
