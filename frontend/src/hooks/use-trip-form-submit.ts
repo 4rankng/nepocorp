@@ -358,6 +358,8 @@ const handleSubmit = useCallback(
 
       const createPayload: Record<string, unknown> = {
         customerId: Number(s.customerId),
+        // NEPO-61 — lô gắn lúc tạo (createTripSchema.shipmentId); '' = không gắn.
+        shipmentId: s.shipmentId ? Number(s.shipmentId) : null,
         routeId: Number(s.routeId),
         cargoTypeId: Number(s.cargoTypeId),
         departureDate: s.departureDate,

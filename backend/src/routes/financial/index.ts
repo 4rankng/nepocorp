@@ -38,5 +38,9 @@ router.use(billingDocumentsRoutes);
 
 // Audit: saving a billing document (debit note / payment statement snapshot)
 registerAuditEvent('POST', '/api/finance/billing-documents', AuditEvent.ENTITY_CREATED);
+// NEPO-63 — Admin edits an ISSUED debit note: the PUT is ADMIN-only and every
+// edit lands in the audit log (yêu cầu phân quyền: "Admin sửa Báo nợ có log").
+// Suffix mode (4 args): matches PUT /api/finance/billing-documents/:id.
+registerAuditEvent('PUT', '/api/finance/billing-documents/', '', AuditEvent.DEBIT_NOTE_UPDATED);
 
 export default router;

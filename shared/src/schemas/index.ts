@@ -21,9 +21,12 @@ export * from './chatbot-metrics';
 // and the frontend config page.
 export * from './llm-settings';
 
-// Admin FAQ knowledge base management — create/update/delete entries with
-// automatic embedding regeneration on save. Backs the chatbot fast lane.
+// Reusable PATCH helper — strips ZodDefault inside .partial() (Zod v4 applies
+// defaults there; see ./partial-update.ts). Kept beside the schemas that wire it.
 export * from './faq';
+
+// Lô hàng (Shipment) — NEPO-61 create/update/cost/document schemas.
+export * from './shipment';
 
 // Reusable PATCH helper — strips ZodDefault inside .partial() (Zod v4 applies
 // defaults there; see ./partial-update.ts). Kept beside the schemas that wire it.
@@ -67,6 +70,9 @@ const nonNegNumeric = z.union([z.number(), z.string()]).transform((val, ctx) => 
 });
 
 const fullNameField = z.string().max(255).or(z.literal('')).optional();
+
+/** Optional ISO date (YYYY-MM-DD) or null — used by NEPO-62 ETD/ETA fields. */
+const isoDateOrNull = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có định dạng YYYY-MM-DD').nullable().optional();
 
 /**
  * Plausible floor for a diesel pump price (₫/lít). Vietnamese diesel runs roughly
@@ -149,6 +155,8 @@ export const createTripSchema = z.object({
   cargoTypeId: z.coerce.number().int().positive(),
   departureDate: z.string().min(1),
   customerReference: z.string().optional(),
+  // NEPO-61 — optional lô link at creation; validated (existence + same customer) in the trip mutation service.
+  shipmentId: z.coerce.number().int().positive().nullable().optional(),
   containerCount: z.coerce.number().int().min(1).max(10).optional(),
   containerTypeId: z.coerce.number().int().positive({ message: 'Loại container là bắt buộc' }),
   fuelMode: z.nativeEnum(FuelMode).optional(),
@@ -245,6 +253,8 @@ export const updateTripFiguresSchema = z.object({
   externalPlateNumber: z.string().max(20).nullable().optional(),
   externalDriverName: z.string().max(100).nullable().optional(),
   externalDriverPhone: z.string().max(20).nullable().optional(),
+  // NEPO-62 — attach/detach the lô link on edit; shipment info lives on the lô.
+  shipmentId: z.coerce.number().int().positive().nullable().optional(),
   truckId: z.coerce.number().int().positive().nullable().optional(),
   driverId: z.coerce.number().int().positive().nullable().optional(),
   trailerType: z.string().max(20).nullable().optional(),
@@ -273,7 +283,7 @@ export const updateTripFiguresSchema = z.object({
   if (data.carrierType === 'EXTERNAL' && data.fuelSupplierId != null) {
     ctx.addIssue({
       code: 'custom',
-      message: 'Chuyến xe ngoài không ghi công nợ nhiên liệu của công ty',
+      message: 'Chuyến xe ngoài không có phân bổ nhiên liệu của công ty',
       path: ['fuelSupplierId'],
     });
   }
@@ -284,6 +294,16 @@ export const updateTripFiguresSchema = z.object({
       path: ['fuelAllocations'],
     });
   }
+});
+
+// ─── NEPO-62 — SOA query (Bảng Tổng hợp Công nợ Tháng theo khách hàng) ──────
+const soaDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD');
+export const customerSoaQuerySchema = z.object({
+  from: soaDate,
+  to: soaDate,
+}).refine((data) => data.from <= data.to, {
+  message: 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc',
+  path: ['from'],
 });
 
 export const bulkUpdateTripFiguresSchema = z.object({
@@ -482,7 +502,8 @@ export const createAdjustmentSchema = z.object({
 
 export const billingDocumentLineSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
-  sourceType: z.enum(['TRIP', 'EXPENSE', 'ADHOC']),
+  // NEPO-62 — SHIPMENT_COST sources a lô cost row (sourceId = shipment_costs.id).
+  sourceType: z.enum(['TRIP', 'EXPENSE', 'ADHOC', 'SHIPMENT_COST']),
   sourceId: z.coerce.number().int().positive().nullable(),
   lineType: z.enum(['FREIGHT', 'SERVICE_FEE', 'ADHOC']),
   typeLabel: z.string().min(1),
@@ -538,13 +559,27 @@ export const generateBillingDocumentSchema = z.object({
   entityId: z.coerce.number().int().positive(),
   rangeFrom: billingDocumentDateSchema,
   rangeTo: billingDocumentDateSchema,
-}).superRefine(validateBillingDocumentScope);
+  // NEPO-62 — per-lot generation: set shipmentId to draft the debit note of
+  // ONE lô hàng. Only valid for customer debit notes.
+  shipmentId: z.coerce.number().int().positive().optional(),
+}).superRefine((value, ctx) => {
+  validateBillingDocumentScope(value, ctx);
+  if (value.shipmentId !== undefined && (value.type !== 'DEBIT_NOTE' || value.entityType !== 'CUSTOMER')) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['shipmentId'],
+      message: 'Báo nợ theo lô chỉ áp dụng cho giấy báo nợ khách hàng',
+    });
+  }
+});
 
 export const saveBillingDocumentSchema = z.object({
   type: z.enum(['DEBIT_NOTE', 'PAYMENT_STATEMENT']),
   entityType: z.enum(['CUSTOMER', 'CARRIER', 'VENDOR']),
   entityId: z.coerce.number().int().positive(),
   entityName: z.string().optional(),
+  // NEPO-61 — stamps the doc as a lô-scoped billing document (deduped per entity+shipment).
+  shipmentId: z.coerce.number().int().positive().nullable().optional(),
   rangeFrom: billingDocumentDateSchema,
   rangeTo: billingDocumentDateSchema,
   note: z.string().nullable().optional(),
@@ -552,7 +587,16 @@ export const saveBillingDocumentSchema = z.object({
   // Resolved at save time so the chosen template is snapshotted onto the doc
   // (re-exports stay stable). Null/undefined = use resolution (customer/default).
   debitNoteTemplateId: z.coerce.number().int().positive().nullable().optional(),
-}).superRefine(validateBillingDocumentScope);
+}).superRefine((value, ctx) => {
+  validateBillingDocumentScope(value, ctx);
+  if (value.shipmentId != null && (value.type !== 'DEBIT_NOTE' || value.entityType !== 'CUSTOMER')) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['shipmentId'],
+      message: 'Báo nợ theo lô chỉ áp dụng cho giấy báo nợ khách hàng',
+    });
+  }
+});
 
 // ─── Billing document Excel templates ────────────────────────────────────────
 // Excel-style templates built around user-defined columns. Each column binds to

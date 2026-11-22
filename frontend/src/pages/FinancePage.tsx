@@ -7,7 +7,7 @@ import { PageHeader } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { Alert } from '../components/shared/Alert';
 import { AssetIcon } from '../components/AssetIcon';
-import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable } from '../hooks/useQueries';
+import { usePnlReport, useYearlyPnl, useMonthlyTrips, useCapTable, useShipmentProfitReport } from '../hooks/useQueries';
 import { useMonth } from '../hooks/useMonth';
 import { usePageAnimations } from '../hooks/animations';
 import { compactNum, EMPTY_CAP, EMPTY_TRIPS, EMPTY_YEARLY, marginPct, useFinanceDerived, yoyClass, yoyDeltaLabel, yoyPct } from './finance-derived';
@@ -26,6 +26,8 @@ export default function FinancePage() {
 
 
   const { data: prevReport } = usePnlReport(month, year - 1);
+  // Báo cáo Lợi nhuận theo Lô (NEPO-63) — cùng kỳ lương với P&L.
+  const { data: shipmentProfit, isLoading: shipmentProfitLoading, error: shipmentProfitError } = useShipmentProfitReport(month, year);
 
   const { data: allTrips = EMPTY_TRIPS } = useMonthlyTrips(year, month); const { data: capTableRaw = EMPTY_CAP } = useCapTable();
   const { data: yearlyData = EMPTY_YEARLY, isLoading: yearlyLoading } = useYearlyPnl(year);
@@ -373,6 +375,70 @@ export default function FinancePage() {
             month={month}
             year={year}
           />
+
+          {/* Báo cáo Lợi nhuận theo Lô (NEPO-63): LN = Tổng Thu − Tổng Chi Trả NCC − Tổng Chi Chạy Xe;
+              phí nộp hộ chi chỉ đối soát, không trừ lần hai (đã nằm trong Chi Trả NCC). */}
+          <section style={{ marginTop: 28 }}>
+            <h2 style={{ fontSize: 'var(--fs-lg)', margin: '0 0 4px' }}>Lợi nhuận theo Lô</h2>
+            <p style={{ fontSize: 'var(--fs-body)', color: 'var(--fg-3)', margin: '0 0 12px' }}>
+              Lợi nhuận = Tổng thu − Tổng chi trả NCC − Tổng chi chạy xe · Phí nộp hộ chi chỉ dùng để đối soát, không tính lại · Kỳ lương {month}/{year}
+            </p>
+            {shipmentProfitLoading ? (
+              <div style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>Đang tải…</div>
+            ) : shipmentProfitError ? (
+              <div style={{ color: 'var(--danger)', fontSize: 'var(--fs-body)' }}>
+                {(shipmentProfitError as Error).message || 'Không thể tải báo cáo theo lô'}
+              </div>
+            ) : !shipmentProfit || shipmentProfit.rows.length === 0 ? (
+              <div style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-body)' }}>
+                Không có lô nào có chuyến trong kỳ này.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body)' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', color: 'var(--fg-3)', borderBottom: '1px solid var(--border-2)' }}>
+                      <th style={{ padding: '8px 10px' }}>Mã lô</th>
+                      <th style={{ padding: '8px 10px' }}>Khách hàng</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Chuyến</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Tổng thu</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Chi trả NCC</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Chi chạy xe</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }} title="Đã nằm trong Chi trả NCC — chỉ đối soát, không trừ lần hai">Hộ chi (đối soát)</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Lợi nhuận</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shipmentProfit.rows.map((row) => (
+                      <tr key={row.shipmentId} style={{ borderBottom: '1px solid var(--border-1)' }}>
+                        <td style={{ padding: '8px 10px', fontWeight: 600 }}>
+                          {row.shipmentCode}
+                          {row.unbilled && <span style={{ marginLeft: 6, fontSize: 'var(--fs-xs)', color: 'var(--warning)' }}>chưa báo nợ</span>}
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>{row.customerName ?? '—'}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right' }}>{row.linkedTripCount}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatNumber(row.revenueInclVat)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatNumber(row.supplierCosts)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatNumber(row.tripRunningCosts)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--fg-3)' }}>{formatNumber(row.passportFeeMemo)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: row.profit < 0 ? 'var(--danger)' : 'var(--success)' }}>{formatNumber(row.profit)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: '2px solid var(--border-2)', fontWeight: 700 }}>
+                      <td style={{ padding: '10px' }} colSpan={3}>Tổng cộng ({shipmentProfit.rows.length} lô)</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>{formatNumber(shipmentProfit.totals.revenueInclVat)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>{formatNumber(shipmentProfit.totals.supplierCosts)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>{formatNumber(shipmentProfit.totals.tripRunningCosts)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: 'var(--fg-3)' }}>{formatNumber(shipmentProfit.totals.passportFeeMemo)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: shipmentProfit.totals.profit < 0 ? 'var(--danger)' : 'var(--success)' }}>{formatNumber(shipmentProfit.totals.profit)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </section>
         </>
       )}
     </div>

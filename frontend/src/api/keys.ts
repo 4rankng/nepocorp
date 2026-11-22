@@ -260,11 +260,27 @@ export const qk = {
       ['approval-queue', role, userId] as const,
   },
 
+  /* ── Shipments (Lô hàng, NEPO-61) ───────────────────────────────────── */
+
+  shipments: {
+    list: (params?: { search?: string; customerId?: number; page?: number; pageSize?: number }) =>
+      ['shipments', params ?? {}] as const,
+    /** Broad prefix — mutations invalidate every shipment list variant. */
+    all: ['shipments'] as const,
+    /** Normalize id like trips.detail so URL-string ids match numeric refreshes. */
+    detail: (id: number | string | undefined) => ['shipment', String(id)] as const,
+    costRegister: (id: number | string | undefined) => ['shipment-cost-register', String(id)] as const,
+  },
+
   /* ── Financial ──────────────────────────────────────────────────────── */
 
   financial: {
     customerAging: (search: string | undefined) =>
       ['customer-aging', search ?? ''] as const,
+    /** Báo cáo Lợi nhuận theo Lô — keyed per period (NEPO-63). */
+    shipmentProfit: (month: number, year: number) =>
+      ['reports', 'shipment-profit', month, year] as const,
+    shipmentProfitAll: ['reports', 'shipment-profit'] as const,
     /** Broad prefix — matches all customerAging queries regardless of args. */
     customerAgingAll: ['customer-aging'] as const,
     /**

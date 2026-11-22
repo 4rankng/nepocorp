@@ -5,7 +5,7 @@ import { ApiError } from '../lib/api';
 import { Role, TripStatus, TRIP_STATUS_LABELS } from '@tingting/shared';
 import { useConfirm } from '../components/useConfirm';
 import { Spinner } from '../components/shared/Spinner';
-import { useTripDetail } from '../hooks/useQueries';
+import { useTripDetail, useLinkTripShipment } from '../hooks/useQueries';
 import { useAuth } from '../hooks/useAuth';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useTripForm } from '../hooks/useTripForm';
@@ -26,6 +26,10 @@ import { useBackShortcut } from '../hooks/useBackShortcut';
 import { useDirtyGuard } from '../hooks/useDirtyGuard';
 import type { TripOptions } from '../hooks/useTripOptions';
 import { SearchableSelect } from '../design-system';
+import { useQuery } from '@tanstack/react-query';
+import { shipmentClient } from '../api/shipmentClient';
+import { qk } from '../api/keys';
+import { useToast } from '../components/shared/Toast';
 import { isTripEditReturnState } from '../features/trips';
 import './TripForm.css';
 import './TripEditPage.css';
@@ -41,7 +45,18 @@ export default function TripEditPage() {
   const { data: catalogData } = useCatalogs();
   const { rootRef } = usePageAnimations({ ready: !loading });
 
+  // Lô biển đang mở (NEPO-63) — select gắn chuyến vào lô trên trang sửa.
+  const { data: shipmentOptions } = useQuery({
+    queryKey: ['shipments', 'options'],
+    queryFn: () => shipmentClient.list({ pageSize: 300 }),
+    staleTime: 2 * 60 * 1000,
+  });
+
   const editOptions: TripOptions = useMemo(() => ({
+    shipments: (shipmentOptions?.items ?? []).map((l) => ({
+      id: l.id,
+      label: `${l.shipmentCode}${l.customerName ? ` — ${l.customerName}` : ''}`,
+    })),
     customers: catalogData?.customers.map((c) => ({ id: c.id, label: c.name })) ?? [],
     carrierCustomers: catalogData?.customers.filter(c => c.isCarrier).map(c => ({ id: c.id, label: c.name })) ?? [],
     routes: catalogData?.routes.map(r => ({
@@ -64,7 +79,7 @@ export default function TripEditPage() {
     containerTypes: catalogData?.containerTypes.map((c) => ({ id: c.id, label: c.name || c.code || `Loại #${c.id}` })) ?? [],
     pricingTables: [],
     loading: !catalogData,
-  }), [catalogData]);
+  }), [catalogData, shipmentOptions]);
 
   const form = useTripForm({ options: editOptions, mode: 'edit', existingTrip: trip });
   const searchableRoutes = useMemo(
@@ -97,6 +112,28 @@ export default function TripEditPage() {
     })));
   };
 
+  // NEPO-61 — lô gắn/sửa qua PATCH /trips/:id/shipment riêng (không nằm trong
+  // figures payload): state cục bộ của trang, commit cùng lượt bấm lưu.
+  // Options chỉ lô của đúng customer của chuyến (backend cũng từ chối lô khác
+  // customer). DISPATCHER vẫn mở được form — quyền chỉ khóa ở backend; nếu tải
+  // lô lỗi/thiếu quyền, select vẫn dùng được với option "Không gắn lô".
+  const { toast: showToast } = useToast();
+  const linkShipment = useLinkTripShipment();
+  const editCustomerId = trip?.customerId ?? 0;
+  const shipmentsQuery = useQuery({
+    queryKey: qk.shipments.list(editCustomerId ? { customerId: editCustomerId, pageSize: 100 } : {}),
+    queryFn: () => shipmentClient.list({ customerId: editCustomerId, pageSize: 100 }),
+    enabled: editCustomerId > 0,
+  });
+  const [shipmentId, setShipmentId] = useState('');
+  // Hydrate lại từ server sau load/refetch (409 "tải lại?" đồng bộ về giá trị
+  // đã lưu; sau khi gắn lô thành công, invalidation ['trips'] refetch và
+  // select phản chiếu giá trị đã commit).
+  useEffect(() => {
+    if (!trip) return;
+    setShipmentId(trip.shipmentId != null ? String(trip.shipmentId) : '');
+  }, [trip]);
+
   // The trip form hydrates from `existingTrip` via an effect inside the form
   // hook (one render after `trip` arrives), so gate the dirty baseline on a
   // `formHydrated` flag that flips the render *after* population — otherwise
@@ -118,9 +155,27 @@ export default function TripEditPage() {
   });
 
   const onSubmit = async (e: React.FormEvent) => {
+    // NEPO-61 — lô KHÔNG nằm trong figures payload: sau khi số liệu commit,
+    // gọi PATCH /trips/:id/shipment qua useLinkTripShipment nếu lựa chọn đổi.
+    // Lỗi lô không rollback số liệu đã lưu — giữ lại trang + toast để sửa thử lại.
+    const savedShipmentId = trip?.shipmentId != null ? String(trip.shipmentId) : '';
+    const shipmentChanged = trip != null && shipmentId !== savedShipmentId;
     try {
       const result = await handleSubmit(e);
       if (result !== undefined) {
+        if (shipmentChanged) {
+          try {
+            await linkShipment.mutateAsync({
+              tripId: trip.id,
+              shipmentId: shipmentId ? Number(shipmentId) : null,
+            });
+          } catch (linkErr) {
+            console.error('Trip shipment link failed:', linkErr);
+            showToast({ kind: 'error', message: 'Số liệu đã lưu nhưng cập nhật lô thất bại — thử lưu lại.' });
+            document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+        }
         if (cameFromTripDetail) {
           navigate(-1);
         } else {
@@ -218,6 +273,25 @@ export default function TripEditPage() {
                         ? 'Đổi khách hàng không tự cập nhật giá cước.'
                         : 'Chỉ Quản lý hoặc Quản trị viên được đổi khách hàng.'}
                     </div>
+                  </div>
+                  <div className="tc-field">
+                    <label className="tc-field-label" htmlFor="shipmentId">Lô hàng</label>
+                    <select
+                      id="shipmentId"
+                      className="input"
+                      value={shipmentId}
+                      onChange={(e) => setShipmentId(e.target.value)}
+                    >
+                      <option value="">
+                        {shipmentsQuery.isLoading ? 'Đang tải lô hàng…' : '-- Không gắn lô --'}
+                      </option>
+                      {(shipmentsQuery.data?.items ?? []).map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.bookingNo ? `${l.shipmentCode} — ${l.bookingNo}` : l.shipmentCode}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="tc-field-hint">Chỉ lô của cùng khách hàng; gỡ lô cũng lưu khi bấm lưu.</div>
                   </div>
                   <div className="tc-field">
                     <label className="tc-field-label">Ngày khởi hành <span style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span></label>

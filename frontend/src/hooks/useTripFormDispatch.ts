@@ -139,6 +139,7 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     s.setDriverId(existingTrip.driverId != null ? String(existingTrip.driverId) : '');
     s.setCargoTypeId(existingTrip.cargoTypeId != null ? String(existingTrip.cargoTypeId) : '');
     s.setCustomerReference(existingTrip.customerReference ?? '');
+    s.setShipmentId(existingTrip.shipmentId != null ? String(existingTrip.shipmentId) : '');
     s.setContainerCount(existingTrip.containerCount != null ? String(existingTrip.containerCount) : '1');
     s.setCompletedAt(existingTrip.completedAt ? existingTrip.completedAt.slice(0, 10) : '');
 

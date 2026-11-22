@@ -4,6 +4,7 @@ import type {
   TrailerType, TruckStatus, TrailerStatus, DriverStatus, CustomerStatus, PenaltyStatus,
   AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus,
   TireStatus, TruckCapRole, VehicleComponent, VehicleScheduleKind, VehicleScheduleStatus,
+  TripFlowType, FeeGroup, LotFeeStatus, TruckTransferCostKey, ShipmentDocType,
 } from '../constants';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -1069,6 +1070,9 @@ export interface TripDetail extends Trip {
   route?: Route;
   customer?: Customer;
   cargoType?: CargoType;
+  /** NEPO-61 — lô biển this trip belongs to (null = road/water trip, no lô). */
+  shipmentId?: number | null;
+  shipmentCode?: string | null;
   fuelSupplier?: { id: number; name: string } | null;
   instructions?: TripInstruction | null;
   /** The vehicle's full real GPS trail (Bách Khoa), captured at completion.
@@ -1085,6 +1089,8 @@ export interface CreateTripRequest {
   driverId?: number | null;
   cargoTypeId: number;
   departureDate: string;
+  /** NEPO-61 — optional lô link at creation (validated server-side). */
+  shipmentId?: number | null;
   customerReference?: string;
   containerCount?: number;
   containerTypeId: number;
@@ -1097,6 +1103,170 @@ export interface CreateTripRequest {
   externalPlateNumber?: string | null;
   externalDriverName?: string | null;
   externalDriverPhone?: string | null;
+}
+
+// ─── Shipment / Lô hàng (NEPO-61) ────────────────────────────────────────────
+/** Sea-freight shipment master — the parent object (lô) that sea booking info,
+ *  customs declaration, uploaded documents (B/L, C/O, kiểm dịch, hun trùng),
+ *  manual costs (chi phí), truck trips (chuyến) and debit notes (giấy báo nợ)
+ *  hang off. Auto code [Mã KH][Năm][STT], e.g. MCT26026. */
+export interface Shipment {
+  id: number;
+  shipmentCode: string;
+  customerId: number;
+  /** NEPO-62 — Hàng Xuất / Hàng Nhập: decides the per-lot debit-note fee order. */
+  flowType: TripFlowType | null;
+  deletedAt?: string | null;
+  /** Denormalized for list rows (server-side join). */
+  customerName?: string | null;
+  customerShortName?: string | null;
+  shippingLine: string | null;
+  bookingNo: string | null;
+  blNo: string | null;
+  vesselVoyage: string | null;
+  pol: string | null;
+  pod: string | null;
+  /** Local YYYY-MM-DD dates. */
+  etd: string | null;
+  eta: string | null;
+  cutoffDate: string | null;
+  /** Free-form "số cont / seal" list as entered on the booking. */
+  containerSeals: string | null;
+  customsDeclarationNo: string | null;
+  customsDeclarationDate: string | null;
+  notes: string | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShipmentDocument {
+  id: number;
+  shipmentId: number;
+  docType: ShipmentDocType;
+  fileName: string;
+  storageKey: string;
+  mimeType: string | null;
+  fileSize: number | null;
+  note: string | null;
+  uploadedBy: number | null;
+  createdAt: string;
+}
+
+export interface ShipmentCost {
+  id: number;
+  shipmentId: number;
+  costType: FeeGroup;             // six register groups (NEPO-62)
+  // NEPO-62 — per-row economics. direction splits Thu khách vs Trả NCC;
+  // serviceMode splits Dịch vụ vs Nộp hộ. VND amount is the integer source of
+  // truth; USD rows keep fxAmount + exchangeRate and the server derives VND.
+  direction: 'CUSTOMER' | 'SUPPLIER';
+  serviceMode: 'SERVICE' | 'ADVANCE';
+  description: string;
+  currency: 'VND' | 'USD';
+  fxAmount: string | null;        // original USD amount
+  exchangeRate: string | null;
+  amount: number;                 // VND integer
+  vatRate: string;                // e.g. '0.080'
+  awaitingInvoice: boolean;       // Chờ hóa đơn — blank amount on the note
+  /** Local YYYY-MM-DD. */
+  incurredDate: string;
+  note: string | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Lô profit — revenue (Σ giấy báo nợ stamped onto the lô) minus the manual
+ *  supplier-side costs (Σ direction=SUPPLIER, awaiting-invoice rows excluded —
+ *  they print amount-less on the note) minus the auto-flowing running cost
+ *  (totalCost / externalFreightCost) of linked truck trips. */
+export interface ShipmentProfitSummary {
+  revenueInclVat: number;
+  collectTotal: number;
+  payTotal: number;
+  tripCosts: number;
+  profit: number;
+  linkedTripCount: number;
+  billingDocumentCount: number;
+}
+
+/** Truck trip attached to a lô (shipment detail payload row, money as VND integers). */
+export interface ShipmentTripRow {
+  id: number;
+  tripCode: string | null;
+  status: string;
+  departureDate: string;
+  plate: string | null;
+  totalCost: number | null;
+  revenue: number | null;
+  grossProfit: number | null;
+  carrierType: string;
+}
+
+/** Giấy báo nợ row listed on the shipment detail (numbers are VND integers). */
+export interface ShipmentBillingDocSummary {
+  id: number;
+  type: string;
+  entityType: string;
+  entityId: number;
+  entityName: string | null;
+  rangeFrom: string;
+  rangeTo: string;
+  totalInclVat: number;
+  // NEPO-62 — chain fields: documentNumber identifies the main note, a
+  // supplement carries parentDocumentId + '-BS01' suffix, issuedAt freezes it.
+  documentNumber?: string | null;
+  parentDocumentId?: number | null;
+  issuedAt?: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+/** Full shipment detail payload (GET /api/shipments/:id). */
+export interface ShipmentDetail extends Shipment {
+  documents: ShipmentDocument[];
+  costs: ShipmentCost[];
+  profit: ShipmentProfitSummary;
+  billingDocuments: ShipmentBillingDocSummary[];
+  trips: ShipmentTripRow[];
+}
+
+/** NEPO-63 — một dòng của Báo cáo Lợi nhuận theo Lô:
+ *  Lợi nhuận = Tổng Thu − Tổng Chi Trả NCC − Tổng Chi Chạy Xe.
+ *  Phí nộp hộ chi chỉ dùng để đối soát (đã nằm trong Chi Trả NCC), không trừ lần hai. */
+export interface ShipmentProfitReportRow {
+  shipmentId: number;
+  shipmentCode: string;
+  customerName: string | null;
+  linkedTripCount: number;
+  /** Σ Giấy báo nợ của lô (chính + phụ lục, VND). */
+  revenueInclVat: number;
+  /** Tổng Chi Trả NCC: cước xe ngoài + chi hộ mua (tripExpenses APPROVED) + shipmentCosts chiều trả NCC. */
+  supplierCosts: number;
+  /** Tổng Chi Chạy Xe: totalCost các chuyến xe nhà. */
+  tripRunningCosts: number;
+  /** Phí nộp hộ chi — đã nằm trong supplierCosts, chỉ hiển thị để đối soát. */
+  passportFeeMemo: number;
+  profit: number;
+  billingDocumentCount: number;
+  /** Chưa có Giấy báo nợ nào (thu chưa phát hành). */
+  unbilled: boolean;
+}
+
+export interface ShipmentProfitReport {
+  month: number;
+  year: number;
+  periodFrom: string;
+  periodTo: string;
+  rows: ShipmentProfitReportRow[];
+  totals: {
+    revenueInclVat: number;
+    supplierCosts: number;
+    tripRunningCosts: number;
+    passportFeeMemo: number;
+    profit: number;
+  };
 }
 
 export interface TripLegInput {
@@ -1232,6 +1402,36 @@ export interface DashboardStats {
   topOverdueCustomer?: { name: string; balance: number; days: number } | null;
   topShareholder?: { name: string; percentage: number } | null;
   decisionItems?: DashboardDecisionItem[];
+  /**
+   * NEPO-63 — operational strip: hôm-nay shipments/trips/debt signals.
+   * Optional so cached payloads from before this field existed keep rendering.
+   */
+  opsToday?: OpsToday;
+}
+
+/** One shipment alert row for the dashboard's operational strip. */
+export interface ShipmentOpsAlert {
+  id: number;
+  shipmentCode: string;
+  customerName: string | null;
+  /** Ngày cắt máng (YYYY-MM-DD), null = chưa set. */
+  cutoffDate: string | null;
+  /** cutoffDate − hôm nay (âm = đã qua cắt máng). Null khi chưa có ngày cắt. */
+  daysUntilCutoff: number | null;
+  linkedTripCount: number;
+  documentCount: number;
+}
+
+/** NEPO-63 dashboard strip — 4 khối vận hành. */
+export interface OpsToday {
+  /** Chuyến xuất phát hôm nay (loại trừ đã hủy). */
+  tripsToday: number;
+  /** Lô sắp cắt máng (trong hạn cảnh báo) hoặc đã quá ngày cắt mà chưa đủ chứng từ. */
+  shipmentsNearingCutoff: ShipmentOpsAlert[];
+  /** Lô thiếu chứng từ (chưa có bất kỳ chứng từ nào được upload). */
+  shipmentsMissingDocs: ShipmentOpsAlert[];
+  /** Công nợ quá hạn: số tiền (VND) + số khách còn nợ quá hạn. */
+  overdueDebt: { amount: number; customers: number };
 }
 
 export type DashboardDecisionSeverity = 'critical' | 'warning' | 'info' | 'success';
@@ -1454,8 +1654,94 @@ export interface DebtOffset {
 
 export type BillingDocumentType = 'DEBIT_NOTE' | 'PAYMENT_STATEMENT';
 export type BillingDocumentEntityType = 'CUSTOMER' | 'CARRIER' | 'VENDOR';
-export type BillingLineSourceType = 'TRIP' | 'EXPENSE' | 'ADHOC';
+// NEPO-62 — a debit-note line may source a lô cost row (sourceId = shipment_costs.id).
+export type BillingLineSourceType = 'TRIP' | 'EXPENSE' | 'ADHOC' | 'SHIPMENT_COST';
 export type BillingLineType = 'FREIGHT' | 'SERVICE_FEE' | 'ADHOC';
+
+// ─── Lot cost register (Chi phí theo Lô hàng — NEPO-62) ──────────────────────
+// The register reads the lô's manual cost rows (shipment_costs), derives each
+// row's billing status, and adds a read-only truck-transfer section fed by the
+// linked trips' own operational figures. Truck-transfer rows are the ONLY
+// operational costs bookable on a lô (dầu/lương/vé cầu đường/cước thuê ngoài) —
+// sea freight and customs fees never belong there.
+
+/** Thông tin Lô hàng block printed on per-lot debit notes. */
+export interface ShipmentInfo {
+  blNumber: string | null;
+  vesselVoyage: string | null;
+  polName: string | null;
+  podName: string | null;
+  etdDate: string | null;
+  etaDate: string | null;
+  containerNumbers: string[]; // "CONT / SEAL" joined pairs
+}
+
+export interface LotCostRow {
+  id: number;                 // shipment_costs.id
+  costType: FeeGroup;
+  label: string;
+  group: FeeGroup;
+  direction: 'CUSTOMER' | 'SUPPLIER'; // Thu khách / Trả NCC
+  serviceMode: 'SERVICE' | 'ADVANCE'; // Dịch vụ / Nộp hộ
+  status: LotFeeStatus;
+  description: string;
+  currency: 'VND' | 'USD';
+  fxAmount: number | null;    // original USD amount
+  exchangeRate: number | null;
+  amount: number;             // VND integer (source of truth)
+  vatRate: string;
+  awaitingInvoice: boolean;
+  incurredDate: string;
+  note: string | null;
+}
+
+export interface LotCostGroup {
+  group: FeeGroup;
+  label: string;
+  rows: LotCostRow[];
+  collectTotal: number; // Σ direction=CUSTOMER, awaiting-invoice excluded
+  payTotal: number;     // Σ direction=SUPPLIER, awaiting-invoice excluded
+}
+
+export interface TruckTransferCostRow {
+  key: TruckTransferCostKey;
+  label: string;
+  amount: number;
+  tripCode: string | null;
+}
+
+export interface LotCostRegister {
+  shipmentId: number;
+  shipmentCode: string;
+  customerId: number;
+  customerName: string;
+  flowType: TripFlowType | null;
+  groups: LotCostGroup[];
+  truckTransfer: { rows: TruckTransferCostRow[]; total: number };
+  totals: { collect: number; pay: number };
+}
+
+/** Bảng Tổng hợp Công nợ Tháng (SOA) — one row per customer, one cell per month. */
+export interface CustomerMonthlySoaCell {
+  month: string;   // 'YYYY-MM'
+  opening: number; // balance carried into the month
+  charges: number; // debits booked in the month
+  payments: number; // credits booked in the month
+  closing: number;
+}
+
+export interface CustomerMonthlySoaRow {
+  customerId: number;
+  customerName: string;
+  months: CustomerMonthlySoaCell[];
+  closing: number; // closing at the end of the range
+}
+
+export interface CustomerMonthlySoa {
+  from: string;
+  to: string;
+  rows: CustomerMonthlySoaRow[];
+}
 export type DebitNoteColumnVariable =
   | 'rowIndex'
   | 'departureDate'
@@ -1498,6 +1784,9 @@ export interface BillingLineRenderData {
   totalAmount?: number | null;
   serviceFeeDescription?: string | null;
   note?: string | null;
+  // NEPO-62 — fee still waiting for its invoice: the line prints with an
+  // empty amount cell and never contributes to the document total.
+  blankAmount?: boolean;
 }
 
 export interface BillingDocumentLine {
@@ -1522,6 +1811,8 @@ export interface BillingDocument {
   id: number;
   type: BillingDocumentType;
   entityType: BillingDocumentEntityType;
+  /** NEPO-61 — the lô this document was issued for (null = monthly/legacy doc). */
+  shipmentId?: number | null;
   entityId: number;
   entityName?: string;
   rangeFrom: string;              // ISO date (trip departure-date basis)
@@ -1537,6 +1828,13 @@ export interface BillingDocument {
   debitNoteTemplateId?: number | null;
   debitNoteTemplateSnapshot?: DebitNoteTemplateSnapshot | null;
   lines: BillingDocumentLine[];
+  // NEPO-62 per-lot chain: documentNumber identifies the note (supplements
+  // get '-BS01'), parentDocumentId links a supplement to its main note, and
+  // issuedAt freezes the note once phát hành (issued notes are immutable).
+  documentNumber?: string | null;  // e.g. DN2026110007; supplements get '-BS01'
+  parentDocumentId?: number | null; // supplement → main document id
+  issuedAt?: string | null;        // set → immutable (không sửa đã phát hành)
+  shipmentInfo?: ShipmentInfo | null; // Thông tin Lô hàng block snapshot
 }
 
 /** Lines returned by the generate/preview step, before save. */

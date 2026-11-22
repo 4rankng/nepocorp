@@ -64,6 +64,8 @@ export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?:
         // Pete 24/10: kế toán không cần thấy Điều vận — chỉ ẩn nav, MANAGER/ADMIN giữ nguyên.
         ...(role === 'ACCOUNTANT' ? [] : [{ key: 'dispatch', label: 'Điều vận', path: routes.dispatch, icon: Compass, section: 'operations' as const, count: dispatchCount }]),
         { key: 'trips', label: 'Kế hoạch vận chuyển', path: routes.trips, icon: Truck, section: 'operations' },
+        // NEPO-61 — Lô hàng: sea shipments (booking, chứng từ, chi phí, báo nợ).
+        { key: 'shipments', label: 'Lô hàng', path: routes.shipments, icon: Package, section: 'operations' },
         { key: 'ledger', label: 'Bảng số liệu', path: routes.bangKeHoach, icon: ClipboardList, section: 'operations' },
 
         { key: 'salary', label: 'Lương & Chấm công', path: routes.salary, icon: CalendarDays, section: 'hr' },
@@ -106,9 +108,18 @@ export function getNavItems(role: Role, dispatchCount?: number, penaltiesCount?:
       ];
     case 'FORWARDER':
       return [
+        // NEPO-61 — Ops biển owns the lô hàng module.
+        { key: 'shipments', label: 'Lô hàng', path: routes.shipments, icon: Package, section: 'operations' },
         { key: 'my-forwarder-trips', label: 'Chuyến đi', path: routes.myForwarderTrips, icon: Package, section: 'operations' },
         { key: 'my-advances', label: 'Tạm ứng', path: routes.myAdvances, icon: Wallet, section: 'operations' },
         { key: 'my-settlements', label: 'Phiếu thanh toán', path: routes.mySettlements, icon: FileText, section: 'operations' },
+      ];
+    case 'DISPATCHER':
+      // NEPO-63 — điều xe: điều vận + kế hoạch chuyến + xem lô để gắn chuyến.
+      return [
+        { key: 'dispatch', label: 'Điều vận', path: routes.dispatch, icon: Compass, section: 'operations', count: dispatchCount },
+        { key: 'trips', label: 'Kế hoạch vận chuyển', path: routes.trips, icon: Truck, section: 'operations' },
+        { key: 'shipments', label: 'Lô hàng', path: routes.shipments, icon: Package, section: 'operations' },
       ];
     default:
       return [];

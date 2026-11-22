@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { tripClient } from "../api/tripClient";
 import type { CatalogData } from "../api/tripClient";
 import { configClient } from "../api/configClient";
+import { shipmentClient } from "../api/shipmentClient";
 import type { PricingTable } from "@tingting/shared";
 import { BOOTSTRAP_QUERY_KEY } from "./useCatalogs";
 import { qk } from "../api/keys";
@@ -41,6 +42,8 @@ export interface TrailerTypeOption {
 export interface TripOptions {
   customers: SelectOption[];
   carrierCustomers: SelectOption[];
+  /** Lô biển đang mở (NEPO-63) — chọn khi tạo/sửa chuyến. */
+  shipments: SelectOption[];
   routes: RouteOption[];
   trucks: TruckOption[];
   trailerTypes: TrailerTypeOption[];
@@ -73,9 +76,22 @@ export function useTripOptions(): TripOptions {
     queryFn: () => configClient.getPricingTables(),
   });
 
+
   const catalog = bootstrapQuery.data;
 
+  // Lô biển đang mở (NEPO-63) — select gắn chuyến vào lô trong form chuyến.
+  const shipmentsQuery = useQuery({
+    queryKey: ['shipments', 'options'],
+    queryFn: () => shipmentClient.list({ pageSize: 300 }),
+    staleTime: 2 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+
   return {
+    shipments: (shipmentsQuery.data?.items ?? []).map((l) => ({
+      id: l.id,
+      label: `${l.shipmentCode}${l.customerName ? ` — ${l.customerName}` : ''}`,
+    })),
     customers: catalog?.customers.map((c) => ({ id: c.id, label: c.name })) ?? [],
     carrierCustomers: catalog?.customers.filter(c => c.isCarrier).map(c => ({ id: c.id, label: c.name })) ?? [],
     routes:

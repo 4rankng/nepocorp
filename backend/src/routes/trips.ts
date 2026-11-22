@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TripStatus, NotificationType, Role, LedgerColumnGroup, createTripSchema, reassignTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema, ledgerQuerySchema, updateTripPlanSchema, updateLedgerMoneySchema, createLedgerDraftSchema } from '@tingting/shared';
+import { TripStatus, NotificationType, Role, LedgerColumnGroup, createTripSchema, reassignTripSchema, updateTripFiguresSchema, bulkUpdateTripFiguresSchema, createAdjustmentSchema, tripContainerBatchSchema, tripExpenseSchema, tripExpensePatchSchema, upsertTripInstructionsSchema, ledgerQuerySchema, updateTripPlanSchema, updateLedgerMoneySchema, createLedgerDraftSchema, linkTripShipmentSchema } from '@tingting/shared';
 import * as tripService from '../services/trip.service';
 import * as gpsService from '../services/gps.service';
 import { captureTripGpsTrack, deriveRoutesForStoredTrip } from '../services/gps/capture.service';
@@ -39,6 +39,8 @@ registerAuditEvent('POST', '/api/trips/', '/adjustment', AuditEvent.ADJUSTMENT_C
 registerAuditEvent('POST', '/api/trips/', '/approve', AuditEvent.ENTITY_UPDATED);
 registerAuditEvent('POST', '/api/trips/', '/unlock', AuditEvent.TRIP_UNLOCKED);
 registerAuditEvent('PATCH', '/api/trips/', '/departure-date', AuditEvent.TRIP_DEPARTURE_DATE_CHANGED);
+// NEPO-61 — gắn/gỡ chuyến vào lô hàng
+registerAuditEvent('PATCH', '/api/trips/', '/shipment', AuditEvent.TRIP_SHIPMENT_LINK_CHANGED);
 // Sổ cái (ledger) routes
 registerAuditEvent('POST', '/api/trips/ledger/drafts', AuditEvent.TRIP_CREATED);
 registerAuditEvent('PATCH', '/api/trips/', '/plan', AuditEvent.ENTITY_UPDATED);
@@ -78,16 +80,30 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   }));
 }));
 
-// Create trip — only ADMIN/MANAGER can create (accountant still has trips:write for figure updates)
-router.post('/', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+// Create trip — ADMIN/MANAGER/DISPATCHER (điều xe tạo chuyến, NEPO-63;
+// accountant still has trips:write for figure updates only)
+router.post('/', requireRoles(Role.ADMIN, Role.MANAGER, Role.DISPATCHER), asyncHandler(async (req: Request, res: Response) => {
   const data = createTripSchema.parse(req.body);
   const trip = await createTripCommand(data, getUser(req));
   res.status(201).json(trip);
 }));
 
+// NEPO-61 — gắn/gỡ chuyến vào lô hàng biển (shipmentId null = gỡ). Mount-level
+// trips:write governs; the service rejects LOCKED/CANCELED trips and
+// cross-customer lô links.
+router.patch('/:id/shipment', asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
+  const data = linkTripShipmentSchema.parse(req.body);
+  await tripService.setTripShipment(id, data.shipmentId ?? null);
+  const trip = await tripService.getTripById(id);
+  if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
+  res.json(trip);
+}));
+
 // Copy every editable planning/financial field atomically. Execution evidence,
 // expenses, lifecycle state, and container/seal identifiers start clean.
-router.post('/:id/copy', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/copy', requireRoles(Role.ADMIN, Role.MANAGER, Role.DISPATCHER), asyncHandler(async (req: Request, res: Response) => {
   const tripId = Number(req.params.id);
   if (!Number.isInteger(tripId) || tripId <= 0) {
     return res.status(400).json({ error: 'ID chuyến đi không hợp lệ' });
@@ -244,7 +260,9 @@ router.post('/bulk-figures', asyncHandler(async (req: Request, res: Response) =>
 
 // Roles that legitimately read any trip. Everyone else (the driver/forwarder
 // portals) is confined to the trips they own — see the ownership guard below.
-const TRIP_READ_STAFF_ROLES: Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
+// NEPO-63 — DISPATCHER (điều xe) reads any trip: it plans/edits trips for the
+// whole fleet, not a personal portal scope.
+const TRIP_READ_STAFF_ROLES: Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER];
 
 router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
@@ -252,7 +270,6 @@ router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
   const user = getUser(req);
   const trip = await tripService.getTripById(id);
   if (!trip) return res.status(404).json({ error: 'Không tìm thấy chuyến đi' });
-
   /**
    * Ownership guard.
    *
@@ -291,8 +308,9 @@ router.delete('/:id', requireRoles(Role.ADMIN, Role.MANAGER), asyncHandler(async
   res.json({ ok: true });
 }));
 
-// Update pre-departure figures
-router.put('/:id/pre-departure', asyncHandler(async (req: Request, res: Response) => {
+// Update pre-departure figures — NEPO-63: DISPATCHER (điều xe) edits its
+// dispatch figures; the accountant's figure edits keep working (trips:write).
+router.put('/:id/pre-departure', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const data = updateTripFiguresSchema.parse(req.body);
   const trip = await tripService.updateTripFigures(id, {
@@ -305,8 +323,8 @@ router.put('/:id/pre-departure', asyncHandler(async (req: Request, res: Response
   res.json(trip);
 }));
 
-// Update actuals
-router.put('/:id/actuals', asyncHandler(async (req: Request, res: Response) => {
+// Update actuals — same role set as pre-departure (NEPO-63: điều xe nhập số liệu thực tế).
+router.put('/:id/actuals', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const data = updateTripFiguresSchema.parse(req.body);
   const updated = await tripService.updateTripFigures(id, {
@@ -319,8 +337,8 @@ router.put('/:id/actuals', asyncHandler(async (req: Request, res: Response) => {
   res.json(updated);
 }));
 
-// Dispatch trip
-router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) => {
+// Dispatch trip — điều xe xuất phát chuyến (NEPO-63)
+router.post('/:id/dispatch', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER), asyncHandler(async (req: Request, res: Response) => {
   const trip = await dispatchTripCommand(parseInt(req.params.id as string), getUser(req));
   res.json(trip);
 }));
@@ -329,7 +347,7 @@ router.post('/:id/dispatch', asyncHandler(async (req: Request, res: Response) =>
 // a trip may be marked "Hoàn thành" without photos; evidence can be added or
 // edited afterwards. This is the explicit replacement for the old auto-complete
 // that previously fired inside updateTripFigures whenever any photo existed.
-router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) => {
+router.post('/:id/complete', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const trip = await tripService.transitionTripStatus(
     id,
@@ -362,8 +380,9 @@ router.post('/:id/complete', asyncHandler(async (req: Request, res: Response) =>
   res.json(trip);
 }));
 
-// Lock trip
-router.post('/:id/lock', asyncHandler(async (req: Request, res: Response) => {
+// Lock trip — NEPO-63: khóa chuyến chốt số liệu vào sổ cái — không thuộc
+// vai điều xe (ADMIN/MANAGER/ACCOUNTANT only).
+router.post('/:id/lock', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const confirmZeroRevenue = req.body.confirmZeroRevenue === true;
   const confirmNoPhoto = req.body.confirmNoPhoto === true;
@@ -386,8 +405,8 @@ router.post('/:id/lock', asyncHandler(async (req: Request, res: Response) => {
   res.json(trip);
 }));
 
-// Cancel trip
-router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
+// Cancel trip — NEPO-63: hủy chuyến là quyết định vận hành của office, không phải điều xe.
+router.post('/:id/cancel', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const trip = await tripService.transitionTripStatus(
     id,
@@ -412,8 +431,8 @@ router.post('/:id/cancel', asyncHandler(async (req: Request, res: Response) => {
   res.json(trip);
 }));
 
-// Reassign truck/driver (only for CREATED trips)
-router.patch('/:id/reassign', asyncHandler(async (req: Request, res: Response) => {
+// Reassign truck/driver (only for CREATED trips) — điều xe điều động (NEPO-63)
+router.patch('/:id/reassign', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const data = reassignTripSchema.parse(req.body);
   const trip = await tripService.reassignTrip(id, data);
@@ -421,8 +440,8 @@ router.patch('/:id/reassign', asyncHandler(async (req: Request, res: Response) =
   res.json(trip);
 }));
 
-// Unlock trip (LOCKED → COMPLETED, reopens editing; ledger stays posted)
-router.post('/:id/unlock', asyncHandler(async (req: Request, res: Response) => {
+// Unlock trip (LOCKED → COMPLETED, reopens editing; ledger stays posted) — NEPO-63: office-only.
+router.post('/:id/unlock', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const trip = await tripService.transitionTripStatus(
     id,
@@ -441,8 +460,8 @@ router.post('/:id/unlock', asyncHandler(async (req: Request, res: Response) => {
   res.json(trip);
 }));
 
-// Change departure date (any status except CANCELED)
-router.patch('/:id/departure-date', asyncHandler(async (req: Request, res: Response) => {
+// Change departure date (any status except CANCELED) — điều xe đổi ngày xuất (NEPO-63)
+router.patch('/:id/departure-date', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const { departureDate } = req.body;
   if (!departureDate || typeof departureDate !== 'string') {
@@ -472,8 +491,8 @@ router.get('/:id/adjustments', asyncHandler(async (req: Request, res: Response) 
   res.json({ items });
 }));
 
-// Create adjustment for a specific trip
-router.post('/:id/adjustment', asyncHandler(async (req: Request, res: Response) => {
+// Create adjustment for a specific trip — NEPO-63: bút toán tiền là việc kế toán (điều xe không có).
+router.post('/:id/adjustment', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const tripId = parseInt(req.params.id as string);
   const data = createAdjustmentSchema.parse({ ...req.body, tripId });
   await financialService.createAdjustment({

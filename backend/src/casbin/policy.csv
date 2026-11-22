@@ -63,3 +63,23 @@ p, MANAGER, agent, read
 p, MANAGER, agent, write
 p, ACCOUNTANT, agent, read
 p, ACCOUNTANT, agent, write
+# NEPO-61 — Lô hàng: office reads; writes only Ops biển (FORWARDER) + office
+# supervisors. ACCOUNTANT gets no write (kế toán owns Báo nợ, not the lô);
+# DRIVER gets nothing. ADMIN keeps the * wildcard.
+p, MANAGER, shipments, read
+p, MANAGER, shipments, write
+p, MANAGER, shipments, delete
+p, ACCOUNTANT, shipments, read
+p, FORWARDER, shipments, read
+p, FORWARDER, shipments, write
+p, FORWARDER, shipments, delete
+# NEPO-63 — DISPATCHER (điều xe): tạo/sửa chuyến, đọc lô để gắn chuyến.
+# Chưa có ghi financial/audit_logs — tiền và sổ cái không thuộc vai điều xe.
+p, DISPATCHER, trips, read
+p, DISPATCHER, trips, write
+p, DISPATCHER, shipments, read
+p, DISPATCHER, maps, read
+p, DISPATCHER, photos, read
+p, DISPATCHER, notifications, read
+p, DISPATCHER, notifications, write
+p, DISPATCHER, upload, write

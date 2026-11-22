@@ -12,10 +12,17 @@ export {
   AdvanceRequestStatus, AdvanceSettlementStatus, ExpenseEntryStatus,
   FORWARDER_EXPENSE_TYPE_DEFAULTS, ADVANCE_REQUEST_STATUS_LABELS, ADVANCE_SETTLEMENT_STATUS_LABELS,
   NotificationType, NOTIFICATION_TYPE_LABELS, PUSH_RULES,
-  CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, CATALOGS, FORWARDER, NOTIFICATIONS, SALARY,
+  CONFIG, FINANCIAL, REPORTS, DRIVER, SYSTEM, AUTH, TRIPS, SHIPMENTS, CATALOGS, FORWARDER, NOTIFICATIONS, SALARY,
   TRACKING,
   CarrierType, SettlementMethod, ApprovalStatus, DebitNoteMode,
+  // NEPO-61/63 — lô write-role gate + dashboard cutoff window
+  SHIPMENT_WRITE_ROLES, SHIPMENT_CUTOFF_WARN_DAYS,
   TruckCapRole,
+  // NEPO-62 — lot costs
+  TripFlowType, FeeGroup, LotFeeStatus, TruckTransferCostKey, ShipmentDocType,
+  FEE_GROUP_LABELS, LOT_FEE_STATUS_LABELS,
+  LOT_DEBIT_NOTE_ORDER_XUAT, LOT_DEBIT_NOTE_ORDER_NHAP, LOT_DEBIT_NOTE_ORDER,
+  TRUCK_TRANSFER_COST_ROWS, SHIPMENT_DOC_TYPE_LABELS,
   CARRIER_TYPE_LABELS, SETTLEMENT_METHOD_LABELS, APPROVAL_STATUS_LABELS,
   TRUCK_CAP_ROLE_LABELS,
   FINANCIAL_ROLES, isFinancialRole,
@@ -51,6 +58,11 @@ export type {
   BillingLineSourceType, BillingLineType, BillingDraftLine, BillingDocumentDraft,
   BillingLineRenderData, DebitNoteColumnVariable, DebitNoteTemplateColumn,
   DebitNoteTemplate, DebitNoteTemplateSnapshot,
+  Shipment, ShipmentDocument, ShipmentCost, ShipmentProfitSummary,
+  OpsToday, ShipmentOpsAlert, ShipmentProfitReport, ShipmentProfitReportRow,
+  ShipmentDetail, ShipmentTripRow, ShipmentBillingDocSummary,
+  ShipmentInfo, LotCostRow, LotCostGroup, TruckTransferCostRow, LotCostRegister,
+  CustomerMonthlySoa, CustomerMonthlySoaRow, CustomerMonthlySoaCell,
   LiveFleetVehicle, LiveFleetResponse, LiveFleetStatus, LiveFleetDetails, LiveFleetLeg,
   GpsStop,
   FuelReconcileStatus, FuelReconcileResult, FuelReconcileResultRow, FuelReconcileSummary, FuelReconcileResponse,
@@ -61,6 +73,7 @@ export type {
 export { parseThreshold } from './types';
 
 export { canonicalFreightDescription } from './calculations/billingDocument';
+export { buildShipmentCode, shipmentCodePrefix, shipmentCodeSeqRe } from './calculations/shipmentCode';
 
 // ─── Navigation catalog (single source for SPA paths/titles + agent search) ──
 export { PAGE_CATALOG } from './navigation/pageCatalog';
@@ -95,6 +108,9 @@ export {
   tireSchema, installTireSchema, disposeTireSchema, transferTireSchema, tirePositionSchema,
   tyreBoardSlotUpdateSchema, tyreBoardChangeSchema,
   generateBillingDocumentSchema, saveBillingDocumentSchema, billingDocumentLineSchema,
+  customerSoaQuerySchema,
+  createShipmentSchema, updateShipmentSchema, shipmentCostSchema, updateShipmentCostSchema,
+  registerShipmentDocumentSchema, linkTripShipmentSchema,
   debitNoteTemplateSchema, debitNoteColumnSchema, debitNoteColumnVariableSchema, defaultDebitNoteColumns, defaultPaymentStatementColumns,
   bachKhoaVehicleSchema, bachKhoaResponseSchema, parseBachKhoaResponse,
   agentDirectiveSchema, agentWidgetSchema, widgetFormatSchema, agentActionChipSchema,
@@ -149,6 +165,8 @@ export type {
   FuelReconcileRowInput, FuelReconcileRequest,
   LedgerQueryInput, UpdateTripPlanInput, UpdateLedgerMoneyInput, CreateLedgerDraftInput,
   PaymentMethod,
+  CreateShipmentInput, UpdateShipmentInput, ShipmentCostInput, ShipmentCostUpdateInput,
+  RegisterShipmentDocumentInput, LinkTripShipmentInput,
 } from './schemas';
 
 export { round2dp, roundInt } from './calculations/round';

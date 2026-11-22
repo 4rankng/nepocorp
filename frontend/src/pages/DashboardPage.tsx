@@ -17,6 +17,7 @@ import './DashboardPage.css';
 import { type CostBreakdownItem } from '../features/dashboard/components/dashboard-presenters';
 import { greeting, runningSum } from '../features/dashboard/components/dashboardFormatters';
 import { DashboardKpiRow } from '../features/dashboard/components/DashboardKpiRow';
+import { TodayOpsStrip } from '../features/dashboard/components/TodayOpsStrip';
 import { AttentionBoard } from '../features/dashboard/components/AttentionBoard';
 import { mergeAttentionRows } from '../features/dashboard/components/attentionRows';
 import {
@@ -422,6 +423,9 @@ export default function DashboardPage() {
         over90Count={over90Count}
         onNavigate={navigate}
       />
+
+      {/* ── Hôm nay (NEPO-63): chuyến hôm nay · lô sắp cắt máng · lô thiếu chứng từ · công nợ quá hạn ── */}
+      <TodayOpsStrip ops={stats?.opsToday} loading={loading} />
 
       {/* ── Operations grid ──
            NEPO-15 layout (consult verdict 24/10, Untitled UI dashboard

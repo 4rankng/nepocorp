@@ -134,6 +134,7 @@ export async function invalidateReportCaches(): Promise<void> {
     await Promise.all([
       cacheInvalidatePattern('reports:dashboard:*'), // per-period keys (kanban 101026003200)
       cacheInvalidatePattern('reports:pnl:*'),
+      cacheInvalidatePattern('reports:shipment-profit:*'),  // NEPO-63 — lô profit follows trip/expense/billing writes
       cacheInvalidatePattern('reports:fuel-variance:*'),   // previously never invalidated — stale-data bug
       cacheInvalidatePattern('reports:entity-results:*'),  // aging primitive cache (Phase A2)
     ]);

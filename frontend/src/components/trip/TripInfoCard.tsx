@@ -1,8 +1,11 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { CardSection } from './CardSection';
 import { InputWithPrefix } from './InputWithPrefix';
 import type { SelectOption, RouteOption, TrailerTypeOption } from '../../hooks/useTripOptions';
 import { useTripFormContext } from '../../hooks/useTripFormContext';
+import { shipmentClient } from '../../api/shipmentClient';
+import { qk } from '../../api/keys';
 import { formatCurrency } from '../../lib/format';
 import { SearchableSelect } from '../../design-system';
 import { selectStyle } from '../../utils/formStyles';
@@ -46,6 +49,19 @@ function Field({ label, required, children, className, controlId }: {
 
 export function TripInfoCard(props: TripInfoCardProps) {
   const form = useTripFormContext();
+  const selectedCustomerId = Number(form.customerId) || 0;
+  // NEPO-61 — chỉ lô của đúng khách hàng của chuyến (backend cũng từ chối lô
+  // khác customer khi PATCH). useQuery key theo customerId nên đổi khách hàng
+  // tự refetch; chưa chọn khách thì chưa gọi (enabled gate), select khóa.
+  const shipmentsQuery = useQuery({
+    queryKey: qk.shipments.list(selectedCustomerId ? { customerId: selectedCustomerId, pageSize: 100 } : {}),
+    queryFn: () => shipmentClient.list({ customerId: selectedCustomerId, pageSize: 100 }),
+    enabled: selectedCustomerId > 0,
+  });
+  const shipmentOptions = (shipmentsQuery.data?.items ?? []).map((l) => ({
+    value: String(l.id),
+    label: l.bookingNo ? `${l.shipmentCode} — ${l.bookingNo}` : l.shipmentCode,
+  }));
   const filledContainerTypeIds = form.containerRows
     .map(row => row.containerTypeId)
     .filter(Boolean)
@@ -103,7 +119,32 @@ export function TripInfoCard(props: TripInfoCardProps) {
       <div className="trip-info-card__grid">
         <div className="trip-info-card__group">Khách hàng & tuyến</div>
         <Field label="Khách hàng" required controlId="customerId">
-          {sel(form.customerId, form.setCustomerId, props.customers, 'Chọn khách hàng', 'customerId', true)}
+          {sel(form.customerId, (v) => {
+            form.setCustomerId(v);
+            // Đổi khách hàng -> lô cũ thuộc customer khác, tự gỡ (backend
+            // cũng từ chối). Chỉ reset khi đang có chọn để không đụng state thừa.
+            if (form.shipmentId) form.setShipmentId('');
+          }, props.customers, 'Chọn khách hàng', 'customerId', true)}
+        </Field>
+        <Field label="Lô hàng" controlId="shipmentId">
+          <select
+            id="shipmentId"
+            name="shipmentId"
+            className="input"
+            style={selectStyle}
+            value={form.shipmentId}
+            onChange={(e) => form.setShipmentId(e.target.value)}
+            disabled={props.loading || !selectedCustomerId}
+          >
+            <option value="">
+              {selectedCustomerId
+                ? (shipmentsQuery.isLoading ? 'Đang tải lô hàng…' : '-- Không gắn lô --')
+                : 'Chọn khách hàng để xem lô'}
+            </option>
+            {shipmentOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Tuyến đường" required controlId="routeId">
           <SearchableSelect

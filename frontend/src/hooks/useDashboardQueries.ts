@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { reportClient } from '../api/reportClient';
 import { qk } from '../api/keys';
 import type { ExtendedDashboardStats } from '../api/reportClient';
-import type { PnlReport, RenewalReminder } from '@tingting/shared';
+import type { PnlReport, RenewalReminder, ShipmentProfitReport } from '@tingting/shared';
 
 export type { PnlReport, PnlTruck } from '@tingting/shared';
 export type { ExtendedDashboardStats };
@@ -24,6 +24,15 @@ export function usePnlReport(month: number, year: number) {
     queryKey: qk.dashboard.pnl(month, year),
     queryFn: () => reportClient.getPnl(month, year),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Báo cáo Lợi nhuận theo Lô (NEPO-63) — cùng kỳ lương với P&L. */
+export function useShipmentProfitReport(month: number, year: number) {
+  return useQuery<ShipmentProfitReport>({
+    queryKey: qk.financial.shipmentProfit(month, year),
+    queryFn: () => reportClient.getShipmentProfit(month, year),
+    staleTime: 2 * 60 * 1000,
   });
 }
 

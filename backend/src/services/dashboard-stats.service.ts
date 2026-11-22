@@ -6,8 +6,8 @@
 
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, isNull, sql, gte, desc } from 'drizzle-orm';
-import { TripStatus, parseThreshold, type DashboardDecisionItem } from '@tingting/shared';
+import { eq, and, isNull, isNotNull, ne, sql, gte, desc } from 'drizzle-orm';
+import { TripStatus, parseThreshold, SHIPMENT_CUTOFF_WARN_DAYS, type DashboardDecisionItem, type OpsToday, type ShipmentOpsAlert } from '@tingting/shared';
 import { getReceivablesSummary, getTopOverdueCustomer, CURRENT_AGING_RANGE } from './aging.service';
 import { cacheGet } from '../lib/redis';
 import { salaryPeriodDateRange, localDateStr, resolveCapTableSnapshot } from './reporting-shared';
@@ -152,6 +152,98 @@ export async function getDashboardStats(month?: number, year?: number) {
       fuelWarningTrips: countFuelWarningTrips(fuelCheckRows, fuelConfig),
     });
 
+    // ─── NEPO-63 — operational strip (Hôm nay) ────────────────────────────────
+    // 4 khối: Chuyến xe hôm nay · Lô sắp cắt máng · Lô thiếu chứng từ · Công nợ quá hạn.
+    const todayStr = localDateStr();
+    const cutoffLimitStr = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + SHIPMENT_CUTOFF_WARN_DAYS);
+      return localDateStr(d);
+    })();
+
+    const [tripsTodayRows, cutoffRows, missingDocRows, tripCountRows, docCountRows] = await Promise.all([
+      // Chuyến xe hôm nay — mọi chuyến (kể cả xe ngoài) xuất phát hôm nay, chưa hủy.
+      db.select({ count: sql<number>`count(*)` }).from(s.trips).where(and(
+        isNull(s.trips.deletedAt),
+        eq(s.trips.departureDate, todayStr),
+        ne(s.trips.status, 'CANCELED'),
+      )),
+      // Lô sắp cắt máng: cutoffDate trong vòng cảnh báo (hoặc đã quá hạn — âm ngày).
+      db.select({
+        id: s.shipments.id,
+        shipmentCode: s.shipments.shipmentCode,
+        cutoffDate: s.shipments.cutoffDate,
+        customerName: s.customers.name,
+      }).from(s.shipments)
+        .leftJoin(s.customers, eq(s.shipments.customerId, s.customers.id))
+        .where(and(
+          isNull(s.shipments.deletedAt),
+          isNotNull(s.shipments.cutoffDate),
+          sql`${s.shipments.cutoffDate} <= ${cutoffLimitStr}`,
+        ))
+        .orderBy(s.shipments.cutoffDate)
+        .limit(8),
+      // Lô thiếu chứng từ: chưa upload CHỨNG TỪ nào (shipment_documents rỗng).
+      db.select({
+        id: s.shipments.id,
+        shipmentCode: s.shipments.shipmentCode,
+        cutoffDate: s.shipments.cutoffDate,
+        customerName: s.customers.name,
+      }).from(s.shipments)
+        .leftJoin(s.customers, eq(s.shipments.customerId, s.customers.id))
+        .where(and(
+          isNull(s.shipments.deletedAt),
+          sql`NOT EXISTS (SELECT 1 FROM ${s.shipmentDocuments} WHERE ${s.shipmentDocuments.shipmentId} = ${s.shipments.id})`,
+        ))
+        .orderBy(desc(s.shipments.createdAt))
+        .limit(8),
+      // Số chuyến theo lô (denormalize cho alert rows).
+      db.select({
+        shipmentId: s.trips.shipmentId,
+        count: sql<number>`count(*)`,
+      }).from(s.trips).where(and(
+        isNull(s.trips.deletedAt),
+        ne(s.trips.status, 'CANCELED'),
+        isNotNull(s.trips.shipmentId),
+      )).groupBy(s.trips.shipmentId),
+      // Số chứng từ theo lô.
+      db.select({
+        shipmentId: s.shipmentDocuments.shipmentId,
+        count: sql<number>`count(*)`,
+      }).from(s.shipmentDocuments).groupBy(s.shipmentDocuments.shipmentId),
+    ]);
+
+    const tripCountByShipment = new Map<number, number>(
+      tripCountRows.map((r) => [r.shipmentId as number, Number(r.count)]),
+    );
+    const docCountByShipment = new Map<number, number>(
+      docCountRows.map((r) => [r.shipmentId as number, Number(r.count)]),
+    );
+    const toAlert = (row: { id: number; shipmentCode: string; cutoffDate: string | null; customerName: string | null }): ShipmentOpsAlert => ({
+      id: row.id,
+      shipmentCode: row.shipmentCode,
+      customerName: row.customerName ?? null,
+      cutoffDate: row.cutoffDate ?? null,
+      daysUntilCutoff: row.cutoffDate
+        ? Math.round((Date.parse(row.cutoffDate) - Date.parse(todayStr)) / 86400000)
+        : null,
+      linkedTripCount: tripCountByShipment.get(row.id) ?? 0,
+      documentCount: docCountByShipment.get(row.id) ?? 0,
+    });
+
+    const opsToday: OpsToday = {
+      tripsToday: Number(tripsTodayRows[0]?.count ?? 0),
+      shipmentsNearingCutoff: cutoffRows.map(toAlert),
+      shipmentsMissingDocs: missingDocRows.map(toAlert),
+      // Công nợ quá hạn — tái dùng receivablesSummary (bucket 31-60/61-90/90+).
+      overdueDebt: {
+        amount: receivablesSummary.buckets
+          .filter((bucket) => bucket.range !== CURRENT_AGING_RANGE)
+          .reduce((sum, bucket) => sum + Number(bucket.amount || 0), 0),
+        customers: receivablesSummary.overdueCustomers,
+      },
+    };
+
     return {
       revenue,
       costs,
@@ -183,6 +275,7 @@ export async function getDashboardStats(month?: number, year?: number) {
       topOverdueCustomer,
       topShareholder,
       decisionItems,
+      opsToday,
     };
   });
 }

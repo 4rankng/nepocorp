@@ -42,7 +42,15 @@ router.get('/finance/billing-documents', requireRoles(...ROLES), asyncHandler(as
   }
   const rawType = req.query.type;
   const type = rawType === 'DEBIT_NOTE' || rawType === 'PAYMENT_STATEMENT' ? rawType : undefined;
-  res.json(await billingService.listDocuments(entityType, entityId, type));
+  // NEPO-61 — optional lô scope (?shipmentId=) for the lô detail page.
+  let shipmentId: number | undefined;
+  if (req.query.shipmentId !== undefined && req.query.shipmentId !== '') {
+    shipmentId = Number(req.query.shipmentId);
+    if (!Number.isInteger(shipmentId) || shipmentId <= 0) {
+      return res.status(400).json({ error: 'shipmentId không hợp lệ' });
+    }
+  }
+  res.json(await billingService.listDocuments(entityType, entityId, type, shipmentId));
 }));
 
 // GET /api/finance/billing-documents/:id — one document with lines
@@ -50,16 +58,37 @@ router.get('/finance/billing-documents/:id', requireRoles(...ROLES), asyncHandle
   res.json(await billingService.getDocument(Number(req.params.id)));
 }));
 
-// PUT /api/finance/billing-documents/:id — edit in place (always-editable)
-router.put('/finance/billing-documents/:id', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
+// POST /api/finance/billing-documents/:id/issue — NEPO-62: stamp phát hành on
+// a per-lot Giấy báo nợ. An issued note becomes immutable; later fees land on
+// a -BS01 supplement via POST /:id/supplement.
+router.post('/finance/billing-documents/:id/issue', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
+  const doc = await billingService.issueDocument(Number(req.params.id));
+  res.locals.auditEntityId = doc.id;
+  res.locals.auditEntityKey = doc.documentNumber ?? undefined;
+  res.json(doc);
+}));
+
+// POST /api/finance/billing-documents/:id/supplement — NEPO-62: sinh Báo nợ
+// bổ sung -BS01 cho lô từ các dòng phí chưa lên báo nợ. Báo nợ gốc không đổi.
+router.post('/finance/billing-documents/:id/supplement', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
+  const doc = await billingService.createLotSupplement(Number(req.params.id), req.user?.userId ?? null);
+  res.locals.auditEntityId = doc.id;
+  res.locals.auditEntityKey = doc.documentNumber ?? undefined;
+  res.status(201).json(doc);
+}));
+
+// PUT /api/finance/billing-documents/:id — edit in place. NEPO-61: a saved
+// (issued) document may only be corrected by ADMIN — the accountant creates,
+// admin corrects; every edit is audit-logged by the global middleware.
+router.put('/finance/billing-documents/:id', requireRoles(Role.ADMIN), asyncHandler(async (req: Request, res: Response) => {
   const data = saveBillingDocumentSchema.parse(req.body);
   const doc = await billingService.updateDocument(Number(req.params.id), data);
   await invalidateReportCaches();
   res.json(doc);
 }));
 
-// DELETE /api/finance/billing-documents/:id — soft delete
-router.delete('/finance/billing-documents/:id', requireRoles(...ROLES), asyncHandler(async (req: Request, res: Response) => {
+// DELETE /api/finance/billing-documents/:id — soft delete (NEPO-61: ADMIN only).
+router.delete('/finance/billing-documents/:id', requireRoles(Role.ADMIN), asyncHandler(async (req: Request, res: Response) => {
   await billingService.deleteDocument(Number(req.params.id));
   await invalidateReportCaches();
   res.json({ ok: true });

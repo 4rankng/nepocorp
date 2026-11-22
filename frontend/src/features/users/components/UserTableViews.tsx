@@ -1,4 +1,4 @@
-import { Users, ShieldCheck, UserCog, KeyRound, Trash2, Loader2, Mail, Phone, UserX, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Users, ShieldCheck, UserCog, KeyRound, Trash2, Loader2, Mail, Phone, UserX, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Truck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatDate } from '../../../lib/format';
 import { Role, ROLE_PILL } from '../utils';
@@ -18,6 +18,7 @@ const AVATAR_CLS: Record<Role, string> = {
   [Role.ACCOUNTANT]: 'user-avatar--accountant',
   [Role.DRIVER]: 'user-avatar--driver',
   [Role.FORWARDER]: 'user-avatar--forwarder',
+  [Role.DISPATCHER]: 'user-avatar--manager',
 };
 
 const AVATAR_ICON: Record<Role, typeof Users> = {
@@ -26,6 +27,7 @@ const AVATAR_ICON: Record<Role, typeof Users> = {
   [Role.ACCOUNTANT]: KeyRound,
   [Role.DRIVER]: Users,
   [Role.FORWARDER]: UserCog,
+  [Role.DISPATCHER]: Truck,
 };
 function RoleAvatar({ role }: { role: Role }) {
   const Icon = AVATAR_ICON[role] || Users;

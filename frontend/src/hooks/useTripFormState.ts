@@ -122,6 +122,9 @@ export interface UseTripFormStateReturn {
   setVatRate: (v: number) => void;
   externalCarrierId: number | null;
   setExternalCarrierId: (v: number | null) => void;
+  /** Lô biển gắn với chuyến ('' = chưa gắn) — NEPO-63. */
+  shipmentId: string;
+  setShipmentId: (v: string) => void;
   externalFreightCost: string;
   setExternalFreightCost: (v: string) => void;
   externalPlateNumber: string;
@@ -240,6 +243,9 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
   );
   const [externalCarrierId, setExternalCarrierId] = useState<number | null>(
     isEditMode && existingTrip ? existingTrip.externalCarrierId : null
+  );
+  const [shipmentId, setShipmentId] = useState<string>(
+    isEditMode && existingTrip?.shipmentId ? String(existingTrip.shipmentId) : ''
   );
   const [externalFreightCost, setExternalFreightCost] = useState(
     isEditMode && existingTrip?.externalFreightCost ? String(existingTrip.externalFreightCost) : ""
@@ -373,6 +379,7 @@ export function useTripFormState(params: TripFormStateParams): UseTripFormStateR
     carrierType, setCarrierType,
     vatRate, setVatRate,
     externalCarrierId, setExternalCarrierId,
+    shipmentId, setShipmentId,
     externalFreightCost, setExternalFreightCost,
     externalPlateNumber, setExternalPlateNumber,
     externalDriverName, setExternalDriverName,

@@ -44,6 +44,8 @@ export enum Role {
   ACCOUNTANT = 'ACCOUNTANT',
   DRIVER = 'DRIVER',
   FORWARDER = 'FORWARDER',
+  /** Điều xe — dispatch staff who plan and edit trips (NEPO-63 phân quyền). */
+  DISPATCHER = 'DISPATCHER',
 }
 
 /** Roles that can approve expense approvals and access financial reports. */
@@ -70,7 +72,8 @@ export enum LedgerColumnGroup {
 
 /** Roles allowed to write each ledger column group. Empty = nobody writes. */
 export const LEDGER_GROUP_ROLES: Readonly<Record<LedgerColumnGroup, readonly Role[]>> = {
-  [LedgerColumnGroup.PLAN]: [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT],
+  // NEPO-63: DISPATCHER (điều xe) owns the planning/dispatch columns.
+  [LedgerColumnGroup.PLAN]: [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT, Role.DISPATCHER],
   [LedgerColumnGroup.MONEY]: [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT],
   [LedgerColumnGroup.RESULT]: [],
 };
@@ -114,6 +117,91 @@ export enum DebitNoteMode {
   MONTHLY = 'MONTHLY',
   PER_BATCH = 'PER_BATCH',
 }
+
+// ─── NEPO-62 — Chi phí theo Lô hàng ──────────────────────────────────────────
+// Six service groups of the lot cost register, plus the per-flow-type row
+// order used when printing a per-lot debit note. MCT26026 (Hàng Xuất) and
+// TMT26004 (Hàng Nhập) are NePO's paper templates; each order below mirrors
+// that template's fee sequence.
+export enum TripFlowType {
+  XUAT = 'XUAT',
+  NHAP = 'NHAP',
+}
+
+export enum FeeGroup {
+  OCEAN_FREIGHT = 'OCEAN_FREIGHT',
+  LINE_ADVANCE = 'LINE_ADVANCE',
+  CUSTOMS_SERVICE = 'CUSTOMS_SERVICE',
+  DOCUMENT_SERVICE = 'DOCUMENT_SERVICE',
+  INLAND_FREIGHT = 'INLAND_FREIGHT',
+  LIFTING = 'LIFTING',
+  OTHER = 'OTHER',
+}
+
+/** Trạng thái của một dòng phí: chưa lên báo nợ / đã lên báo nợ / chờ hóa đơn. */
+export enum LotFeeStatus {
+  PENDING = 'PENDING',
+  ON_DEBIT_NOTE = 'ON_DEBIT_NOTE',
+  AWAITING_INVOICE = 'AWAITING_INVOICE',
+}
+
+export enum TruckTransferCostKey {
+  FUEL = 'FUEL',
+  DRIVER_SALARY = 'DRIVER_SALARY',
+  TOLLS = 'TOLLS',
+  EXTERNAL_FREIGHT = 'EXTERNAL_FREIGHT',
+}
+
+export const FEE_GROUP_LABELS: Record<FeeGroup, string> = {
+  [FeeGroup.OCEAN_FREIGHT]: 'Cước biển',
+  [FeeGroup.LINE_ADVANCE]: 'Phí nộp hộ hãng tàu',
+  [FeeGroup.CUSTOMS_SERVICE]: 'Phí DV Hải quan',
+  [FeeGroup.DOCUMENT_SERVICE]: 'Phí DV Chứng từ',
+  [FeeGroup.INLAND_FREIGHT]: 'Cước bộ',
+  [FeeGroup.LIFTING]: 'Phí nâng hạ',
+  [FeeGroup.OTHER]: 'Phí khác',
+};
+
+export const LOT_FEE_STATUS_LABELS: Record<LotFeeStatus, string> = {
+  [LotFeeStatus.PENDING]: 'Chưa lên Báo nợ',
+  [LotFeeStatus.ON_DEBIT_NOTE]: 'Đã lên Báo nợ',
+  [LotFeeStatus.AWAITING_INVOICE]: 'Chờ hóa đơn',
+};
+
+/** Thứ tự dòng phí trên Báo nợ theo lô — Hàng Xuất (mẫu MCT26026). */
+export const LOT_DEBIT_NOTE_ORDER_XUAT: FeeGroup[] = [
+  FeeGroup.OCEAN_FREIGHT,
+  FeeGroup.LINE_ADVANCE,
+  FeeGroup.CUSTOMS_SERVICE,
+  FeeGroup.DOCUMENT_SERVICE,
+  FeeGroup.INLAND_FREIGHT,
+  FeeGroup.LIFTING,
+  FeeGroup.OTHER,
+];
+
+/** Thứ tự dòng phí trên Báo nợ theo lô — Hàng Nhập (mẫu TMT26004). */
+export const LOT_DEBIT_NOTE_ORDER_NHAP: FeeGroup[] = [
+  FeeGroup.LINE_ADVANCE,
+  FeeGroup.CUSTOMS_SERVICE,
+  FeeGroup.DOCUMENT_SERVICE,
+  FeeGroup.OCEAN_FREIGHT,
+  FeeGroup.INLAND_FREIGHT,
+  FeeGroup.LIFTING,
+  FeeGroup.OTHER,
+];
+
+export const LOT_DEBIT_NOTE_ORDER: Record<TripFlowType, FeeGroup[]> = {
+  [TripFlowType.XUAT]: LOT_DEBIT_NOTE_ORDER_XUAT,
+  [TripFlowType.NHAP]: LOT_DEBIT_NOTE_ORDER_NHAP,
+};
+
+/** Chi phí chuyển xe — chỉ được nhập đúng 4 khoản vận hành này. */
+export const TRUCK_TRANSFER_COST_ROWS: Array<{ key: TruckTransferCostKey; label: string }> = [
+  { key: TruckTransferCostKey.FUEL, label: 'Dầu' },
+  { key: TruckTransferCostKey.DRIVER_SALARY, label: 'Lương' },
+  { key: TruckTransferCostKey.TOLLS, label: 'Vé cầu đường' },
+  { key: TruckTransferCostKey.EXTERNAL_FREIGHT, label: 'Cước thuê xe ngoài' },
+];
 
 /**
  * B2 (feedback202606 GAP 7) — Role of a `truck_cap_table` partner.
@@ -218,6 +306,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   [Role.ACCOUNTANT]: 'Kế toán',
   [Role.DRIVER]: 'Lái xe',
   [Role.FORWARDER]: 'Giao nhận',
+  [Role.DISPATCHER]: 'Điều xe',
 };
 
 export const FUEL_MODE_LABELS: Record<FuelMode, string> = {
@@ -249,6 +338,8 @@ export const FORWARDER_EXPENSE_TYPE_DEFAULTS: Record<string, { name: string; def
   INFRASTRUCTURE: { name: 'Phí kết cấu hạ tầng',        defaultMarkup: false, billingLabel: 'Phí hạ tầng' },
   INSPECTION:     { name: 'Phí kiểm hóa tại cảng',      defaultMarkup: false, billingLabel: 'Phí kiểm hóa' },
   INSPECTION_SVC: { name: 'Phí phục vụ kiểm hóa',       defaultMarkup: true,  billingLabel: 'Phí phục vụ kiểm hóa' },
+  // NEPO-63 — phí nộp hộ chi chỉ dùng để đối soát, không tính lại vào lợi nhuận lô.
+  PASSPORT_FEE:   { name: 'Phí nộp hộ chi',             defaultMarkup: true,  billingLabel: 'Phí nộp hộ chi' },
   OTHER:          { name: 'Phí chi hộ khác',             defaultMarkup: false, billingLabel: 'Chi phí khác' },
 };
 
@@ -415,5 +506,36 @@ export const PUSH_RULES: Partial<Record<NotificationType, PushAudience>> = {
   [NotificationType.TRIP_UNLOCKED]: 'financial',
   [NotificationType.ADVANCE_SETTLEMENT_APPROVED]: 'all',
 };
+
+// ─── Shipment / Lô hàng (NEPO-61) ────────────────────────────────────────────
+/** Document types uploadable against a lô (chứng từ: B/L, C/O, kiểm dịch, hun trùng…). */
+export enum ShipmentDocType {
+  BOOKING = 'BOOKING',
+  BL = 'BL',
+  CO = 'CO',
+  QUARANTINE = 'QUARANTINE',
+  FUMIGATION = 'FUMIGATION',
+  CUSTOMS_DECLARATION = 'CUSTOMS_DECLARATION',
+  OTHER = 'OTHER',
+}
+
+export const SHIPMENT_DOC_TYPE_LABELS: Record<ShipmentDocType, string> = {
+  [ShipmentDocType.BOOKING]: 'Booking',
+  [ShipmentDocType.BL]: 'B/L',
+  [ShipmentDocType.CO]: 'C/O',
+  [ShipmentDocType.QUARANTINE]: 'Kiểm dịch',
+  [ShipmentDocType.FUMIGATION]: 'Hun trùng',
+  [ShipmentDocType.CUSTOMS_DECLARATION]: 'Tờ khai hải quan',
+  [ShipmentDocType.OTHER]: 'Khác',
+};
+
+/** NEPO-63 — window (days) for the "Lô sắp cắt máng" dashboard alert: lô whose
+ *  cutoffDate falls within the next N days (hoặc đã qua mà chưa đóng). */
+export const SHIPMENT_CUTOFF_WARN_DAYS = 3;
+
+/** Vai được tạo/sửa lô + chứng từ + chi phí lô (NEPO-61/63 phân quyền).
+ *  "Ops biển" = FORWARDER (giao nhận); office supervisors giữ quyền quản trị.
+ *  Xóa lô không có endpoint. Đọc rộng hơn qua policy.csv (shipments read). */
+export const SHIPMENT_WRITE_ROLES: readonly Role[] = [Role.ADMIN, Role.MANAGER, Role.FORWARDER] as const;
 
 export * from './api-paths';

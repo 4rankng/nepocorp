@@ -49,6 +49,7 @@ export const ROLE_PILL: Record<Role, { cls: string; label: string }> = {
   [Role.ACCOUNTANT]: { cls: 'pill pill--neutral', label: 'Kế toán' },
   [Role.DRIVER]:     { cls: 'pill pill--success', label: 'Lái xe' },
   [Role.FORWARDER]:  { cls: 'pill pill--info',    label: 'Giao nhận' },
+  [Role.DISPATCHER]: { cls: 'pill pill--neutral', label: 'Điều xe' },
 };
 
 export type FilterKey = 'all' | Role;

@@ -51,6 +51,9 @@ export interface UseTripFormReturn {
   setVatRate: (v: number) => void;
   externalCarrierId: number | null;
   setExternalCarrierId: (v: number | null) => void;
+  /** Lô biển gắn chuyến ('' = chưa gắn) — NEPO-63. */
+  shipmentId: string;
+  setShipmentId: (v: string) => void;
   externalFreightCost: string;
   setExternalFreightCost: (v: string) => void;
   externalPlateNumber: string;
@@ -183,6 +186,7 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     carrierType: s.carrierType, setCarrierType: s.setCarrierType,
     vatRate: s.vatRate, setVatRate: s.setVatRate,
     externalCarrierId: s.externalCarrierId, setExternalCarrierId: s.setExternalCarrierId,
+    shipmentId: s.shipmentId, setShipmentId: s.setShipmentId,
     externalFreightCost: s.externalFreightCost, setExternalFreightCost: s.setExternalFreightCost,
     externalPlateNumber: s.externalPlateNumber, setExternalPlateNumber: s.setExternalPlateNumber,
     externalDriverName: s.externalDriverName, setExternalDriverName: s.setExternalDriverName,

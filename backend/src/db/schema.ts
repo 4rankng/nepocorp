@@ -23,7 +23,7 @@ export const vectorColumn1536 = vector1536Builder;
 export const tripStatusEnum = pgEnum('trip_status', ['CREATED', 'IN_TRANSIT', 'COMPLETED', 'LOCKED', 'CANCELED']);
 export const fuelModeEnum = pgEnum('fuel_mode', ['AUTO', 'FLAT_RATE']);
 export const loadingTypeEnum = pgEnum('loading_type', ['HANG', 'VO']);
-export const roleEnum = pgEnum('role', ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER', 'FORWARDER']);
+export const roleEnum = pgEnum('role', ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'DRIVER', 'FORWARDER', 'DISPATCHER']);
 export const txnTypeEnum = pgEnum('txn_type', ['TRIP_REVENUE', 'PAYMENT_RECEIVED', 'PENALTY', 'MANAGEMENT_FEE', 'ADJUSTMENT', 'DRIVER_SALARY', 'VENDOR_EXPENSE', 'VENDOR_PAYMENT', 'FORWARDER_ADVANCE', 'FORWARDER_SETTLEMENT', 'EXTERNAL_CARRIER_COST', 'FUEL_EXPENSE', 'UNLOCK_REVERSAL', 'COMMISSION', 'DRIVER_PAYOUT', 'SERVICE_FEE']);
 export const trailerTypeEnum = pgEnum('trailer_type', ['20FT', '40FT']);
 export const truckStatusEnum = pgEnum('truck_status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE']);
@@ -363,6 +363,8 @@ export const trips = pgTable('trips', {
   createdBy: integer('created_by').references(() => users.id),
   customerId: integer('customer_id').references(() => customers.id).notNull(),
   customerReference: text('customer_reference'),
+  // NEPO-61 — lô biển this trip belongs to (null = road/water trip, no lô).
+  shipmentId: integer('shipment_id').references(() => shipments.id),
   truckId: integer('truck_id').references(() => trucks.id),
   driverId: integer('driver_id').references(() => drivers.id),
   // Nullable for /ledger quick-add drafts (customer + date only). Computed
@@ -434,6 +436,7 @@ export const trips = pgTable('trips', {
   index('trips_status_idx').on(table.status),
   index('trips_departure_date_idx').on(table.departureDate),
   index('trips_customer_departure_idx').on(table.customerId, table.departureDate),
+  index('trips_shipment_id_idx').on(table.shipmentId),
 ]);
 
 export const tripFuelAllocations = pgTable('trip_fuel_allocations', {
@@ -571,6 +574,16 @@ export const billingDocuments = pgTable('billing_documents', {
   entityType: varchar('entity_type', { length: 20 }).notNull(),  // CUSTOMER | CARRIER | VENDOR
   entityId: integer('entity_id').notNull(),
   entityName: varchar('entity_name', { length: 255 }),
+  // NEPO-61 — lô the document was issued for (null = monthly/legacy doc).
+  shipmentId: integer('shipment_id').references(() => shipments.id),
+  // NEPO-62 — per-lot debit note chain. documentNumber identifies the main
+  // note (e.g. DN2026110007); supplements share it with a '-BS01' suffix and
+  // point at the main doc via parentDocumentId. issuedAt freezes the note:
+  // issued notes are immutable — later fees land on a -BS01 supplement.
+  parentDocumentId: integer('parent_document_id'),
+  documentNumber: varchar('document_number', { length: 60 }),
+  issuedAt: timestamp('issued_at'),
+  shipmentInfo: jsonb('shipment_info'),
   rangeFrom: date('range_from').notNull(),
   rangeTo: date('range_to').notNull(),
   note: text('note'),
@@ -593,13 +606,18 @@ export const billingDocuments = pgTable('billing_documents', {
   uniqueIndex('billing_documents_active_period_unique')
     .on(table.type, table.entityType, table.entityId, table.rangeFrom, table.rangeTo)
     .where(sql`${table.deletedAt} IS NULL AND ${table.type} = 'DEBIT_NOTE'`),
+  // NEPO-62 — 1 lô hàng = 1 Báo nợ chính. Supplements (-BS01) are exempt via
+  // parent_document_id; the shipment ref itself stays FK-only.
+  uniqueIndex('billing_documents_lot_main_unique')
+    .on(table.shipmentId)
+    .where(sql`${table.deletedAt} IS NULL AND ${table.type} = 'DEBIT_NOTE' AND ${table.parentDocumentId} IS NULL AND ${table.shipmentId} IS NOT NULL`),
 ]);
 
 export const billingDocumentLines = pgTable('billing_document_lines', {
   id: serial('id').primaryKey(),
   documentId: integer('document_id').references(() => billingDocuments.id).notNull(),
-  sourceType: varchar('source_type', { length: 20 }).notNull(),  // TRIP | EXPENSE | ADHOC
-  sourceId: integer('source_id'),                                // tripId | tripExpenseId | null(ADHOC)
+  sourceType: varchar('source_type', { length: 20 }).notNull(),  // TRIP | EXPENSE | SHIPMENT_COST | ADHOC
+  sourceId: integer('source_id'),                                // tripId | tripExpenseId | shipmentCostId | null(ADHOC)
   lineType: varchar('line_type', { length: 20 }).notNull(),      // FREIGHT | SERVICE_FEE | ADHOC
   typeLabel: varchar('type_label', { length: 100 }).notNull().default('Khác'),
   unit: varchar('unit', { length: 50 }).notNull().default('lần'),
@@ -614,7 +632,6 @@ export const billingDocumentLines = pgTable('billing_document_lines', {
 }, (table) => [
   index('billing_document_lines_doc_idx').on(table.documentId),
 ]);
-
 export const penalties = pgTable('penalties', {
   id: serial('id').primaryKey(),
   driverId: integer('driver_id').references(() => drivers.id).notNull(),
@@ -891,6 +908,93 @@ export const tripContainers = pgTable('trip_containers', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('trip_containers_trip_id_idx').on(table.tripId),
+]);
+
+// ─── Shipment / Lô hàng (NEPO-61/63) ──────────────────────────────────────────
+// The sea-freight parent object: booking info, chứng từ (documents), manual
+// costs (chi phí trả NCC: cước biển, hải quan, bốc xếp) and the link target
+// for truck trips. Trip running costs are NOT entered here — linked trips flow
+// their cost into the lô profit automatically (see shipment.service.ts).
+export const shipments = pgTable('shipments', {
+  id: serial('id').primaryKey(),
+  // [Mã KH][Năm][STT] e.g. MCT26026 — generated server-side (shipmentCode.ts).
+  shipmentCode: varchar('shipment_code', { length: 32 }).notNull().unique(),
+  customerId: integer('customer_id').references(() => customers.id).notNull(),
+  // NEPO-62 — Hàng Xuất / Hàng Nhập: decides the per-lot debit-note fee
+  // order (mẫu MCT26026 for XUAT, TMT26004 for NHAP).
+  flowType: varchar('flow_type', { length: 10 }),
+  shippingLine: varchar('shipping_line', { length: 120 }),
+  bookingNo: varchar('booking_no', { length: 100 }),
+  blNo: varchar('bl_no', { length: 100 }),
+  vesselVoyage: varchar('vessel_voyage', { length: 120 }),
+  pol: varchar('pol', { length: 100 }),
+  pod: varchar('pod', { length: 100 }),
+  etd: date('etd'),
+  eta: date('eta'),
+  // Ngày cắt máng — drives the "Lô sắp cắt máng" dashboard alert.
+  cutoffDate: date('cutoff_date'),
+  // Free-form "số cont / seal" list as entered on the booking.
+  containerSeals: text('container_seals'),
+  customsDeclarationNo: varchar('customs_declaration_no', { length: 100 }),
+  customsDeclarationDate: date('customs_declaration_date'),
+  notes: text('notes'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+}, (table) => [
+  index('shipments_customer_idx').on(table.customerId),
+  index('shipments_cutoff_date_idx').on(table.cutoffDate),
+]);
+
+// Chứng từ per lô (B/L, C/O, kiểm dịch, hun trùng, tờ khai…). The file bytes
+// live in the shared upload storage — this row registers one stored file.
+export const shipmentDocuments = pgTable('shipment_documents', {
+  id: serial('id').primaryKey(),
+  shipmentId: integer('shipment_id')
+    .references(() => shipments.id, { onDelete: 'cascade' }).notNull(),
+  docType: varchar('doc_type', { length: 32 }).notNull(),   // ShipmentDocType
+  fileName: varchar('file_name', { length: 255 }).notNull(),
+  storageKey: varchar('storage_key', { length: 255 }).notNull(),
+  mimeType: varchar('mime_type', { length: 120 }),
+  fileSize: integer('file_size'),
+  note: text('note'),
+  uploadedBy: integer('uploaded_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('shipment_documents_shipment_idx').on(table.shipmentId),
+]);
+
+// Manual chi phí per lô (trả hãng tàu / cảng / NCC) — truck running costs flow
+// from the linked trips and must NOT be entered here (double-count). NEPO-62:
+// each row carries its economics — direction (Thu khách vs Trả NCC),
+// serviceMode (Dịch vụ vs Nộp hộ), currency (VND integer source of truth; USD
+// rows keep fxAmount + exchangeRate), vatRate and the "Chờ hóa đơn" flag that
+// prints the row amount-less on the debit note.
+export const shipmentCosts = pgTable('shipment_costs', {
+  id: serial('id').primaryKey(),
+  shipmentId: integer('shipment_id')
+    .references(() => shipments.id, { onDelete: 'cascade' }).notNull(),
+  costType: varchar('cost_type', { length: 32 }).notNull(), // FeeGroup
+  direction: varchar('direction', { length: 10 }).notNull().default('SUPPLIER'),  // CUSTOMER | SUPPLIER
+  serviceMode: varchar('service_mode', { length: 10 }).notNull().default('SERVICE'), // SERVICE | ADVANCE
+  description: varchar('description', { length: 500 }).notNull(),
+  currency: varchar('currency', { length: 3 }).notNull().default('VND'),
+  fxAmount: numeric('fx_amount', { precision: 18, scale: 2 }),
+  exchangeRate: numeric('exchange_rate', { precision: 18, scale: 4 }),
+  amount: numeric('amount', { precision: 15, scale: 0 }).notNull(),
+  vatRate: numeric('vat_rate', { precision: 5, scale: 3 }).notNull().default('0.080'),
+  awaitingInvoice: boolean('awaiting_invoice').notNull().default(false),
+  incurredDate: date('incurred_date').notNull(),
+  note: text('note'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('shipment_costs_shipment_idx').on(table.shipmentId),
+  check('shipment_costs_direction_check', sql`${table.direction} IN ('CUSTOMER', 'SUPPLIER')`),
+  check('shipment_costs_service_mode_check', sql`${table.serviceMode} IN ('SERVICE', 'ADVANCE')`),
+  check('shipment_costs_currency_check', sql`${table.currency} IN ('VND', 'USD')`),
 ]);
 
 // ─── Multi-seal per container (Phase 2) ───────────────────────────────────

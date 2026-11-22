@@ -904,6 +904,13 @@
       "when": 1794916085358,
       "tag": "0131_ledger_txn_table",
       "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1795366446605,
+      "tag": "0132_shipments_lot_costs",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { asyncHandler } from '../../middleware/asyncHandler';
 import { getUser } from '../../middleware/auth';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../../services/reporting.service';
 import { getFuelVarianceReport } from '../../services/pnl.service';
+import { getShipmentProfitReport } from '../../services/shipment-profit.service';
 import { getCustomerAgingList } from '../../services/receivables.service';
 import { getApprovalQueue } from '../../services/approval-queue.service';
 import { getOcrUsageStatus } from '../../services/ocr-usage.service';
@@ -60,6 +61,20 @@ router.get('/reports/pnl', asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Tháng là bắt buộc (month 1-12)' });
   }
   res.json(await getPnlReport(month, year));
+}));
+
+// ─── Shipment profit report (Báo cáo Lợi nhuận theo Lô — NEPO-63) ────────────
+// Lợi nhuận = Tổng Thu − Tổng Chi Trả NCC − Tổng Chi Chạy Xe; phí nộp hộ chi
+// chỉ đối soát, không tính lại. Kỳ = kỳ lương (đồng bộ /reports/pnl) chọn lô.
+// Financial roles only — tiền của lô không thuộc vai điều xe/ops biển read.
+router.get('/reports/shipment-profit', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const now = new Date();
+  const month = req.query.month ? Number(req.query.month) : now.getMonth() + 1;
+  const year = req.query.year ? Number(req.query.year) : now.getFullYear();
+  if (!Number.isInteger(month) || month < 1 || month > 12 || !Number.isInteger(year)) {
+    return res.status(400).json({ error: 'Kỳ báo không hợp lệ' });
+  }
+  res.json(await getShipmentProfitReport(month, year));
 }));
 
 // ─── Receivables summary ──────────────────────────────────────────────────────

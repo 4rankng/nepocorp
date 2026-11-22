@@ -1,7 +1,7 @@
 import { api } from '../lib/api';
 import { toQuery } from '../lib/http/query';
 import { REPORTS } from '@tingting/shared';
-import type { DashboardStats, PnlReport, RenewalReminder, Distribution } from '@tingting/shared';
+import type { DashboardStats, PnlReport, RenewalReminder, Distribution, ShipmentProfitReport } from '@tingting/shared';
 
 export interface ExtendedDashboardStats extends DashboardStats {
   topOverdueCustomer?: { name: string; balance: number; days: number } | null;
@@ -17,6 +17,11 @@ export const reportClient = {
 
   getPnl: async (month: number, year: number) => {
     return api.get<PnlReport>(`${REPORTS.PNL}${toQuery({ month, year })}`);
+  },
+
+  /** Báo cáo Lợi nhuận theo Lô (NEPO-63) — Thu − Chi Trả NCC − Chi Chạy Xe. */
+  getShipmentProfit: async (month: number, year: number) => {
+    return api.get<ShipmentProfitReport>(`${REPORTS.SHIPMENT_PROFIT}${toQuery({ month, year })}`);
   },
 
   getDistributionHistory: async () => {

@@ -34,6 +34,22 @@ export const TRIPS = {
   EXPENSE: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}`,
   EXPENSE_APPROVE: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}/approve`,
   EXPENSE_REJECT: (tripId: number, eid: number) => `/trips/${tripId}/expenses/${eid}/reject`,
+  // NEPO-61 — attach/detach a trip to a lô biển (shipment link).
+  SHIPMENT: (id: number) => `/trips/${id}/shipment`,
+} as const;
+
+// ─── Shipments / Lô hàng (NEPO-61) ──────────────────────────────────────────
+// Sea-shipment master (lô) + its documents (chứng từ) and costs (chi phí).
+// Mounted under casbinAuthz('shipments') + requireRoles(SHIPMENT_WRITE_ROLES).
+export const SHIPMENTS = {
+  LIST: '/shipments',
+  DETAIL: (id: number) => `/shipments/${id}`,
+  DOCUMENTS: (id: number) => `/shipments/${id}/documents`,
+  DOCUMENT: (id: number, docId: number) => `/shipments/${id}/documents/${docId}`,
+  DOCUMENT_FILE: (id: number, docId: number) => `/shipments/${id}/documents/${docId}/file`,
+  COSTS: (id: number) => `/shipments/${id}/costs`,
+  COST: (id: number, costId: number) => `/shipments/${id}/costs/${costId}`,
+  COSTS_REGISTER: (id: number) => `/shipments/${id}/costs/register`,
 } as const;
 
 // ─── Tracking (live GPS vehicle positions) ────────────────────────────────────
@@ -162,12 +178,19 @@ export const FINANCIAL = {
   BILLING_DOCUMENT_GENERATE: '/finance/billing-documents/generate',
   BILLING_DOCUMENT: (id: number) => `/finance/billing-documents/${id}`,
   BILLING_DOCUMENT_EXPORT: (id: number) => `/finance/billing-documents/${id}/export`,
+  // NEPO-62 — per-lot debit note chain: phát hành + bổ sung -BS01.
+  BILLING_DOCUMENT_ISSUE: (id: number) => `/finance/billing-documents/${id}/issue`,
+  BILLING_DOCUMENT_SUPPLEMENT: (id: number) => `/finance/billing-documents/${id}/supplement`,
+  // NEPO-62 — Bảng Tổng hợp Công nợ Tháng (SOA) theo khách hàng.
+  CUSTOMER_SOA: '/finance/ledger/customers/soa',
+  CUSTOMER_SOA_EXPORT: '/finance/ledger/customers/soa/export',
 } as const;
 
 // ─── Reports ────────────────────────────────────────────────────────────────────
 export const REPORTS = {
   DASHBOARD: '/reports/dashboard',
   PNL: '/reports/pnl',
+  SHIPMENT_PROFIT: '/reports/shipment-profit',
   RECEIVABLES_SUMMARY: '/reports/receivables-summary',
   RECEIVABLES_AGING: '/reports/receivables-aging',
   PAYABLES_SUMMARY: '/reports/payables-summary',

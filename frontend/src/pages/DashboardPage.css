@@ -1561,3 +1561,48 @@
     font-size: var(--fs-2xl);
   }
 }
+
+/* ── NEPO-63 — dải vận hành hôm nay ─────────────────────────────────────── */
+.dash-ops {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 18px;
+  width: 100%;
+}
+.dash-ops__card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--border-2);
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.dash-ops__card:hover { border-color: var(--brand); }
+.dash-ops__card:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.dash-ops__label { font-size: var(--fs-xs); color: var(--fg-3); }
+.dash-ops__value { font-size: var(--fs-xl); font-weight: 700; line-height: 1.2; }
+.dash-ops__hint {
+  font-size: var(--fs-xs);
+  color: var(--fg-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.dash-ops__card--warning .dash-ops__value { color: var(--warning); }
+.dash-ops__card--danger .dash-ops__value { color: var(--danger); }
+.dash-ops__card--ok .dash-ops__value { color: var(--success); }
+@media (max-width: 1023px) {
+  .dash-ops { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .dash-ops { grid-template-columns: 1fr; }
+}
