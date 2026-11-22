@@ -12,7 +12,7 @@
  * the note and Chờ hóa đơn rows print amount-less, outside the total.
  */
 import { useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Download, FileText, PencilLine, Plus, Receipt, Send, Trash2 } from 'lucide-react';
 import {
@@ -43,6 +43,7 @@ import {
 } from '../hooks/useShipmentQueries';
 import { shipmentClient } from '../api/shipmentClient';
 import { financialClient } from '../api/financialClient';
+import ShipmentFormModal from '../features/shipments/ShipmentFormModal';
 import { downloadBlob } from '../lib/download';
 import { formatCurrency, formatDate } from '../lib/format';
 import { qk } from '../api/keys';
@@ -98,6 +99,10 @@ export default function ShipmentDetailPage() {
   const { toast: showToast } = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // NEPO-61 — the list row's pencil lands here with ?edit=1: open the form
+  // modal immediately, and strip the flag on close so a reload stays read-only.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [editOpen, setEditOpen] = useState(() => searchParams.get('edit') === '1');
 
   const canWrite = canWriteShipments(user?.role);
 
@@ -567,10 +572,13 @@ export default function ShipmentDetailPage() {
             </div>
             <div style={{ marginTop: 10, display: 'flex', gap: 6, alignItems: 'center' }}>
               {canWrite && (
-                <button className="btn btn--secondary btn--sm" onClick={() => navigate(`/shipments`)}>
-                  <PencilLine size={14} style={{ marginRight: 4 }} aria-hidden="true" /> Danh sách lô
+                <button className="btn btn--secondary btn--sm" onClick={() => setEditOpen(true)}>
+                  <PencilLine size={14} style={{ marginRight: 4 }} aria-hidden="true" /> Sửa lô
                 </button>
               )}
+              <button className="btn btn--secondary btn--sm" onClick={() => navigate(`/shipments`)}>
+                Danh sách lô
+              </button>
             </div>
           </section>
 
@@ -847,6 +855,16 @@ export default function ShipmentDetailPage() {
             </button>
           </div>
         </Modal>
+      )}
+      {canWrite && (
+        <ShipmentFormModal
+          isOpen={editOpen && !!shipment}
+          onClose={() => {
+            setEditOpen(false);
+            if (searchParams.get('edit')) setSearchParams({}, { replace: true });
+          }}
+          shipment={editOpen ? shipment ?? null : null}
+        />
       )}
       {confirmDialog}
     </div>

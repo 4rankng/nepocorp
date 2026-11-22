@@ -7,11 +7,12 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, PencilLine } from 'lucide-react';
+import { Loader2, PencilLine, Plus } from 'lucide-react';
 import { SHIPMENT_CUTOFF_WARN_DAYS } from '@tingting/shared';
 import type { Shipment } from '@tingting/shared';
 import { useAuth } from '../hooks/useAuth';
 import { useShipments } from '../hooks/useShipmentQueries';
+import ShipmentFormModal from '../features/shipments/ShipmentFormModal';
 import { useDebouncedValue, useAutoHideColumn, Pagination, SubLine } from '../design-system';
 import { PageHeader } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
@@ -43,6 +44,7 @@ export function cutoffUrgentCount(rows: Shipment[]): number {
 export default function ShipmentListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [createOpen, setCreateOpen] = useState(false);
   const { user } = useAuth();
   const canWrite = canWriteShipments(user?.role);
 
@@ -108,6 +110,15 @@ export default function ShipmentListPage() {
         title="Lô hàng"
         description={loading ? 'Đang tải dữ liệu lô hàng…' : 'Danh sách lô biển'}
         iconName="cargo"
+        action={canWrite && (
+          <button
+            className="btn btn--primary btn--sm"
+            onClick={() => setCreateOpen(true)}
+            data-tour-id="shipment-create"
+          >
+            <Plus size={14} aria-hidden="true" /> Tạo lô hàng
+          </button>
+        )}
       />
 
       {/* Zone 1 — number band. Cut-off chip rides the shared warn window. */}
@@ -218,6 +229,14 @@ export default function ShipmentListPage() {
           </>
         )}
       </div>
+
+      {canWrite && (
+        <ShipmentFormModal
+          isOpen={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(created) => navigate(`/shipments/${created.id}`)}
+        />
+      )}
     </div>
   );
 }
