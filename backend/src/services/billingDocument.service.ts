@@ -925,15 +925,20 @@ export async function createLotSupplement(mainId: number, userId: number | null)
       eq(s.billingDocuments.parentDocumentId, main.id),
       isNull(s.billingDocuments.deletedAt),
     ))).map((r) => r.id)];
+  // Every source-keyed row already on ANY live document of the chain counts as
+  // billed — TRIP freight and EXPENSE chi hộ included. Filtering SHIPMENT_COST
+  // keys only let the draft's freight lines through, so each -BS01 re-billed
+  // the whole lot on top of the main note. ADHOC rows (sourceId null) never
+  // match a draft line, so supplements stay source-row-only.
   const covered = new Set((await db.select({ sourceType: s.billingDocumentLines.sourceType, sourceId: s.billingDocumentLines.sourceId })
     .from(s.billingDocumentLines)
     .where(inArray(s.billingDocumentLines.documentId, chainIds)))
-    .filter((l) => l.sourceType === 'SHIPMENT_COST' && l.sourceId != null)
+    .filter((l) => l.sourceId != null)
     .map((l) => `${l.sourceType}:${l.sourceId}`));
 
   const draft = await buildLotDebitLines(main.shipmentId, main.rangeFrom, main.rangeTo);
   const remaining = draft.lines.filter((line) =>
-    !(line.sourceType === 'SHIPMENT_COST' && line.sourceId != null && covered.has(`${line.sourceType}:${line.sourceId}`)));
+    !(line.sourceId != null && covered.has(`${line.sourceType}:${line.sourceId}`)));
   if (remaining.length === 0) {
     throw new ApiError(400, 'Không còn chi phí mới nào để bổ sung');
   }
