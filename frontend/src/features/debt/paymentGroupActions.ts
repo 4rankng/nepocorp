@@ -34,18 +34,33 @@ export function receiptGroupCredit(row: LedgerEntry, fullBookRows: LedgerEntry[]
 }
 
 /**
- * HTTP target for Sửa/Xoa from a ledger payment row: the receipt-scoped
+ * HTTP target for Sửa/Xóa from a ledger payment row: the receipt-scoped
  * endpoints for receipted rows (the synthetic display id is not an entry id
  * and must never hit /payments/:id), the per-entry endpoints for legacy
  * no-receipt rows.
+ *
+ * Throws — never returns a URL the backend will 400 — so a corrupt row can
+ * never reach 'ID bản ghi thanh toán không hợp lệ' again (NEPO-60):
+ * - a bad customerId (NaN/≤0) cannot address by-receipt;
+ * - a PAYMENT row carrying a synthetic display id (reattributePaymentRows
+ *   output, id ≤ 0) is ALWAYS a receipt group — the biên lai is its only
+ *   real address. If such a row ever lost receiptId mid-pipeline, the
+ *   per-entry endpoint could only reject it, so refuse loudly and surface
+ *   the message in the edit error / delete toast instead.
  */
 export function paymentActionUrl(
   kind: 'edit' | 'delete',
   customerId: number,
   row: LedgerEntry,
 ): string {
+  if (!Number.isFinite(customerId) || customerId <= 0) {
+    throw new Error('Không xác định được khách hàng của dòng thanh toán — hãy tải lại trang và thử lại.');
+  }
   if (isReceiptedPaymentRow(row)) {
     return `/payments/by-receipt/${customerId}/${encodeURIComponent(row.receiptId as string)}`;
+  }
+  if (row.id <= 0) {
+    throw new Error('Dòng thanh toán tổng hợp thiếu mã biên lai — hãy tải lại sổ chi tiết rồi thử sửa lại.');
   }
   return `/payments/${row.id}`;
 }

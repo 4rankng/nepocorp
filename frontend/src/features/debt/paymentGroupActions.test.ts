@@ -64,4 +64,28 @@ describe('paymentGroupActions (NEPO-52)', () => {
     expect(isReceiptedPaymentRow(row)).toBe(false);
     expect(paymentActionUrl('delete', 7, row)).toBe('/payments/5');
   });
+
+  it('refuses to route a synthetic-id payment row that lost its receiptId (NEPO-60)', () => {
+    // reattributePaymentRows only emits id ≤ 0 for receipt-group rows — a
+    // synthetic id without a biên lai is a corrupt shape, and the per-entry
+    // endpoint would reject it with 'ID bản ghi thanh toán không hợp lệ'
+    // (the accountant's NEPO-60 report). The router must throw before that
+    // request can leave the page, so the error lands in the edit error /
+    // delete toast instead of a doomed 400.
+    const row = paymentRow({ id: -3, receiptId: null });
+    expect(() => paymentActionUrl('edit', 7, row)).toThrow('thiếu mã biên lai');
+    expect(() => paymentActionUrl('delete', 7, row)).toThrow('thiếu mã biên lai');
+  });
+
+  it('refuses to route when the customerId is not a usable id (NEPO-60)', () => {
+    // The page derives the customerId from the route param; a non-numeric
+    // param would previously build /payments/by-receipt/NaN/… and earn the
+    // backend's guard 400. Throw at the router instead.
+    const receipted = paymentRow({ id: -1, receiptId: '9399' });
+    const legacy = paymentRow({ id: 42, receiptId: null });
+    for (const bad of [Number.NaN, 0, -5]) {
+      expect(() => paymentActionUrl('edit', bad, receipted)).toThrow('khách hàng');
+      expect(() => paymentActionUrl('delete', bad, legacy)).toThrow('khách hàng');
+    }
+  });
 });
