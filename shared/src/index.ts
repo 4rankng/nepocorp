@@ -73,7 +73,7 @@ export type {
 export { parseThreshold } from './types';
 
 export { canonicalFreightDescription } from './calculations/billingDocument';
-export { buildShipmentCode, shipmentCodePrefix, shipmentCodeSeqRe } from './calculations/shipmentCode';
+export { buildShipmentCode, deriveShipmentCodeShortName, shipmentCodePrefix, shipmentCodeSeqRe } from './calculations/shipmentCode';
 
 // ─── Navigation catalog (single source for SPA paths/titles + agent search) ──
 export { PAGE_CATALOG } from './navigation/pageCatalog';

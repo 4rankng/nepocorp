@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildShipmentCode,
+  deriveShipmentCodeShortName,
   shipmentCodePrefix,
   shipmentCodeSeqRe,
 } from './shipmentCode';
@@ -51,6 +52,33 @@ describe('buildShipmentCode', () => {
 
   test('sequence beyond 999 grows (never truncated)', () => {
     assert.equal(buildShipmentCode('MCT', 2026, 1000), 'MCT261000');
+  });
+});
+
+describe('deriveShipmentCodeShortName', () => {
+  test('drops generic legal-entity tokens and takes the identity words', () => {
+    assert.equal(deriveShipmentCodeShortName('Công ty TNHH Mộc Trà'), 'MOCTRA');
+    assert.equal(deriveShipmentCodeShortName('CÔNG TY CỔ PHẦN PETROLIMEX HẢI PHÒNG'), 'PETROL');
+  });
+
+  test('caps at 6 and feeds shipmentCodePrefix unchanged', () => {
+    const derived = deriveShipmentCodeShortName('Beta Logistics Group Việt Nam');
+    assert.equal(derived, 'BETALO');
+    assert.equal(shipmentCodePrefix(derived), derived);
+  });
+
+  test('falls back to all tokens when every word is generic', () => {
+    assert.equal(deriveShipmentCodeShortName('Công ty TNHH'), 'CONGTY');
+  });
+
+  test('falls back to word initials for single-letter tokens', () => {
+    assert.equal(deriveShipmentCodeShortName('A B C'), 'ABC');
+  });
+
+  test('returns empty string when nothing usable derives', () => {
+    assert.equal(deriveShipmentCodeShortName(''), '');
+    assert.equal(deriveShipmentCodeShortName('!!! --- !!!'), '');
+    assert.equal(deriveShipmentCodeShortName('A'), '');
   });
 });
 

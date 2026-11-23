@@ -19,6 +19,7 @@ import {
   useUpdateShipment,
 } from '../../hooks/useShipmentQueries';
 import { canWriteShipments } from './shipmentDisplay';
+import './ShipmentFormModal.css';
 
 interface Props {
   isOpen: boolean;
@@ -160,7 +161,7 @@ export default function ShipmentFormModal({ isOpen, onClose, shipment, onCreated
       isOpen={isOpen}
       title={isEdit ? `Sửa lô — ${shipment?.shipmentCode ?? ''}` : 'Thêm lô hàng'}
       onClose={onClose}
-      maxWidth={620}
+      maxWidth={960}
       footer={(
         <>
           <button className="btn btn--ghost btn--sm" onClick={onClose} type="button">

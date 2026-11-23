@@ -20,7 +20,7 @@ Lô hàng (shipment) là **đối tượng cha** của side vận tải biển: 
 
 Định dạng `[Mã KH][Năm][STT]` — ví dụ **MCT26026** = MCT + năm 26 + số thứ tự 026.
 
-- Tiền tố = `shortName` của khách hàng (bỏ dấu, đ→D, chỉ A–Z0–9, tối đa 6 ký tự, tối thiểu 2). Khách chưa có tên viết tắt hợp lệ → chặn tạo lô với lỗi tiếng Việt rõ ràng.
+- Tiền tố = `shortName` của khách hàng (bỏ dấu, đ→D, chỉ A–Z0–9, tối đa 6 ký tự, tối thiểu 2). Khách **chưa có** tên viết tắt hợp lệ → hệ thống **tự sinh Mã KH từ tên pháp lý** (bỏ từ loại hình công ty — "Công ty TNHH", "Cổ phần"…; trùng tiền tố với khách khác → thêm số thứ tự: `BETALO` → `BETAL2`) và lưu lại vào khách hàng; **không chặn tạo lô**. Đổi Mã KH chủ đích vẫn làm trong cấu hình khách hàng.
 - STT theo **tiền tố + năm**, cấp phát trong transaction với advisory lock — hai lô tạo đồng thời không trùng số. Nếu một khách có >999 lô/năm, STT tự mở rộng 4 chữ số (không cắt cụt).
 - Không thể **đổi khách hàng** của lô sau khi tạo (mã gắn với Mã KH).
 
@@ -79,7 +79,7 @@ Chi phí chạy xe **không** nhập tay — chuyến gắn lô tự động c�
 ## 9. QA checklist
 
 1. Tạo lô cho khách có shortName → mã đúng mẫu `MCT26026`, tạo tiếp → STT +1; khách khác → STT riêng từ 001.
-2. Khách thiếu tên viết tắt → chặn tạo với lỗi tiếng Việt.
+2. Khách thiếu tên viết tắt → tạo lô vẫn thành công, Mã KH tự sinh từ tên (trùng → thêm số thứ tự) và lưu vào khách hàng.
 3. Upload chứng từ PDF → tải xuống lại đúng file; xóa → mất khỏi danh sách.
 4. Thêm chi phí thu khách 30tr + trả NCC 1tr + chờ hóa đơn 5tr + chuyến 18tr → lợi nhuận = −19tr (chờ hóa đơn không vào tổng).
 5. Gắn chuyến khách khác → lỗi 400; gắn chuyến đã chốt → lỗi 400; gỡ lô → cột MÃ LÔ HÀNG trống.

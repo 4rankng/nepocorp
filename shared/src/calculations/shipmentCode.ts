@@ -28,6 +28,44 @@ export function buildShipmentCode(prefix: string, year: number, seq: number): st
   return `${prefix}${String(year % 100).padStart(2, '0')}${String(seq).padStart(3, '0')}`;
 }
 
+/** Legal-entity filler words that carry no identity ("Công ty TNHH", "Cổ phần",
+ *  "Trách nhiệm hữu hạn", "Một thành viên" — full spellings included). */
+const GENERIC_NAME_TOKENS: Record<string, true> = {
+  CONG: true, TY: true, CTY: true, TNHH: true, MTV: true, CO: true, CP: true,
+  PHAN: true, TRACH: true, NHIEM: true, HUU: true, HAN: true,
+  MOT: true, THANH: true, VIEN: true,
+};
+
+function normalizeNameTokens(name: string): string[] {
+  const noDiacritics = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+  return noDiacritics
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter(Boolean);
+}
+
+/**
+ * Derive a usable Mã KH (2–6 chars) from the customer's legal name: drop
+ * generic legal-entity tokens, join the rest, cap at 6. Falls back to all
+ * tokens (when every word is generic, e.g. "Công ty TNHH") and then to word
+ * initials. Returns '' when the name yields nothing usable at all.
+ */
+export function deriveShipmentCodeShortName(name: string): string {
+  const tokens = normalizeNameTokens(name);
+  if (tokens.length === 0) return '';
+  const meaningful = tokens.filter(t => GENERIC_NAME_TOKENS[t] !== true);
+  const fromMeaningful = meaningful.join('').slice(0, 6);
+  if (fromMeaningful.length >= 2) return fromMeaningful;
+  const fromAll = tokens.join('').slice(0, 6);
+  if (fromAll.length >= 2) return fromAll;
+  const initials = tokens.map(t => t[0]).join('').slice(0, 6);
+  return initials.length >= 2 ? initials : '';
+}
+
 /**
  * Anchored matcher for one customer+year; group 1 captures the numeric seq
  * tail. Mirrors buildShipmentCode so the backend max-seq scan and the builder

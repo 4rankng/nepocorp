@@ -112,12 +112,37 @@ describe('NEPO-61 shipment auto-code', () => {
     assert.equal(first.customerId, mct.id);
   });
 
-  test('rejects customers without a usable shortName (Mã KH)', async () => {
+  test('auto-generates Mã KH for an existing customer missing one (no block)', async () => {
     const noShort = await seedCustomer('Khách không có tên viết tắt', null);
-    await assert.rejects(
-      () => createShipment({ customerId: noShort.id }, null),
-      (error: unknown) => error instanceof ApiError && error.statusCode === 400,
-    );
+    const shipment = await createShipment({ customerId: noShort.id }, null);
+    createdShipmentIds.push(shipment.id);
+    const year = String(new Date().getFullYear() % 100).padStart(2, '0');
+    // seedCustomer appends ` ${suffix}`; identity tokens join to
+    // "KHACHKHONG…" and the 6-char cap yields KHACHK.
+    assert.match(shipment.shipmentCode, new RegExp(`^KHACHK${year}\\d{3,}$`));
+    // The generated Mã KH persists — the customer now owns a stable code.
+    const [refreshed] = await db.select({ shortName: s.customers.shortName })
+      .from(s.customers).where(eq(s.customers.id, noShort.id));
+    assert.equal(refreshed.shortName, 'KHACHK');
+  });
+
+  test('derived Mã KH collision gets a numeric suffix, codes stay distinct', async () => {
+    const nam = await seedCustomer('Beta Logistics Nam', null);
+    const bac = await seedCustomer('Beta Logistics Bac', null);
+    const first = await createShipment({ customerId: nam.id }, null);
+    createdShipmentIds.push(first.id);
+    const second = await createShipment({ customerId: bac.id }, null);
+    createdShipmentIds.push(second.id);
+    const [refreshedNam] = await db.select({ shortName: s.customers.shortName })
+      .from(s.customers).where(eq(s.customers.id, nam.id));
+    const [refreshedBac] = await db.select({ shortName: s.customers.shortName })
+      .from(s.customers).where(eq(s.customers.id, bac.id));
+    assert.equal(refreshedNam.shortName, 'BETALO');
+    assert.equal(refreshedBac.shortName, 'BETAL2');
+    const year = String(new Date().getFullYear() % 100).padStart(2, '0');
+    assert.notEqual(first.shipmentCode.slice(0, 6), second.shipmentCode.slice(0, 6));
+    assert.match(first.shipmentCode, new RegExp(`^BETALO${year}`));
+    assert.match(second.shipmentCode, new RegExp(`^BETAL2${year}`));
   });
 
   test('rejects moving a lô to another customer (code encodes Mã KH)', async () => {

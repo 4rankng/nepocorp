@@ -13,6 +13,7 @@ import * as s from '../db/schema';
 import { ApiError } from '../errors';
 import {
   buildShipmentCode,
+  deriveShipmentCodeShortName,
   shipmentCodePrefix,
   shipmentCodeSeqRe,
   FeeGroup,
@@ -275,11 +276,60 @@ export async function getShipmentDetail(id: number) {
 }
 
 /**
- * Auto code [Mã KH][Năm][STT]: prefix from the customer's shortName, year from
- * the creation date, sequence per prefix+year under an advisory lock so two
- * concurrent creates cannot take the same number. Two customers sharing a
- * shortName share the sequence space (codes stay unique; interleaved numbers
- * are acceptable — the prefix is the customer's identity, not a unique key).
+ * Resolve the lot-code prefix (Mã KH) for the customer. When the customer has
+ * no usable shortName, derive one from the legal name (generic legal-entity
+ * words dropped), break collisions with other customers' prefixes by numeric
+ * suffix (BETALO → BETALO2), and persist it — the generated Mã KH becomes the
+ * customer's stable code that later lots and the config page reuse. The config
+ * page stays the place to change a working Mã KH deliberately.
+ */
+async function ensureCustomerShipmentPrefix(customer: {
+  id: number;
+  name: string;
+  shortName: string | null;
+}): Promise<string> {
+  const existing = shipmentCodePrefix(customer.shortName ?? '');
+  if (existing.length >= 2) return existing;
+  return db.transaction(async (tx) => {
+    // Serialize same-customer creates so two lots don't derive different
+    // suffixes for the same customer.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`customer-shortname:${customer.id}`}))`);
+    const [fresh] = await tx.select({ shortName: s.customers.shortName })
+      .from(s.customers)
+      .where(eq(s.customers.id, customer.id))
+      .limit(1);
+    const fromFresh = shipmentCodePrefix(fresh?.shortName ?? '');
+    if (fromFresh.length >= 2) return fromFresh;
+    const taken = new Set<string>();
+    const rows = await tx.select({ shortName: s.customers.shortName }).from(s.customers);
+    for (const row of rows) {
+      const p = shipmentCodePrefix(row.shortName ?? '');
+      if (p.length >= 2) taken.add(p);
+    }
+    const base = deriveShipmentCodeShortName(customer.name);
+    if (base.length < 2) {
+      throw new ApiError(400, 'Không sinh được Mã KH hợp lệ từ tên khách hàng — hãy cập nhật tên viết tắt trong cấu hình khách hàng');
+    }
+    let candidate = base;
+    for (let n = 2; taken.has(candidate); n += 1) {
+      const suffix = String(n);
+      // Trim the base so base + suffix never exceeds the 6-char prefix cap.
+      candidate = base.slice(0, Math.max(2, 6 - suffix.length)) + suffix;
+    }
+    await tx.update(s.customers)
+      .set({ shortName: candidate, updatedAt: new Date() })
+      .where(eq(s.customers.id, customer.id));
+    return candidate;
+  });
+}
+
+/**
+ * Auto code [Mã KH][Năm][STT]: prefix from the customer's shortName (auto-
+ * generated when the customer has none), year from the creation date, sequence
+ * per prefix+year under an advisory lock so two concurrent creates cannot take
+ * the same number. Two customers sharing a shortName share the sequence space
+ * (codes stay unique; interleaved numbers are acceptable — the prefix is the
+ * customer's identity, not a unique key).
  */
 export async function createShipment(input: CreateShipmentInput, userId: number | null): Promise<Shipment> {
   const [customer] = await db.select({
@@ -290,10 +340,7 @@ export async function createShipment(input: CreateShipmentInput, userId: number 
     .where(and(eq(s.customers.id, input.customerId), isNull(s.customers.deletedAt)))
     .limit(1);
   if (!customer) throw new ApiError(404, 'Không tìm thấy khách hàng');
-  const prefix = shipmentCodePrefix(customer.shortName ?? '');
-  if (prefix.length < 2) {
-    throw new ApiError(400, 'Khách hàng chưa có tên viết tắt (Mã KH) hợp lệ — hãy cập nhật trong cấu hình khách hàng');
-  }
+  const prefix = await ensureCustomerShipmentPrefix(customer);
   const year = new Date().getFullYear();
   const yearPrefix = `${prefix}${String(year % 100).padStart(2, '0')}`;
   const code = await db.transaction(async (tx) => {

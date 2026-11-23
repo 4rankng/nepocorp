@@ -1,0 +1,45 @@
+/* ShipmentFormModal — 2-column form grid.
+   The dialog opens at 960px (maxWidth prop), so every field pair shares one
+   row and the whole form fits a 1440px laptop viewport without internal
+   scrolling. Collapses to one column under 720px for small screens. */
+.shipment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shipment-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  align-items: start;
+}
+
+.shipment-form__grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* The global .field carries margin-bottom for stacked layouts — inside the
+   grid the gap owns spacing (same pattern as TripInfoCard.css). */
+.shipment-form__grid > .field {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.shipment-form__error {
+  color: var(--danger);
+  margin: 0;
+  font-size: var(--fs-caption);
+}
+
+.shipment-form__hint {
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+@media (max-width: 720px) {
+  .shipment-form__grid,
+  .shipment-form__grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
