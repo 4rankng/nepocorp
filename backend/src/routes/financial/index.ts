@@ -42,5 +42,8 @@ registerAuditEvent('POST', '/api/finance/billing-documents', AuditEvent.ENTITY_C
 // edit lands in the audit log (yêu cầu phân quyền: "Admin sửa Báo nợ có log").
 // Suffix mode (4 args): matches PUT /api/finance/billing-documents/:id.
 registerAuditEvent('PUT', '/api/finance/billing-documents/', '', AuditEvent.DEBIT_NOTE_UPDATED);
+// NEPO-63 — deleting a DRAFT Báo nợ (chưa phát hành, -BS01 included) is
+// audit-logged with the document number + amount the route stashes.
+registerAuditEvent('DELETE', '/api/finance/billing-documents/', '', AuditEvent.BILLING_DOCUMENT_DELETED);
 
 export default router;

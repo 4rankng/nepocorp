@@ -466,12 +466,15 @@ export async function updateShipmentCost(shipmentId: number, costId: number, inp
   return toShipmentCost(row);
 }
 
-export async function deleteShipmentCost(shipmentId: number, costId: number): Promise<void> {
-  const [row] = await db.select({ id: s.shipmentCosts.id }).from(s.shipmentCosts)
+/** Deletes one fee line; returns its description so the audit log names the line. */
+export async function deleteShipmentCost(shipmentId: number, costId: number): Promise<{ description: string }> {
+  const [row] = await db.select({ id: s.shipmentCosts.id, description: s.shipmentCosts.description })
+    .from(s.shipmentCosts)
     .where(and(eq(s.shipmentCosts.id, costId), eq(s.shipmentCosts.shipmentId, shipmentId)))
     .limit(1);
   if (!row) throw new ApiError(404, 'Không tìm thấy chi phí');
   await db.delete(s.shipmentCosts).where(eq(s.shipmentCosts.id, costId));
+  return { description: row.description };
 }
 
 // ─── Lot cost register (Bảng chi phí theo lô — NEPO-62) ──────────────────────

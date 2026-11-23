@@ -319,6 +319,23 @@ export default function ShipmentDetailPage() {
     }
   };
 
+  // NEPO-63 — a draft note (chưa phát hành, -BS01 supplement included) deletes
+  // back to the pre-note state; the backend refuses issued notes.
+  const removeNote = async (doc: ShipmentBillingDocSummary) => {
+    const ok = await confirm(
+      `Xóa Báo nợ ${doc.documentNumber ?? `#${doc.id}`} (${formatCurrency(doc.totalInclVat)}₫, chưa phát hành)? Công nợ sẽ quay lại như trước khi lập.`,
+      { variant: 'danger', confirmLabel: 'Xóa' },
+    );
+    if (!ok) return;
+    try {
+      await financialClient.deleteBillingDocument(doc.id);
+      await queryClient.invalidateQueries({ queryKey: qk.shipments.detail(shipmentId) });
+      showToast({ kind: 'success', message: 'Đã xóa Báo nợ' });
+    } catch (error) {
+      showToast({ kind: 'error', message: (error as Error).message });
+    }
+  };
+
   const exportNote = async (doc: ShipmentBillingDocSummary) => {
     try {
       const blob = await fetch(
@@ -541,6 +558,11 @@ export default function ShipmentDetailPage() {
                       <Plus size={14} />
                     </button>
                   )}
+                  {!doc.issuedAt && canWrite && (
+                    <button className="icon-btn" title="Xóa Báo nợ chưa phát hành (công nợ về như trước khi lập)" onClick={() => void removeNote(doc)}>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                   <button className="icon-btn" title="Xuất Excel" onClick={() => exportNote(doc)}>
                     <Download size={14} />
                   </button>
@@ -548,7 +570,8 @@ export default function ShipmentDetailPage() {
               </div>
             ))}
             <p className="lot-billing__sub" style={{ marginTop: 10 }}>
-              Báo nợ đã phát hành không sửa được — phí phát sinh sau lên Báo nợ bổ sung -BS01.
+              Báo nợ đã phát hành không sửa/xóa được — phí phát sinh sau lên Báo nợ bổ sung -BS01.
+              Báo nợ chưa phát hành có thể xóa: công nợ quay lại như trước khi lập.
               Phí "Chờ hóa đơn" in trên Báo nợ không có số tiền và không cộng vào Tổng cộng.
             </p>
           </section>

@@ -57,9 +57,24 @@ describe('debit-note edit audit trail', () => {
       resolveAuditEvent('PUT', '/api/finance/billing-documents/12'),
       'DEBIT_NOTE_UPDATED',
     );
+    // NEPO-63 — deleting a draft Báo nợ has its own event too.
+    assert.equal(resolveAuditEvent('DELETE', '/api/finance/billing-documents/12'), 'BILLING_DOCUMENT_DELETED');
     // Other methods on the same surface keep their generic events.
     assert.equal(resolveAuditEvent('POST', '/api/finance/billing-documents'), 'ENTITY_CREATED');
     assert.equal(resolveAuditEvent('PUT', '/api/trips/9/pre-departure'), 'TRIP_UPDATED_PRE_DEPARTURE');
+  });
+
+  test('billing-doc delete log names the note and the amount', () => {
+    const message = renderAuditMessage({
+      event: 'BILLING_DOCUMENT_DELETED',
+      entityType: 'billing_documents',
+      entityId: 21,
+      entityKey: 'DN26110001-BS01 · 300.000₫',
+      actorRole: 'ADMIN',
+      actorName: 'Bùi Thị Hùng',
+    } satisfies AuditPayload);
+    assert.match(message, /đã xóa Báo nợ\/Bảng kê chưa phát hành: DN26110001-BS01 · 300\.000₫/);
+    assert.match(message, /công nợ quay lại như trước khi lập/);
   });
 
   test('lot fee-line edits name the fee, not the lô hàng', () => {
@@ -76,11 +91,14 @@ describe('debit-note edit audit trail', () => {
       event: 'SHIPMENT_COST_DELETED',
       entityType: 'shipments',
       entityId: 11,
+      entityKey: 'QA TEST R5',
       actorRole: 'ADMIN',
       actorName: 'Bùi Thị Hùng',
     } satisfies AuditPayload);
-    assert.match(message, /đã xóa chi phí của lô hàng/);
+    // NEPO-63 — the sentence names the fee LINE, not the lô hàng or the row id.
+    assert.match(message, /đã xóa dòng chi phí QA TEST R5/);
     assert.doesNotMatch(message, /đã xóa lô hàng/);
+    assert.doesNotMatch(message, /lô hàng 11/);
   });
 
   test('the audit sentence names the issued note and the ledger adjustment', () => {

@@ -135,7 +135,8 @@ router.put('/:id/costs/:costId', requireRoles(...WRITE), asyncHandler(async (req
 }));
 
 router.delete('/:id/costs/:costId', requireRoles(...WRITE), asyncHandler(async (req: Request, res: Response) => {
-  await shipmentService.deleteShipmentCost(Number(req.params.id), Number(req.params.costId));
+  const deleted = await shipmentService.deleteShipmentCost(Number(req.params.id), Number(req.params.costId));
+  res.locals.auditEntityKey = deleted.description;
   res.json({ ok: true });
 }));
 

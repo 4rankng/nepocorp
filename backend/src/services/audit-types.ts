@@ -35,6 +35,8 @@ export const AuditEvent = {
   PROFIT_DISTRIBUTED: 'PROFIT_DISTRIBUTED',
   // NEPO-63 — Admin edits an ISSUED debit note (the only role allowed to).
   DEBIT_NOTE_UPDATED: 'DEBIT_NOTE_UPDATED',
+  // NEPO-63 — deleting a DRAFT Báo nợ (chưa phát hành, -BS01 supplement included).
+  BILLING_DOCUMENT_DELETED: 'BILLING_DOCUMENT_DELETED',
 
   // Config CRUD
   ENTITY_CREATED: 'ENTITY_CREATED',

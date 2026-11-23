@@ -88,9 +88,13 @@ router.put('/finance/billing-documents/:id', requireRoles(Role.ADMIN), asyncHand
 }));
 
 // DELETE /api/finance/billing-documents/:id — soft delete (NEPO-61: ADMIN only).
+// NEPO-63: a DRAFT note (chưa phát hành, -BS01 included) deletes back to the
+// pre-note state; an ISSUED note refuses. The audit entry names the note.
 router.delete('/finance/billing-documents/:id', requireRoles(Role.ADMIN), asyncHandler(async (req: Request, res: Response) => {
-  await billingService.deleteDocument(Number(req.params.id));
+  const deleted = await billingService.deleteDocument(Number(req.params.id));
   await invalidateReportCaches();
+  res.locals.auditEntityId = deleted.id;
+  res.locals.auditEntityKey = `${deleted.documentNumber ?? `#${deleted.id}`} · ${Number(deleted.totalInclVat).toLocaleString('vi-VN')}₫`;
   res.json({ ok: true });
 }));
 

@@ -138,7 +138,8 @@ const templates: Record<string, (c: TemplateContext) => string> = {
   [AuditEvent.SHIPMENT_DOCUMENT_DELETED]: (c) => `${subj(c)} đã xóa chứng từ của lô hàng${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.SHIPMENT_COST_CREATED]: (c) => `${subj(c)} đã ghi nhận chi phí cho lô hàng${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.SHIPMENT_COST_UPDATED]: (c) => `${subj(c)} đã cập nhật chi phí của lô hàng${c.entityKey ? ` ${c.entityKey}` : ''}`,
-  [AuditEvent.SHIPMENT_COST_DELETED]: (c) => `${subj(c)} đã xóa chi phí của lô hàng${c.entityKey ? ` ${c.entityKey}` : ''}`,
+  // NEPO-63 — entityKey is the fee line's description, never the lô hàng
+  [AuditEvent.SHIPMENT_COST_DELETED]: (c) => `${subj(c)} đã xóa dòng chi phí${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.TRIP_SHIPMENT_LINK_CHANGED]: (c) => `${subj(c)} đã cập nhật liên kết lô hàng của lệnh vận chuyển${c.entityKey ? ` ${c.entityKey}` : ''}`,
   [AuditEvent.VEHICLE_SCHEDULE_CREATED]: (c) => `${subj(c)} đã tạo lịch nhắc việc xe${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.VEHICLE_SCHEDULE_UPDATED]: (c) => `${subj(c)} đã cập nhật lịch nhắc việc xe${c.entityKey ? `: ${c.entityKey}` : ''}`,
@@ -151,6 +152,8 @@ const templates: Record<string, (c: TemplateContext) => string> = {
   [AuditEvent.ADJUSTMENT_CREATED]: (c) => `${subj(c)} đã tạo bút toán điều chỉnh công nợ${c.entityKey ? ` ${c.entityKey}` : ''}`,
   // NEPO-63 — sửa Giấy báo nợ đã phát hành (quyền Admin duy nhất, luôn ghi log)
   [AuditEvent.DEBIT_NOTE_UPDATED]: (c) => `${subj(c)} đã SỬA Giấy báo nợ đã phát hành${c.entityKey ? ` ${c.entityKey}` : ''} (bút toán công nợ được điều chỉnh theo chênh lệch)`,
+  // NEPO-63 — xóa Báo nợ/Bảng kê chưa phát hành; bút toán điều chỉnh quay về như trước khi lập
+  [AuditEvent.BILLING_DOCUMENT_DELETED]: (c) => `${subj(c)} đã xóa Báo nợ/Bảng kê chưa phát hành${c.entityKey ? `: ${c.entityKey}` : ''} (công nợ quay lại như trước khi lập)`,
   [AuditEvent.PENALTY_CREATED]: (c) => `${subj(c)} đã ghi nhận quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.PENALTY_CANCELED]: (c) => `${subj(c)} đã hủy bỏ quyết định kỷ luật${c.entityKey ? `: ${c.entityKey}` : ''}`,
   [AuditEvent.DRIVER_SALARY_RECORDED]: (c) => `${subj(c)} đã ghi nhận bảng tính lương cho lái xe${c.entityKey ? `: ${c.entityKey}` : ''}`,

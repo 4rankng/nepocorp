@@ -1196,11 +1196,23 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
   };
 }
 
-export async function deleteDocument(id: number): Promise<void> {
-  await db.transaction(async (tx) => {
+/** What the route needs to name the deletion in the audit log. */
+export interface DeletedBillingDocumentInfo {
+  id: number;
+  type: string;
+  documentNumber: string | null;
+  totalInclVat: string;
+}
+
+export async function deleteDocument(id: number): Promise<DeletedBillingDocumentInfo> {
+  const deleted = await db.transaction(async (tx) => {
     const [initial] = await tx.select().from(s.billingDocuments)
       .where(and(eq(s.billingDocuments.id, id), isNull(s.billingDocuments.deletedAt))).limit(1);
     if (!initial) throw new ApiError(404, 'Không tìm thấy tài liệu');
+    // A draft (chưa phát hành) deletes back to the pre-note state — the -BS01
+    // supplement included. An ISSUED note is immutable, delete included: later
+    // fees belong on a supplement, never on undoing the issued note.
+    if (initial.issuedAt) throw new ApiError(409, 'Báo nợ đã phát hành không xóa được');
     if (initial.type === 'DEBIT_NOTE' && initial.entityType === 'CUSTOMER') {
       await LedgerService.lockEntity(tx, 'CUSTOMER', initial.entityId);
       // Re-read after acquiring the entity lock so a concurrent save cannot
@@ -1216,7 +1228,14 @@ export async function deleteDocument(id: number): Promise<void> {
     }
     await tx.update(s.billingDocuments).set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(eq(s.billingDocuments.id, id));
+    return {
+      id: initial.id,
+      type: initial.type,
+      documentNumber: initial.documentNumber,
+      totalInclVat: initial.totalInclVat,
+    };
   });
+  return deleted;
 }
 
 // ─── Excel export ─────────────────────────────────────────────────────────────

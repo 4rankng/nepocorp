@@ -16,8 +16,9 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { TxnType } from '@tingting/shared';
 import { db, client } from '../db';
 import { disconnectRedis } from '../lib/redis';
+import { ApiError } from '../errors';
 import * as s from '../db/schema';
-import { createLotSupplement } from '../services/billingDocument.service';
+import { createLotSupplement, deleteDocument } from '../services/billingDocument.service';
 import { describe, test, after } from './payment-ledger-test-utils';
 
 const customerIds: number[] = [];
@@ -149,6 +150,68 @@ describe('lot debit note supplement (-BS01)', () => {
       'BS02 covers only rows no live document carries — BS01 rows stay put',
     );
     assert.equal(supp2.totalInclVat, 300000);
+  });
+
+  test('deleting an un-issued supplement reverses the AR delta and frees its fee rows', async () => {
+    await seed();
+    // BS01/BS02 from the earlier tests carry the seeded fee rows, so two fresh
+    // post-issuance rows give this test its own supplement.
+    const late = await db.insert(s.shipmentCosts).values([
+      { shipmentId: shipmentIds[0], costType: 'OTHER', direction: 'CUSTOMER', description: 'Thu khách xóa BS', amount: '400000', incurredDate: '2026-11-22' },
+      { shipmentId: shipmentIds[0], costType: 'HANDLING', direction: 'CUSTOMER', description: 'Chờ hóa đơn xóa BS', amount: '100000', awaitingInvoice: true, incurredDate: '2026-11-22' },
+    ]).returning({ id: s.shipmentCosts.id });
+    shipmentCostIds.push(...late.map((c) => c.id));
+
+    const supp = await createLotSupplement(mainDocId, null);
+    docIds.push(supp.id);
+    assert.equal(supp.documentNumber, `${mainNumber}-BS03`);
+    assert.equal(supp.totalInclVat, 400000, 'Chờ hóa đơn rides along amount-less');
+
+    const deleted = await deleteDocument(supp.id);
+    assert.equal(deleted.documentNumber, `${mainNumber}-BS03`);
+    assert.equal(Number(deleted.totalInclVat), 400000);
+
+    const [row] = await db.select({ deletedAt: s.billingDocuments.deletedAt })
+      .from(s.billingDocuments).where(eq(s.billingDocuments.id, supp.id));
+    assert.ok(row?.deletedAt, 'supplement soft-deleted');
+
+    const [rev] = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.ADJUSTMENT),
+      eq(s.ledger.txnId, supp.id),
+      eq(s.ledger.credit, '400000'),
+    ));
+    assert.ok(rev, 'deletion posts the reversal credit');
+
+    // Trả lại trạng thái như trước khi tạo: the fee rows are billable again
+    // and the next supplement re-numbers -BS03 from the live chain.
+    const reborn = await createLotSupplement(mainDocId, null);
+    docIds.push(reborn.id);
+    assert.equal(reborn.documentNumber, `${mainNumber}-BS03`);
+    assert.deepEqual(
+      reborn.lines.filter((l) => l.sourceType === 'SHIPMENT_COST').map((l) => l.sourceId).sort(),
+      late.map((c) => c.id).sort(),
+      'exactly the freed rows, none of the live BS01/BS02 rows',
+    );
+  });
+
+  test('an ISSUED note refuses deletion and the ledger stays untouched', async () => {
+    await seed();
+    await assert.rejects(
+      () => deleteDocument(mainDocId),
+      (err: unknown) => {
+        assert.ok(err instanceof ApiError);
+        assert.equal((err as ApiError).statusCode, 409);
+        return true;
+      },
+    );
+    const [row] = await db.select({ deletedAt: s.billingDocuments.deletedAt })
+      .from(s.billingDocuments).where(eq(s.billingDocuments.id, mainDocId));
+    assert.ok(row && !row.deletedAt, 'issued note survives');
+    const entries = await db.select().from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.ADJUSTMENT),
+      eq(s.ledger.txnId, mainDocId),
+    ));
+    assert.equal(entries.length, 0, 'no reversal entry for a refused delete');
   });
 });
 
