@@ -1155,6 +1155,32 @@ export async function updateDocument(id: number, input: SaveBillingDocumentInput
   return getDocument(id);
 }
 
+/**
+ * NEPO-63 — human-readable key for a debit-note edit's audit entry: note
+ * number, old → new total, and which parts changed (khoảng ngày / ghi chú /
+ * mẫu in / dòng phí with the line-count delta). Lines compare by
+ * description + effective amount + exclusion so an amount override on one row
+ * is reported even when the count is unchanged.
+ */
+export function describeBillingDocumentEdit(before: BillingDocument, after: BillingDocument): string {
+  const label = after.documentNumber ?? `#${after.id}`;
+  const oldTotal = Math.round(Number(before.totalInclVat));
+  const newTotal = Math.round(Number(after.totalInclVat));
+  const head = oldTotal === newTotal
+    ? `${label} · ${newTotal.toLocaleString('vi-VN')}₫`
+    : `${label} · ${oldTotal.toLocaleString('vi-VN')}₫ → ${newTotal.toLocaleString('vi-VN')}₫`;
+  const changed: string[] = [];
+  if (before.rangeFrom !== after.rangeFrom || before.rangeTo !== after.rangeTo) changed.push('khoảng ngày');
+  if ((before.note ?? '') !== (after.note ?? '')) changed.push('ghi chú');
+  if ((before.debitNoteTemplateId ?? null) !== (after.debitNoteTemplateId ?? null)) changed.push('mẫu in');
+  const beforeLineKey = (before.lines ?? []).map((l) => `${l.description}|${effectiveAmount(l)}|${l.excluded ? 1 : 0}`).sort().join(';');
+  const afterLineKey = (after.lines ?? []).map((l) => `${l.description}|${effectiveAmount(l)}|${l.excluded ? 1 : 0}`).sort().join(';');
+  if (beforeLineKey !== afterLineKey) {
+    changed.push(`dòng phí (${(before.lines ?? []).length} → ${(after.lines ?? []).length})`);
+  }
+  return changed.length > 0 ? `${head} (đổi: ${changed.join(', ')})` : head;
+}
+
 async function persistLines(tx: Tx, documentId: number, lines: BillingDocumentLine[]): Promise<void> {
   if (lines.length === 0) return;
   await tx.insert(s.billingDocumentLines).values(

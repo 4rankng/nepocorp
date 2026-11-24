@@ -13,6 +13,7 @@
  * The casbin enforcer reads policy.csv at init — no DB needed.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 // Importing the routers populates the audit registry at module load —
 // the same registrations the running server uses.
 import '../routes/financial';
@@ -115,5 +116,25 @@ describe('debit-note edit audit trail', () => {
     assert.match(message, /DN2026110007/);
     assert.match(message, /Giấy báo nợ/);
     assert.match(message, /bút toán/);
+  });
+
+  test('PUT billing-documents/:id stays ADMIN-only and stashes the edit key for the log', () => {
+    // No HTTP harness exists in this repo — pin the route wiring by source:
+    // the handler fetches the pre-edit document and hands the audit
+    // middleware a key naming the note (number + old→new total + changed
+    // parts). Without the stash the middleware's name/code probes find
+    // nothing on a billing document and the log loses the document number.
+    const source = readFileSync(
+      new URL('../routes/financial/billing-documents.routes.ts', import.meta.url),
+      'utf8',
+    );
+    const putBlock = source.slice(
+      source.indexOf("router.put('/finance/billing-documents/:id'"),
+      source.indexOf("router.delete('/finance/billing-documents/:id'"),
+    );
+    assert.match(putBlock, /requireRoles\(Role\.ADMIN\)/);
+    assert.match(putBlock, /billingService\.getDocument\(Number\(req\.params\.id\)\)/);
+    assert.match(putBlock, /describeBillingDocumentEdit\(before, doc\)/);
+    assert.match(putBlock, /res\.locals\.auditEntityKey/);
   });
 });

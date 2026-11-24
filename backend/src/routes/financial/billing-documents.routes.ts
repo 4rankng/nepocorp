@@ -82,8 +82,14 @@ router.post('/finance/billing-documents/:id/supplement', requireRoles(...ROLES),
 // admin corrects; every edit is audit-logged by the global middleware.
 router.put('/finance/billing-documents/:id', requireRoles(Role.ADMIN), asyncHandler(async (req: Request, res: Response) => {
   const data = saveBillingDocumentSchema.parse(req.body);
+  const before = await billingService.getDocument(Number(req.params.id));
   const doc = await billingService.updateDocument(Number(req.params.id), data);
   await invalidateReportCaches();
+  // NEPO-63 — the audit sentence must name the note (QA fail 24/11: the log
+  // had no edit event naming the document). Stash number + old→new total +
+  // changed parts; the DEBIT_NOTE_UPDATED template renders this key.
+  res.locals.auditEntityId = doc.id;
+  res.locals.auditEntityKey = billingService.describeBillingDocumentEdit(before, doc);
   res.json(doc);
 }));
 

@@ -5,10 +5,12 @@ import {
   effectiveAmount, docTotal, documentLedgerAdjustment, splitContainers, joinContainers,
   counterpartyCatalogForEntityType,
   paymentStatementRenderingPolicy,
+  describeBillingDocumentEdit,
 } from '../services/billingDocument.service';
 import {
   generateBillingDocumentSchema,
   saveBillingDocumentSchema,
+  type BillingDocument,
   type BillingDocumentLine,
 } from '@tingting/shared';
 
@@ -201,4 +203,53 @@ test('documentLedgerAdjustment — SHIPMENT_COST override delta counts', () => {
     line({ sourceType: 'SHIPMENT_COST', baseAmount: 4500000, amountOverride: 5000000 }),
   ];
   assert.equal(documentLedgerAdjustment(lines), 5000000);
+});
+
+// ─── NEPO-63 — audit key for admin edits of an issued debit note ─────────────
+
+const editDoc = (over: Partial<BillingDocument>): BillingDocument => ({
+  id: 1, type: 'DEBIT_NOTE', entityType: 'CUSTOMER', entityId: 7,
+  rangeFrom: '2026-11-01', rangeTo: '2026-11-30', note: null, totalInclVat: 22_500_000,
+  createdBy: null, createdAt: '2026-11-22T00:00:00Z', updatedAt: '2026-11-22T00:00:00Z',
+  documentNumber: 'DN26110001', lines: [], ...over,
+});
+
+test('describeBillingDocumentEdit — names the note, the old→new total, and changed lines', () => {
+  const before = editDoc({
+    lines: [
+      line({ description: 'Cước biển HP-SGP', baseAmount: 10_000_000 }),
+      line({ description: 'Cước biển HP-SGP (cont 2)', baseAmount: 12_000_000 }),
+    ],
+  });
+  const after = editDoc({
+    totalInclVat: 22_000_000,
+    lines: [
+      line({ description: 'Cước biển HP-SGP', baseAmount: 10_000_000 }),
+      line({ description: 'Cước biển HP-SGP (cont 2)', baseAmount: 12_000_000, excluded: true }),
+    ],
+  });
+  assert.equal(
+    describeBillingDocumentEdit(before, after),
+    'DN26110001 · 22.500.000₫ → 22.000.000₫ (đổi: dòng phí (2 → 2))',
+  );
+});
+
+test('describeBillingDocumentEdit — an amount override is caught with an unchanged line count', () => {
+  const before = editDoc({ lines: [line({ baseAmount: 10_000_000 })] });
+  const after = editDoc({ totalInclVat: 12_000_000, lines: [line({ baseAmount: 10_000_000, amountOverride: 12_000_000 })] });
+  assert.equal(
+    describeBillingDocumentEdit(before, after),
+    'DN26110001 · 22.500.000₫ → 12.000.000₫ (đổi: dòng phí (1 → 1))',
+  );
+});
+
+test('describeBillingDocumentEdit — scalar edits are named without a line diff', () => {
+  const before = editDoc({});
+  const after = editDoc({ note: 'Điều khoản thanh toán mới' });
+  assert.equal(describeBillingDocumentEdit(before, after), 'DN26110001 · 22.500.000₫ (đổi: ghi chú)');
+});
+
+test('describeBillingDocumentEdit — an unchanged re-save renders number + total only', () => {
+  const before = editDoc({});
+  assert.equal(describeBillingDocumentEdit(before, editDoc({})), 'DN26110001 · 22.500.000₫');
 });
