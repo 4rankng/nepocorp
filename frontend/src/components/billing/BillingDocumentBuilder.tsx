@@ -590,9 +590,16 @@ export default function BillingDocumentBuilder({
         <button className="btn btn--secondary" type="button" onClick={onClose} disabled={busy}>
           Đóng
         </button>
-        <button className="btn btn--primary" type="button" onClick={exportXlsx} disabled={busy || lines.length === 0}>
-          {exporting || saving ? <Loader2 size={16} className="spin" /> : <Download size={16} />}
-          {exporting || saving ? 'Đang lưu & xuất...' : 'Xuất Excel'}
+        {/* NEPO-63 — plain save: PUT on an existing note (issued Báo nợ sửa
+            bởi Admin, server ghi DEBIT_NOTE_UPDATED), POST on first save.
+            Xuất Excel vẫn tự lưu trước khi render workbook. */}
+        <button className="btn btn--primary" type="button" onClick={() => void persistDocument()} disabled={busy || lines.length === 0}>
+          {saving ? <Loader2 size={16} className="spin" /> : null}
+          {saving ? 'Đang lưu...' : 'Lưu'}
+        </button>
+        <button className="btn btn--secondary" type="button" onClick={exportXlsx} disabled={busy || lines.length === 0}>
+          {exporting ? <Loader2 size={16} className="spin" /> : <Download size={16} />}
+          {exporting ? 'Đang xuất...' : 'Xuất Excel'}
         </button>
       </footer>
     </section>

@@ -23,6 +23,7 @@ import {
   ShipmentDocType,
 } from '@tingting/shared';
 import type {
+  BillingDocument,
   BillingDraftLine,
   LotCostRow,
   LotFeeStatus,
@@ -45,6 +46,7 @@ import { shipmentClient } from '../api/shipmentClient';
 import { financialClient } from '../api/financialClient';
 import { api } from '../lib/api';
 import ShipmentFormModal from '../features/shipments/ShipmentFormModal';
+import BillingDocumentBuilder from '../components/billing/BillingDocumentBuilder';
 import { downloadBlob } from '../lib/download';
 import { formatCurrency, formatDate } from '../lib/format';
 import { qk } from '../api/keys';
@@ -130,6 +132,12 @@ export default function ShipmentDetailPage() {
 
   const [noteDraft, setNoteDraft] = useState<BillingDocumentDraftState | null>(null);
   const [noteBusy, setNoteBusy] = useState(false);
+  // NEPO-63 — Admin sửa Báo nợ ĐÃ PHÁT HÀNH: the row summary carries no lines,
+  // so openEditNote fetches the full document and opens the shared builder in
+  // edit mode; its save path PUTs /finance/billing-documents/:id (ADMIN-only)
+  // and the server writes the DEBIT_NOTE_UPDATED audit entry.
+  const [editNoteDoc, setEditNoteDoc] = useState<BillingDocument | null>(null);
+  const [editNoteBusy, setEditNoteBusy] = useState(false);
 
   const billingDocs = useMemo(
     () => [...(shipment?.billingDocuments ?? [])].sort(
@@ -339,6 +347,17 @@ export default function ShipmentDetailPage() {
       showToast({ kind: 'success', message: 'Đã xóa Báo nợ' });
     } catch (error) {
       showToast({ kind: 'error', message: (error as Error).message });
+    }
+  };
+
+  const openEditNote = async (doc: ShipmentBillingDocSummary) => {
+    setEditNoteBusy(true);
+    try {
+      setEditNoteDoc(await financialClient.getBillingDocument(doc.id));
+    } catch (error) {
+      showToast({ kind: 'error', message: (error as Error).message });
+    } finally {
+      setEditNoteBusy(false);
     }
   };
 
@@ -568,6 +587,15 @@ export default function ShipmentDetailPage() {
                       <Plus size={14} />
                     </button>
                   )}
+                  {/* NEPO-63 — sửa Báo nợ ĐÃ PHÁT HÀNH: ADMIN-only (backend
+                      PUT requireRoles(Role.ADMIN) 403s the rest), every save
+                      writes the DEBIT_NOTE_UPDATED audit entry. Ketoan/Ops
+                      biển see no button — đúng ma trận §6. */}
+                  {doc.issuedAt && canManageBillingDocuments(user?.role) && (
+                    <button className="icon-btn" title="Sửa Báo nợ đã phát hành (ghi nhật ký)" disabled={editNoteBusy} onClick={() => void openEditNote(doc)}>
+                      <PencilLine size={14} />
+                    </button>
+                  )}
                   {/* NEPO-63 — draft delete = DELETE /:id, ADMIN-only backend. */}
                   {!doc.issuedAt && canManageBillingDocuments(user?.role) && (
                     <button className="icon-btn" title="Xóa Báo nợ chưa phát hành (công nợ về như trước khi lập)" onClick={() => void removeNote(doc)}>
@@ -581,7 +609,7 @@ export default function ShipmentDetailPage() {
               </div>
             ))}
             <p className="lot-billing__sub" style={{ marginTop: 10 }}>
-              Báo nợ đã phát hành không sửa/xóa được — phí phát sinh sau lên Báo nợ bổ sung -BS01.
+              Báo nợ đã phát hành: chỉ Quản trị viên sửa được — mỗi lần sửa ghi nhật ký hệ thống, bút toán công nợ điều chỉnh theo chênh lệch; phí phát sinh sau lên Báo nợ bổ sung -BS01.
               Báo nợ chưa phát hành có thể xóa: công nợ quay lại như trước khi lập.
               Phí "Chờ hóa đơn" in trên Báo nợ không có số tiền và không cộng vào Tổng cộng.
             </p>
@@ -889,6 +917,22 @@ export default function ShipmentDetailPage() {
             </button>
           </div>
         </Modal>
+      )}
+      {/* NEPO-63 — Sửa Báo nợ đã phát hành (ADMIN-only): the shared builder
+          in edit mode; its save/export path calls updateBillingDocument (PUT)
+          and the server audit-logs DEBIT_NOTE_UPDATED with the note number. */}
+      {editNoteDoc && (
+        <BillingDocumentBuilder
+          isOpen
+          type="DEBIT_NOTE"
+          entityType="CUSTOMER"
+          entityId={editNoteDoc.entityId}
+          entityName={editNoteDoc.entityName ?? shipment.customerName ?? ''}
+          shipmentId={shipment.id}
+          initialDoc={editNoteDoc}
+          onClose={() => setEditNoteDoc(null)}
+          onSaved={() => void queryClient.invalidateQueries({ queryKey: qk.shipments.detail(shipmentId) })}
+        />
       )}
       {canWrite && (
         <ShipmentFormModal

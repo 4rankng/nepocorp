@@ -43,6 +43,21 @@ describe('billing-document role gates — UI mirrors the billing-documents API p
     expect(detailPage).toContain('canWriteShipments(user?.role)');
   });
 
+  it('Sửa Báo nợ đã phát hành — ADMIN-only pencil on issued rows opens the shared builder', () => {
+    // NEPO-63 r2 — QA blocker 24/11 12:47: the PUT had zero UI call sites on
+    // the lô page; issued rows showed only Bổ sung -BS01 + Xuất Excel. The
+    // pencil now sits ONLY on issued rows behind canManageBillingDocuments
+    // (ketoan/gncapture never see it), fetches the full document (the row
+    // summary has no lines), and mounts the builder whose save path is
+    // financialClient.updateBillingDocument → PUT /finance/billing-documents/:id
+    // (server requireRoles(Role.ADMIN) + DEBIT_NOTE_UPDATED audit entry).
+    expect(detailPage).toContain('doc.issuedAt && canManageBillingDocuments(user?.role)');
+    expect(detailPage).toContain('title="Sửa Báo nợ đã phát hành (ghi nhật ký)"');
+    expect(detailPage).toContain('financialClient.getBillingDocument(doc.id)');
+    expect(detailPage).toContain('<BillingDocumentBuilder');
+    expect(detailPage).toContain('initialDoc={editNoteDoc}');
+  });
+
   it('billing panel create/builder gates follow the same POST policy', () => {
     expect(billingPanel).toContain('canCreateBillingDocuments(user?.role)');
     expect(billingPanel).toContain('builderOpen && canCreateBillingDocuments(user?.role)');
