@@ -36,6 +36,15 @@ export function canCreateBillingDocuments(role: Role | null | undefined): boolea
   return role === 'ADMIN' || role === 'MANAGER' || role === 'ACCOUNTANT';
 }
 
+/**
+ * NEPO-63 (QA 3b) — whole 'Giấy báo nợ theo lô' section visibility on the lô
+ * detail: the same role set the server enforces (GET /api/shipments/:id
+ * strips the embedded notes for everyone else). Giao nhận sees no Báo nợ.
+ */
+export function canSeeBillingDocuments(role: Role | null | undefined): boolean {
+  return role === 'ADMIN' || role === 'MANAGER' || role === 'ACCOUNTANT';
+}
+
 /* ─── Flow type ───────────────────────────────────────────────────────────── */
 
 const FLOW_TYPE_LABELS: Record<TripFlowType, string> = {

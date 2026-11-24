@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Role } from '@tingting/shared';
-import { canCreateBillingDocuments, canManageBillingDocuments } from './shipmentDisplay';
+import { canCreateBillingDocuments, canManageBillingDocuments, canSeeBillingDocuments } from './shipmentDisplay';
 import detailPage from '../../pages/ShipmentDetailPage.tsx?raw';
 import billingPanel from '../../components/billing/BillingDocumentsPanel.tsx?raw';
 
@@ -61,5 +61,26 @@ describe('billing-document role gates — UI mirrors the billing-documents API p
   it('billing panel create/builder gates follow the same POST policy', () => {
     expect(billingPanel).toContain('canCreateBillingDocuments(user?.role)');
     expect(billingPanel).toContain('builderOpen && canCreateBillingDocuments(user?.role)');
+  });
+
+  it('canSeeBillingDocuments mirrors the server-stripped embed (QA 3b: gncapture sees no Báo nợ)', () => {
+    expect(canSeeBillingDocuments(Role.ADMIN)).toBe(true);
+    expect(canSeeBillingDocuments(Role.MANAGER)).toBe(true);
+    expect(canSeeBillingDocuments(Role.ACCOUNTANT)).toBe(true);
+    expect(canSeeBillingDocuments(Role.FORWARDER)).toBe(false);
+    expect(canSeeBillingDocuments(Role.DISPATCHER)).toBe(false);
+    expect(canSeeBillingDocuments(Role.DRIVER)).toBe(false);
+    expect(canSeeBillingDocuments(null)).toBe(false);
+    expect(canSeeBillingDocuments(undefined)).toBe(false);
+  });
+
+  it('lô detail hides the WHOLE Giấy báo nợ theo lô section for stripped roles', () => {
+    // NEPO-63 QA 3b fail (build eb668fd): the section (danh sách DN + dòng
+    // -BS01 + Xuất Excel + chú thích) still rendered for FORWARDER even though
+    // every button was gated. The entire section now sits behind the
+    // visibility gate matching the server-side strip in GET /api/shipments/:id.
+    expect(detailPage).toContain('const canSeeBilling = canSeeBillingDocuments(user?.role);');
+    expect(detailPage).toContain('{canSeeBilling && (<section className="shipment-detail__card">');
+    expect(detailPage).toContain('<h2 className="shipment-detail__card-title">Giấy báo nợ theo lô</h2>');
   });
 });

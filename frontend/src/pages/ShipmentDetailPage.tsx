@@ -60,6 +60,7 @@ import {
   canWriteShipments,
   canCreateBillingDocuments,
   canManageBillingDocuments,
+  canSeeBillingDocuments,
   cutoffDaysLeft,
   flowTypeLabel,
   formatFileSize,
@@ -113,6 +114,9 @@ export default function ShipmentDetailPage() {
   // NEPO-63 — the debit-note button follows the billing-documents server
   // policy, NOT the lô-write policy: ketoan sees it, forwarder does not.
   const canIssueDebitNote = canCreateBillingDocuments(user?.role);
+  // NEPO-63 (QA 3b) — the whole 'Giấy báo nợ theo lô' section is hidden for
+  // roles the server strips the embedded notes for; gncapture sees no Báo nợ.
+  const canSeeBilling = canSeeBillingDocuments(user?.role);
 
   const { data: shipment, isLoading } = useShipmentDetail(id);
   const { data: register } = useShipmentCostRegister(id);
@@ -551,8 +555,10 @@ export default function ShipmentDetailPage() {
             </div>
           </section>
 
-          {/* ─── Per-lot debit notes ─── */}
-          <section className="shipment-detail__card">
+          {/* ─── Per-lot debit notes — NEPO-63 (QA 3b): the section is hidden
+              entirely for roles the server strips the embedded notes for;
+              gncapture sees no Báo nợ on the lô page. ─── */}
+          {canSeeBilling && (<section className="shipment-detail__card">
             <h2 className="shipment-detail__card-title">Giấy báo nợ theo lô</h2>
             {billingDocs.length === 0 && (
               <div className="lot-billing__empty">
@@ -614,6 +620,7 @@ export default function ShipmentDetailPage() {
               Phí "Chờ hóa đơn" in trên Báo nợ không có số tiền và không cộng vào Tổng cộng.
             </p>
           </section>
+          )}
         </div>
 
         <div>

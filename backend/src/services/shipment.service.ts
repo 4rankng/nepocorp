@@ -18,6 +18,7 @@ import {
   shipmentCodeSeqRe,
   FeeGroup,
   LotFeeStatus,
+  Role,
   TripFlowType,
   TruckTransferCostKey,
   FEE_GROUP_LABELS,
@@ -210,8 +211,16 @@ async function computeProfit(shipmentId: number): Promise<ShipmentProfitSummary>
   };
 }
 
-export async function getShipmentDetail(id: number) {
+export async function getShipmentDetail(id: number, role?: Role | null) {
   const shipment = await getShipmentById(id);
+  // NEPO-63 (QA 3b fail, build eb668fd) — Giao nhận/FORWARDER sees no Báo nợ
+  // anywhere on the lô page, so the embedded per-lô notes are stripped
+  // SERVER-side for roles outside the billing-documents policy (same role set
+  // requireRoles() enforces on /api/finance/billing-documents*). Hiding the
+  // section in the UI alone would leave the data one GET away. No role
+  // (internal callers) is denied too — the route always passes one.
+  const canSeeBillingDocuments =
+    role === Role.ADMIN || role === Role.MANAGER || role === Role.ACCOUNTANT;
   const [documents, costs, profit, billingDocuments, trips] = await Promise.all([
     db.select().from(s.shipmentDocuments)
       .where(eq(s.shipmentDocuments.shipmentId, id))
@@ -220,7 +229,7 @@ export async function getShipmentDetail(id: number) {
       .where(eq(s.shipmentCosts.shipmentId, id))
       .orderBy(desc(s.shipmentCosts.incurredDate), desc(s.shipmentCosts.id)),
     computeProfit(id),
-    db.select({
+    canSeeBillingDocuments ? db.select({
       id: s.billingDocuments.id,
       type: s.billingDocuments.type,
       entityType: s.billingDocuments.entityType,
@@ -237,7 +246,8 @@ export async function getShipmentDetail(id: number) {
     }).from(s.billingDocuments).where(and(
       eq(s.billingDocuments.shipmentId, id),
       isNull(s.billingDocuments.deletedAt),
-    )).orderBy(desc(s.billingDocuments.createdAt), desc(s.billingDocuments.id)),
+    )).orderBy(desc(s.billingDocuments.createdAt), desc(s.billingDocuments.id))
+      : Promise.resolve([]),
     // NEPO-62 — the truck trips attached to this lô; their operational figures
     // feed the truck-transfer section and the lô profit.
     db.select({

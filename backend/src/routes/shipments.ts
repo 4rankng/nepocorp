@@ -77,7 +77,9 @@ router.post('/', requireRoles(...WRITE), asyncHandler(async (req: Request, res: 
 }));
 
 router.get('/:id', asyncHandler(async (req: Request, res: Response) => {
-  res.json(await shipmentService.getShipmentDetail(Number(req.params.id)));
+  // NEPO-63 (QA 3b) — the viewer's role decides whether the payload carries
+  // the per-lô Báo nợ: the service strips it for Giao nhận et al.
+  res.json(await shipmentService.getShipmentDetail(Number(req.params.id), getUser(req).role));
 }));
 
 router.put('/:id', requireRoles(...WRITE), asyncHandler(async (req: Request, res: Response) => {
