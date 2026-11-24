@@ -43,6 +43,7 @@ import {
 } from '../hooks/useShipmentQueries';
 import { shipmentClient } from '../api/shipmentClient';
 import { financialClient } from '../api/financialClient';
+import { api } from '../lib/api';
 import ShipmentFormModal from '../features/shipments/ShipmentFormModal';
 import { downloadBlob } from '../lib/download';
 import { formatCurrency, formatDate } from '../lib/format';
@@ -338,10 +339,9 @@ export default function ShipmentDetailPage() {
 
   const exportNote = async (doc: ShipmentBillingDocSummary) => {
     try {
-      const blob = await fetch(
-        financialClient.getBillingDocumentExportUrl(doc.id),
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` } },
-      ).then((res) => res.blob());
+      // api.getBlob owns the /api prefix + auth header — a raw fetch here
+      // produced /finance/... and hit the SPA's index.html instead.
+      const blob = await api.getBlob(financialClient.getBillingDocumentExportUrl(doc.id));
       downloadBlob(blob, `${doc.documentNumber ?? `bao-no-${doc.id}`}.xlsx`);
     } catch (error) {
       showToast({ kind: 'error', message: (error as Error).message });

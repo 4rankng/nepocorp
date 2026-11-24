@@ -709,20 +709,51 @@ async function loadLotShipment(shipmentId: number) {
  * ("CONT / SEAL" pairs). Frozen onto each saved lot document so re-exports
  * stay identical after the lô record changes.
  */
-export async function buildLotShipmentInfo(shipmentId: number): Promise<ShipmentInfo> {
-  const shipment = await loadLotShipment(shipmentId);
+/**
+ * "CONT / SEAL" pairs for a lô: the booking's free-form số cont/seal text
+ * (shipments.container_seals, one "CONT / SEAL" per line) merged with the
+ * linked trips' container rows (primary-seal mirror). Booking entries come
+ * first — sea-freight lots record containers there before any trip is linked,
+ * and QA lot 4 has exactly that shape.
+ */
+async function loadLotContainerPairs(shipmentId: number, bookingContainerSeals: string | null): Promise<string[]> {
+  const pairs: string[] = [];
+  const seen = new Set<string>();
+  const push = (value: string): void => {
+    const trimmed = value.trim();
+    if (trimmed && !seen.has(trimmed.toUpperCase())) {
+      seen.add(trimmed.toUpperCase());
+      pairs.push(trimmed);
+    }
+  };
+  for (const line of (bookingContainerSeals ?? '').split(/\r?\n/)) {
+    const [cont, seal] = line.split('/');
+    const container = (cont ?? '').trim();
+    if (!container) continue;
+    const sealNumber = (seal ?? '').trim().replace(/^seal[\s:—-]*/i, '');
+    push(sealNumber ? `${container} / ${sealNumber}` : container);
+  }
   const tripIds = (await db.select({ id: s.trips.id }).from(s.trips)
     .where(and(eq(s.trips.shipmentId, shipmentId), isNull(s.trips.deletedAt))))
     .map((r) => r.id);
-  const containerRows = await db.select({
-    containerNumber: s.tripContainers.containerNumber,
-    sealNumber: s.tripContainers.sealNumber,
-  }).from(s.tripContainers)
-    .where(tripIds.length > 0 ? inArray(s.tripContainers.tripId, tripIds) : sql`false`);
-  const containerNumbers = containerRows
-    .map((c) => c.containerNumber)
-    .filter((c): c is string => !!c)
-    .map((c) => c.trim());
+  if (tripIds.length > 0) {
+    const containerRows = await db.select({
+      containerNumber: s.tripContainers.containerNumber,
+      sealNumber: s.tripContainers.sealNumber,
+    }).from(s.tripContainers)
+      .where(inArray(s.tripContainers.tripId, tripIds));
+    for (const row of containerRows) {
+      const container = (row.containerNumber ?? '').trim();
+      if (!container) continue;
+      const sealNumber = (row.sealNumber ?? '').trim();
+      push(sealNumber ? `${container} / ${sealNumber}` : container);
+    }
+  }
+  return pairs;
+}
+
+export async function buildLotShipmentInfo(shipmentId: number): Promise<ShipmentInfo> {
+  const shipment = await loadLotShipment(shipmentId);
   return {
     blNumber: shipment.blNo ?? null,
     vesselVoyage: shipment.vesselVoyage ?? null,
@@ -730,7 +761,7 @@ export async function buildLotShipmentInfo(shipmentId: number): Promise<Shipment
     podName: shipment.pod ?? null,
     etdDate: shipment.etd ?? null,
     etaDate: shipment.eta ?? null,
-    containerNumbers,
+    containerNumbers: await loadLotContainerPairs(shipmentId, shipment.containerSeals ?? null),
   };
 }
 
@@ -770,6 +801,9 @@ async function buildLotDebitLines(
       eq(s.shipmentCosts.direction, 'CUSTOMER'),
     ));
 
+  // NEPO-62 (d) — no official MCT26026/TMT26004 sample files exist to verify
+  // against (QA-verified absence), so the order below follows the current
+  // fee_type sequence (LOT_DEBIT_NOTE_ORDER) until real samples arrive.
   const order = shipment.flowType === 'NHAP'
     ? LOT_DEBIT_NOTE_ORDER.NHAP
     : LOT_DEBIT_NOTE_ORDER.XUAT;
@@ -1166,6 +1200,22 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
   const lines = await db.select().from(s.billingDocumentLines)
     .where(eq(s.billingDocumentLines.documentId, doc.id))
     .orderBy(s.billingDocumentLines.sortOrder);
+  // NEPO-62 QA — notes saved before the container/seal snapshot existed, or
+  // before the booking's số cont/seal text was merged in, freeze an empty
+  // container list. Complete it from the live lô at read time so the API
+  // payload and re-exports show the lot's containers; every other frozen
+  // field stays as saved.
+  let shipmentInfo = (doc.shipmentInfo as ShipmentInfo | null) ?? null;
+  if (doc.shipmentId != null && (shipmentInfo === null || shipmentInfo.containerNumbers.length === 0)) {
+    try {
+      const live = await buildLotShipmentInfo(doc.shipmentId);
+      shipmentInfo = shipmentInfo === null
+        ? live
+        : { ...shipmentInfo, containerNumbers: live.containerNumbers };
+    } catch {
+      // Lô since deleted — export the frozen block as-is.
+    }
+  }
   return {
     id: doc.id, type: doc.type as BillingDocumentType, entityType: doc.entityType as BillingDocumentEntityType,
     entityId: doc.entityId, entityName: doc.entityName ?? undefined,
@@ -1173,7 +1223,7 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
     documentNumber: doc.documentNumber ?? null,
     parentDocumentId: doc.parentDocumentId ?? null,
     issuedAt: doc.issuedAt ? doc.issuedAt.toISOString() : null,
-    shipmentInfo: (doc.shipmentInfo as ShipmentInfo | null) ?? null,
+    shipmentInfo,
     rangeFrom: doc.rangeFrom, rangeTo: doc.rangeTo, note: doc.note,
     totalInclVat: Number(doc.totalInclVat), createdBy: doc.createdBy,
     ledgerAdjustmentAmount: Number(doc.ledgerAdjustmentAmount),
@@ -2012,7 +2062,24 @@ async function renderDebitNoteXlsx(
   const thinBlack = { style: 'thin' as const, color: { argb: 'FF000000' } };
   const tableBorder = { top: thinBlack, left: thinBlack, right: thinBlack, bottom: thinBlack };
   const accent = hexToArgb(snap.accentColor || '#00A651');
-  const dataStartRow = 16;
+  // NEPO-62 QA — frozen Thông tin Lô hàng block sits between the recipient
+  // meta (rows 9-13) and the fee table on per-lot notes; both Hàng Xuất and
+  // Hàng Nhập share this renderer. Without it the header row shifts back to
+  // the pre-lot fixed row 15.
+  const lotRows: Array<[string, string]> = [];
+  if (doc.shipmentInfo) {
+    const info = doc.shipmentInfo;
+    lotRows.push(
+      ['THÔNG TIN LÔ HÀNG', ''],
+      ['Số B/L', info.blNumber ?? ''],
+      ['Tàu / Chuyến', info.vesselVoyage ?? ''],
+      ['POL - POD', [info.polName, info.podName].filter(Boolean).join(' - ')],
+      ['ETD / ETA', [info.etdDate, info.etaDate].filter((v): v is string => !!v).map(formatVietnameseDate).join(' - ')],
+      ['Số container / Seal', (info.containerNumbers ?? []).join(', ')],
+    );
+  }
+  const tableHeaderRow = 15 + lotRows.length;
+  const dataStartRow = tableHeaderRow + 1;
   const minTotalRow = 61;
   const renderedDataRowCount = lineGroups.reduce((sum, group) => sum + 1 + group.lines.length, 0);
   const totalRow = Math.max(minTotalRow, dataStartRow + renderedDataRowCount);
@@ -2066,7 +2133,7 @@ async function renderDebitNoteXlsx(
     ws.getColumn(index + 1).width = width;
   });
   for (let r = 1; r <= sheetRows; r++) {
-    if (r === 15) ws.getRow(r).height = 28;
+    if (r === tableHeaderRow) ws.getRow(r).height = 28;
     for (let c = 1; c <= 8; c++) {
       ws.getCell(r, c).font = baseFont;
     }
@@ -2115,7 +2182,13 @@ async function renderDebitNoteXlsx(
   ws.getCell(7, 2).font = { name: 'Tahoma', size: 14, bold: true, color: { argb: 'FF7A7F87' } };
   ws.getCell(7, 2).alignment = { horizontal: 'left', vertical: 'middle' };
 
-  const noticeNo = doc.note?.trim() || `${customerCode(partner.name, doc.entityId)}${doc.rangeTo.replaceAll('-', '').slice(2)}`;
+  // NEPO-62 QA — the printed Số must carry the SYSTEM number (DN{yy}{mm}{seq})
+  // stamped on the saved note, not the note text or a generated
+  // customerCode+period fallback (QA saw "HCN261129" where DN26110001 belongs).
+  // Non-lot docs keep the old chain: they have no documentNumber yet.
+  const noticeNo = doc.documentNumber
+    || doc.note?.trim()
+    || `${customerCode(partner.name, doc.entityId)}${doc.rangeTo.replaceAll('-', '').slice(2)}`;
   ws.mergeCells('C9:D9');
   ws.mergeCells('C10:D10');
   ws.mergeCells('C11:D11');
@@ -2149,7 +2222,20 @@ async function renderDebitNoteXlsx(
   ws.getCell(12, 5).value = partnerAddress2;
   ws.getCell(13, 5).value = partner.taxCode ? `MST : ${partner.taxCode}` : 'MST :';
 
-  const tableHeaderRow = 15;
+  // NEPO-62 QA — render the frozen Thông tin Lô hàng block (B/L, tàu/chuyến,
+  // POL-POD, ETD/ETA, số cont/seal) between the recipient meta and the fee
+  // table. Rows 14+; the table header/data rows shift down accordingly.
+  lotRows.forEach(([label, value], idx) => {
+    const rowNumber = 14 + idx;
+    const cell = ws.getCell(rowNumber, 2);
+    cell.value = idx === 0 ? label : `${label}: ${value}`;
+    ws.mergeCells(rowNumber, 2, rowNumber, 8);
+    cell.font = idx === 0
+      ? { ...boldFont, color: { argb: 'FF1F4E79' } }
+      : baseFont;
+    cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: false };
+  });
+
   const fixedHeaders = ['Ngày tháng', 'Số \nchứng từ', 'Diễn giải', 'ĐVT', 'Số lượng', 'Đơn giá', 'Thành tiền'];
   fixedHeaders.forEach((header, index) => {
     const cell = ws.getCell(tableHeaderRow, index + 2);

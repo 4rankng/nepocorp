@@ -8,6 +8,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import { financialClient } from '../api/financialClient';
+import { api } from '../lib/api';
+import { downloadBlob } from '../lib/download';
 import { formatCurrency } from '../lib/format';
 import { PageHeader } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
@@ -51,17 +53,10 @@ export default function SoaPage() {
 
   const exportXlsx = async () => {
     try {
-      const res = await fetch(financialClient.getCustomerSoaExportUrl(from, to), {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
-      });
-      if (!res.ok) throw new Error('Xuất file thất bại');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `SOA_cong_no_${from}_${to}.xlsx`;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      // api.getBlob owns the /api prefix + auth header — a raw fetch here
+      // produced /ledger/... and hit the SPA's index.html instead.
+      const blob = await api.getBlob(financialClient.getCustomerSoaExportUrl(from, to));
+      downloadBlob(blob, `SOA_cong_no_${from}_${to}.xlsx`);
     } catch (err) {
       showToast({ kind: 'error', message: (err as Error).message });
     }
