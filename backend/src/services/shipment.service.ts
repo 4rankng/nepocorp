@@ -211,16 +211,21 @@ async function computeProfit(shipmentId: number): Promise<ShipmentProfitSummary>
   };
 }
 
+/**
+ * NEPO-63 (QA 3b fail, build eb668fd) — Giao nhận/FORWARDER sees no Báo nợ
+ * anywhere on the lô page, so per-lô debit-note data (embedded notes, per-row
+ * billing status) is stripped SERVER-side for roles outside the
+ * billing-documents policy (same role set requireRoles() enforces on
+ * /api/finance/billing-documents*). Hiding it in the UI alone would leave the
+ * data one GET away. No role (internal callers) is denied too — the routes
+ * always pass one.
+ */
+function canSeeBillingDocuments(role: Role | null | undefined): boolean {
+  return role === Role.ADMIN || role === Role.MANAGER || role === Role.ACCOUNTANT;
+}
+
 export async function getShipmentDetail(id: number, role?: Role | null) {
   const shipment = await getShipmentById(id);
-  // NEPO-63 (QA 3b fail, build eb668fd) — Giao nhận/FORWARDER sees no Báo nợ
-  // anywhere on the lô page, so the embedded per-lô notes are stripped
-  // SERVER-side for roles outside the billing-documents policy (same role set
-  // requireRoles() enforces on /api/finance/billing-documents*). Hiding the
-  // section in the UI alone would leave the data one GET away. No role
-  // (internal callers) is denied too — the route always passes one.
-  const canSeeBillingDocuments =
-    role === Role.ADMIN || role === Role.MANAGER || role === Role.ACCOUNTANT;
   const [documents, costs, profit, billingDocuments, trips] = await Promise.all([
     db.select().from(s.shipmentDocuments)
       .where(eq(s.shipmentDocuments.shipmentId, id))
@@ -229,7 +234,7 @@ export async function getShipmentDetail(id: number, role?: Role | null) {
       .where(eq(s.shipmentCosts.shipmentId, id))
       .orderBy(desc(s.shipmentCosts.incurredDate), desc(s.shipmentCosts.id)),
     computeProfit(id),
-    canSeeBillingDocuments ? db.select({
+    canSeeBillingDocuments(role) ? db.select({
       id: s.billingDocuments.id,
       type: s.billingDocuments.type,
       entityType: s.billingDocuments.entityType,
@@ -585,8 +590,14 @@ export function truckTransferRows(
   return { rows, total: rows.reduce((sum, row) => sum + row.amount, 0) };
 }
 
-export async function getLotCostRegister(shipmentId: number): Promise<LotCostRegister> {
+export async function getLotCostRegister(shipmentId: number, role?: Role | null): Promise<LotCostRegister> {
   const shipment = await getShipmentById(shipmentId);
+  // NEPO-63 r4 (QA 14:47 24/11) — the derived per-row status is debit-note
+  // vocabulary ('Chưa lên/Đã lên Báo nợ'), so it is stripped SERVER-side for
+  // roles outside the billing-documents policy, exactly like the embedded
+  // notes in getShipmentDetail. Null status → the lô page renders a neutral
+  // dash in the Trạng thái column.
+  const showBillingStatus = canSeeBillingDocuments(role);
 
   // Raw select: the exists() probe joins billing lines/documents by explicit
   // table names — drizzle's column interpolation renders unqualified "id"
@@ -649,9 +660,11 @@ export async function getLotCostRegister(shipmentId: number): Promise<LotCostReg
       group,
       direction: cost.direction as 'CUSTOMER' | 'SUPPLIER',
       serviceMode: cost.serviceMode as 'SERVICE' | 'ADVANCE',
-      status: cost.awaitingInvoice
-        ? LotFeeStatus.AWAITING_INVOICE
-        : (cost.onDebitNote ? LotFeeStatus.ON_DEBIT_NOTE : LotFeeStatus.PENDING),
+      status: showBillingStatus
+        ? (cost.awaitingInvoice
+          ? LotFeeStatus.AWAITING_INVOICE
+          : (cost.onDebitNote ? LotFeeStatus.ON_DEBIT_NOTE : LotFeeStatus.PENDING))
+        : null,
       description: cost.description,
       currency: cost.currency as 'VND' | 'USD',
       fxAmount: cost.fxAmount != null ? Number(cost.fxAmount) : null,

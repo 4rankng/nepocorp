@@ -145,7 +145,8 @@ router.delete('/:id/costs/:costId', requireRoles(...WRITE), asyncHandler(async (
 // NEPO-62 — Bảng chi phí theo lô: fee rows grouped by FeeGroup in the debit
 // note order (XUAT/NHAP) + derived truck-transfer section from linked trips.
 router.get('/:id/costs/register', asyncHandler(async (req: Request, res: Response) => {
-  res.json(await shipmentService.getLotCostRegister(Number(req.params.id)));
+  // NEPO-63 r4 — role drives the per-row billing-status strip (Giao nhận null).
+  res.json(await shipmentService.getLotCostRegister(Number(req.params.id), getUser(req).role));
 }));
 
 export default router;

@@ -492,9 +492,16 @@ export default function ShipmentDetailPage() {
                           </td>
                           <td className="is-money">{Math.round(Number(row.vatRate) * 100)}%</td>
                           <td>
-                            <StatusPill variant={FEE_STATUS_VARIANT[row.status]}>
-                              {LOT_FEE_STATUS_LABELS[row.status]}
-                            </StatusPill>
+                            {/* NEPO-63 r4 — pill vocabulary ('Chưa lên/Đã lên Báo
+                                nợ') is debit-note language: roles the server
+                                strips billing data for see a neutral dash. */}
+                            {canSeeBilling && row.status ? (
+                              <StatusPill variant={FEE_STATUS_VARIANT[row.status]}>
+                                {LOT_FEE_STATUS_LABELS[row.status]}
+                              </StatusPill>
+                            ) : (
+                              <span className="lot-register__fx">—</span>
+                            )}
                           </td>
                           {canWrite && (
                             <td>
@@ -860,7 +867,7 @@ export default function ShipmentDetailPage() {
                 checked={costForm.awaitingInvoice}
                 onChange={(e) => setCostForm((f) => ({ ...f, awaitingInvoice: e.target.checked }))}
               />
-              Chờ hóa đơn — in trên Báo nợ không có số tiền, không cộng Tổng cộng
+              Chờ hóa đơn — {canSeeBilling ? 'in trên Báo nợ không có số tiền' : 'in không có số tiền'}, không cộng Tổng cộng
             </label>
             <label className="lot-cost-form__field lot-cost-form__field--full">
               <span className="lot-cost-form__label">Ghi chú</span>

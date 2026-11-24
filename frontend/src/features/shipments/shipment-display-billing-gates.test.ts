@@ -83,4 +83,17 @@ describe('billing-document role gates — UI mirrors the billing-documents API p
     expect(detailPage).toContain('{canSeeBilling && (<section className="shipment-detail__card">');
     expect(detailPage).toContain('<h2 className="shipment-detail__card-title">Giấy báo nợ theo lô</h2>');
   });
+
+  it('r4 — cost-register Trạng thái pill renders neutral for stripped roles (QA 14:47 residual)', () => {
+    // QA verdict 14:47 24/11 on build 06b3737a: /shipments/4 still spelled
+    // "CHƯA LÊN BÁO NỢ" on the cost rows for gncapture. The pill is now
+    // rendered ONLY when the role sees billing data AND the server sent a
+    // status (GET /:id/costs/register strips the debit-note state otherwise);
+    // the fallback is the neutral dash — the pill vocabulary is never visible
+    // to FORWARDER, while ketoan/admin keep the exact labels (3a unchanged).
+    expect(detailPage).toContain('{canSeeBilling && row.status ? (');
+    expect(detailPage).toContain('{LOT_FEE_STATUS_LABELS[row.status]}');
+    // The cost form's "Chờ hóa đơn" hint must not spell 'Báo nợ' to stripped roles.
+    expect(detailPage).toContain("{canSeeBilling ? 'in trên Báo nợ không có số tiền' : 'in không có số tiền'}");
+  });
 });

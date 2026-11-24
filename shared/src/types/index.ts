@@ -1685,7 +1685,9 @@ export interface LotCostRow {
   group: FeeGroup;
   direction: 'CUSTOMER' | 'SUPPLIER'; // Thu khách / Trả NCC
   serviceMode: 'SERVICE' | 'ADVANCE'; // Dịch vụ / Nộp hộ
-  status: LotFeeStatus;
+  /** Null khi người xem ngoài billing-documents policy — server strip trạng thái
+   *  Báo nợ (Giao nhận không thấy chữ 'Báo nợ' ở cột Trạng thái). */
+  status: LotFeeStatus | null;
   description: string;
   currency: 'VND' | 'USD';
   fxAmount: number | null;    // original USD amount
