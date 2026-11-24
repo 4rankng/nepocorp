@@ -1,0 +1,1 @@
+ALTER TABLE "customers" ADD COLUMN "debt_closed_until" date;

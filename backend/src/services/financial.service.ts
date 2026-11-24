@@ -52,6 +52,83 @@ function receivedDateToTimestamp(receivedDate: string | undefined): Date | undef
   return new Date(`${receivedDate}T00:00:00Z`);
 }
 
+// ─── NEPO-63 Chốt công nợ (customer receivable book close) ───────────────────
+
+export interface ClosedDebtInfo {
+  customerId: number;
+  customerName: string;
+  /** YYYY-MM-DD — the book is frozen through this day. */
+  debtClosedUntil: string;
+}
+
+export interface ReopenedDebtInfo {
+  customerId: number;
+  customerName: string;
+}
+
+/**
+ * Chốt công nợ — freeze a customer's receivable book through `until`.
+ * Backdating money into the closed range is refused afterwards (payment
+ * intake, entry/receipt edit+delete via assertDebtOpen); entries dated on or
+ * after the close day keep flowing. The close itself is audit-logged by the
+ * middleware (DEBT_CLOSED) with the operator's note in the request body.
+ */
+export async function closeCustomerDebt(
+  customerId: number,
+  until: string,
+  _note?: string,
+): Promise<ClosedDebtInfo> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(until) || Number.isNaN(Date.parse(until))) {
+    throw new ApiError(422, 'Ngày chốt không hợp lệ (YYYY-MM-DD)');
+  }
+  // "Today" at UTC+7 — the same Indochina wall-clock convention the ledger uses.
+  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  if (until > today) {
+    throw new ApiError(422, 'Ngày chốt không được lớn hơn ngày hôm nay');
+  }
+  const [customer] = await db.select({ id: s.customers.id, name: s.customers.name })
+    .from(s.customers)
+    .where(and(eq(s.customers.id, customerId), isNull(s.customers.deletedAt)))
+    .limit(1);
+  if (!customer) throw new ApiError(404, 'Không tìm thấy khách hàng');
+  await db.update(s.customers)
+    .set({ debtClosedUntil: until, updatedAt: new Date() })
+    .where(eq(s.customers.id, customerId));
+  return { customerId: customer.id, customerName: customer.name, debtClosedUntil: until };
+}
+
+/** Mở chốt — reopen the receivable book (correction path for a wrong close). */
+export async function reopenCustomerDebt(customerId: number): Promise<ReopenedDebtInfo> {
+  const [customer] = await db.select({ id: s.customers.id, name: s.customers.name })
+    .from(s.customers)
+    .where(and(eq(s.customers.id, customerId), isNull(s.customers.deletedAt)))
+    .limit(1);
+  if (!customer) throw new ApiError(404, 'Không tìm thấy khách hàng');
+  await db.update(s.customers)
+    .set({ debtClosedUntil: null, updatedAt: new Date() })
+    .where(eq(s.customers.id, customerId));
+  return { customerId: customer.id, customerName: customer.name };
+}
+
+/**
+ * Guard for money mutations: refuse when the ledger entry's day lands before
+ * the customer's chốt day. `entryAt` undefined means "post at now" — always
+ * on/after a past close day (closes can never be future-dated), so it passes.
+ */
+async function assertDebtOpen(tx: Tx, customerId: number, entryAt: Date | undefined): Promise<void> {
+  if (!entryAt) return;
+  const [row] = await tx.select({ closedUntil: s.customers.debtClosedUntil })
+    .from(s.customers)
+    .where(eq(s.customers.id, customerId))
+    .limit(1);
+  if (!row?.closedUntil) return;
+  const entryDay = entryAt.toISOString().slice(0, 10);
+  if (entryDay < row.closedUntil) {
+    throw new ApiError(409,
+      `Công nợ đã chốt đến ${row.closedUntil.split('-').reverse().join('/')} — không thể ghi/sửa/xóa chứng từ trước ngày chốt`);
+  }
+}
+
 /**
  * A trip of this customer that still has collectible balance, with the
  * epoch-ms of the ledger row that first billed it (used for oldest-first
@@ -177,6 +254,10 @@ export async function recordPayment(input: PaymentInput): Promise<RecordPaymentR
     // "Ngày nhận" — validated before any posting so a bad date can never
     // leave half a payment on the books.
     const postedAt = receivedDateToTimestamp(input.receivedDate);
+
+    // NEPO-63 Chốt công nợ — a backdated intake into the closed range is
+    // refused before anything posts.
+    await assertDebtOpen(tx, input.customerId, postedAt);
 
     // Advisory lock — serialize concurrent payments for the same customer
     await LedgerService.lockEntity(tx, 'CUSTOMER', input.customerId);
@@ -304,6 +385,11 @@ export async function deletePaymentEntry(entryId: number): Promise<DeletedPaymen
       throw new ApiError(422, 'Chỉ được xóa bản ghi thanh toán (PAYMENT_RECEIVED)');
     }
 
+    // NEPO-63 Chốt công nợ — entries inside the closed range are immutable.
+    if (entry.entityType === 'CUSTOMER') {
+      await assertDebtOpen(tx, entry.entityId, entry.timestamp);
+    }
+
     // Serialize against concurrent payment intake / deletes for this customer,
     // then remove the row and rebuild the running balance of the rows behind it.
     await LedgerService.lockEntity(tx, entry.entityType, entry.entityId);
@@ -371,6 +457,11 @@ export async function updatePaymentEntry(
     }
     // Validates format + no-future and converts to the ledger timestamp.
     const postedAt = receivedDateToTimestamp(input.receivedDate);
+
+    // NEPO-63 Chốt công nợ — neither the entry being edited nor its new
+    // received date may sit inside the closed range.
+    await assertDebtOpen(tx, entry.entityId, entry.timestamp);
+    await assertDebtOpen(tx, entry.entityId, postedAt);
 
     // Serialize against concurrent payment intake / edits / deletes for this
     // customer before reading what is collectible.
@@ -515,6 +606,11 @@ export async function updatePaymentReceipt(
     // Validates format + no-future and converts to the ledger timestamp.
     const postedAt = receivedDateToTimestamp(input.receivedDate);
 
+    // NEPO-63 Chốt công nợ — neither the receipt's slices nor its new
+    // received date may sit inside the closed range.
+    for (const slice of group) await assertDebtOpen(tx, customerId, slice.timestamp);
+    await assertDebtOpen(tx, customerId, postedAt);
+
     // Serialize against concurrent payment intake / edits / deletes.
     await LedgerService.lockEntity(tx, 'CUSTOMER', customerId);
 
@@ -611,6 +707,10 @@ export async function deletePaymentReceipt(customerId: number, receiptId: string
     if (group.length === 0) {
       throw new ApiError(404, 'Không tìm thấy bản ghi thanh toán');
     }
+
+    // NEPO-63 Chốt công nợ — receipt slices inside the closed range are
+    // immutable.
+    for (const slice of group) await assertDebtOpen(tx, customerId, slice.timestamp);
 
     // Serialize against concurrent payment intake / deletes for this customer,
     // then remove the rows and rebuild the running balance of the rows behind.

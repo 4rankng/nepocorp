@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { Role } from '@tingting/shared';
 import pageCss from './ShipmentListPage.css?raw';
 import { canWriteShipments, cutoffUrgentCount } from './ShipmentListPage';
-import { cutoffDaysLeft, isCutoffUrgent } from '../features/shipments/shipmentDisplay';
+import { cutoffDaysLeft, canCreateBillingDocuments, isCutoffUrgent } from '../features/shipments/shipmentDisplay';
 
 describe('shipment list — write-role gate (NEPO-61)', () => {
   it('write roles cover ADMIN/MANAGER/FORWARDER only', () => {
@@ -22,6 +22,21 @@ describe('shipment list — write-role gate (NEPO-61)', () => {
     expect(canWriteShipments(Role.DRIVER)).toBe(false);
     expect(canWriteShipments(null)).toBe(false);
     expect(canWriteShipments(undefined)).toBe(false);
+  });
+});
+
+// NEPO-63 — the 'Lập Báo nợ lô' button follows the billing-documents server
+// policy (requireRoles ADMIN/MANAGER/ACCOUNTANT), NOT the lô-write gate:
+// kế toán must see it, forwarder must not be offered a 403 button.
+describe('debit note creation gate (NEPO-63)', () => {
+  it('mirrors the server billing-documents roles', () => {
+    expect(canCreateBillingDocuments(Role.ADMIN)).toBe(true);
+    expect(canCreateBillingDocuments(Role.MANAGER)).toBe(true);
+    expect(canCreateBillingDocuments(Role.ACCOUNTANT)).toBe(true);
+    expect(canCreateBillingDocuments(Role.FORWARDER)).toBe(false);
+    expect(canCreateBillingDocuments(Role.DISPATCHER)).toBe(false);
+    expect(canCreateBillingDocuments(Role.DRIVER)).toBe(false);
+    expect(canCreateBillingDocuments(null)).toBe(false);
   });
 });
 

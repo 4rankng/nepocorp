@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, FileText, Download, History, Pencil, Plus, Receipt, Trash2 } from 'lucide-react';
 import { useToast } from '../shared/Toast';
 import { useAuth } from '../../hooks/useAuth';
-import { canManageBillingDocuments } from '../../features/shipments/shipmentDisplay';
+import { canManageBillingDocuments, canCreateBillingDocuments } from '../../features/shipments/shipmentDisplay';
 import { api } from '../../lib/api';
 import { downloadBlob } from '../../lib/download';
 import { formatCurrency } from '../../lib/format';
@@ -124,9 +124,14 @@ export default function BillingDocumentsPanel({
               <ChevronDown size={14} className={historyOpen ? 'is-open' : undefined} />
             </button>
           )}
-          <button className="btn btn--secondary billing-panel__create" type="button" onClick={openNew}>
-            <Plus size={14} /> {buttonLabel}
-          </button>
+          {/* NEPO-63 — create follows the billing-documents POST policy
+              (ADMIN/MANAGER/ACCOUNTANT): DISPATCHER deep-linking /debt must
+              not be offered a button the API answers 403. */}
+          {canCreateBillingDocuments(user?.role) && (
+            <button className="btn btn--secondary billing-panel__create" type="button" onClick={openNew}>
+              <Plus size={14} /> {buttonLabel}
+            </button>
+          )}
         </div>
       </div>
 
@@ -172,7 +177,7 @@ export default function BillingDocumentsPanel({
         )
       )}
 
-      {builderOpen && (
+      {builderOpen && canCreateBillingDocuments(user?.role) && (
         <BillingDocumentBuilder
           isOpen={builderOpen}
           onClose={closeBuilder}

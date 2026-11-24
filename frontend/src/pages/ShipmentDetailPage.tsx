@@ -56,6 +56,8 @@ import { useToast } from '../components/shared/Toast';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import {
   canWriteShipments,
+  canCreateBillingDocuments,
+  canManageBillingDocuments,
   cutoffDaysLeft,
   flowTypeLabel,
   formatFileSize,
@@ -106,6 +108,9 @@ export default function ShipmentDetailPage() {
   const [editOpen, setEditOpen] = useState(() => searchParams.get('edit') === '1');
 
   const canWrite = canWriteShipments(user?.role);
+  // NEPO-63 — the debit-note button follows the billing-documents server
+  // policy, NOT the lô-write policy: ketoan sees it, forwarder does not.
+  const canIssueDebitNote = canCreateBillingDocuments(user?.role);
 
   const { data: shipment, isLoading } = useShipmentDetail(id);
   const { data: register } = useShipmentCostRegister(id);
@@ -372,7 +377,7 @@ export default function ShipmentDetailPage() {
         description={[shipment.customerName, route].filter(Boolean).join(' — ')}
         iconName="cargo"
         action={
-          canWrite && !mainNote && (
+          canIssueDebitNote && !mainNote && (
             <button className="btn btn--primary btn--sm" onClick={draftMainNote} disabled={noteBusy}>
               <Receipt size={14} style={{ marginRight: 6 }} aria-hidden="true" />
               Lập Báo nợ lô
@@ -548,17 +553,23 @@ export default function ShipmentDetailPage() {
                   </div>
                 </div>
                 <div className="lot-billing__actions">
-                  {!doc.issuedAt && (
+                  {/* NEPO-63 — phát hành = POST /:id/issue, roles
+                      ADMIN/MANAGER/ACCOUNTANT ("tạo + chốt" §6/§7 matrix). */}
+                  {!doc.issuedAt && canIssueDebitNote && (
                     <button className="icon-btn" title="Phát hành (khóa Báo nợ)" onClick={() => issueNote(doc)}>
                       <Send size={14} />
                     </button>
                   )}
-                  {doc.issuedAt && doc.parentDocumentId == null && canWrite && (
+                  {/* NEPO-63 — supplement = POST /:id/supplement, roles
+                      ADMIN/MANAGER/ACCOUNTANT: ketoan supplements, Ops biển
+                      must not be offered a button the API 403s. */}
+                  {doc.issuedAt && doc.parentDocumentId == null && canIssueDebitNote && (
                     <button className="icon-btn" title="Bổ sung -BS01 (phí phát sinh sau)" onClick={() => supplementNote(doc)}>
                       <Plus size={14} />
                     </button>
                   )}
-                  {!doc.issuedAt && canWrite && (
+                  {/* NEPO-63 — draft delete = DELETE /:id, ADMIN-only backend. */}
+                  {!doc.issuedAt && canManageBillingDocuments(user?.role) && (
                     <button className="icon-btn" title="Xóa Báo nợ chưa phát hành (công nợ về như trước khi lập)" onClick={() => void removeNote(doc)}>
                       <Trash2 size={14} />
                     </button>

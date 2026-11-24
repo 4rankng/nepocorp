@@ -1,4 +1,4 @@
-import { ArrowLeft, Building2, Download, Phone, Plus, Truck } from 'lucide-react';
+import { ArrowLeft, Building2, Download, Lock, LockOpen, Phone, Plus, Truck } from 'lucide-react';
 import type { CustomerStatement } from '@tingting/shared';
 import AssetIcon from '../../components/AssetIcon';
 import { Tooltip } from '../../components/shared/Tooltip';
@@ -8,18 +8,34 @@ interface DebtDetailHeaderProps {
   hasDebt: boolean;
   /** True when any bucket past the current 0–30 one carries a balance. */
   isOverdue: boolean;
+  /** NEPO-63 Chốt công nợ — the book is frozen through this day (yyyy-mm-dd). */
+  debtClosedUntil?: string | null;
+  /** Financial roles only (server enforces the same set). */
+  canManageDebt: boolean;
   onBack: () => void;
   onRecordPayment: () => void;
   onExport: () => void;
+  onCloseDebt: () => void;
+  onReopenDebt: () => void;
+}
+
+/** "dd/mm/yyyy" for the badge; the raw value is an ISO date or null. */
+function formatClosedDay(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  return y && m && d ? `${d}/${m}/${y}` : iso;
 }
 
 export function DebtDetailHeader({
   customer,
   hasDebt,
   isOverdue,
+  debtClosedUntil,
+  canManageDebt,
   onBack,
   onRecordPayment,
   onExport,
+  onCloseDebt,
+  onReopenDebt,
 }: DebtDetailHeaderProps) {
   return (
     <div className="dd-header">
@@ -42,6 +58,11 @@ export function DebtDetailHeader({
           {customer.isCarrier && (
             <span style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: '#1d4ed8', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
               <Truck size={12} aria-hidden="true" /> Xe ngoài
+            </span>
+          )}
+          {debtClosedUntil && (
+            <span title={`Công nợ đã chốt đến ${formatClosedDay(debtClosedUntil)} — không thể ghi/sửa/xóa chứng từ trước ngày chốt`} style={{ fontSize: 'var(--fs-body)', lineHeight: 1.35, fontWeight: 700, color: '#92400e', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 4, padding: '3px 7px', letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              <Lock size={12} aria-hidden="true" /> Đã chốt đến {formatClosedDay(debtClosedUntil)}
             </span>
           )}
         </div>
@@ -87,6 +108,19 @@ export function DebtDetailHeader({
           <Download size={14} />
           Xuất sao kê
         </button>
+        {canManageDebt && (
+          debtClosedUntil ? (
+            <button className="btn btn--secondary" onClick={onReopenDebt}>
+              <LockOpen size={14} />
+              Mở chốt
+            </button>
+          ) : (
+            <button className="btn btn--secondary" onClick={onCloseDebt}>
+              <Lock size={14} />
+              Chốt công nợ
+            </button>
+          )
+        )}
       </div>
     </div>
   );

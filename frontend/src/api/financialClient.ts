@@ -187,4 +187,15 @@ export const financialClient = {
     const base = FINANCIAL.BILLING_DOCUMENT_EXPORT(id);
     return templateId ? `${base}?templateId=${templateId}` : base;
   },
+
+  // ─── NEPO-63 Chốt công nợ — close/reopen the customer's receivable book ────
+  closeCustomerDebt: (id: number, until: string, note?: string) =>
+    api.post<{ customerId: number; customerName: string; debtClosedUntil: string }>(
+      FINANCIAL.CUSTOMER_DEBT_CLOSE(id), { until, note },
+    ),
+
+  reopenCustomerDebt: (id: number) =>
+    api.post<{ customerId: number; customerName: string }>(
+      FINANCIAL.CUSTOMER_DEBT_REOPEN(id), {},
+    ),
 };

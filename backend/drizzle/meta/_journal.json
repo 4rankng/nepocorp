@@ -918,6 +918,13 @@
       "when": 1795371297828,
       "tag": "0133_debit_note_main_period_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 134,
+      "version": "7",
+      "when": 1795491722064,
+      "tag": "0134_customer_debt_closed_until",
+      "breakpoints": true
     }
   ]
 }

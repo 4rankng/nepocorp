@@ -25,6 +25,10 @@ registerAuditEvent('POST', '/api/advance-settlements/', '/approve', AuditEvent.E
 registerAuditEvent('POST', '/api/advance-settlements/', '/reject', AuditEvent.ENTITY_UPDATED);
 registerAuditEvent('POST', '/api/finance/debt-offsets/', '/approve', AuditEvent.ENTITY_UPDATED);
 registerAuditEvent('POST', '/api/finance/debt-offsets', AuditEvent.ENTITY_CREATED);
+// NEPO-63 Chốt công nợ — closing/reopening a customer's receivable book is
+// audit-logged with the customer + the closed-through day (note rides the body).
+registerAuditEvent('POST', '/api/finance/customers/', '/close-debt', AuditEvent.DEBT_CLOSED);
+registerAuditEvent('POST', '/api/finance/customers/', '/reopen-debt', AuditEvent.DEBT_REOPENED);
 
 const router = Router();
 

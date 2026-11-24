@@ -124,6 +124,7 @@ export {
   ledgerQuerySchema, ledgerPlanContainerSchema, ledgerPlanLegSchema,
   updateTripPlanSchema, updateLedgerMoneySchema, createLedgerDraftSchema,
   paymentMethodSchema,
+  closeCustomerDebtSchema,
 } from './schemas';
 
 export { appSettingsSchema } from './schemas/app-settings';

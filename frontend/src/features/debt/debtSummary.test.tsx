@@ -74,7 +74,7 @@ describe('AR detail overdue status (kanban 101026203130)', () => {
   it('names the badge like the list row does', () => {
     const { unmount } = render(
       <MemoryRouter>
-        <DebtDetailHeader customer={customer} hasDebt isOverdue onBack={() => {}} onRecordPayment={() => {}} onExport={() => {}} />
+        <DebtDetailHeader customer={customer} hasDebt isOverdue canManageDebt={false} onBack={() => {}} onRecordPayment={() => {}} onExport={() => {}} onCloseDebt={() => {}} onReopenDebt={() => {}} />
       </MemoryRouter>,
     );
     expect(screen.getByText('Nợ quá hạn')).toBeTruthy();
@@ -83,7 +83,7 @@ describe('AR detail overdue status (kanban 101026203130)', () => {
 
     render(
       <MemoryRouter>
-        <DebtDetailHeader customer={customer} hasDebt isOverdue={false} onBack={() => {}} onRecordPayment={() => {}} onExport={() => {}} />
+        <DebtDetailHeader customer={customer} hasDebt isOverdue={false} canManageDebt={false} onBack={() => {}} onRecordPayment={() => {}} onExport={() => {}} onCloseDebt={() => {}} onReopenDebt={() => {}} />
       </MemoryRouter>,
     );
     expect(screen.getByText('Còn nợ trong hạn')).toBeTruthy();
@@ -92,7 +92,7 @@ describe('AR detail overdue status (kanban 101026203130)', () => {
   it('shows the settled badge when there is no debt at all', () => {
     render(
       <MemoryRouter>
-        <DebtDetailHeader customer={customer} hasDebt={false} isOverdue={false} onBack={() => {}} onRecordPayment={() => {}} onExport={() => {}} />
+        <DebtDetailHeader customer={customer} hasDebt={false} isOverdue={false} canManageDebt={false} onBack={() => {}} onRecordPayment={() => {}} onExport={() => {}} onCloseDebt={() => {}} onReopenDebt={() => {}} />
       </MemoryRouter>,
     );
     expect(screen.getByText('Đã thanh toán đủ')).toBeTruthy();

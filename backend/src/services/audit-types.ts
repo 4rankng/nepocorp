@@ -37,6 +37,9 @@ export const AuditEvent = {
   DEBIT_NOTE_UPDATED: 'DEBIT_NOTE_UPDATED',
   // NEPO-63 — deleting a DRAFT Báo nợ (chưa phát hành, -BS01 supplement included).
   BILLING_DOCUMENT_DELETED: 'BILLING_DOCUMENT_DELETED',
+  // NEPO-63 Chốt công nợ — closing/reopening a customer's receivable book.
+  DEBT_CLOSED: 'DEBT_CLOSED',
+  DEBT_REOPENED: 'DEBT_REOPENED',
 
   // Config CRUD
   ENTITY_CREATED: 'ENTITY_CREATED',

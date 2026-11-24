@@ -1628,6 +1628,8 @@ export interface CustomerStatement {
   fastStatement?: FastStatementDetail;
   /** Kỳ báo cáo of the request (filter bounds or ledger activity bounds). */
   period?: { dateFrom: string; dateTo: string };
+  /** NEPO-63 Chốt công nợ — the receivable book is frozen through this day. */
+  debtClosedUntil?: string | null;
 }
 
 export interface DebtOffset {

@@ -62,6 +62,8 @@ export interface CustomerStatementData {
   /** Kỳ báo cáo of the request (client filter or ledger activity bounds) —
    * renders 'TỪ NGÀY … ĐẾN NGÀY …' in the Fast header + exports. */
   period: { dateFrom: string; dateTo: string };
+  /** NEPO-63 Chốt công nợ — the receivable book is frozen through this day. */
+  debtClosedUntil?: string | null;
 }
 
 export interface SupplierStatementData {
@@ -1236,6 +1238,8 @@ export async function getStatementData(customerId: number, dateFrom?: string, da
     statementTotals,
     fastStatement,
     period: { dateFrom: periodFrom ?? '', dateTo: periodTo ?? '' },
+    // NEPO-63 Chốt công nợ — the header shows the freeze and the sổ guards read it.
+    debtClosedUntil: customer.debtClosedUntil ?? null,
   };
 }
 

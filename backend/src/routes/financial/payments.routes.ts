@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { Role, NotificationType, createPaymentSchema, updatePaymentSchema, createAdjustmentSchema, vendorPaymentSchema, commissionSchema, driverPayoutSchema } from '@tingting/shared';
+import { Role, NotificationType, createPaymentSchema, updatePaymentSchema, createAdjustmentSchema, vendorPaymentSchema, commissionSchema, driverPayoutSchema, closeCustomerDebtSchema } from '@tingting/shared';
 import type { PayablesCategory } from '@tingting/shared';
 import { requireRoles } from '../../middleware/casbin';
 import { asyncHandler } from '../../middleware/asyncHandler';
@@ -15,6 +15,29 @@ import { recordCommission } from '../../services/commission.service';
 const PAYABLES_CATEGORIES = new Set<string>(['fuel', 'ancillary', 'commission', 'carrier']);
 
 const router = Router();
+
+// ─── NEPO-63 Chốt công nợ — close/reopen a customer's receivable book ────────
+// Financial roles only (§6 role matrix: kế toán/admin — MANAGER follows the
+// financial-route convention). The close freezes money writes dated before
+// `until` (enforced in financial.service); the request body's note lands in
+// the audit trail via the middleware body capture.
+router.post('/finance/customers/:id/close-debt', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const customerId = Number(req.params.id);
+  const data = closeCustomerDebtSchema.parse(req.body);
+  const closed = await financialService.closeCustomerDebt(customerId, data.until, data.note);
+  res.locals.auditEntityId = closed.customerId;
+  res.locals.auditEntityKey = closed.customerName;
+  res.json(closed);
+}));
+
+router.post('/finance/customers/:id/reopen-debt', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const customerId = Number(req.params.id);
+  const reopened = await financialService.reopenCustomerDebt(customerId);
+  res.locals.auditEntityId = reopened.customerId;
+  res.locals.auditEntityKey = reopened.customerName;
+  res.json(reopened);
+}));
+
 
 // ─── Record payment ──────────────────────────────────────────────────────────
 

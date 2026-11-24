@@ -323,6 +323,13 @@ export const bulkUpdateTripFiguresSchema = z.object({
 
 const ledgerDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phải có dạng YYYY-MM-DD');
 
+// ─── NEPO-63 Chốt công nợ (customer receivable book close) ──────────────────
+/** Close/reopen a customer's debt book through a day (no future dates). */
+export const closeCustomerDebtSchema = z.object({
+  until: ledgerDate,
+  note: z.string().trim().max(500).optional(),
+});
+
 export const ledgerQuerySchema = z.object({
   from: ledgerDate,
   to: ledgerDate,

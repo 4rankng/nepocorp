@@ -258,6 +258,11 @@ export const customers = pgTable('customers', {
   isCarrier: boolean('is_carrier').notNull().default(false),
   debitNoteMode: varchar('debit_note_mode', { length: 20 }).notNull().default('MONTHLY'),
   debitNoteTemplateId: integer('debit_note_template_id').references(() => debitNoteTemplates.id),
+  // NEPO-63 Chốt công nợ — the customer's receivable book is closed through
+  // this day: payment intake may not backdate before it and recorded payments
+  // dated before it refuse edit/delete. Null = the book is open. Set/cleared
+  // by POST /api/finance/customers/:id/{close,reopen}-debt (financial roles).
+  debtClosedUntil: date('debt_closed_until'),
   linkedSupplierId: integer('linked_supplier_id').references(() => suppliers.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

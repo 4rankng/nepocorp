@@ -25,6 +25,17 @@ export function canManageBillingDocuments(role: Role | null | undefined): boolea
   return role === 'ADMIN';
 }
 
+/**
+ * NEPO-63 — Lập Báo nợ (billing-documents routes): the UI mirror of the server
+ * guard `requireRoles(ADMIN, MANAGER, ACCOUNTANT)` on
+ * /api/finance/billing-documents*. Kế toán MUST see the 'Lập Báo nợ lô' button
+ * even though it cannot write the lô itself; FORWARDER/DISPATCHER must not be
+ * offered a button the API answers 403.
+ */
+export function canCreateBillingDocuments(role: Role | null | undefined): boolean {
+  return role === 'ADMIN' || role === 'MANAGER' || role === 'ACCOUNTANT';
+}
+
 /* ─── Flow type ───────────────────────────────────────────────────────────── */
 
 const FLOW_TYPE_LABELS: Record<TripFlowType, string> = {

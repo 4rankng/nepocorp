@@ -152,6 +152,9 @@ export const FINANCIAL = {
   CARRIER_PAYABLE_STATEMENT: (id: number) => `/ledger/carriers/${id}/statement`,
   SUPPLIER_STATEMENT_EXPORT: (id: number) => `/ledger/suppliers/${id}/statement/export`,
   PAYMENTS_RECEIVE: '/payments/receive',
+  // NEPO-63 Chốt công nợ — close/reopen a customer's receivable book.
+  CUSTOMER_DEBT_CLOSE: (id: number) => `/finance/customers/${id}/close-debt`,
+  CUSTOMER_DEBT_REOPEN: (id: number) => `/finance/customers/${id}/reopen-debt`,
   PAYMENTS_VENDOR: '/payments/vendor',
   PAYMENTS_CARRIER: '/payments/carrier',
   ADJUSTMENTS: '/adjustments',

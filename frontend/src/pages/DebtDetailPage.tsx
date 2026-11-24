@@ -10,6 +10,7 @@ import { useCustomerStatement, useSupplierStatement } from '../hooks/useQueries'
 import { useCompanyInfo } from '../hooks/useCatalogQueries';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
+import { financialClient } from '../api/financialClient';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { ConfirmDialog } from '../components/UI';
 import BillingDocumentsPanel from '../components/billing/BillingDocumentsPanel';
@@ -153,6 +154,44 @@ export default function DebtDetailPage() {
   // both observe paySubmitting=false before React re-renders. A ref makes the
   // guard immediate, so a frozen-looking form can never queue a second POST.
   const payInFlightRef = useRef(false);
+
+  // NEPO-63 Chốt công nợ — financial roles freeze the receivable book through
+  // today; the server audit-logs the close/reopen and refuses money writes
+  // dated before the close day afterwards.
+  const canManageDebt = isFinancialRole(user?.role);
+  const [closeDebtSubmitting, setCloseDebtSubmitting] = useState(false);
+  const [closeDebtConfirmOpen, setCloseDebtConfirmOpen] = useState(false);
+  const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
+
+  const submitCloseDebt = useCallback(async () => {
+    if (!id) return;
+    setCloseDebtSubmitting(true);
+    try {
+      // "Today" at UTC+7 — the ledger's wall-clock convention.
+      const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const closed = await financialClient.closeCustomerDebt(Number(id), today);
+      await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatementAll });
+      showToast({ kind: 'success', message: `Đã chốt công nợ ${closed.customerName} đến ${closed.debtClosedUntil.split('-').reverse().join('/')}` });
+    } catch (err) {
+      showToast({ kind: 'error', message: (err as Error).message || 'Không chốt được công nợ' });
+    } finally {
+      setCloseDebtSubmitting(false);
+    }
+  }, [id, queryClient, showToast]);
+
+  const submitReopenDebt = useCallback(async () => {
+    if (!id) return;
+    setCloseDebtSubmitting(true);
+    try {
+      const reopened = await financialClient.reopenCustomerDebt(Number(id));
+      await queryClient.invalidateQueries({ queryKey: qk.financial.customerStatementAll });
+      showToast({ kind: 'success', message: `Đã mở chốt công nợ ${reopened.customerName}` });
+    } catch (err) {
+      showToast({ kind: 'error', message: (err as Error).message || 'Không mở chốt được công nợ' });
+    } finally {
+      setCloseDebtSubmitting(false);
+    }
+  }, [id, queryClient, showToast]);
 
   // Delete-payment flow (kanban 141026163920). Only financial roles get the
   // action; the backend re-checks permissions on DELETE /payments/:id.
@@ -624,9 +663,13 @@ export default function DebtDetailPage() {
         customer={customer}
         hasDebt={hasDebt}
         isOverdue={oldestOverdueIdx > 0}
+        debtClosedUntil={profileStatement.debtClosedUntil ?? null}
+        canManageDebt={canManageDebt}
         onBack={handleBack}
         onRecordPayment={openPaymentModal}
         onExport={() => { void downloadExport('xlsx'); }}
+        onCloseDebt={() => setCloseDebtConfirmOpen(true)}
+        onReopenDebt={() => setReopenConfirmOpen(true)}
       />
 
       <DebtAccountStrip
@@ -964,6 +1007,25 @@ export default function DebtDetailPage() {
         cancelLabel="Hủy"
         onConfirm={() => { void confirmEditPayment(); }}
         onCancel={() => setEditConfirmOpen(false)}
+      />
+
+      {/* NEPO-63 Chốt công nợ — money-write safety: explicit confirmation, the
+          close/reopen is audit-logged server-side (DEBT_CLOSED/DEBT_REOPENED). */}
+      <ConfirmDialog
+        isOpen={closeDebtConfirmOpen}
+        message={`Chốt công nợ ${customer.name} đến hôm nay? Không thể ghi/sửa/xóa chứng từ thanh toán trước ngày chốt sau khi chốt (mở chốt khi cần điều chỉnh).`}
+        confirmLabel={closeDebtSubmitting ? 'Đang chốt…' : 'Chốt công nợ'}
+        cancelLabel="Hủy"
+        onConfirm={() => { setCloseDebtConfirmOpen(false); void submitCloseDebt(); }}
+        onCancel={() => setCloseDebtConfirmOpen(false)}
+      />
+      <ConfirmDialog
+        isOpen={reopenConfirmOpen}
+        message={`Mở chốt công nợ ${customer.name}? Chứng từ trước ngày chốt sẽ có thể ghi/sửa/xóa lại.`}
+        confirmLabel={closeDebtSubmitting ? 'Đang mở…' : 'Mở chốt'}
+        cancelLabel="Hủy"
+        onConfirm={() => { setReopenConfirmOpen(false); void submitReopenDebt(); }}
+        onCancel={() => setReopenConfirmOpen(false)}
       />
     </div>
   );
