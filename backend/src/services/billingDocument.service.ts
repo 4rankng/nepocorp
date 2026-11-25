@@ -766,11 +766,34 @@ export async function buildLotShipmentInfo(shipmentId: number): Promise<Shipment
 }
 
 /**
+ * Source rows this lot has already billed: any source-keyed line on a live
+ * DEBIT_NOTE of the lot (main note or a -BS01 supplement) — the same predicate
+ * that derives the per-row 'Đã lên Báo nợ' status in getLotCostRegister.
+ * Deleted notes never count (NEPO-61: deleting a DRAFT note returns the lot to
+ * the pre-note state, freeing its rows again).
+ */
+async function loadLotBilledSourceKeys(shipmentId: number): Promise<Set<string>> {
+  const rows = await db.select({
+    sourceType: s.billingDocumentLines.sourceType,
+    sourceId: s.billingDocumentLines.sourceId,
+  }).from(s.billingDocumentLines)
+    .innerJoin(s.billingDocuments, eq(s.billingDocumentLines.documentId, s.billingDocuments.id))
+    .where(and(
+      eq(s.billingDocuments.shipmentId, shipmentId),
+      eq(s.billingDocuments.type, 'DEBIT_NOTE'),
+      isNull(s.billingDocuments.deletedAt),
+    ));
+  return new Set(rows.filter((r) => r.sourceId != null).map((r) => `${r.sourceType}:${r.sourceId}`));
+}
+
+/**
  * One lô hàng = one Báo nợ. Lines: every billable linked trip's FREIGHT (road
  * revenue) + the lô's collect-side (Thu khách) shipment cost rows, ordered per
  * the flow-type fee order — MCT26026 sequence for Hàng Xuất, TMT26004 for Hàng
  * Nhập. Supplier rows (Trả NCC) never reach a customer note. Awaiting-invoice
  * rows (Chờ hóa đơn) print with a blank amount and never join the total.
+ * NEPO-69 — rows already on a live note of the lot ('Đã lên Báo nợ') are left
+ * out: a draft preview only ever shows the not-yet-billed remainder.
  */
 async function buildLotDebitLines(
   shipmentId: number,
@@ -791,15 +814,18 @@ async function buildLotDebitLines(
       isNull(s.trips.deletedAt),
     )).orderBy(s.trips.departureDate);
 
-  const tripIds = trips.map((t) => t.id);
+  const billed = await loadLotBilledSourceKeys(shipmentId);
+  const billableTrips = trips.filter((t) => !billed.has(`TRIP:${t.id}`));
+
+  const tripIds = billableTrips.map((t) => t.id);
   const containersByTrip = await loadContainersByTrip(tripIds);
   const legsByTrip = await loadLegRenderDataByTrip(tripIds);
 
-  const costs = await db.select().from(s.shipmentCosts)
+  const costs = (await db.select().from(s.shipmentCosts)
     .where(and(
       eq(s.shipmentCosts.shipmentId, shipmentId),
       eq(s.shipmentCosts.direction, 'CUSTOMER'),
-    ));
+    ))).filter((cost) => !billed.has(`SHIPMENT_COST:${cost.id}`));
 
   // NEPO-62 (d) — no official MCT26026/TMT26004 sample files exist to verify
   // against (QA-verified absence), so the order below follows the current
@@ -818,7 +844,7 @@ async function buildLotDebitLines(
 
   const lines: BillingDraftLine[] = [];
   let sortOrder = 0;
-  for (const trip of trips) {
+  for (const trip of billableTrips) {
     const containerInfo = containersByTrip.get(trip.id) ?? [];
     const containers = containerNumbers(containerInfo);
     const unit = containerUnit(containerInfo);
@@ -953,33 +979,24 @@ export async function createLotSupplement(mainId: number, userId: number | null)
   }
   if (!main.issuedAt) throw new ApiError(409, 'Chỉ bổ sung cho Báo nợ đã phát hành');
 
-  const chainIds = [main.id, ...(await db.select({ id: s.billingDocuments.id })
+  // NEPO-69 — buildLotDebitLines already leaves out every source row on a live
+  // note of the chain ('Đã lên Báo nợ'), TRIP freight and SHIPMENT_COST fees
+  // alike, so a -BS01 regenerates only the post-issuance remainder and never
+  // re-bills the main note's rows. ADHOC rows (sourceId null) never match a
+  // draft line, so supplements stay source-row-only.
+  const draft = await buildLotDebitLines(main.shipmentId, main.rangeFrom, main.rangeTo);
+  if (draft.lines.length === 0) {
+    throw new ApiError(400, 'Không còn chi phí mới nào để bổ sung');
+  }
+
+  const supplementCount = (await db.select({ id: s.billingDocuments.id })
     .from(s.billingDocuments)
     .where(and(
       eq(s.billingDocuments.parentDocumentId, main.id),
       isNull(s.billingDocuments.deletedAt),
-    ))).map((r) => r.id)];
-  // Every source-keyed row already on ANY live document of the chain counts as
-  // billed — TRIP freight and EXPENSE chi hộ included. Filtering SHIPMENT_COST
-  // keys only let the draft's freight lines through, so each -BS01 re-billed
-  // the whole lot on top of the main note. ADHOC rows (sourceId null) never
-  // match a draft line, so supplements stay source-row-only.
-  const covered = new Set((await db.select({ sourceType: s.billingDocumentLines.sourceType, sourceId: s.billingDocumentLines.sourceId })
-    .from(s.billingDocumentLines)
-    .where(inArray(s.billingDocumentLines.documentId, chainIds)))
-    .filter((l) => l.sourceId != null)
-    .map((l) => `${l.sourceType}:${l.sourceId}`));
-
-  const draft = await buildLotDebitLines(main.shipmentId, main.rangeFrom, main.rangeTo);
-  const remaining = draft.lines.filter((line) =>
-    !(line.sourceId != null && covered.has(`${line.sourceType}:${line.sourceId}`)));
-  if (remaining.length === 0) {
-    throw new ApiError(400, 'Không còn chi phí mới nào để bổ sung');
-  }
-
-  const supplementCount = chainIds.length - 1; // supplements already in the chain
+    ))).length; // supplements already in the chain
   const documentNumber = `${main.documentNumber ?? `DN-${main.id}`}-BS${String(supplementCount + 1).padStart(2, '0')}`;
-  const lines = remaining as BillingDocumentLine[];
+  const lines = draft.lines as BillingDocumentLine[];
   const total = docTotal(lines);
   const adjustment = documentLedgerAdjustment(lines);
 
@@ -1037,6 +1054,26 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
   const docId = await db.transaction(async (tx) => {
     if (input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER') {
       await LedgerService.lockEntity(tx, 'CUSTOMER', input.entityId);
+    }
+    // NEPO-69 — a lot with an issued main note is frozen. Saving a new draft
+    // for the same lot used to replace the issued note's lines and totals in
+    // place (QA repro: a 400k fee landed on issued DN26110009 AND its -BS01 —
+    // double-counted). The save is refused before any UPDATE/DELETE runs;
+    // later fees go through POST /:id/supplement (-BS01).
+    if (input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER' && input.shipmentId != null) {
+      const [lotMain] = await tx.select({
+        issuedAt: s.billingDocuments.issuedAt,
+        documentNumber: s.billingDocuments.documentNumber,
+      }).from(s.billingDocuments)
+        .where(and(
+          eq(s.billingDocuments.shipmentId, input.shipmentId),
+          eq(s.billingDocuments.type, 'DEBIT_NOTE'),
+          isNull(s.billingDocuments.parentDocumentId),
+          isNull(s.billingDocuments.deletedAt),
+        )).limit(1);
+      if (lotMain?.issuedAt) {
+        throw new ApiError(409, `Lô đã có Báo nợ chính đã phát hành${lotMain.documentNumber ? ` ${lotMain.documentNumber}` : ''} — dùng Báo nợ bổ sung (-BS01) cho phí phát sinh sau`);
+      }
     }
     const [existing] = input.type === 'DEBIT_NOTE'
       ? await tx.select().from(s.billingDocuments).where(and(
