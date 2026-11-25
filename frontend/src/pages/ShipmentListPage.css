@@ -30,7 +30,9 @@
 .shipment-band__total {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  /* Label and amount must never touch: 8px keeps them visibly separate
+     without pushing long VND values into a wrap (NEPO-71). */
+  gap: 8px;
   min-width: 0;
 }
 

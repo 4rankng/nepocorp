@@ -6,11 +6,16 @@
  * law (ADR 0045): mobile card list ≤640px / desktop table >640px; mã lô in
  * JetBrains mono.
  */
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { Role } from '@tingting/shared';
 import pageCss from './ShipmentListPage.css?raw';
 import { canWriteShipments, cutoffUrgentCount } from './ShipmentListPage';
 import { cutoffDaysLeft, canCreateBillingDocuments, isCutoffUrgent } from '../features/shipments/shipmentDisplay';
+
+const PAGES_DIR = dirname(fileURLToPath(import.meta.url));
 
 describe('shipment list — write-role gate (NEPO-61)', () => {
   it('write roles cover ADMIN/MANAGER/FORWARDER only', () => {
@@ -95,5 +100,30 @@ describe('shipment list — layout law (ADR 0045)', () => {
     expect(rule, 'band rule missing').toBeTruthy();
     expect(rule!.body).toMatch(/border:\s*1px solid var\(--line\)/);
     expect(rule!.body).not.toMatch(/box-shadow/);
+  });
+});
+
+// NEPO-71 — label and amount inside a band row must never touch. The gap is
+// the only thing keeping "Doanh thu23.400.000 ₫" readable; it also has to
+// stay small enough that long VND values never force a wrap.
+describe('shipment band — label/amount spacing (NEPO-71)', () => {
+  it('row keeps label and value apart with a 6–8px flex gap', () => {
+    const rule = cssRules(pageCss).find((r) => r.selector === '.shipment-band__total');
+    expect(rule, 'band row rule missing').toBeTruthy();
+    expect(rule!.body).toMatch(/display:\s*flex/);
+    const gap = rule!.body.match(/gap:\s*(\d+)px/);
+    expect(gap, 'band row must set a pixel gap').toBeTruthy();
+    expect(Number(gap![1])).toBeGreaterThanOrEqual(6);
+    expect(Number(gap![1])).toBeLessThanOrEqual(8);
+  });
+
+  it('shipment detail chunk imports the stylesheet owning the band rules', () => {
+    // Pages are lazy chunks: ShipmentDetailPage renders .shipment-band__*
+    // markup but the rules live in ShipmentListPage.css. A detail chunk that
+    // does not import it renders the whole strip unstyled (0px gap, the
+    // original bug) — and jsdom cannot run layout to see that, so pin the
+    // import itself.
+    const detailTsx = readFileSync(resolve(PAGES_DIR, 'ShipmentDetailPage.tsx'), 'utf8');
+    expect(detailTsx).toMatch(/import\s+['"]\.\/ShipmentListPage\.css['"]/);
   });
 });

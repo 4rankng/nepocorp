@@ -69,6 +69,10 @@ import {
   routeText,
   tripStatusLabel,
 } from '../features/shipments/shipmentDisplay';
+// The profit strip reuses the .shipment-band__* (and crumbs) class names
+// defined in ShipmentListPage.css. Pages are lazy chunks: without this import
+// the detail chunk ships no band styles and label/amount render glued at 0px.
+import './ShipmentListPage.css';
 import './ShipmentDetailPage.css';
 
 const FEE_GROUP_OPTIONS = Object.values(FeeGroup) as FeeGroup[];
