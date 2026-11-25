@@ -48,6 +48,17 @@ describe('shipment profit report', () => {
       .returning();
     shipmentIds.push(shipment.id);
 
+    // NEPO-68 second lô — Phí nộp hộ (LINE_ADVANCE) 2M + nâng hạ trả NCC 300k,
+    // Thu 13.1M, no linked trips: supplierCosts must read 300k, profit 12.8M.
+    const [advanceShipment] = await db.insert(s.shipments)
+      .values({
+        shipmentCode: `PRF27${String(Date.now()).slice(-6)}`,
+        customerId: customer.id,
+        cutoffDate: '2026-11-20',
+      })
+      .returning();
+    shipmentIds.push(advanceShipment.id);
+
     const [route] = await db.insert(s.routes).values({ name: `Lô profit route ${suffix}` }).returning();
     const [cargo] = await db.insert(s.cargoTypes).values({ name: `Lô profit cargo ${suffix}` }).returning();
 
@@ -101,6 +112,8 @@ describe('shipment profit report', () => {
       { shipmentId: shipment.id, costType: 'SEA_FREIGHT', direction: 'SUPPLIER', description: 'Cước biển', amount: '1200000', incurredDate: periodStart },
       { shipmentId: shipment.id, costType: 'OTHER', direction: 'SUPPLIER', description: 'Chờ hóa đơn', amount: '777000', awaitingInvoice: true, incurredDate: periodStart },
       { shipmentId: shipment.id, costType: 'HANDLING', direction: 'CUSTOMER', description: 'Thu hộ bốc xếp', amount: '900000', incurredDate: periodStart },
+      { shipmentId: advanceShipment.id, costType: 'LINE_ADVANCE', direction: 'SUPPLIER', serviceMode: 'ADVANCE', description: 'Nộp hộ hãng tàu', amount: '2000000', incurredDate: periodStart },
+      { shipmentId: advanceShipment.id, costType: 'HANDLING', direction: 'SUPPLIER', description: 'Phí nâng hạ', amount: '300000', incurredDate: periodStart },
     ]).returning({ id: s.shipmentCosts.id });
     shipmentCostIds.push(...costs.map((c) => c.id));
 
@@ -111,6 +124,12 @@ describe('shipment profit report', () => {
       totalInclVat: '10000000',
     }).returning({ id: s.billingDocuments.id });
     billingDocIds.push(doc.id);
+    const [advanceDoc] = await db.insert(s.billingDocuments).values({
+      type: 'DEBIT_NOTE', entityType: 'CUSTOMER', entityId: customer.id,
+      shipmentId: advanceShipment.id, rangeFrom: periodStart, rangeTo: periodEnd,
+      totalInclVat: '13100000',
+    }).returning({ id: s.billingDocuments.id });
+    billingDocIds.push(advanceDoc.id);
     const [deadDoc] = await db.insert(s.billingDocuments).values({
       type: 'DEBIT_NOTE', entityType: 'CUSTOMER', entityId: customer.id,
       rangeFrom: '2026-01-01', rangeTo: '2026-01-31',
@@ -155,6 +174,17 @@ describe('shipment profit report', () => {
     assert.equal(row.profit, 10500000 - 5200000 - 2000000);
     assert.equal(row.billingDocumentCount, 2);
     assert.equal(row.unbilled, false);
+  });
+
+  test('NEPO-68 — LINE_ADVANCE nộp hộ excluded from supplierCosts, ticket numbers', async () => {
+    const report = await getShipmentProfitReport(11, 2026);
+    const row = report.rows.find((r) => r.shipmentId === shipmentIds[1]);
+    assert.ok(row, 'nộp hộ lô must appear in its period report');
+
+    assert.equal(row.revenueInclVat, 13100000, 'Thu = báo nợ chính 13.1M');
+    assert.equal(row.supplierCosts, 300000, '2M nộp hộ excluded, 300k nâng hạ counted');
+    assert.equal(row.tripRunningCosts, 0, 'no linked trips on this lô');
+    assert.equal(row.profit, 12800000, '13.1M − 300k Chi Trả NCC');
   });
 
   test('totals aggregate across lô rows', async () => {

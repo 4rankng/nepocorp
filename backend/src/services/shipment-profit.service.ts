@@ -8,7 +8,8 @@
  *   - Tổng Thu         = Σ Giấy báo nợ của lô (chính + phụ lục -BS, VND).
  *   - Tổng Chi Trả NCC = cước xe ngoài (EXTERNAL trips) + chi hộ mua
  *     (trip_expenses APPROVED) + shipment_costs direction=SUPPLIER
- *     (bỏ qua awaiting-invoice — chúng in không số tiền trên báo nợ).
+ *     (bỏ qua awaiting-invoice — chúng in không số tiền trên báo nợ;
+ *     bỏ nhóm LINE_ADVANCE nộp hộ — chỉ đối soát, không vào lợi nhuận).
  *   - Tổng Chi Chạy Xe = totalCost các chuyến xe nhà (OWN).
  *   - Phí nộp hộ chi (trip_expenses expenseType='PASSPORT_FEE') ĐÃ nằm trong
  *     Chi Trả NCC — chỉ hiển thị thành dòng đối soát (passportFeeMemo),
@@ -98,12 +99,14 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
       )).groupBy(s.billingDocuments.shipmentId),
 
       // Chi phí lô chiều trả NCC (bỏ chờ hóa đơn — in không số tiền trên báo nợ).
+      // Nhóm LINE_ADVANCE (nộp hộ hãng tàu) chỉ đối soát — không vào lợi nhuận.
       db.select({
         shipmentId: s.shipmentCosts.shipmentId,
         supplierCosts: sql<string>`coalesce(sum(${s.shipmentCosts.amount}), 0)`,
       }).from(s.shipmentCosts).where(and(
         eq(s.shipmentCosts.direction, 'SUPPLIER'),
         eq(s.shipmentCosts.awaitingInvoice, false),
+        ne(s.shipmentCosts.costType, 'LINE_ADVANCE'),
       )).groupBy(s.shipmentCosts.shipmentId),
 
       // Phụ lục (-BS01) đếm qua parentDocumentId join — chúng VẪN mang

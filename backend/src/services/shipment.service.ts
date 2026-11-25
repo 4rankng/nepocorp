@@ -173,6 +173,8 @@ export async function getShipmentById(id: number): Promise<Shipment> {
  * (Chờ hóa đơn has no invoice yet, so it books no cost); trip running cost =
  * totalCost for OWN trips, externalFreightCost (falling back to totalCost) for
  * EXTERNAL ones — mirrors the P&L decomposition in pnl.service.ts.
+ * LINE_ADVANCE (Phí nộp hộ hãng tàu) is reconciliation-only: it never enters
+ * payTotal or profit, though the row itself stays in the register (KB ch.5).
  */
 async function computeProfit(shipmentId: number): Promise<ShipmentProfitSummary> {
   const [revenueRow] = await db.select({
@@ -185,7 +187,7 @@ async function computeProfit(shipmentId: number): Promise<ShipmentProfitSummary>
   ));
   const [costRow] = await db.select({
     collect: sql<string>`coalesce(sum(case when ${s.shipmentCosts.direction} = 'CUSTOMER' and not ${s.shipmentCosts.awaitingInvoice} then ${s.shipmentCosts.amount} else 0 end), 0)`,
-    pay: sql<string>`coalesce(sum(case when ${s.shipmentCosts.direction} = 'SUPPLIER' and not ${s.shipmentCosts.awaitingInvoice} then ${s.shipmentCosts.amount} else 0 end), 0)`,
+    pay: sql<string>`coalesce(sum(case when ${s.shipmentCosts.direction} = 'SUPPLIER' and not ${s.shipmentCosts.awaitingInvoice} and ${s.shipmentCosts.costType} <> 'LINE_ADVANCE' then ${s.shipmentCosts.amount} else 0 end), 0)`,
   }).from(s.shipmentCosts).where(eq(s.shipmentCosts.shipmentId, shipmentId));
   const [tripRow] = await db.select({
     total: sql<string>`coalesce(sum(case when ${s.trips.carrierType} = 'EXTERNAL'

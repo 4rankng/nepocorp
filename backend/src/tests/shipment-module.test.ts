@@ -7,6 +7,7 @@ import * as s from '../db/schema';
 import {
   addShipmentCost,
   createShipment,
+  getLotCostRegister,
   getShipmentById,
   getShipmentDetail,
   listShipments,
@@ -72,6 +73,7 @@ after(async () => {
     await db.delete(s.trips).where(inArray(s.trips.id, createdTripIds));
   }
   if (createdShipmentIds.length > 0) {
+    await db.delete(s.billingDocuments).where(inArray(s.billingDocuments.shipmentId, createdShipmentIds));
     await db.delete(s.shipmentCosts).where(inArray(s.shipmentCosts.shipmentId, createdShipmentIds));
     await db.delete(s.shipmentDocuments).where(inArray(s.shipmentDocuments.shipmentId, createdShipmentIds));
     await db.delete(s.shipments).where(inArray(s.shipments.id, createdShipmentIds));
@@ -209,14 +211,16 @@ describe('NEPO-61 lô profit rollup', () => {
     createdShipmentIds.push(shipment.id);
 
     // Thu khách 30M (collect), Trả NCC 1M (pay), chờ hóa đơn 5M (excluded).
+    // The 1M pay row is a non-LINE_ADVANCE group on purpose: normal supplier
+    // fees keep counting — only nộp hộ (NEPO-68) is excluded, see next test.
     await addShipmentCost(shipment.id, {
       costType: FeeGroup.OCEAN_FREIGHT, direction: 'CUSTOMER', serviceMode: 'SERVICE',
       description: 'Cước biển thu khách', currency: 'VND', amount: 30_000_000,
       vatRate: 0.08, awaitingInvoice: false, incurredDate: '2026-11-20',
     }, null);
     await addShipmentCost(shipment.id, {
-      costType: FeeGroup.LINE_ADVANCE, direction: 'SUPPLIER', serviceMode: 'ADVANCE',
-      description: 'Nộp hộ hãng tàu', currency: 'VND', amount: 1_000_000,
+      costType: FeeGroup.CUSTOMS_SERVICE, direction: 'SUPPLIER', serviceMode: 'SERVICE',
+      description: 'Phí DV hải quan', currency: 'VND', amount: 1_000_000,
       vatRate: 0.08, awaitingInvoice: false, incurredDate: '2026-11-20',
     }, null);
     await addShipmentCost(shipment.id, {
@@ -236,6 +240,41 @@ describe('NEPO-61 lô profit rollup', () => {
     assert.equal(detail.profit.profit, -19_000_000);
     assert.equal(detail.profit.linkedTripCount, 1);
     assert.equal(detail.trips.length, 1);
+  });
+
+  test('NEPO-68 — nộp hộ (LINE_ADVANCE) chỉ đối soát, không vào lợi nhuận lô', async () => {
+    const mct = await seedCustomer('Mộc Trà nộp hộ', 'NPH');
+    const shipment = await createShipment({ customerId: mct.id }, null);
+    createdShipmentIds.push(shipment.id);
+
+    // Ticket numbers: LINE_ADVANCE 2M + nâng hạ trả NCC 300k + Thu 13.1M.
+    await addShipmentCost(shipment.id, {
+      costType: FeeGroup.LINE_ADVANCE, direction: 'SUPPLIER', serviceMode: 'ADVANCE',
+      description: 'Nộp hộ hãng tàu', currency: 'VND', amount: 2_000_000,
+      vatRate: 0.08, awaitingInvoice: false, incurredDate: '2026-11-20',
+    }, null);
+    await addShipmentCost(shipment.id, {
+      costType: FeeGroup.LIFTING, direction: 'SUPPLIER', serviceMode: 'SERVICE',
+      description: 'Phí nâng hạ trả NCC', currency: 'VND', amount: 300_000,
+      vatRate: 0.08, awaitingInvoice: false, incurredDate: '2026-11-20',
+    }, null);
+    await db.insert(s.billingDocuments).values({
+      type: 'DEBIT_NOTE', entityType: 'CUSTOMER', entityId: mct.id,
+      shipmentId: shipment.id, rangeFrom: '2026-11-20', rangeTo: '2026-11-20',
+      totalInclVat: '13100000',
+    });
+
+    const detail = await getShipmentDetail(shipment.id);
+    assert.equal(detail.profit.revenueInclVat, 13_100_000);
+    assert.equal(detail.profit.payTotal, 300_000, 'Chi trả NCC excludes nộp hộ');
+    assert.equal(detail.profit.profit, 12_800_000, '13.1M Thu − 300k Chi Trả NCC');
+
+    // Đối soát KHÔNG đổi: register vẫn nắm đủ cả dòng nộp hộ.
+    const register = await getLotCostRegister(shipment.id);
+    assert.equal(register.totals.pay, 2_300_000);
+    const advanceGroup = register.groups.find((g) => g.group === FeeGroup.LINE_ADVANCE);
+    assert.equal(advanceGroup?.rows.length, 1, 'nộp hộ row still listed');
+    assert.equal(advanceGroup?.payTotal, 2_000_000);
   });
 });
 
