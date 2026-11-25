@@ -151,7 +151,15 @@ const handleSubmit = useCallback(
           return;
         }
         const kmRaw = (leg.km ?? '').toString().trim();
-        if (kmRaw !== '' && (!Number.isFinite(Number(kmRaw)) || Number(kmRaw) < 0)) {
+        // A leg without distance silently computes a near-zero fuel total and
+        // leaves the trip stuck with a nonsensical cost — require it up front.
+        if (kmRaw === '' || Number(kmRaw) === 0) {
+          const msg = `Chặng ${leg.sequence}: Vui lòng nhập Cự ly (km) cho chặng.`;
+          s.setError(msg);
+          showToast({ kind: 'error', message: msg });
+          return;
+        }
+        if (!Number.isFinite(Number(kmRaw)) || Number(kmRaw) < 0) {
           const msg = `Chặng ${leg.sequence}: Quãng đường phải là số không âm.`;
           s.setError(msg);
           showToast({ kind: 'error', message: msg });

@@ -69,6 +69,8 @@ describe('create trip recovery', () => {
   it.each([
     { legs: [{ ...validLegs[0], destination: '' }], state: {} },
     { legs: [{ ...validLegs[0], km: '-1' }], state: {} },
+    { legs: [{ ...validLegs[0], km: '' }], state: {} },
+    { legs: [{ ...validLegs[0], km: '0' }], state: {} },
     { legs: validLegs, state: { fuelSupplementLiters: '5', fuelSupplementReason: '' } },
     // A fat-fingered pump price (225 thay vì 22.500) would book a nonsense
     // fuel payable — kanban 081026232520.
@@ -79,6 +81,13 @@ describe('create trip recovery', () => {
     expect(result.current.error).not.toBe('');
     expect(api.post).not.toHaveBeenCalled();
     expect(api.put).not.toHaveBeenCalled();
+  });
+
+  it('blocks the save on a 0-km leg with the explicit distance message', async () => {
+    const { result } = setup({ legs: [{ ...validLegs[0], km: '' }] });
+    await act(async () => { await result.current.handleSubmit(); });
+    expect(result.current.error).toBe('Chặng 1: Vui lòng nhập Cự ly (km) cho chặng.');
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('blocks an external plan that has no carrier partner or freight cost', async () => {
