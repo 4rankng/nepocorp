@@ -1,5 +1,31 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { formatAmount, formatCurrency, moneyParts, parseAmount } from './format';
+
+// Every `formatCurrency(...)}₫` call site renders the unit twice — the helper
+// already returns "1.200.000 ₫". The QA-reported "Thu 0 đđ" / "Chi 1.200.000
+// đđ" on the shipment detail came from exactly this doubling, page after page.
+// The guard reads the two heaviest money surfaces from disk and fails the
+// moment a literal ₫ reappears after a formatter call.
+const LIB_DIR = dirname(fileURLToPath(import.meta.url));
+const sweepTargets: Array<[string, string]> = (
+  [
+    'ShipmentDetailPage.tsx',
+    'SoaPage.tsx',
+  ] as const
+).map(name => [name, readFileSync(resolve(LIB_DIR, '../pages', name), 'utf8')]);
+
+describe('money unit sweep — no doubled ₫ after formatCurrency', () => {
+  it('renders exactly one unit per amount', () => {
+    expect(formatCurrency(1200000)).toBe('1.200.000 ₫');
+  });
+
+  it.each(sweepTargets)('%s never appends a literal ₫ after a formatter call', (_label, src) => {
+    expect(src.match(/\}₫/g) ?? []).toEqual([]);
+  });
+});
 
 /**
  * `parseAmount` is the inverse of `formatCurrency`/`formatNumber`, and reading

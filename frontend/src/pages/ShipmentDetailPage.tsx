@@ -227,7 +227,7 @@ export default function ShipmentDetailPage() {
   };
 
   const removeCost = (row: LotCostRow) => {
-    void confirm(`Xóa "${row.description}" (${formatCurrency(row.amount)}₫)?`, {
+    void confirm(`Xóa "${row.description}" (${formatCurrency(row.amount)})?`, {
       confirmLabel: 'Xóa',
     }).then(async (ok) => {
       if (!ok) return;
@@ -341,7 +341,7 @@ export default function ShipmentDetailPage() {
   // back to the pre-note state; the backend refuses issued notes.
   const removeNote = async (doc: ShipmentBillingDocSummary) => {
     const ok = await confirm(
-      `Xóa Báo nợ ${doc.documentNumber ?? `#${doc.id}`} (${formatCurrency(doc.totalInclVat)}₫, chưa phát hành)? Công nợ sẽ quay lại như trước khi lập.`,
+      `Xóa Báo nợ ${doc.documentNumber ?? `#${doc.id}`} (${formatCurrency(doc.totalInclVat)}, chưa phát hành)? Công nợ sẽ quay lại như trước khi lập.`,
       { variant: 'danger', confirmLabel: 'Xóa' },
     );
     if (!ok) return;
@@ -415,7 +415,7 @@ export default function ShipmentDetailPage() {
           <div key={row.key} className="shipment-band__total" title={row.title}>
             <span className="shipment-band__label">{row.label}</span>
             <span className={`shipment-band__amount${row.valueClassName === 'is-negative' ? ' is-negative' : ''}`}>
-              {formatCurrency(row.value)}₫
+              {formatCurrency(row.value)}
             </span>
           </div>
         ))}
@@ -439,8 +439,8 @@ export default function ShipmentDetailPage() {
                 <div className="lot-register__group-header">
                   <span>{group.label}</span>
                   <span className="lot-register__group-totals">
-                    <span className="is-collect">Thu {formatCurrency(group.collectTotal)}₫</span>
-                    <span className="is-pay">Chi {formatCurrency(group.payTotal)}₫</span>
+                    <span className="is-collect">Thu {formatCurrency(group.collectTotal)}</span>
+                    <span className="is-pay">Chi {formatCurrency(group.payTotal)}</span>
                   </span>
                 </div>
                 {group.rows.length > 0 && (
@@ -482,7 +482,7 @@ export default function ShipmentDetailPage() {
                               <span className="lot-register__fx">—</span>
                             ) : (
                               <>
-                                {formatCurrency(row.amount)}₫
+                                {formatCurrency(row.amount)}
                                 {row.currency === 'USD' && row.fxAmount != null && (
                                   <span className="lot-register__fx">
                                     ${formatCurrency(row.fxAmount)} × {formatCurrency(row.exchangeRate ?? 0)}
@@ -529,7 +529,7 @@ export default function ShipmentDetailPage() {
             <div className="lot-register__group-header">
               <span>Chi phí chuyển xe</span>
               <span className="lot-register__group-totals">
-                <span className="is-pay">Chi {formatCurrency(register?.truckTransfer.total ?? 0)}₫</span>
+                <span className="is-pay">Chi {formatCurrency(register?.truckTransfer.total ?? 0)}</span>
               </span>
             </div>
             {(register?.truckTransfer.rows.length ?? 0) > 0 && (
@@ -542,7 +542,7 @@ export default function ShipmentDetailPage() {
                         {row.label}
                         {row.tripCode && <span className="lot-register__fx">{row.tripCode}</span>}
                       </td>
-                      <td className="is-money">{formatCurrency(row.amount)}₫</td>
+                      <td className="is-money">{formatCurrency(row.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -554,13 +554,13 @@ export default function ShipmentDetailPage() {
               <div className="lot-register__totals-item">
                 <span className="lot-register__totals-label">Tổng thu khách</span>
                 <span className="lot-register__totals-value is-collect">
-                  {formatCurrency(register?.totals.collect ?? 0)}₫
+                  {formatCurrency(register?.totals.collect ?? 0)}
                 </span>
               </div>
               <div className="lot-register__totals-item">
                 <span className="lot-register__totals-label">Tổng trả NCC</span>
                 <span className="lot-register__totals-value is-pay">
-                  {formatCurrency(register?.totals.pay ?? 0)}₫
+                  {formatCurrency(register?.totals.pay ?? 0)}
                 </span>
               </div>
             </div>
@@ -584,7 +584,7 @@ export default function ShipmentDetailPage() {
                     {doc.parentDocumentId != null && ' (bổ sung)'}
                   </span>
                   <div className="lot-billing__sub">
-                    {formatCurrency(doc.totalInclVat)}₫ · {formatDate(doc.rangeFrom)}–{formatDate(doc.rangeTo)}
+                    {formatCurrency(doc.totalInclVat)} · {formatDate(doc.rangeFrom)}–{formatDate(doc.rangeTo)}
                     {doc.issuedAt ? ` · phát hành ${formatDate(doc.issuedAt.slice(0, 10))}` : ' · chưa phát hành'}
                   </div>
                 </div>
@@ -676,8 +676,8 @@ export default function ShipmentDetailPage() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div className="lot-register__fx">DT {formatCurrency(trip.revenue ?? 0)}₫</div>
-                  <div className="lot-register__fx">CP {formatCurrency(trip.totalCost ?? 0)}₫</div>
+                  <div className="lot-register__fx">DT {formatCurrency(trip.revenue ?? 0)}</div>
+                  <div className="lot-register__fx">CP {formatCurrency(trip.totalCost ?? 0)}</div>
                 </div>
               </div>
             ))}
@@ -847,7 +847,7 @@ export default function ShipmentDetailPage() {
                 <div className="lot-cost-form__field">
                   <span className="lot-cost-form__label">Quy VND (làm tròn)</span>
                   <div className="input" style={{ background: 'var(--surface-2)' }}>
-                    {formatCurrency(derivedVnd)}₫
+                    {formatCurrency(derivedVnd)}
                   </div>
                 </div>
               </>
@@ -917,7 +917,7 @@ export default function ShipmentDetailPage() {
                     )}
                   </td>
                   <td className={`is-money${line.renderData?.blankAmount ? ' is-blank' : ''}`}>
-                    {line.renderData?.blankAmount ? '—' : formatCurrency(line.baseAmount)}₫
+                    {line.renderData?.blankAmount ? '—' : formatCurrency(line.baseAmount)}
                   </td>
                 </tr>
               ))}
@@ -927,7 +927,7 @@ export default function ShipmentDetailPage() {
           <div className="lot-register__totals">
             <div className="lot-register__totals-item">
               <span className="lot-register__totals-label">Tổng cộng</span>
-              <span className="lot-register__totals-value">{formatCurrency(noteDraft.totalInclVat)}₫</span>
+              <span className="lot-register__totals-value">{formatCurrency(noteDraft.totalInclVat)}</span>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>

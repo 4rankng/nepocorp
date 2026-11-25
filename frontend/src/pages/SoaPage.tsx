@@ -132,12 +132,12 @@ export default function SoaPage() {
                     <Link to={`/customers/${row.customerId}`}>{row.customerName}</Link>
                   </td>
                   {row.months.flatMap((cell) => [
-                    <td key={`${cell.month}-o`} className="is-money">{formatCurrency(cell.opening)}₫</td>,
-                    <td key={`${cell.month}-c`} className="is-money is-charge">{formatCurrency(cell.charges)}₫</td>,
-                    <td key={`${cell.month}-p`} className="is-money is-pay">{formatCurrency(cell.payments)}₫</td>,
-                    <td key={`${cell.month}-cl`} className="is-money">{formatCurrency(cell.closing)}₫</td>,
+                    <td key={`${cell.month}-o`} className="is-money">{formatCurrency(cell.opening)}</td>,
+                    <td key={`${cell.month}-c`} className="is-money is-charge">{formatCurrency(cell.charges)}</td>,
+                    <td key={`${cell.month}-p`} className="is-money is-pay">{formatCurrency(cell.payments)}</td>,
+                    <td key={`${cell.month}-cl`} className="is-money">{formatCurrency(cell.closing)}</td>,
                   ])}
-                  <td className="is-money is-strong">{formatCurrency(row.closing)}₫</td>
+                  <td className="is-money is-strong">{formatCurrency(row.closing)}</td>
                 </tr>
               ))}
               {data.rows.length === 0 && (
