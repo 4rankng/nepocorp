@@ -1059,7 +1059,8 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
     // for the same lot used to replace the issued note's lines and totals in
     // place (QA repro: a 400k fee landed on issued DN26110009 AND its -BS01 —
     // double-counted). The save is refused before any UPDATE/DELETE runs;
-    // later fees go through POST /:id/supplement (-BS01).
+    // later fees go through POST /:id/supplement (-BS01). NEPO-70 — any live
+    // main note for the lot blocks a second main-note save: 1 lô = 1 Báo nợ.
     if (input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER' && input.shipmentId != null) {
       const [lotMain] = await tx.select({
         issuedAt: s.billingDocuments.issuedAt,
@@ -1071,8 +1072,14 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
           isNull(s.billingDocuments.parentDocumentId),
           isNull(s.billingDocuments.deletedAt),
         )).limit(1);
-      if (lotMain?.issuedAt) {
-        throw new ApiError(409, `Lô đã có Báo nợ chính đã phát hành${lotMain.documentNumber ? ` ${lotMain.documentNumber}` : ''} — dùng Báo nợ bổ sung (-BS01) cho phí phát sinh sau`);
+      if (lotMain) {
+        if (lotMain.issuedAt) {
+          throw new ApiError(409, `Lô đã có Báo nợ chính đã phát hành${lotMain.documentNumber ? ` ${lotMain.documentNumber}` : ''} — dùng Báo nợ bổ sung (-BS01) cho phí phát sinh sau`);
+        }
+        // NEPO-70 — 1 lô = 1 Báo nợ chính: a second main-note save for the
+        // same lot is a duplicate, answered with the same message the
+        // billing_documents unique indexes produce through the 23505 handler.
+        throw new ApiError(409, 'Dữ liệu đã tồn tại');
       }
     }
     const [existing] = input.type === 'DEBIT_NOTE'

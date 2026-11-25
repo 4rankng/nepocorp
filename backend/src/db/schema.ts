@@ -608,11 +608,14 @@ export const billingDocuments = pgTable('billing_documents', {
   deletedAt: timestamp('deleted_at'),
 }, (table) => [
   index('billing_documents_entity_idx').on(table.entityType, table.entityId),
-  // Active-period uniqueness guards MAIN debit notes only — a -BS01
-  // supplement intentionally shares its parent's period (NEPO-62).
+  // Active-period uniqueness guards MAIN *monthly/legacy* debit notes only —
+  // NEPO-70: lot notes (shipment_id set) are out of scope here, or a second
+  // lot of the same customer in the same month could never be billed. Their
+  // invariant is 1 lô = 1 Báo nợ chính via billing_documents_lot_main_unique;
+  // a -BS01 supplement intentionally shares its parent's period (NEPO-62).
   uniqueIndex('billing_documents_active_period_unique')
     .on(table.type, table.entityType, table.entityId, table.rangeFrom, table.rangeTo)
-    .where(sql`${table.deletedAt} IS NULL AND ${table.type} = 'DEBIT_NOTE' AND ${table.parentDocumentId} IS NULL`),
+    .where(sql`${table.deletedAt} IS NULL AND ${table.type} = 'DEBIT_NOTE' AND ${table.parentDocumentId} IS NULL AND ${table.shipmentId} IS NULL`),
   // NEPO-62 — 1 lô hàng = 1 Báo nợ chính. Supplements (-BS01) are exempt via
   // parent_document_id; the shipment ref itself stays FK-only.
   uniqueIndex('billing_documents_lot_main_unique')
