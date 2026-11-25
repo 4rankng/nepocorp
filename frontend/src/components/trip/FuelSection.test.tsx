@@ -76,17 +76,17 @@ describe('FuelSection allocation reconciliation', () => {
     useFuelConfigMock.mockReturnValue({ data: { unitPrice: '25000' } });
   });
 
-  it('warns when allocated liters differ from the trip fuel total and offers the one-click reconcile', () => {
+  it('warns concisely and offers distance entry plus khoán as text actions', () => {
     useTripFormContextMock.mockReturnValue(formStub({
       fuelAllocations: [allocationRow('248')],
     }));
 
     render(<FuelSection />);
 
-    const alert = screen.getByText(/Tổng phân bổ dầu \(248 lít\) ≠ tổng dầu chuyến \(3 lít\)/);
+    const alert = screen.getByText(/Đã phân bổ 248 lít, chuyến tính 3 lít \(cự ly 0 km\)/);
     expect(alert.getAttribute('role')).toBe('alert');
-    expect(screen.getByText(/cự ly 0 km/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Khoán 248 lít làm tổng dầu chuyến' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Nhập cự ly' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Khoán 248 lít' })).toBeTruthy();
   });
 
   it('reconciles by switching to FLAT_RATE with the allocation total minus the supplement', () => {
@@ -98,21 +98,22 @@ describe('FuelSection allocation reconciliation', () => {
 
     render(<FuelSection />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Khoán 248 lít làm tổng dầu chuyến' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Khoán 248 lít' }));
 
     expect(stub.setFuelMode).toHaveBeenCalledWith(FuelMode.FLAT_RATE);
     expect(stub.setFuelLitersOverride).toHaveBeenCalledWith('245');
   });
 
-  it('hides the reconcile button for decimal allocation totals and asks for rounding', () => {
+  it('hides the khoán action for decimal allocation totals and asks for rounding', () => {
     useTripFormContextMock.mockReturnValue(formStub({
       fuelAllocations: [allocationRow('248.5')],
     }));
 
     render(<FuelSection />);
 
-    expect(screen.queryByRole('button')).toBeNull();
-    expect(screen.getByText('Làm tròn số lít phân bổ thành số nguyên để khoán được.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Khoán/ })).toBeNull();
+    expect(screen.getByText(/Làm tròn số lẻ/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Nhập cự ly' })).toBeTruthy();
   });
 
   it('stays silent when the allocation matches the trip fuel total', () => {
@@ -123,10 +124,10 @@ describe('FuelSection allocation reconciliation', () => {
 
     render(<FuelSection />);
 
-    expect(screen.queryByText(/Tổng phân bổ dầu/)).toBeNull();
+    expect(screen.queryByText(/Đã phân bổ/)).toBeNull();
   });
 
-  it('explains the stored-total freeze for committed legacy trips without offering a reconcile', () => {
+  it('explains the stored-total freeze for committed legacy trips without offering a khoán', () => {
     useTripFormContextMock.mockReturnValue(formStub({
       fuelAllocations: [allocationRow('248')],
       fuelFrozenLegacy: true,
@@ -134,7 +135,7 @@ describe('FuelSection allocation reconciliation', () => {
 
     render(<FuelSection />);
 
-    expect(screen.getByText(/Chuyến legacy này giữ nguyên tổng dầu đã lưu — phân bổ đúng 3 lít/)).toBeTruthy();
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByText(/khóa tổng dầu/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Khoán/ })).toBeNull();
   });
 });

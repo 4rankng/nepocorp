@@ -18,3 +18,20 @@
     gap: 10px;
   }
 }
+
+/* Inline text action inside the mismatch hint — link-styled, not a boxed
+   button, so the warning reads as one line. */
+.fs-textbtn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 8px;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fs-textbtn:hover { text-decoration: none; }
+.fs-textbtn:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }
