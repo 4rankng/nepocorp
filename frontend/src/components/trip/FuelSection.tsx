@@ -28,9 +28,9 @@ export function FuelSection() {
     fuelConfig && fuelConfig.unitPrice != null ? Number(fuelConfig.unitPrice) : 0
   ).toLocaleString('vi-VN');
 
-  // Ledger invariant the backend enforces on save (assertFuelAllocationTotal):
-  // Σ allocation liters must equal the trip's computed fuel total. Surface it
-  // here instead of leaving the dispatcher to discover it via a save-time 400.
+  // Σ allocation liters vs the trip's computed fuel total: the backend no
+  // longer rejects a mismatch on save (equality check removed), so surface
+  // the divergence here as an advisory hint with a one-click reconcile.
   const allocatedLiters = fuelAllocations.reduce((t, r) => t + (Number(r.liters) || 0), 0);
   const hasAllocationRows = fuelAllocations.some(r => r.liters.trim() !== '');
   const targetLiters = totals.totalFuelLiters;

@@ -2,10 +2,8 @@
 // route AFTER a trip is created. The trip's snapshotted fuel_fixed_allowance_applied
 // was 0 at creation, so the per-km norm is used. When the user enters the 378L
 // route fixed allowance into the fuel allocation editor and tries to save, the
-// backend's assertFuelAllocationTotal fires (allocation 378 != trip total 338)
-// with the "Tổng phân bổ dầu phải bằng tổng dầu chuyến" error — even though
-// the route now mandates 378L. Operations work-around was to artificially
-// inflate km to bring the per-km norm up to the route's fixed value.
+// stored snapshot (0) overrode the route's live 378L — operations had to
+// artificially inflate km to bring the per-km norm up to the route's fixed value.
 //
 // The fix: updateTripFigures must re-fetch the live route's fixed_fuel_allowance
 // when the trip is not yet financially committed and the snapshot is 0,
@@ -124,10 +122,8 @@ describe('updateTripFigures re-reads live route fixed fuel allowance for uncommi
     await db.update(s.routes).set({ fixedFuelAllowance: '378' }).where(eq(s.routes.id, route.id));
 
     // Save the trip with a single 378L allocation that exactly matches the route's
-    // new fixed allowance. Before the fix, totalFuelLiters comes from per-km norm
-    // (487×43/100≈209 + 487×25/100≈122 = 331) and the allocation 378 fails the
-    // "tổng phân bổ dầu phải bằng tổng dầu chuyến" assertion with the exact
-    // message the customer reported on demo trip.
+    // new fixed allowance. Before the fix, totalFuelLiters came from the per-km
+    // norm (487×43/100≈209 + 487×25/100≈122 = 331) instead of the route's 378.
     const updated = await updateTripFigures(trip.id, {
       legs: [
         { sequence: 1, origin: 'Nam Định Vũ', destination: 'Lai Châu', km: 487, loadingType: LoadingType.HANG },
@@ -210,5 +206,43 @@ describe('updateTripFigures re-reads live route fixed fuel allowance for uncommi
     });
     assert.equal(updated.fuelLiters, '240.00');
     assert.equal(updated.fuelFixedAllowanceApplied, '240.00');
+  });
+
+  test('allocation differing from the computed trip fuel total still saves', async () => {
+    // The fuel-equality assertion ("tổng phân bổ dầu phải bằng tổng dầu chuyến")
+    // was removed: a stale snapshot or a norm mismatch can legitimately leave
+    // the computed total ≠ what ops entered at the pump, and that must not
+    // block the save. Computed total 331 (per-km norm, no route fixed
+    // allowance) with an operator-entered 378L allocation saves cleanly.
+    const { customer, supplier, route, cargoType } = await seedFixture({ initialRouteAllowance: null });
+    const trip = await seedCreatedTrip({
+      customerId: customer.id,
+      routeId: route.id,
+      cargoTypeId: cargoType.id,
+      supplierId: supplier.id,
+      fuelFixedAllowanceApplied: 0,
+    });
+    const updated = await updateTripFigures(trip.id, {
+      legs: [
+        { sequence: 1, origin: 'Nam Định Vũ', destination: 'Lai Châu', km: 487, loadingType: LoadingType.HANG },
+        { sequence: 2, origin: 'Lai Châu', destination: 'Nam Định Vũ', km: 487, loadingType: LoadingType.VO },
+      ],
+      fuelMode: FuelMode.AUTO,
+      fuelLitersOverride: null,
+      fuelSupplementLiters: 0,
+      fuelAllocations: [
+        { supplierId: supplier.id, liters: 378, paymentMethod: 'CREDIT' },
+      ],
+      expectedVersion: trip.version,
+      userId: 1,
+    });
+    // Computed total keeps following legs/norms; allocation rows keep the
+    // operator-entered liters.
+    assert.equal(updated.fuelLiters, '331.00');
+    const storedAllocations = await db.select()
+      .from(s.tripFuelAllocations)
+      .where(eq(s.tripFuelAllocations.tripId, trip.id));
+    assert.equal(storedAllocations.length, 1);
+    assert.equal(Number(storedAllocations[0].liters), 378);
   });
 });

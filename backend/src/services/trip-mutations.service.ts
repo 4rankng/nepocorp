@@ -287,27 +287,13 @@ async function validateFuelAllocationSuppliers(
   }
 }
 
-function assertFuelAllocationTotal(
+function assertFuelAllocationDecimals(
   allocations: TripFuelAllocationInput[],
-  totalFuelLiters: number,
 ): void {
-  if (allocations.length === 0) return;
   for (const allocation of allocations) {
     if (Math.abs(allocation.liters * 100 - Math.round(allocation.liters * 100)) > 1e-8) {
       throw new ApiError(400, 'Số lít tại mỗi điểm đổ chỉ được có tối đa 2 chữ số thập phân');
     }
-  }
-  const allocatedHundredths = allocations.reduce(
-    (sum, allocation) => sum + Math.round(allocation.liters * 100),
-    0,
-  );
-  const tripHundredths = Math.round(totalFuelLiters * 100);
-  if (allocatedHundredths !== tripHundredths) {
-    const allocatedLiters = allocatedHundredths / 100;
-    throw new ApiError(
-      400,
-      `Tổng phân bổ dầu (${allocatedLiters.toLocaleString('vi-VN')} lít) phải bằng tổng dầu chuyến (${(tripHundredths / 100).toLocaleString('vi-VN')} lít)`,
-    );
   }
 }
 
@@ -1027,7 +1013,7 @@ export async function updateTripFigures(
         && !historicalSupplierIds.has(allocation.supplierId),
     );
     await validateFuelAllocationSuppliers(tx, newlySelectedAllocations);
-    assertFuelAllocationTotal(fuelAllocations, totals.totalFuelLiters);
+    assertFuelAllocationDecimals(fuelAllocations);
     // Legacy committed trips keep their fuel component frozen to the stored
     // total (B3/D4 — the price they were costed at is unreconstructable).
     // Pricing rows individually there would post ledger payables that can
