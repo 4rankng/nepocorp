@@ -145,6 +145,38 @@ describe('NEPO-61 shipment auto-code', () => {
     assert.match(second.shipmentCode, new RegExp(`^BETAL2${year}`));
   });
 
+  test('FORWARDER lot create never blocked by an underivable name — deterministic id-based prefix, shortName untouched', async () => {
+    // A name with no usable tokens defeats the legal-name derivation. Insert
+    // directly (seedCustomer's unique suffix would tokenize and become usable).
+    const [row] = await db.insert(s.customers).values({ name: '!!! ???' }).returning();
+    createdCustomerIds.push(row.id);
+    const shipment = await createShipment({ customerId: row.id }, null, Role.FORWARDER);
+    createdShipmentIds.push(shipment.id);
+    const year = String(new Date().getFullYear() % 100).padStart(2, '0');
+    const fallbackPrefix = `K${row.id.toString(36).toUpperCase()}`.slice(0, 6);
+    assert.match(shipment.shipmentCode, new RegExp(`^${fallbackPrefix}${year}\\d{3,}$`));
+    // The fallback is not persisted — shortName stays a display label (null),
+    // so dense grids keep showing the legal name.
+    const [refreshed] = await db.select({ shortName: s.customers.shortName })
+      .from(s.customers).where(eq(s.customers.id, row.id));
+    assert.equal(refreshed.shortName, null);
+  });
+
+  test('internal role keeps the underivable-name guard — error message names no Mã KH', async () => {
+    const [row] = await db.insert(s.customers).values({ name: '??? !!!' }).returning();
+    createdCustomerIds.push(row.id);
+    await assert.rejects(
+      () => createShipment({ customerId: row.id }, null, Role.ADMIN),
+      (error: unknown) => {
+        assert.ok(error instanceof ApiError);
+        assert.equal(error.statusCode, 400);
+        assert.ok(!error.message.includes('Mã KH'));
+        assert.match(error.message, /tên viết tắt/);
+        return true;
+      },
+    );
+  });
+
   test('rejects moving a lô to another customer (code encodes Mã KH)', async () => {
     const mct = await seedCustomer('Mộc Trà giữ lô', 'MCT');
     const tmt = await seedCustomer('TMT nhận nhầm lô', 'TMT');

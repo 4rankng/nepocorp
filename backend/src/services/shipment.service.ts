@@ -302,7 +302,7 @@ async function ensureCustomerShipmentPrefix(customer: {
   id: number;
   name: string;
   shortName: string | null;
-}): Promise<string> {
+}, role?: Role | null): Promise<string> {
   const existing = shipmentCodePrefix(customer.shortName ?? '');
   if (existing.length >= 2) return existing;
   return db.transaction(async (tx) => {
@@ -323,7 +323,14 @@ async function ensureCustomerShipmentPrefix(customer: {
     }
     const base = deriveShipmentCodeShortName(customer.name);
     if (base.length < 2) {
-      throw new ApiError(400, 'Không sinh được Mã KH hợp lệ từ tên khách hàng — hãy cập nhật tên viết tắt trong cấu hình khách hàng');
+      // Giao nhận (FORWARDER) tạo lô không bao giờ bị chặn bởi mã nội bộ:
+      // tiền tố dự phòng suy từ id khách (base36, A–Z0–9, ≤6 ký tự) — ổn định
+      // giữa các lần tạo, KHÔNG persist để shortName giữ vai trò nhãn hiển thị.
+      // Id bị cắt (≥36^5) chỉ chia vùng cấp số — mã lô vẫn duy nhất.
+      if (role === Role.FORWARDER) {
+        return `K${customer.id.toString(36).toUpperCase()}`.slice(0, 6);
+      }
+      throw new ApiError(400, 'Không sinh được tên viết tắt hợp lệ từ tên khách hàng — hãy cập nhật tên viết tắt trong cấu hình khách hàng');
     }
     let candidate = base;
     for (let n = 2; taken.has(candidate); n += 1) {
@@ -346,7 +353,7 @@ async function ensureCustomerShipmentPrefix(customer: {
  * (codes stay unique; interleaved numbers are acceptable — the prefix is the
  * customer's identity, not a unique key).
  */
-export async function createShipment(input: CreateShipmentInput, userId: number | null): Promise<Shipment> {
+export async function createShipment(input: CreateShipmentInput, userId: number | null, role?: Role | null): Promise<Shipment> {
   const [customer] = await db.select({
     id: s.customers.id,
     name: s.customers.name,
@@ -355,7 +362,7 @@ export async function createShipment(input: CreateShipmentInput, userId: number 
     .where(and(eq(s.customers.id, input.customerId), isNull(s.customers.deletedAt)))
     .limit(1);
   if (!customer) throw new ApiError(404, 'Không tìm thấy khách hàng');
-  const prefix = await ensureCustomerShipmentPrefix(customer);
+  const prefix = await ensureCustomerShipmentPrefix(customer, role);
   const year = new Date().getFullYear();
   const yearPrefix = `${prefix}${String(year % 100).padStart(2, '0')}`;
   const code = await db.transaction(async (tx) => {

@@ -70,7 +70,8 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
 router.post('/', requireRoles(...WRITE), asyncHandler(async (req: Request, res: Response) => {
   const data = createShipmentSchema.parse(req.body);
-  const shipment = await shipmentService.createShipment(data, getUser(req).userId);
+  const user = getUser(req);
+  const shipment = await shipmentService.createShipment(data, user.userId, user.role);
   res.locals.auditEntityId = shipment.id;
   res.locals.auditEntityKey = shipment.shipmentCode;
   res.status(201).json(shipment);

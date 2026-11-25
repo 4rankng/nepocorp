@@ -21,6 +21,7 @@ Lô hàng (shipment) là **đối tượng cha** của side vận tải biển: 
 Định dạng `[Mã KH][Năm][STT]` — ví dụ **MCT26026** = MCT + năm 26 + số thứ tự 026.
 
 - Tiền tố = `shortName` của khách hàng (bỏ dấu, đ→D, chỉ A–Z0–9, tối đa 6 ký tự, tối thiểu 2). Khách **chưa có** tên viết tắt hợp lệ → hệ thống **tự sinh Mã KH từ tên pháp lý** (bỏ từ loại hình công ty — "Công ty TNHH", "Cổ phần"…; trùng tiền tố với khách khác → thêm số thứ tự: `BETALO` → `BETAL2`) và lưu lại vào khách hàng; **không chặn tạo lô**. Đổi Mã KH chủ đích vẫn làm trong cấu hình khách hàng.
+- Mã KH là mã **nội bộ**: không có thông báo/trường nào trên web nêu tên "Mã KH". Nếu tên pháp lý cũng không suy ra được tiền tố: **Giao nhận (FORWARDER)** vẫn tạo được lô với tiền tố dự phòng suy từ id khách (không lưu vào tên viết tắt); vai trò nội bộ (Admin/Quản lý) nhận lỗi nhắc cập nhật **tên viết tắt** trong cấu hình khách hàng.
 - STT theo **tiền tố + năm**, cấp phát trong transaction với advisory lock — hai lô tạo đồng thời không trùng số. Nếu một khách có >999 lô/năm, STT tự mở rộng 4 chữ số (không cắt cụt).
 - Không thể **đổi khách hàng** của lô sau khi tạo (mã gắn với Mã KH).
 
