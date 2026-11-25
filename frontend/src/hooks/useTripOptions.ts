@@ -3,9 +3,16 @@ import { tripClient } from "../api/tripClient";
 import type { CatalogData } from "../api/tripClient";
 import { configClient } from "../api/configClient";
 import { shipmentClient } from "../api/shipmentClient";
-import type { PricingTable } from "@tingting/shared";
+import { Role, type PricingTable } from "@tingting/shared";
 import { BOOTSTRAP_QUERY_KEY } from "./useCatalogs";
+import { useAuth } from "./useAuth";
 import { qk } from "../api/keys";
+
+// /pricing-tables is Casbin-gated behind `config:read` (ADMIN/MANAGER/
+// ACCOUNTANT — backend/src/casbin/policy.csv). Portal roles have no policy
+// row: the fetch returned a guaranteed 403 and its retries held the form's
+// loading state (NEPO-66). They render no pricing-dependent UI, so skip it.
+const PRICING_TABLE_ROLES: readonly Role[] = [Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT];
 
 export interface SelectOption {
   id: number;
@@ -64,6 +71,7 @@ export function toDriverOption(driver: CatalogData['drivers'][number]): DriverOp
 }
 
 export function useTripOptions(): TripOptions {
+  const { user } = useAuth();
   const bootstrapQuery = useQuery<CatalogData>({
     queryKey: BOOTSTRAP_QUERY_KEY,
     queryFn: () => tripClient.getBootstrap(),
@@ -74,6 +82,7 @@ export function useTripOptions(): TripOptions {
     queryKey: qk.catalogs.pricingTables,
     staleTime: 5 * 60 * 1000,
     queryFn: () => configClient.getPricingTables(),
+    enabled: PRICING_TABLE_ROLES.includes(user?.role as Role),
   });
 
 
