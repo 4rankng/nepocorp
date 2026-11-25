@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { Role } from '@tingting/shared';
 import { canCreateBillingDocuments, canManageBillingDocuments, canSeeBillingDocuments } from './shipmentDisplay';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import detailPage from '../../pages/ShipmentDetailPage.tsx?raw';
 import billingPanel from '../../components/billing/BillingDocumentsPanel.tsx?raw';
+
+// vitest renders a `?raw` import of a .css file as '' — read the source from
+// disk instead (same approach as pages/filter-grid-rebuild.styles.test.ts).
+const PAGES_DIR = dirname(fileURLToPath(import.meta.url)) + '/../../pages';
+const detailCss = readFileSync(resolve(PAGES_DIR, 'ShipmentDetailPage.css'), 'utf8');
 
 // NEPO-63 role matrix (docs/flows/16-LO_HANG.md §7 = yêu cầu §6): Giấy báo nợ —
 // Kế toán "tạo + chốt", Ops biển (FORWARDER) chỉ xem lô, Admin sửa bản đã phát
@@ -95,5 +103,18 @@ describe('billing-document role gates — UI mirrors the billing-documents API p
     expect(detailPage).toContain('{LOT_FEE_STATUS_LABELS[row.status]}');
     // The cost form's "Chờ hóa đơn" hint must not spell 'Báo nợ' to stripped roles.
     expect(detailPage).toContain("{canSeeBilling ? 'in trên Báo nợ không có số tiền' : 'in không có số tiền'}");
+  });
+
+  it('r5 — lot cost register escapes the global 900px table floor (QA 25/11 overlap on Thông tin lô)', () => {
+    // QA verdict 25/11 on build 23fccdcc @1440×900: the base `table` rule
+    // (components/Table.css "Base table styles") carries min-width: 900px, so
+    // the register tables rendered 900px inside a ~740px grid column and
+    // painted the Trạng thái pills and row-action icons over the Thông tin lô
+    // card (ETD cut in half, Cut-off/Hãng tàu/Cont-Seal hidden). The register
+    // tables override the floor; narrow containers scroll via .table-scroll
+    // instead of bleeding into the right rail.
+    expect(detailCss).toMatch(/\.lot-register__table \{[^}]*min-width: 0;/);
+    const wrappers = detailPage.match(/<div className="table-scroll">/g) ?? [];
+    expect(wrappers.length).toBe(3);
   });
 });

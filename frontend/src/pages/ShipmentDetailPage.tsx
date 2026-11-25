@@ -444,7 +444,8 @@ export default function ShipmentDetailPage() {
                   </span>
                 </div>
                 {group.rows.length > 0 && (
-                  <table className="lot-register__table">
+                  <div className="table-scroll">
+                    <table className="lot-register__table">
                     <thead>
                       <tr>
                         <th>Diễn giải</th>
@@ -519,6 +520,7 @@ export default function ShipmentDetailPage() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 )}
               </div>
             ))}
@@ -531,7 +533,8 @@ export default function ShipmentDetailPage() {
               </span>
             </div>
             {(register?.truckTransfer.rows.length ?? 0) > 0 && (
-              <table className="lot-register__table">
+              <div className="table-scroll">
+                <table className="lot-register__table">
                 <tbody>
                   {register!.truckTransfer.rows.map((row) => (
                     <tr key={row.key}>
@@ -544,6 +547,7 @@ export default function ShipmentDetailPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
 
             <div className="lot-register__totals">
@@ -898,10 +902,11 @@ export default function ShipmentDetailPage() {
           <p style={{ marginTop: 0 }}>
             {noteDraft.entityName} · {formatDate(noteDraft.rangeFrom)}–{formatDate(noteDraft.rangeTo)}
           </p>
-          <table className="lot-register__table">
-            <thead>
-              <tr><th>Diễn giải</th><th style={{ textAlign: 'right' }}>Số tiền (VNĐ)</th></tr>
-            </thead>
+          <div className="table-scroll">
+            <table className="lot-register__table">
+              <thead>
+                <tr><th>Diễn giải</th><th style={{ textAlign: 'right' }}>Số tiền (VNĐ)</th></tr>
+              </thead>
             <tbody>
               {noteDraft.lines.map((line, idx) => (
                 <tr key={`${line.sourceType}-${line.sourceId ?? idx}`}>
@@ -917,7 +922,8 @@ export default function ShipmentDetailPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
           <div className="lot-register__totals">
             <div className="lot-register__totals-item">
               <span className="lot-register__totals-label">Tổng cộng</span>

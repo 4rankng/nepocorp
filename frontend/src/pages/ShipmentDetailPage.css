@@ -82,6 +82,12 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 6px;
+  /* The base `table` rule (components/Table.css) carries min-width: 900px for
+     the wide ledger grids. This register lives in a ~740px grid column, so
+     that floor widened the table 130px past its column and painted the status
+     pills / row actions over the Thông tin lô card. Six columns here need only
+     ~650px of min-content; narrower containers scroll via .table-scroll. */
+  min-width: 0;
 }
 .lot-register__table th {
   padding: 6px 10px;
