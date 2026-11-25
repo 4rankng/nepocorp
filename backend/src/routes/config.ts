@@ -20,6 +20,7 @@ import type { Request, Response } from 'express';
 import { createCrudRouter } from './utils/crud-factory';
 import debitNoteTemplatesRouter from './config/debit-note-templates.routes';
 import { ApiError } from '../errors';
+import { portalBootstrapCatalog } from '../lib/catalog-portal';
 import { getBootstrapData, getPricing, getFuelConfig, upsertFuelConfig, getFuelPriceHistory, getEffectiveFuelPrice, mirrorCustomerLink, mirrorSupplierLink, syncTrailerFields, validateCustomerUniqueness } from '../services/config.service';
 import { cacheInvalidate, cacheInvalidatePattern } from '../lib/redis';
 import { Role } from '@tingting/shared';
@@ -45,27 +46,16 @@ const router = Router();
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
-function portalBootstrap(data: Awaited<ReturnType<typeof getBootstrapData>>) {
-  return {
-    ...data,
-    customers: [],
-    trucks: [],
-    drivers: [],
-    routes: [],
-    cargoTypes: [],
-    expenseCategories: [],
-    suppliers: [],
-    trailers: [],
-  };
-}
-
 export const catalogBootstrapRouter = Router();
 
 catalogBootstrapRouter.get('/catalogs/bootstrap', asyncHandler(async (req: Request, res: Response) => {
   const data = await getBootstrapData();
   const role = getUser(req).role;
   if (role === Role.DRIVER || role === Role.FORWARDER) {
-    return res.json(portalBootstrap(data));
+    // NEPO-66 — portal trim lives in lib/catalog-portal.ts: DRIVER gets the
+    // fully stripped shape; FORWARDER keeps the customers list its lô form
+    // picks from (a stripped list made every web-UI lô creation impossible).
+    return res.json(portalBootstrapCatalog(data, role));
   }
   res.json(data);
 }));

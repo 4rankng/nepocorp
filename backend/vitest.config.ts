@@ -23,6 +23,7 @@ export default defineConfig({
       'src/tests/payment-fifo-skip.test.ts',
       'src/tests/payment-received-date.test.ts',
       'src/tests/payment-edit-recompute.test.ts',
+      'src/tests/catalog-bootstrap-role.test.ts',
     ],
     testTimeout: 30_000,
     hookTimeout: 30_000,

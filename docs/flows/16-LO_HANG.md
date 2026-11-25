@@ -86,3 +86,4 @@ Chi phí chạy xe **không** nhập tay — chuyến gắn lô tự động c�
 5. Gắn chuyến khách khác → lỗi 400; gắn chuyến đã chốt → lỗi 400; gỡ lô → cột MÃ LÔ HÀNG trống.
 6. Kế toán sửa báo nợ đã phát hành → 403; Admin sửa → thành công + có dòng audit.
 7. FORWARDER thấy menu Lô hàng (tạo/sửa được); DISPATCHER thấy menu mới ở lane NEPO-63; DRIVER không thấy.
+8. FORWARDER mở 'Thêm lô hàng' → dropdown Khách hàng có danh sách (bootstrap không trả mảng rỗng cho role này); driver/fleet catalog vẫn bị trim; portal role không gọi `/api/pricing-tables` (đã gate theo `config:read`, hết 403).
