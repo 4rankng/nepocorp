@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from "react";
 import './TripSummaryCard.css';
 import { Clock, Users, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Truck } from "lucide-react";
-import { computeTripTotals } from "@tingting/shared";
 import { useTripFormContext } from "../../hooks/useTripFormContext";
-import { useFuelConfig } from '../../hooks/useQueries';
 import { Money } from '../shared/Money';
 
 /**
@@ -17,74 +15,16 @@ import { Money } from '../shared/Money';
  */
 export function TotalsPanel() {
   const form = useTripFormContext();
-  const { data: fuelConfig } = useFuelConfig();
   const {
-    legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
     tollsDiscount, tollsAddition, tollsStations,
     hasReturnCargo, driverSalary, revenue,
-    customerCommission,
     revenueEmptyReturn, revenueCombine,
-    selectedRouteData, roadAllowanceBaseApplied, fuelActualUnitPrice,
+    roadAllowanceBaseApplied,
     roadAllowanceOverride, tollPerStationApplied, returnCargoBonusApplied,
-    carrierType, externalFreightCost, vatRate,
+    carrierType, totals,
   } = form;
   const [showRoadBreakdown, setShowRoadBreakdown] = useState(true);
   const isExternal = carrierType === 'EXTERNAL';
-
-  const isMountainRoute = selectedRouteData?.isMountain ?? false;
-  const mountainFixedAllowance = selectedRouteData?.fixedFuelAllowance ? Number(selectedRouteData.fixedFuelAllowance) : null;
-
-  const totals = useMemo(() => {
-    const formattedLegs = legs.map((leg) => ({
-      sequence: leg.sequence,
-      km: Number(leg.km) || 0,
-      loadingType: leg.loadingType,
-    }));
-
-    return computeTripTotals({
-      legs: formattedLegs,
-      fuelMode: fuelMode,
-      fuelLitersOverride: fuelLitersOverride ? Number(fuelLitersOverride) : null,
-      fuelSupplementLiters: fuelSupplementLiters ? Number(fuelSupplementLiters) : 0,
-      fuelLoadedNorm: 43,
-      fuelEmptyNorm: 25,
-      fuelPerTripSupplement: 3,
-      fuelUnitPrice: fuelConfig ? Number(fuelConfig.unitPrice) : 25000,
-      fuelActualUnitPrice: fuelActualUnitPrice !== '' ? Number(fuelActualUnitPrice) : null,
-      isMountainRoute,
-      mountainFixedAllowance,
-      roadAllowanceBase: roadAllowanceBaseApplied ?? 0,
-      tollsDiscount: tollsDiscount ? Number(tollsDiscount) : 0,
-      tollsAddition: tollsAddition ? Number(tollsAddition) : 0,
-      tollsStations: tollsStations ? Number(tollsStations) : 0,
-      tollPerStation: tollPerStationApplied ?? 0,
-      hasReturnCargo,
-      returnCargoBonus: returnCargoBonusApplied ?? 0,
-      revenue: revenue ? Number(revenue) : 0,
-      vatRate: Number(vatRate) || 0,
-      // Per-purchase pricing: mirror the server's Σ-row-amounts totals so the
-      // live preview matches what saving will produce.
-      fuelAllocations: form.fuelAllocations
-        .filter(row => row.liters.trim() !== '')
-        .map(row => ({
-          liters: Number(row.liters) || 0,
-          unitPrice: row.unitPrice && Number(row.unitPrice) > 0 ? Number(row.unitPrice) : null,
-        })),
-      carrierType,
-      externalFreightCost: externalFreightCost ? Number(externalFreightCost) : 0,
-      driverSalary: driverSalary ? Number(driverSalary) : 0,
-      twoPointDeliveryBonus: Number(form.twoPointDeliveryBonus) || 0,
-      vehicleShiftAllowance: Number(form.vehicleShiftAllowance) || 0,
-      customerCommission: Number(customerCommission) || 0,
-    });
-  }, [
-    legs, fuelMode, fuelLitersOverride, fuelSupplementLiters,
-    isMountainRoute, mountainFixedAllowance, roadAllowanceBaseApplied,
-    tollsDiscount, tollsAddition, tollsStations, tollPerStationApplied, returnCargoBonusApplied,
-    hasReturnCargo, revenue, driverSalary, fuelConfig, fuelActualUnitPrice,
-    form.twoPointDeliveryBonus, form.vehicleShiftAllowance, customerCommission, form.fuelAllocations,
-    carrierType, externalFreightCost, vatRate,
-  ]);
 
   // Road-allowance breakdown — what makes up "Tiền đi đường thực nhận"
   const roadBreakdown = useMemo(() => {

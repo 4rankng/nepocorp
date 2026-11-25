@@ -9,8 +9,10 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { FuelMode, LoadingType, FUEL_PRICE_PER_LITER_FALLBACK, FUEL_LOADED_NORM_FALLBACK, FUEL_EMPTY_NORM_FALLBACK, computeTripDriverSalary } from '@tingting/shared';
-import type { PricingTable, TripDetail, TripLeg, PaginatedResponse } from '@tingting/shared';
+import { FuelMode, LoadingType, FUEL_PRICE_PER_LITER_FALLBACK, FUEL_LOADED_NORM_FALLBACK, FUEL_EMPTY_NORM_FALLBACK, computeTripDriverSalary, computeTripTotals } from '@tingting/shared';
+import type { ComputeTripTotalsOutput, PricingTable, TripDetail, TripLeg, PaginatedResponse } from '@tingting/shared';
+import { resolveFuelRates } from '../lib/fuel-target';
+import { useFuelConfig } from './useQueries';
 import { tripClient } from '../api/tripClient';
 import { configClient } from '../api/configClient';
 import { qk } from '../api/keys';
@@ -75,6 +77,10 @@ export interface UseTripFormDispatchReturn {
   returnCargoBonusApplied?: number;
   twoPointDeliveryDefault?: number;
   vehicleShiftDefault?: number;
+  /** Live preview of the same computeTripTotals call the backend runs on save. */
+  totals: ComputeTripTotalsOutput;
+  /** Committed legacy trip: fuel is pinned to the stored row, not recomputed. */
+  fuelFrozenLegacy: boolean;
 }
 
 export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripFormDispatchReturn {
@@ -98,6 +104,10 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     queryFn: () => configClient.getRoadConfig(),
     staleTime: 10 * 60 * 1000,
   });
+
+  // Live fuel config; null while the query is cold. Feeds resolveFuelRates
+  // for the totals preview below.
+  const { data: fuelConfig } = useFuelConfig();
 
   useEffect(() => {
     // Only derive revenue from splits when at least one split is populated.
@@ -416,6 +426,112 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     [s.revenue, estimatedFuelCost, estimatedTollCost, s.driverSalary, s.twoPointDeliveryBonus, s.vehicleShiftAllowance],
   );
 
+  // Single source for the finance panel's totals (TotalsPanel consumes
+  // `totals` directly). Fuel rates resolve exactly like the backend's
+  // updateTripFigures: snapshots from the stored row, live-config fallback
+  // for uncommitted trips with zero snapshots, stored-row freeze for
+  // committed legacy trips — so the previewed "tổng dầu chuyến" the fuel
+  // allocation must reconcile with matches what saving will produce.
+  const fuelRates = useMemo(() => resolveFuelRates({
+    tripStatus: existingTrip?.status ?? null,
+    snapshots: isEditMode && existingTrip ? existingTrip : null,
+    liveConfig: fuelConfig ? {
+      unitPrice: Number(fuelConfig.unitPrice) || 0,
+      loadedNorm: Number(fuelConfig.loadedNorm) || 0,
+      emptyNorm: Number(fuelConfig.emptyNorm) || 0,
+      supplement: Number(fuelConfig.supplement) || 0,
+    } : null,
+    routeFixedAllowance: selectedRouteData?.fixedFuelAllowance != null
+      ? Number(selectedRouteData.fixedFuelAllowance)
+      : null,
+    routeChanged: !!existingTrip && s.routeId !== '' && Number(s.routeId) !== existingTrip.routeId,
+  }), [existingTrip, isEditMode, fuelConfig, selectedRouteData, s.routeId]);
+
+  // Same expressions the return object exposes (edit snapshots win over live
+  // road config) — hoisted so the totals memo reads the identical values.
+  const roadAllowanceBaseApplied = isEditMode && existingTrip?.roadAllowanceBaseApplied
+    ? Number(existingTrip.roadAllowanceBaseApplied)
+    : undefined;
+  const tollPerStationApplied = isEditMode && existingTrip?.tollPerStationApplied
+    ? Number(existingTrip.tollPerStationApplied)
+    : roadConfig ? Number(roadConfig.tollPerStation) : undefined;
+  const returnCargoBonusApplied = isEditMode && existingTrip?.returnCargoBonusApplied
+    ? Number(existingTrip.returnCargoBonusApplied)
+    : roadConfig ? Number(roadConfig.returnCargoBonus) : undefined;
+
+  const isMountainRoute = selectedRouteData?.isMountain ?? false;
+
+  const totals = useMemo<ComputeTripTotalsOutput>(() => {
+    const formattedLegs = legs.map((leg) => ({
+      sequence: leg.sequence,
+      km: Number(leg.km) || 0,
+      loadingType: leg.loadingType,
+    }));
+
+    const computed = computeTripTotals({
+      legs: formattedLegs,
+      fuelMode: s.fuelMode,
+      fuelLitersOverride: s.fuelLitersOverride ? Number(s.fuelLitersOverride) : null,
+      fuelSupplementLiters: s.fuelSupplementLiters ? Number(s.fuelSupplementLiters) : 0,
+      fuelLoadedNorm: fuelRates.fuelLoadedNorm,
+      fuelEmptyNorm: fuelRates.fuelEmptyNorm,
+      fuelPerTripSupplement: fuelRates.fuelPerTripSupplement,
+      fuelUnitPrice: fuelRates.fuelUnitPrice,
+      fuelActualUnitPrice: s.fuelActualUnitPrice !== '' ? Number(s.fuelActualUnitPrice) : null,
+      isMountainRoute,
+      mountainFixedAllowance: fuelRates.fixedAllowance,
+      roadAllowanceBase: roadAllowanceBaseApplied ?? 0,
+      tollsDiscount: s.tollsDiscount ? Number(s.tollsDiscount) : 0,
+      tollsAddition: s.tollsAddition ? Number(s.tollsAddition) : 0,
+      tollsStations: s.tollsStations ? Number(s.tollsStations) : 0,
+      tollPerStation: tollPerStationApplied ?? 0,
+      hasReturnCargo: s.hasReturnCargo,
+      returnCargoBonus: returnCargoBonusApplied ?? 0,
+      revenue: s.revenue ? Number(s.revenue) : 0,
+      vatRate: Number(s.vatRate) || 0,
+      // Per-purchase pricing: mirror the server's Σ-row-amounts totals so the
+      // live preview matches what saving will produce.
+      fuelAllocations: s.fuelAllocations
+        .filter(row => row.liters.trim() !== '')
+        .map(row => ({
+          liters: Number(row.liters) || 0,
+          unitPrice: row.unitPrice && Number(row.unitPrice) > 0 ? Number(row.unitPrice) : null,
+        })),
+      carrierType: s.carrierType,
+      externalFreightCost: s.externalFreightCost ? Number(s.externalFreightCost) : 0,
+      driverSalary: s.driverSalary ? Number(s.driverSalary) : 0,
+      twoPointDeliveryBonus: Number(s.twoPointDeliveryBonus) || 0,
+      vehicleShiftAllowance: Number(s.vehicleShiftAllowance) || 0,
+      customerCommission: Number(s.customerCommission) || 0,
+    });
+
+    // Legacy-freeze mirror (backend applyCommittedLegacyFuelFreeze): a
+    // committed trip with zero fuel snapshots keeps its stored liters and
+    // cost; the delta propagates into totalCost / grossProfit so the panel
+    // shows the saved P&L instead of a 0-sentinel recost.
+    if (fuelRates.frozenLegacy && existingTrip) {
+      const storedLiters = Math.round(Number(existingTrip.fuelLiters) || 0);
+      const storedCost = Math.round(Number(existingTrip.totalFuelCost) || 0);
+      const delta = storedCost - computed.totalFuelCost;
+      return {
+        ...computed,
+        totalFuelLiters: storedLiters,
+        totalFuelCost: storedCost,
+        totalCost: computed.totalCost + delta,
+        grossProfit: computed.grossProfit - delta,
+      };
+    }
+    return computed;
+  }, [
+    legs, s.fuelMode, s.fuelLitersOverride, s.fuelSupplementLiters,
+    fuelRates, existingTrip, isMountainRoute, roadAllowanceBaseApplied,
+    s.fuelActualUnitPrice, s.tollsDiscount, s.tollsAddition, s.tollsStations,
+    tollPerStationApplied, returnCargoBonusApplied, s.hasReturnCargo, s.revenue,
+    s.vatRate, s.fuelAllocations, s.carrierType, s.externalFreightCost,
+    s.driverSalary, s.twoPointDeliveryBonus, s.vehicleShiftAllowance, s.customerCommission,
+  ]);
+
+
   const requiredProgress = useMemo(() => {
     return requiredTripFieldProgress({
       customerId: s.customerId,
@@ -522,13 +638,11 @@ export function useTripFormDispatch(params: UseTripFormDispatchParams): UseTripF
     createdTripId,
     selectedRouteData,
     driverBaseSalary,
-    roadAllowanceBaseApplied: isEditMode && existingTrip?.roadAllowanceBaseApplied ? Number(existingTrip.roadAllowanceBaseApplied) : undefined,
-    tollPerStationApplied: isEditMode && existingTrip?.tollPerStationApplied
-      ? Number(existingTrip.tollPerStationApplied)
-      : roadConfig ? Number(roadConfig.tollPerStation) : undefined,
-    returnCargoBonusApplied: isEditMode && existingTrip?.returnCargoBonusApplied
-      ? Number(existingTrip.returnCargoBonusApplied)
-      : roadConfig ? Number(roadConfig.returnCargoBonus) : undefined,
+    totals,
+    fuelFrozenLegacy: fuelRates.frozenLegacy,
+    roadAllowanceBaseApplied,
+    tollPerStationApplied,
+    returnCargoBonusApplied,
     twoPointDeliveryDefault: roadConfig?.twoPointDeliveryBonus ? Number(roadConfig.twoPointDeliveryBonus) : undefined,
     vehicleShiftDefault: roadConfig?.vehicleShiftDefault ? Number(roadConfig.vehicleShiftDefault) : undefined,
   };

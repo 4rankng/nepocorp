@@ -1,4 +1,5 @@
 import type { TripDetail, TripStatus } from '@tingting/shared';
+import type { ComputeTripTotalsOutput } from '@tingting/shared';
 import type { FuelMode } from '@tingting/shared';
 
 import type { TripOptions } from './useTripOptions';
@@ -156,6 +157,10 @@ export interface UseTripFormReturn {
   isEditMode: boolean;
   selectedRouteData: RouteOption | null;
   driverBaseSalary: number;
+  /** Live preview of the same computeTripTotals call the backend runs on save. */
+  totals: ComputeTripTotalsOutput;
+  /** Committed legacy trip: fuel is pinned to the stored row, not recomputed. */
+  fuelFrozenLegacy: boolean;
   resetForm?: () => void;
 }
 
@@ -239,6 +244,8 @@ export function useTripForm(arg: TripOptions | UseTripFormParams): UseTripFormRe
     isEditMode,
     selectedRouteData: d.selectedRouteData,
     driverBaseSalary: d.driverBaseSalary,
+    totals: d.totals,
+    fuelFrozenLegacy: d.fuelFrozenLegacy,
     resetForm: s.resetForm,
   };
 }

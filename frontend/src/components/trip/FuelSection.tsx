@@ -17,6 +17,7 @@ export function FuelSection() {
     fuelSupplementLiters, setFuelSupplementLiters,
     fuelSupplementReason, setFuelSupplementReason,
     carrierType,
+    legs, fuelAllocations, totals, fuelFrozenLegacy,
   } = form;
 
   const isSupplementActive = Number(fuelSupplementLiters) > 0;
@@ -26,6 +27,19 @@ export function FuelSection() {
   const configPrice = (
     fuelConfig && fuelConfig.unitPrice != null ? Number(fuelConfig.unitPrice) : 0
   ).toLocaleString('vi-VN');
+
+  // Ledger invariant the backend enforces on save (assertFuelAllocationTotal):
+  // Σ allocation liters must equal the trip's computed fuel total. Surface it
+  // here instead of leaving the dispatcher to discover it via a save-time 400.
+  const allocatedLiters = fuelAllocations.reduce((t, r) => t + (Number(r.liters) || 0), 0);
+  const hasAllocationRows = fuelAllocations.some(r => r.liters.trim() !== '');
+  const targetLiters = totals.totalFuelLiters;
+  const allocationMismatch = carrierType === 'OWN' && hasAllocationRows
+    && Math.round(allocatedLiters * 100) !== Math.round(targetLiters * 100);
+  const allLegsZeroKm = legs.length > 0 && legs.every(l => !(Number(l.km) > 0));
+  // fuelLitersOverride is integer-only server-side (roundInt), so a decimal
+  // allocation total cannot be reconciled with one click.
+  const canKhoan = Number.isInteger(allocatedLiters) && allocatedLiters > 0 && !fuelFrozenLegacy;
 
   const unitPriceField = (
     <div className="field">
@@ -95,6 +109,42 @@ export function FuelSection() {
           <p className="tc-field-hint" style={{ marginTop: 6 }}>
             Đổ cùng nơi nhiều lần, mỗi lần một giá? Bấm (+) để thêm lần đổ — đơn giá để trống = dùng giá chuyến.
           </p>
+          {allocationMismatch && (
+            <>
+              <p role="alert" className="tc-field-hint" style={{ color: 'var(--warning, #b45309)', marginTop: 6 }}>
+                Tổng phân bổ dầu ({allocatedLiters.toLocaleString('vi-VN')} lít) ≠ tổng dầu chuyến ({targetLiters.toLocaleString('vi-VN')} lít).
+                {fuelMode === FuelMode.AUTO && allLegsZeroKm && (
+                  <> Chế độ Tự động đang tính trên cự ly 0 km — nhập cự ly các chặng phía trên hoặc khoán tổng lít.</>
+                )}
+              </p>
+              {canKhoan && (
+                <button
+                  type="button"
+                  className="btn btn--secondary"
+                  style={{ marginTop: 6 }}
+                  onClick={() => {
+                    // FLAT_RATE server fuel = fuelLitersOverride + fuelSupplementLiters,
+                    // so the override is the allocation total minus the supplement —
+                    // the recomputed trip total then equals the allocation exactly.
+                    setFuelMode(FuelMode.FLAT_RATE);
+                    setFuelLitersOverride(String(Math.max(0, Math.round(allocatedLiters) - Math.round(Number(fuelSupplementLiters) || 0))));
+                  }}
+                >
+                  Khoán {Math.round(allocatedLiters).toLocaleString('vi-VN')} lít làm tổng dầu chuyến
+                </button>
+              )}
+              {!canKhoan && allocatedLiters > 0 && !Number.isInteger(allocatedLiters) && (
+                <p className="tc-field-hint" style={{ marginTop: 6 }}>
+                  Làm tròn số lít phân bổ thành số nguyên để khoán được.
+                </p>
+              )}
+              {fuelFrozenLegacy && (
+                <p className="tc-field-hint" style={{ marginTop: 6 }}>
+                  Chuyến legacy này giữ nguyên tổng dầu đã lưu — phân bổ đúng {targetLiters.toLocaleString('vi-VN')} lít.
+                </p>
+              )}
+            </>
+          )}
         </div>
       )}
 
