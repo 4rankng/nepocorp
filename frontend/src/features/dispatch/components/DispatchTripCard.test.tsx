@@ -71,6 +71,14 @@ it('renders long customer / driver / route names in full — zero ellipsis', () 
   expect(container.querySelector('.assign-card .ap')?.textContent).toBe(PLATE);
 });
 
+it('never names Mã KH on the UI — reference shows as Mã tham chiếu (NEPO-66)', () => {
+  const { container } = renderCard();
+
+  expect(screen.getByText(/Mã tham chiếu: KH-0042/)).toBeTruthy();
+  // Frank 25/11: chuỗi "Mã KH" không được xuất hiện ở bất kỳ đâu trên web UI.
+  expect(container.textContent ?? '').not.toContain('Mã KH');
+});
+
 it('keeps the NGÀY cell intact: badge Hôm nay + ngày đầy đủ', () => {
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;

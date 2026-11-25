@@ -94,7 +94,7 @@ export function DispatchTripCard({
         <div className="info">
           <div className="name">{trip.customerName}</div>
           {trip.customerReference && (
-            <div className="meta">Mã KH: {trip.customerReference}</div>
+            <div className="meta">Mã tham chiếu: {trip.customerReference}</div>
           )}
         </div>
       </div>
