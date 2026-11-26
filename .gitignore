@@ -81,3 +81,6 @@ package-lock.json
 .repowise/
 .codewhale/
 *.db
+
+# Shipmate run state (machine-local)
+.shipmate/
