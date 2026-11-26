@@ -27,6 +27,7 @@ import {
   deleteTripExpenseGuarded,
   setTripExpenseCompletion,
   updateForwarderTripExpense,
+  updateTripExpense,
 } from '../services/forwarder.service';
 import { previewSettlementHtml } from '../services/settlement-export.service';
 
@@ -594,6 +595,48 @@ describe('forwarder settlement streamlined workflow', () => {
     await assert.rejects(
       () => updateForwarderTripExpense(expense.id, forwarderId, { note: 'Đã gửi KT' }),
       /Chi phí đã gửi kế toán, không thể sửa/,
+    );
+  });
+
+  test('a fee locked by its phiếu walks the whole loop: 409 names the phiếu → adjust on the slip → approve switches remedy', async () => {
+    const expense = await insertExpense({ approvalStatus: 'APPROVED', buyAmount: 400_000 });
+    await markCompleted(null);
+    const flowRequestId = await insertApprovedRequest(400_000);
+    const settlement = await createAdvanceSettlement(forwarderId, {
+      advanceRequestIds: [flowRequestId], tripExpenseIds: [expense.id],
+    });
+    ids.settlements.push(settlement.id);
+    const [row] = await db.select().from(s.advanceSettlements).where(eq(s.advanceSettlements.id, settlement.id));
+
+    // PENDING phiếu — the guard names the phiếu and points at on-slip editing.
+    await assert.rejects(
+      db.transaction((tx) => updateTripExpense(tx, expense.id, { buyAmount: "999000" })),
+      (err: { statusCode?: number; message: string }) => {
+        assert.strictEqual(err.statusCode, 409);
+        assert.match(err.message, new RegExp(row.code));
+        assert.match(err.message, /chờ ký/);
+        assert.match(err.message, /Sửa chi phí/);
+        return true;
+      },
+    );
+
+    // The designed remedy: accountant adjusts the amount ON the phiếu itself.
+    const adjusted = await adjustSettlementExpense(settlement.id, expense.id, accountantId, {
+      buyAmount: 350_000,
+      adjustmentReason: 'Đối chiếu lại tờ khai',
+    });
+    assert.equal(adjusted.totalExpenseAmount, '350000');
+
+    // Once approved the remedy switches: the phiếu must be reopened first.
+    await approveAdvanceSettlement(settlement.id, accountantId);
+    await assert.rejects(
+      db.transaction((tx) => updateTripExpense(tx, expense.id, { buyAmount: "999000" })),
+      (err: { statusCode?: number; message: string }) => {
+        assert.strictEqual(err.statusCode, 409);
+        assert.match(err.message, new RegExp(row.code));
+        assert.match(err.message, /đã duyệt/);
+        return true;
+      },
     );
   });
 

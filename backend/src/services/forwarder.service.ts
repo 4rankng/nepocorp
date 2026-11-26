@@ -333,14 +333,26 @@ export async function updateTripExpense(
     throw new ApiError(409, `Phí đã phát hành Báo nợ (${issuedDebitNoteRef(issuedNote)}) — hủy/điều chỉnh Báo nợ trước khi sửa`);
   }
   if (existing.forwarderId != null) {
-    const [activeLink] = await txOrDb.select({ id: s.settlementExpenses.id })
+    const [activeLink] = await txOrDb.select({
+      code: s.advanceSettlements.code,
+      status: s.advanceSettlements.status,
+    })
       .from(s.settlementExpenses)
       .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
       .where(and(
         eq(s.settlementExpenses.tripExpenseId, id),
         notInArray(s.advanceSettlements.status, ['REJECTED']),
       )).limit(1);
-    if (activeLink) throw new ApiError(409, 'Chi phí đã gửi kế toán, chỉ được điều chỉnh trên phiếu hoàn ứng');
+    if (activeLink) {
+      // REJECTED links never reach here, so only two shapes remain. Name the
+      // phiếu and the concrete remedy — the bare "điều chỉnh trên phiếu hoàn
+      // ứng" used to dead-end the accountant (QA 26/11: she went to Hoàn ứng
+      // and had no idea what to do there).
+      const awaitingSignOff = activeLink.status === 'PENDING' || activeLink.status === 'CHECKED_BY_ACCOUNTANT';
+      throw new ApiError(409, awaitingSignOff
+        ? `Chi phí đã nằm trong phiếu hoàn ứng ${activeLink.code} (chờ ký) — sửa số tiền trực tiếp trên phiếu: menu Hoàn ứng → mở phiếu ${activeLink.code} → Sửa chi phí`
+        : `Chi phí đã nằm trong phiếu hoàn ứng ${activeLink.code} (đã duyệt) — phiếu đã duyệt phải được mở lại trước khi phí được sửa`);
+    }
   }
   const scopeKeys = [...new Set([
     existing.tripContainerId ?? -existing.tripId,
