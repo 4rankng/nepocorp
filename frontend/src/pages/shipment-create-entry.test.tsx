@@ -103,3 +103,24 @@ describe('shipment list — Tạo lô hàng entry point', () => {
     expect(screen.queryByRole('button', { name: /Tạo lô hàng/i })).toBeNull();
   });
 });
+
+// Frank 25/11 (NEPO-66): Mã KH (customerShortName) chỉ dùng nội bộ — không hiển
+// thị trên web UI. Ô khách hàng của danh sách lô chỉ được có tên khách; mã
+// standalone dưới tên (dòng "CNT" muted, ảnh QA ann-66c) là vi phạm.
+describe('shipment list — customer cell never shows the internal code', () => {
+  beforeEach(() => { currentRole = Role.ADMIN; });
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+
+  it('customer cell renders the name only — no standalone Mã KH sub-line', () => {
+    const { container } = renderPage();
+
+    const cell = container.querySelector('td .shipment-list-table__customer-main')?.closest('td');
+    expect(cell).toBeTruthy();
+    expect(cell!.querySelector('.ds-sub-line')).toBeNull();
+    // No element on the page renders the bare internal code as its own text;
+    // the lot-code link 'CNT26004' is a different string and stays.
+    expect(screen.queryByText('CNT')).toBeNull();
+    // No UI text anywhere names "Mã KH" (Frank 25/11 — thông báo, nhãn, cột).
+    expect(container.textContent ?? '').not.toContain('Mã KH');
+  });
+});

@@ -281,8 +281,9 @@ function ShipmentRow({ shipment: r, showBl, canWrite, onOpen }: ShipmentRowProps
         <SubLine value={flow} />
       </td>
       <td>
+        {/* Frank 25/11: Mã KH (customerShortName) chỉ dùng nội bộ — danh sách lô
+            chỉ hiển thị tên khách hàng, không hàng mã riêng dưới tên. */}
         <div className="shipment-list-table__customer-main">{r.customerName ?? '—'}</div>
-        <SubLine value={r.customerShortName} />
       </td>
       <td className="shipment-list-table__date">{r.bookingNo ?? <Dash />}</td>
       {showBl && <td className="shipment-list-table__date">{r.blNo ?? <Dash />}</td>}
