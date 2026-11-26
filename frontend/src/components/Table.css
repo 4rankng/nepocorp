@@ -190,14 +190,21 @@
 
 /* Dashed "Thêm phí" row */
 .ancillary-fees__add-row td {
-  border: 1.5px dashed var(--line-2);
+  border: 1px dashed var(--line-2);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   color: var(--ink-3);
   font-size: var(--fs-control);
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
-  transition: border-color 120ms ease, color 120ms ease;
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+.ancillary-fees__add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 .ancillary-fees__add-row:hover td {
   border-color: var(--accent);

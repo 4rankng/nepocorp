@@ -67,8 +67,8 @@
 
 /* Compact input modifier */
 .input--sm {
-  min-height: 45px;
-  padding: 7px 10px;
+  min-height: var(--control-h, 32px);
+  padding: 5px 10px;
   font-size: var(--fs-control);
 }
 

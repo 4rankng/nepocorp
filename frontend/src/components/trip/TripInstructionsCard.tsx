@@ -148,11 +148,20 @@ export function TripInstructionsCard() {
       </div>
       <div className="ti-reminders">
         <span className="ti-reminders__label">Mẫu nhanh:</span>
-        {reminderTemplates.map(t => (
-          <button key={t} type="button" className="ti-chip" onClick={() => appendReminder(t)}>
-            {t}
-          </button>
-        ))}
+        {reminderTemplates.map(t => {
+          const applied = instructionsNotes.includes(t);
+          return (
+            <button
+              key={t}
+              type="button"
+              className={`ti-chip${applied ? ' ti-chip--applied' : ''}`}
+              aria-pressed={applied}
+              onClick={() => appendReminder(t)}
+            >
+              {t}
+            </button>
+          );
+        })}
       </div>
       <div className="ti-hint">Lưu cùng nút "Lưu cập nhật" ở dưới.</div>
     </div>

@@ -1,0 +1,233 @@
+/* ============================================================================
+ * AncillaryFeeModal — Add / Edit trip ancillary fee dialog
+ * Follows NEPO flat-surface contrast ladder (tokens.css):
+ *   modal body (--surface) -> pricing group (--surface-2) -> inputs (--surface)
+ * ========================================================================== */
+
+.ancillary-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ancillary-modal__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--danger-soft);
+  color: var(--danger-text);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border-radius: var(--r-sm, 8px);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+
+.ancillary-modal__error svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ancillary-modal__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ancillary-modal__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.ancillary-modal__hint {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.ancillary-modal__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  background: var(--surface-3);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ── Grouped Pricing Block ─────────────────────────────────────────────── */
+
+.ancillary-modal__pricing {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm, 8px);
+}
+
+.ancillary-modal__pricing .input:not(:disabled) {
+  background: var(--surface);
+}
+
+.ancillary-modal__readonly-wrap {
+  position: relative;
+}
+
+.ancillary-modal__readonly-input {
+  background: var(--surface-3) !important;
+  color: var(--ink-3) !important;
+  cursor: not-allowed;
+  padding-right: 32px;
+}
+
+.ancillary-modal__readonly-suffix {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--fs-body);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+/* ── Live Financial Summary Strip ──────────────────────────────────────── */
+
+.ancillary-modal__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.ancillary-modal__margin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+
+.ancillary-modal__margin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ancillary-modal__margin-pill--positive {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.ancillary-modal__margin-pill--neutral {
+  background: var(--surface-3);
+  color: var(--ink-3);
+}
+
+.ancillary-modal__margin-pill--negative {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.ancillary-modal__debit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.ancillary-modal__debit-label {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.ancillary-modal__debit-value {
+  font-size: var(--fs-card-title, 15px);
+  font-weight: 700;
+  color: var(--success);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Documents & Tracking Section ──────────────────────────────────────── */
+
+.ancillary-modal__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ancillary-modal__section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.ancillary-modal__section-head::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.ancillary-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ancillary-modal__full {
+  grid-column: 1 / -1;
+}
+
+.ancillary-modal__field-invalid .input,
+.ancillary-modal__field-invalid input {
+  border-color: var(--danger);
+}
+
+.ancillary-modal__footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+@media (max-width: 540px) {
+  .ancillary-modal__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ancillary-modal__summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ancillary-modal__debit {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+}

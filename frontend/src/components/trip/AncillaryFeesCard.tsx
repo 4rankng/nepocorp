@@ -1,19 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Check, X, Edit2, MoreVertical, Trash2 } from 'lucide-react';
-import { ANCILLARY_EXPENSE_TYPES } from '@tingting/shared';
-import type { AncillaryExpenseType } from '@tingting/shared';
-import type { TripExpense } from '@tingting/shared';
+import type { AncillaryExpenseType, TripExpense } from '@tingting/shared';
 import { tripClient } from '../../api/tripClient';
 import { formatCurrency } from '../../lib/format';
 import { useCatalogs } from '../../hooks/useCatalogs';
-import { InputWithPrefix } from './InputWithPrefix';
-import { StatusPill, Modal } from '../UI';
+import { StatusPill } from '../UI';
 import { useConfirm } from '../useConfirm';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { qk } from '../../api/keys';
 import { AncillaryEmptyState, AncillaryMobileTotals, AncillaryTableTotals, type AncillaryFeesCardProps } from './ancillary-fees-totals';
 import { EMPTY_FORM, feeTypeLabel, resolveMarkupConfig, suggestedSellFor } from './ancillary-fees-card-utils';
+import { AncillaryFeeModal, type AncillaryFeeFormState } from './AncillaryFeeModal';
 
 export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = false }: AncillaryFeesCardProps) {
   const queryClient = useQueryClient();
@@ -41,6 +39,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
 
   const expenses: (TripExpense & { supplierName?: string | null })[] = data ?? [];
   const handleExpenseTypeChange = (newType: string) => {
+    setFormError('');
     const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, newType);
 
     setForm(f => {
@@ -54,6 +53,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
   };
 
   const handleBuyAmountChange = (val: string) => {
+    setFormError('');
     const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, form.expenseType);
 
     setForm(f => {
@@ -74,6 +74,14 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
         sellAmount: newSell,
       };
     });
+  };
+
+  const handleFieldChange = <K extends keyof AncillaryFeeFormState>(
+    field: K,
+    value: AncillaryFeeFormState[K],
+  ) => {
+    if (formError) setFormError('');
+    setForm(f => ({ ...f, [field]: value }));
   };
 
   const handleEdit = (fee: TripExpense) => {
@@ -409,7 +417,10 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                         onClick={() => { setForm(EMPTY_FORM); setFormError(''); setEditingId(null); setShowForm(true); }}
                       >
                         <td colSpan={6}>
-                          <Plus size={13} /> Thêm phí
+                          <span className="ancillary-fees__add-btn">
+                            <Plus size={13} aria-hidden="true" />
+                            <span>Thêm phí</span>
+                          </span>
                         </td>
                       </tr>
                     )}
@@ -541,161 +552,20 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
           )}
 
           {!readOnly && (
-            <Modal
+            <AncillaryFeeModal
               isOpen={showForm}
-              title={editingId ? 'Sửa dịch vụ đi kèm' : 'Thêm dịch vụ đi kèm'}
+              isEditing={editingId !== null}
+              form={form}
+              hasMarkup={hasMarkup}
+              submitting={submitting}
+              formError={formError}
+              catalogTypes={catalogData?.forwarderExpenseTypes}
               onClose={() => { setShowForm(false); setFormError(''); setEditingId(null); }}
-              onConfirm={handleAdd}
-              footer={
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', width: '100%' }}>
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    disabled={submitting}
-                    onClick={() => { setShowForm(false); setFormError(''); setEditingId(null); }}
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--primary btn--sm"
-                    disabled={submitting}
-                    onClick={handleAdd}
-                  >
-                    {submitting ? <Loader2 size={13} className="spin" /> : <Plus size={13} />}
-                    Lưu phí
-                  </button>
-                </div>
-              }
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {formError && (
-                  <div style={{ padding: '6px 10px', background: 'var(--danger-soft)', color: 'var(--danger-text)', borderRadius: 6, fontSize: 'var(--fs-body)' }}>
-                    {formError}
-                  </div>
-                )}
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <div className="field">
-                    <label style={{ fontSize: 'var(--fs-body)' }}>Loại phí *</label>
-                    <select
-                      className="input"
-                      value={form.expenseType}
-                      onChange={(e) => handleExpenseTypeChange(e.target.value)}
-                    >
-                      {(catalogData?.forwarderExpenseTypes && catalogData.forwarderExpenseTypes.length > 0
-                        ? catalogData.forwarderExpenseTypes
-                        : ANCILLARY_EXPENSE_TYPES.map(t => ({ code: t, name: feeTypeLabel(t) }))
-                      ).map(t => (
-                        <option key={t.code} value={t.code}>{t.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="field">
-                    <label style={{ fontSize: 'var(--fs-body)' }}>Số tiền gốc *</label>
-                    <InputWithPrefix
-                      value={form.buyAmount}
-                      onChange={handleBuyAmountChange}
-                      placeholder="0"
-                      prefix="₫"
-                      mono
-                      type="money"
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label style={{ fontSize: 'var(--fs-body)' }}>
-                      Báo khách {hasMarkup ? '' : '(= số tiền gốc)'}
-                    </label>
-                    {hasMarkup ? (
-                      <InputWithPrefix
-                        value={form.sellAmount}
-                        onChange={(val) => setForm(f => ({ ...f, sellAmount: val }))}
-                        placeholder="0"
-                        prefix="₫"
-                        mono
-                        type="money"
-                      />
-                    ) : (
-                      <div style={{ position: 'relative' }}>
-                        <input
-                          className="input mono"
-                          type="text"
-                          value={form.buyAmount ? Number(form.buyAmount).toLocaleString('vi-VN') : '0'}
-                          readOnly
-                          disabled
-                          style={{ background: 'var(--bg-2)', color: 'var(--fg-3)', cursor: 'not-allowed', paddingRight: 32 }}
-                        />
-                        <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 'var(--fs-body)', color: 'var(--fg-3)' }}>₫</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minHeight: 24 }}>
-                    <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--success)' }}>
-                      Báo nợ: <span className="mono">{formatCurrency(Number(form.sellAmount) || 0)}</span>
-                    </div>
-                  </div>
-
-                  <div className="field">
-                    <label style={{ fontSize: 'var(--fs-body)' }}>Số hóa đơn</label>
-                    <input
-                      className="input mono"
-                      type="text"
-                      placeholder="VD: HD-001"
-                      value={form.invoiceNumber}
-                      onChange={(e) => setForm(f => ({ ...f, invoiceNumber: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label style={{ fontSize: 'var(--fs-body)' }}>Ngày hóa đơn</label>
-                    <input
-                      className="input mono"
-                      type="date"
-                      value={form.invoiceDate}
-                      onChange={(e) => setForm(f => ({ ...f, invoiceDate: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label style={{ fontSize: 'var(--fs-body)' }}>Số công-te-nơ</label>
-                    <input
-                      className="input mono"
-                      type="text"
-                      placeholder="VD: HDMU1234567"
-                      value={form.containerNumber}
-                      onChange={(e) => setForm(f => ({ ...f, containerNumber: e.target.value.toUpperCase() }))}
-                    />
-                  </div>
-
-                  {form.expenseType === 'CUSTOMS' && (
-                    <div className="field">
-                      <label style={{ fontSize: 'var(--fs-body)' }}>Số tờ khai hải quan *</label>
-                      <input
-                        className="input mono"
-                        type="text"
-                        placeholder="VD: TK-2024-001"
-                        value={form.declarationNumber}
-                        onChange={(e) => setForm(f => ({ ...f, declarationNumber: e.target.value }))}
-                      />
-                    </div>
-                  )}
-
-                  <div className="field" style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: 'var(--fs-body)' }}>Ghi chú</label>
-                    <input
-                      className="input"
-                      type="text"
-                      placeholder="Ghi chú thêm…"
-                      value={form.note}
-                      onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              </div>
-            </Modal>
+              onSubmit={handleAdd}
+              onExpenseTypeChange={handleExpenseTypeChange}
+              onBuyAmountChange={handleBuyAmountChange}
+              onFieldChange={handleFieldChange}
+            />
           )}
         </>
       )}

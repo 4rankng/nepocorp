@@ -43,39 +43,51 @@
   }
 }
 
-/* B1c — one-tap reminder chips that append a bullet line to the notes. */
+/* B1c — compact one-tap reminder chips that append a bullet line to the notes. */
 .ti-reminders {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .ti-reminders__label {
   font-size: var(--fs-xs);
   font-weight: 600;
-  color: var(--fg-3, #888);
+  color: var(--ink-3);
   margin-right: 2px;
 }
 
 .ti-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: var(--fs-xs);
   font-weight: 500;
-  color: var(--accent-ink, #065f46);
-  background: var(--accent-soft, rgba(0, 177, 79, 0.08));
-  border: 1px solid var(--accent, rgba(0, 177, 79, 0.25));
-  border-radius: 999px;
-  min-height: 45px;
-  padding: 8px 12px;
-  line-height: 1.35;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-height: 0;
+  padding: 3px 9px;
+  line-height: 1.4;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .ti-chip:hover {
-  background: var(--accent, rgba(0, 177, 79, 0.16));
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .ti-chip:active {
   transform: translateY(1px);
+}
+
+.ti-chip--applied {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent-ink);
+  opacity: 0.72;
 }
