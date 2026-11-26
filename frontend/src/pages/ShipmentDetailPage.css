@@ -12,7 +12,13 @@
 }
 
 @media (max-width: 1023px) {
-  .shipment-detail__grid { grid-template-columns: 1fr; }
+  /* Bare `1fr` has an auto minimum: the register table's min-content (~700px
+     of nowrap money columns) propagates through the grid item and blows the
+     single track past the viewport, so the Thông tin lô grid lays out 3
+     columns wide and its third column (POL-POD, Cut-off, Hãng tàu) lands
+     outside the 360/390px screen. minmax(0, 1fr) caps the track — narrow
+     containers scroll via .table-scroll instead. */
+  .shipment-detail__grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 .shipment-detail__card {

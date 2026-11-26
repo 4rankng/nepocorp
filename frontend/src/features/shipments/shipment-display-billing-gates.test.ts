@@ -117,4 +117,16 @@ describe('billing-document role gates — UI mirrors the billing-documents API p
     const wrappers = detailPage.match(/<div className="table-scroll">/g) ?? [];
     expect(wrappers.length).toBe(3);
   });
+
+  it('r6 — ≤1023px grid track is minmax(0, 1fr), not bare 1fr (QA 26/11 mobile: cột 3 Thông tin lô ngoài màn hình tại 360/390)', () => {
+    // QA verdict 26/11: at 390/360 the Thông tin lô grid laid out its 3 columns
+    // (POL–POD, Cut-off, Hãng tàu) past the right screen edge. A bare `1fr`
+    // track has an auto minimum, so the register table's ~700px min-content
+    // propagated through the grid item and blew the single track to ~742px —
+    // auto-fit then rendered 3 info columns inside a container wider than the
+    // viewport. minmax(0, 1fr) caps the track; narrow containers scroll via
+    // .table-scroll and the info grid stacks to 1 column.
+    expect(detailCss).toMatch(/@media \(max-width: 1023px\) \{\s*\/\*[\s\S]*?\*\/\s*\.shipment-detail__grid \{ grid-template-columns: minmax\(0, 1fr\); \}/);
+    expect(detailCss).not.toMatch(/@media \(max-width: 1023px\) \{[^}]*\.shipment-detail__grid \{ grid-template-columns: 1fr; \}/);
+  });
 });
