@@ -615,6 +615,8 @@ router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response
   const eid = parseInt(req.params.eid as string, 10);
   const parsed = tripExpensePatchSchema.safeParse(req.body);
   if (!parsed.success) throwValidation(parsed.error);
+  // Snapshot before the update so the audit trail records old → new values.
+  const before = await getTripExpenseAuditInfo(eid);
   const item = await db.transaction(async (tx) =>
     updateTripExpense(tx, eid, {
       expenseType: parsed.data.expenseType,
@@ -632,6 +634,19 @@ router.put('/:id/expenses/:eid', asyncHandler(async (req: Request, res: Response
     }),
   );
   if (!item) return res.status(404).json({ error: 'Không tìm thấy chi phí' });
+  // Every fee edit lands one cumulative audit row: the middleware keeps the
+  // request payload in metadata.body, and the key spells out what changed.
+  if (before) {
+    const fmtVnd = (v: string | number) => Number(v).toLocaleString('vi-VN') + ' ₫';
+    const changes: string[] = [];
+    if (item.expenseType !== before.expenseType) changes.push(`loại phí ${before.typeName || before.expenseType} → ${item.expenseType}`);
+    if (item.buyAmount !== before.buyAmount) changes.push(`số tiền chi ${fmtVnd(before.buyAmount)} → ${fmtVnd(item.buyAmount)}`);
+    if (item.sellAmount !== before.sellAmount) changes.push(`báo khách ${fmtVnd(before.sellAmount)} → ${fmtVnd(item.sellAmount)}`);
+    res.locals.auditEntityKey = `phí ${before.typeName || item.expenseType} với số tiền chi ${fmtVnd(item.buyAmount)}`
+      + (changes.length > 0 ? ` (${changes.join(', ')})` : '')
+      + (before.tripCode ? ` cho chuyến ${before.tripCode}` : '')
+      + (before.supplierName ? ` (Nhà cung cấp: ${before.supplierName})` : '');
+  }
   res.json(item);
 }));
 

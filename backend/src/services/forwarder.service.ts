@@ -3,7 +3,7 @@ import type { Tx } from './trip-shared';
 export type { Tx };
 import * as s from '../db/schema';
 import type { GuardedResult } from './approval.service';
-import { eq, and, isNull, desc, notInArray, inArray, sql } from 'drizzle-orm';
+import { eq, and, isNull, isNotNull, desc, notInArray, inArray, sql } from 'drizzle-orm';
 import { ApiError } from '../errors';
 export {
   getForwarderTrips,
@@ -262,6 +262,35 @@ export async function createTripExpense(
   return inserted;
 }
 
+/**
+ * NEPO-72 — the live issued Báo nợ (debit note) holding a fee, if any. A fee
+ * on an issued note is frozen (NEPO-69): corrections go through the note (or a
+ * -BS supplement), never through an in-place fee edit. Returns the note's
+ * documentNumber (or id fallback) for user-facing messages.
+ */
+async function getIssuedDebitNoteForExpense(dbOrTx: DbOrTx, expenseId: number) {
+  const [note] = await dbOrTx.select({
+    documentId: s.billingDocuments.id,
+    documentNumber: s.billingDocuments.documentNumber,
+  })
+    .from(s.billingDocumentLines)
+    .innerJoin(s.billingDocuments, eq(s.billingDocuments.id, s.billingDocumentLines.documentId))
+    .where(and(
+      eq(s.billingDocumentLines.sourceType, 'EXPENSE'),
+      eq(s.billingDocumentLines.sourceId, expenseId),
+      eq(s.billingDocuments.type, 'DEBIT_NOTE'),
+      isNotNull(s.billingDocuments.issuedAt),
+      isNull(s.billingDocuments.deletedAt),
+    ))
+    .orderBy(desc(s.billingDocuments.id))
+    .limit(1);
+  return note ?? null;
+}
+
+function issuedDebitNoteRef(note: { documentId: number; documentNumber: string | null }): string {
+  return note.documentNumber ?? `#${note.documentId}`;
+}
+
 export async function updateTripExpense(
   txOrDb: DbOrTx,
   id: number,
@@ -297,6 +326,12 @@ export async function updateTripExpense(
     .limit(1);
 
   if (!existing) return null;
+  // NEPO-72 — a fee already on an issued Báo nợ is frozen; adjust the note (or
+  // land later fees on a -BS supplement) instead of editing the fee in place.
+  const issuedNote = await getIssuedDebitNoteForExpense(txOrDb, id);
+  if (issuedNote) {
+    throw new ApiError(409, `Phí đã phát hành Báo nợ (${issuedDebitNoteRef(issuedNote)}) — hủy/điều chỉnh Báo nợ trước khi sửa`);
+  }
   if (existing.forwarderId != null) {
     const [activeLink] = await txOrDb.select({ id: s.settlementExpenses.id })
       .from(s.settlementExpenses)
@@ -418,6 +453,20 @@ export async function getTripExpenses(txOrDb: DbOrTx, tripId: number) {
     note: s.tripExpenses.note,
     createdAt: s.tripExpenses.createdAt,
     updatedAt: s.tripExpenses.updatedAt,
+    // NEPO-72 — live issued Báo nợ (if any) holding this fee, so the UI can
+    // block Sửa/Xóa with the NEPO-69 explanation.
+    issuedDebitNoteNumber: sql<string | null>`(
+      SELECT bd.document_number
+      FROM billing_document_lines bdl
+      JOIN billing_documents bd ON bd.id = bdl.document_id
+      WHERE bdl.source_type = 'EXPENSE'
+        AND bdl.source_id = ${s.tripExpenses.id}
+        AND bd.type = 'DEBIT_NOTE'
+        AND bd.issued_at IS NOT NULL
+        AND bd.deleted_at IS NULL
+      ORDER BY bd.id DESC
+      LIMIT 1
+    )`,
     forwarderName: s.users.fullName,
     expenseTypeName: s.forwarderExpenseTypes.name,
     supplierName: s.suppliers.name,
@@ -441,6 +490,11 @@ export async function deleteTripExpense(expenseId: number, forwarderId: number) 
     const [trip] = await tx.select({ status: s.trips.status }).from(s.trips)
       .where(eq(s.trips.id, existing.tripId)).limit(1);
     if (trip?.status === 'LOCKED') throw new ApiError(409, 'Không thể xóa chi phí của chuyến đã chốt');
+    // NEPO-72 — a fee on an issued Báo nợ cannot be hard-deleted (NEPO-69).
+    const issuedNote = await getIssuedDebitNoteForExpense(tx, expenseId);
+    if (issuedNote) {
+      throw new ApiError(409, `Phí đã phát hành Báo nợ (${issuedDebitNoteRef(issuedNote)}) — hủy/điều chỉnh Báo nợ trước khi xóa`);
+    }
     const [activeLink] = await tx.select({ id: s.settlementExpenses.id })
       .from(s.settlementExpenses)
       .innerJoin(s.advanceSettlements, eq(s.advanceSettlements.id, s.settlementExpenses.settlementId))
@@ -456,12 +510,15 @@ export async function deleteTripExpense(expenseId: number, forwarderId: number) 
 }
 
 /**
- * Fetch expense audit info (type name, amounts, trip code, supplier) for logging.
- * Returns null if expense not found.
+ * Fetch expense audit info (type, amounts, trip code, supplier) for logging.
+ * Returns null if expense not found. Read BEFORE the mutation so the audit
+ * trail can record old → new values.
  */
 export async function getTripExpenseAuditInfo(expenseId: number) {
   const [expense] = await db.select({
+    expenseType: s.tripExpenses.expenseType,
     buyAmount: s.tripExpenses.buyAmount,
+    sellAmount: s.tripExpenses.sellAmount,
     typeName: s.forwarderExpenseTypes.name,
     tripCode: s.trips.tripCode,
     supplierName: s.suppliers.name,
@@ -497,6 +554,11 @@ export async function deleteTripExpenseGuarded(tripId: number, expenseId: number
       .from(s.trips).where(eq(s.trips.id, tripId)).limit(1);
     if (!trip) return { error: 'Không tìm thấy chuyến xe', status: 404 };
     if (trip.status === 'LOCKED') return { error: 'Không thể xóa chi phí trên chuyến đã khóa', status: 400 };
+    // NEPO-72 — a fee on an issued Báo nợ cannot be hard-deleted (NEPO-69).
+    const issuedNote = await getIssuedDebitNoteForExpense(tx, expenseId);
+    if (issuedNote) {
+      return { error: `Phí đã phát hành Báo nợ (${issuedDebitNoteRef(issuedNote)}) — hủy/điều chỉnh Báo nợ trước khi xóa`, status: 409 };
+    }
     // Keep historical settlement snapshots referentially intact, including
     // rejected submissions. Corrections can be edited and resubmitted instead.
     const [link] = await tx.select({ id: s.settlementExpenses.id })

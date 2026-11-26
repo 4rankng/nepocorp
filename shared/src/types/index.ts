@@ -881,6 +881,8 @@ export interface TripExpense {
   note: string | null;
   createdAt: string;
   updatedAt: string;
+  /** NEPO-72 — documentNumber of the live issued Báo nợ holding this fee; set ⇒ the fee is frozen (NEPO-69) and Sửa/Xóa are blocked. */
+  issuedDebitNoteNumber?: string | null;
 }
 
 export interface TripExpenseCompletionScope {

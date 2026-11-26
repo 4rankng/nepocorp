@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Check, X, Edit2, MoreVertical } from 'lucide-react';
+import { Loader2, Plus, Check, X, Edit2, MoreVertical, Trash2 } from 'lucide-react';
 import { ANCILLARY_EXPENSE_TYPES } from '@tingting/shared';
 import type { AncillaryExpenseType } from '@tingting/shared';
 import type { TripExpense } from '@tingting/shared';
@@ -105,6 +105,15 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
       setFormError('Số tờ khai là bắt buộc cho phí hải quan.');
       return;
     }
+    // NEPO-72 — confirm before changing an existing fee (APPROVED included).
+    if (editingId) {
+      const label = feeTypeLabel(form.expenseType);
+      const ok = await confirm(
+        `Lưu thay đổi khoản phí "${label}" (${formatCurrency(Number(form.buyAmount))})?`,
+        { confirmLabel: 'Lưu thay đổi' },
+      );
+      if (!ok) return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -170,6 +179,54 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
     }
   };
 
+  // NEPO-72 — Sửa/Xóa are available on every fee row (APPROVED included);
+  // canDecide keeps gating only Duyệt/Từ chối. A fee already issued on a
+  // Báo nợ is frozen (NEPO-69): we explain instead of editing.
+  const notifyIssuedNote = async (fee: TripExpense) => {
+    const label = feeTypeLabel(fee.expenseType);
+    await confirm(
+      `Khoản phí "${label}" đã phát hành Báo nợ (${fee.issuedDebitNoteNumber}). Không thể sửa/xóa — hủy/điều chỉnh Báo nợ trước.`,
+      { variant: 'danger', confirmLabel: 'Đã hiểu', cancelLabel: 'Đóng' },
+    );
+  };
+
+  const handleMenuEdit = (fee: TripExpense) => {
+    if (fee.issuedDebitNoteNumber) {
+      void notifyIssuedNote(fee);
+      return;
+    }
+    handleEdit(fee);
+  };
+
+  const handleMenuDelete = (fee: TripExpense) => {
+    if (fee.issuedDebitNoteNumber) {
+      void notifyIssuedNote(fee);
+      return;
+    }
+    void handleDelete(fee);
+  };
+
+  const handleDelete = async (fee: TripExpense) => {
+    const label = feeTypeLabel(fee.expenseType);
+    const amount = formatCurrency(Number(fee.buyAmount));
+    const ok = await confirm(
+      `Xóa khoản phí "${label}" (${amount})? Thao tác này không thể hoàn tác.`,
+      { variant: 'danger', confirmLabel: 'Xóa' },
+    );
+    if (!ok) return;
+    setPendingId(fee.id);
+    try {
+      await tripClient.deleteTripExpense(tripId, fee.id);
+      await queryClient.invalidateQueries({ queryKey: qk.tripForm.tripExpenses(tripId) });
+      await queryClient.invalidateQueries({ queryKey: qk.trips.tripDetail(tripId) });
+    } catch (e: unknown) {
+      // Backend guards (chuyến đã chốt / Báo nợ đã phát hành) surface verbatim.
+      await confirm((e as Error).message || 'Lỗi khi xóa phí.', { variant: 'danger', confirmLabel: 'Đã hiểu' });
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   const totalBuy = expenses.reduce((s, e) => s + Number(e.buyAmount), 0);
   const totalSell = expenses.reduce((s, e) => s + Number(e.sellAmount), 0);
   const hasMarkup = resolveMarkupConfig(catalogData?.forwarderExpenseTypes, form.expenseType);
@@ -203,6 +260,9 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                       const sell = Number(fee.sellAmount);
                       // Forwarder-owned fees are accepted with the settlement,
                       // never as a separate per-line approval on this card.
+                      // canDecide gates ONLY Duyệt/Từ chối (NEPO-72) — Sửa/Xóa
+                      // stay on every row; fees already issued on a Báo nợ are
+                      // explained and blocked (NEPO-69 immutability).
                       const canDecide = false;
                       const isBusy = pendingId === fee.id;
                       return (
@@ -254,7 +314,7 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                               ) : (
                                 <span title="Chờ hoàn ứng"><StatusPill variant="neutral">Chờ hoàn ứng</StatusPill></span>
                               )}
-                              {canDecide && !readOnly && (
+                              {!readOnly && (
                                 <div
                                   className="fee-action-container"
                                   ref={activeActionId === fee.id ? actionMenuRef : null}
@@ -285,21 +345,10 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                                         type="button"
                                         className="fee-action-dropdown__item"
                                         role="menuitem"
+                                        title={fee.issuedDebitNoteNumber ? `Đã phát hành Báo nợ ${fee.issuedDebitNoteNumber}` : undefined}
                                         onClick={() => {
                                           setActiveActionId(null);
-                                          confirmAndRun(fee, 'approve');
-                                        }}
-                                      >
-                                        <Check size={13} strokeWidth={2.6} style={{ color: 'var(--accent)' }} />
-                                        Duyệt
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="fee-action-dropdown__item"
-                                        role="menuitem"
-                                        onClick={() => {
-                                          setActiveActionId(null);
-                                          handleEdit(fee);
+                                          handleMenuEdit(fee);
                                         }}
                                       >
                                         <Edit2 size={13} style={{ color: 'var(--ink-2)' }} />
@@ -309,14 +358,43 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                                         type="button"
                                         className="fee-action-dropdown__item"
                                         role="menuitem"
+                                        title={fee.issuedDebitNoteNumber ? `Đã phát hành Báo nợ ${fee.issuedDebitNoteNumber}` : undefined}
                                         onClick={() => {
                                           setActiveActionId(null);
-                                          confirmAndRun(fee, 'reject');
+                                          handleMenuDelete(fee);
                                         }}
                                       >
-                                        <X size={13} strokeWidth={2.6} style={{ color: 'var(--danger)' }} />
-                                        Từ chối
+                                        <Trash2 size={13} style={{ color: 'var(--danger)' }} />
+                                        Xóa
                                       </button>
+                                      {canDecide && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            className="fee-action-dropdown__item"
+                                            role="menuitem"
+                                            onClick={() => {
+                                              setActiveActionId(null);
+                                              confirmAndRun(fee, 'approve');
+                                            }}
+                                          >
+                                            <Check size={13} strokeWidth={2.6} style={{ color: 'var(--accent)' }} />
+                                            Duyệt
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="fee-action-dropdown__item"
+                                            role="menuitem"
+                                            onClick={() => {
+                                              setActiveActionId(null);
+                                              confirmAndRun(fee, 'reject');
+                                            }}
+                                          >
+                                            <X size={13} strokeWidth={2.6} style={{ color: 'var(--danger)' }} />
+                                            Từ chối
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -394,21 +472,13 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                           </div>
                         )}
 
-                        {canDecide && !readOnly && (
+                        {!readOnly && (
                           <div className="ancillary-fee-card__actions">
                             <button
                               type="button"
-                              className="btn btn--sm ancillary-fee-card__btn ancillary-fee-card__btn--approve"
-                              onClick={() => confirmAndRun(fee, 'approve')}
-                              disabled={isBusy}
-                            >
-                              {isBusy ? <Loader2 size={13} className="spin" /> : <Check size={13} />}
-                              Duyệt
-                            </button>
-                            <button
-                              type="button"
                               className="btn btn--sm btn--ghost ancillary-fee-card__btn"
-                              onClick={() => handleEdit(fee)}
+                              title={fee.issuedDebitNoteNumber ? `Đã phát hành Báo nợ ${fee.issuedDebitNoteNumber}` : undefined}
+                              onClick={() => handleMenuEdit(fee)}
                               disabled={isBusy}
                             >
                               <Edit2 size={13} />
@@ -417,12 +487,35 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                             <button
                               type="button"
                               className="btn btn--sm btn--ghost ancillary-fee-card__btn ancillary-fee-card__btn--reject"
-                              onClick={() => confirmAndRun(fee, 'reject')}
+                              title={fee.issuedDebitNoteNumber ? `Đã phát hành Báo nợ ${fee.issuedDebitNoteNumber}` : undefined}
+                              onClick={() => handleMenuDelete(fee)}
                               disabled={isBusy}
                             >
-                              {isBusy ? <Loader2 size={13} className="spin" /> : <X size={13} />}
-                              Từ chối
+                              <Trash2 size={13} />
+                              Xóa
                             </button>
+                            {canDecide && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn--sm ancillary-fee-card__btn ancillary-fee-card__btn--approve"
+                                  onClick={() => confirmAndRun(fee, 'approve')}
+                                  disabled={isBusy}
+                                >
+                                  {isBusy ? <Loader2 size={13} className="spin" /> : <Check size={13} />}
+                                  Duyệt
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn--sm btn--ghost ancillary-fee-card__btn ancillary-fee-card__btn--reject"
+                                  onClick={() => confirmAndRun(fee, 'reject')}
+                                  disabled={isBusy}
+                                >
+                                  {isBusy ? <Loader2 size={13} className="spin" /> : <X size={13} />}
+                                  Từ chối
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
