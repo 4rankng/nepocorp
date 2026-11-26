@@ -71,7 +71,7 @@ async function ledgerRowsForTrip(tripId: number) {
 }
 
 describe('trip completion ledger posting', () => {
-  test('persists split fuel allocations and enforces the trip fuel total', async () => {
+  test('persists split fuel allocations when their total differs from the trip fuel total', async () => {
     const { trip, supplier: firstSupplier } = await createInTransitTrip();
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const [secondSupplier] = await db.insert(s.suppliers).values({
@@ -117,20 +117,27 @@ describe('trip completion ledger posting', () => {
       ],
     );
 
-    await assert.rejects(
-      updateTripFigures(trip.id, {
-        legs: [],
-        fuelMode: FuelMode.FLAT_RATE,
-        fuelLitersOverride: 250,
-        fuelSupplementLiters: 0,
-        fuelActualUnitPrice: 1000,
-        fuelAllocations: [
-          { supplierId: firstSupplier.id, liters: 200, paymentMethod: 'CREDIT' },
-        ],
-        expectedVersion: updated.version,
-        userId: 1,
-      }),
-      /Tổng phân bổ dầu/,
+    // NEPO-67: the old equality check ("tổng phân bổ dầu phải bằng tổng dầu
+    // chuyến") is gone — a partial allocation that ops entered at the pump
+    // saves instead of answering 400.
+    const mismatched = await updateTripFigures(trip.id, {
+      legs: [],
+      fuelMode: FuelMode.FLAT_RATE,
+      fuelLitersOverride: 250,
+      fuelSupplementLiters: 0,
+      fuelActualUnitPrice: 1000,
+      fuelAllocations: [
+        { supplierId: firstSupplier.id, liters: 200, paymentMethod: 'CREDIT' },
+      ],
+      expectedVersion: updated.version,
+      userId: 1,
+    });
+    assert.equal(mismatched.fuelLiters, '250.00');
+    const remaining = await db.select().from(s.tripFuelAllocations)
+      .where(eq(s.tripFuelAllocations.tripId, trip.id));
+    assert.deepEqual(
+      remaining.map(allocation => allocation.liters),
+      ['200.00'],
     );
   });
 
