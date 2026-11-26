@@ -68,8 +68,21 @@ export default function TyreBoardPage() {
   const { toast } = useToast();
   const isNarrow = useIsNarrowViewport();
 
+  const slots = board?.slots ?? [];
   const commitCell = (position: number, patch: TyreBoardSlotUpdateInput) => {
     if (truckId == null) return;
+    // Báo trùng ngay khi nhập seri trên ô dòng (cùng xe); xe khác backend
+    // chặn bằng 409 kèm biển xe + ô, toast hiển thị nguyên văn.
+    if (patch.serial !== undefined && patch.serial.trim() !== "") {
+      const incoming = patch.serial.trim().toLowerCase();
+      const dup = slots.find((s) =>
+        s.position !== position && (s.serial ?? "").trim().toLowerCase() === incoming,
+      );
+      if (dup) {
+        toast({ kind: "error", message: `Số seri ${patch.serial.trim()} đã có ở ô ${dup.position} của xe này — một seri lốp chỉ gắn một vị trí` });
+        return;
+      }
+    }
     updateSlot.mutate(
       { position, patch },
       { onError: (err) => toast({ kind: "error", message: formatErrorMessage(err) }) },
@@ -89,11 +102,26 @@ export default function TyreBoardPage() {
     setChangeError(null);
   };
 
+  // Báo trùng ngay khi nhập (yêu cầu kế toán 26/11): seri mới trùng một ô
+  // khác trên bảng của xe này → chặn lưu. Xe khác do backend chặn (409 kèm
+  // biển xe + ô) và toast hiển thị nguyên văn.
+  const changeDupPosition = changeTarget
+    ? slots.find((s) =>
+        s.position !== changeTarget.position
+        && newSerial.trim() !== ""
+        && (s.serial ?? "").trim().toLowerCase() === newSerial.trim().toLowerCase(),
+      )?.position ?? null
+    : null;
+
   const submitChange = async () => {
     if (!changeTarget) return;
     const serial = newSerial.trim();
     if (!serial) {
       setChangeError("Nhập số seri lốp mới");
+      return;
+    }
+    if (changeDupPosition != null) {
+      setChangeError(`Số seri ${serial} đã có ở ô ${changeDupPosition} của xe này — một seri lốp chỉ gắn một vị trí`);
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(changedAt)) {
@@ -109,7 +137,6 @@ export default function TyreBoardPage() {
     }
   };
 
-  const slots = board?.slots ?? [];
   const statusCounts = slots.reduce<Record<TyreStatus, number>>((acc, s) => {
     acc[tyreStatus(s)] += 1;
     return acc;
@@ -323,7 +350,7 @@ export default function TyreBoardPage() {
         footer={(
           <>
             <button type="button" className="tbp-btn" onClick={() => setChangeTarget(null)}>Hủy</button>
-            <button type="button" className="tbp-btn tbp-btn--primary" disabled={changeTyre.isPending} onClick={submitChange}>
+            <button type="button" className="tbp-btn tbp-btn--primary" disabled={changeTyre.isPending || changeDupPosition != null} onClick={submitChange}>
               {changeTyre.isPending ? "Đang lưu…" : "Lưu thay lốp"}
             </button>
           </>
@@ -338,6 +365,9 @@ export default function TyreBoardPage() {
             placeholder="VD: 32422059514"
             autoFocus
           />
+          {changeDupPosition != null && (
+            <div className="tbp-modal-error">Trùng số seri với ô {changeDupPosition} của xe này — nhập seri khác.</div>
+          )}
         </div>
         <div className="tbp-modal-field">
           <label htmlFor="tbp-changed-at">Ngày thay</label>

@@ -1,9 +1,11 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, ne, or, sql } from 'drizzle-orm';
 import { TYRE_BOARD_POSITION_COUNT } from '@tingting/shared';
 import type { TyreBoard, TyreBoardSlot, TyreBoardSlotUpdateInput, TyreChangeRecord } from '@tingting/shared';
 import { ApiError } from '../errors';
+
+type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * NEPO-49 — Tyre board (Bảng theo dõi lốp) service.
@@ -91,6 +93,46 @@ function mergeField(patchValue: string | undefined, current: string | null): str
 }
 
 /**
+ * Một seri lốp chỉ gắn một vị trí — fleet-wide duplicate check (yêu cầu kế
+ * toán 26/11: "báo trùng khi nhập số seri giống nhau"). So sánh không phân
+ * biệt hoa/thường và khoảng trắng; ô đang sửa không tự trùng với chính nó.
+ * '' (xóa trắng) luôn hợp lệ. Chạy trong transaction của caller khi có.
+ */
+async function assertSlotSerialAvailable(
+  executor: DbOrTx,
+  serial: string,
+  own: { truckId: number; position: number },
+): Promise<void> {
+  const normalized = serial.trim().toLowerCase();
+  if (!normalized) return;
+  const [conflict] = await executor
+    .select({
+      truckId: s.tyrePositionsBoard.truckId,
+      positionNumber: s.tyrePositionsBoard.positionNumber,
+    })
+    .from(s.tyrePositionsBoard)
+    .where(and(
+      sql`lower(btrim(coalesce(${s.tyrePositionsBoard.serial}, ''))) = ${normalized}`,
+      // NOT (same truck AND same position) — the slot's own row never self-conflicts.
+      or(
+        ne(s.tyrePositionsBoard.truckId, own.truckId),
+        ne(s.tyrePositionsBoard.positionNumber, own.position),
+      ),
+    ))
+    .limit(1);
+  if (!conflict) return;
+  const [truck] = await executor
+    .select({ licensePlate: s.trucks.licensePlate })
+    .from(s.trucks)
+    .where(eq(s.trucks.id, conflict.truckId))
+    .limit(1);
+  throw new ApiError(
+    409,
+    `Số seri ${serial.trim()} đã có ở xe ${truck?.licensePlate ?? conflict.truckId} ô ${conflict.positionNumber} — một seri lốp chỉ gắn một vị trí`,
+  );
+}
+
+/**
  * Inline cell edit (initial data entry / correction) on any subset of the
  * slot's data row. Intentionally records NO history row — history belongs to
  * the "Thay lốp" flow, which carries its own date. Upsert keeps the API
@@ -123,6 +165,10 @@ export async function updateTyreSlot(
       ? (patch.lastChangedAt === '' ? null : patch.lastChangedAt)
       : (existing?.lastChangedAt ?? null),
   };
+
+  if (merged.serial) {
+    await assertSlotSerialAvailable(db, merged.serial, { truckId, position });
+  }
 
   const [row] = await db.insert(s.tyrePositionsBoard)
     .values({ truckId, positionNumber: position, ...merged })
@@ -160,6 +206,11 @@ export async function replaceTyreAtPosition(
   const newSerial = input.newSerial.trim();
 
   return db.transaction(async (tx) => {
+    // Fleet-wide duplicate guard before any write — a rejected replacement
+    // must not leave a history row behind.
+    if (newSerial) {
+      await assertSlotSerialAvailable(tx, newSerial, { truckId, position });
+    }
     const [current] = await tx.select()
       .from(s.tyrePositionsBoard)
       .where(and(

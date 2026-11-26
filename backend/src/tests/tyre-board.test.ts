@@ -26,16 +26,21 @@ import { TYRE_BOARD_POSITION_COUNT } from '@tingting/shared';
 
 const SUFFIX = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
 const truckPlate = `TEST-TYRE-${SUFFIX}`.slice(0, 15);
+const truck2Plate = `TEST-TYRE2-${SUFFIX}`.slice(0, 15);
 let truckId: number;
+let truck2Id: number;
 
 before(async () => {
   const [truck] = await db.insert(s.trucks).values({ licensePlate: truckPlate }).returning({ id: s.trucks.id });
   truckId = truck.id;
+  const [truck2] = await db.insert(s.trucks).values({ licensePlate: truck2Plate }).returning({ id: s.trucks.id });
+  truck2Id = truck2.id;
 });
 
 after(async () => {
   // Board rows + history cascade with the truck.
   await db.delete(s.trucks).where(eq(s.trucks.id, truckId));
+  await db.delete(s.trucks).where(eq(s.trucks.id, truck2Id));
   await client.end();
 });
 
@@ -125,5 +130,47 @@ describe('tyre board', () => {
     const slot3History = await getTyreChanges(truckId, 3);
     assert.strictEqual(slot3History.length, 1);
     assert.strictEqual(slot3History[0].oldSerial, '32422059514');
+  });
+
+  test('a serial already mounted on another slot is rejected with 409 (báo trùng)', async () => {
+    const dupSerial = `DUP-${SUFFIX}`;
+    await updateTyreSlot(truck2Id, 1, { serial: dupSerial });
+
+    // Same serial, different case + stray spaces — still a duplicate.
+    await assert.rejects(
+      updateTyreSlot(truckId, 7, { serial: `  ${dupSerial.toLowerCase()}  ` }),
+      (err: { statusCode?: number; message: string }) => {
+        assert.strictEqual(err.statusCode, 409);
+        assert.match(err.message, /đã có/);
+        assert.match(err.message, new RegExp(truck2Plate));
+        assert.match(err.message, /ô 1/);
+        return true;
+      },
+    );
+
+    // "Thay lốp" with a serial mounted elsewhere is rejected the same way,
+    // before any history row is written.
+    await assert.rejects(
+      replaceTyreAtPosition(truckId, 5, { newSerial: dupSerial, changedAt: '2026-11-20' }),
+      (err: { statusCode?: number; message: string }) => {
+        assert.strictEqual(err.statusCode, 409);
+        assert.match(err.message, /đã có/);
+        return true;
+      },
+    );
+    assert.strictEqual((await getTyreChanges(truckId, 5)).length, 0);
+  });
+
+  test('re-saving a slot\'s own serial stays allowed (sửa ngày / sửa chữ)', async () => {
+    const ownSerial = `OWN-${SUFFIX}`;
+    await updateTyreSlot(truck2Id, 2, { serial: ownSerial });
+    // Same slot, same serial (trimmed on save, case kept) — not a duplicate.
+    const slot = await updateTyreSlot(truck2Id, 2, { serial: ` ${ownSerial.toLowerCase()} `, note: 'sửa trực tiếp' });
+    assert.strictEqual(slot.serial, ownSerial.toLowerCase());
+
+    // "Thay lốp" re-entering the same serial (correcting ngày thay) is fine.
+    const result = await replaceTyreAtPosition(truck2Id, 2, { newSerial: ownSerial, changedAt: '2026-11-21' });
+    assert.strictEqual(result.oldSerial, ownSerial.toLowerCase());
+    assert.strictEqual(result.newSerial, ownSerial);
   });
 });
