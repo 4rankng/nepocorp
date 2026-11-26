@@ -351,7 +351,7 @@ export async function updateTripExpense(
       const awaitingSignOff = activeLink.status === 'PENDING' || activeLink.status === 'CHECKED_BY_ACCOUNTANT';
       throw new ApiError(409, awaitingSignOff
         ? `Chi phí đã nằm trong phiếu hoàn ứng ${activeLink.code} (chờ ký) — sửa số tiền trực tiếp trên phiếu: menu Hoàn ứng → mở phiếu ${activeLink.code} → Sửa chi phí`
-        : `Chi phí đã nằm trong phiếu hoàn ứng ${activeLink.code} (đã duyệt) — phiếu đã duyệt phải được mở lại trước khi phí được sửa`);
+        : `Chi phí đã nằm trong phiếu hoàn ứng ${activeLink.code} (đã duyệt) — menu Hoàn ứng → mở phiếu ${activeLink.code} → Mở lại phiếu, rồi Sửa chi phí trên phiếu`);
     }
   }
   const scopeKeys = [...new Set([

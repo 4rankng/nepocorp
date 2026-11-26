@@ -406,6 +406,23 @@ export function useRejectSettlement() {
   });
 }
 
+export function useReopenSettlement() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => forwarderClient.reopenAdvanceSettlement(id),
+    onSuccess: (_data, id) => {
+      // A reopened phiếu re-enters the sign-off path and its carry-forward
+      // advances were rejected — refresh balances and request lists too.
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementDetail(id) });
+      qc.invalidateQueries({ queryKey: qk.forwarder.settlementDetail(id) });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.settlementsAll });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.advanceRequestsAll });
+      qc.invalidateQueries({ queryKey: qk.adminForwarder.advanceBalances });
+      qc.invalidateQueries({ queryKey: qk.forwarder.advanceBalance });
+    },
+  });
+}
+
 // ── Admin: Settlement detail (for print/export page) ─────────────────────────
 
 export function useAdminSettlementDetail(id: number) {

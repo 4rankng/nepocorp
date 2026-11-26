@@ -63,6 +63,7 @@ vi.mock('../hooks/useForwarderQueries', async (importOriginal) => ({
   useUpdateSettlementExpense: () => mocks.returns.expense,
   useApproveSettlement: () => mocks.returns.approve,
   useRejectSettlement: () => mocks.returns.reject,
+  useReopenSettlement: () => mocks.returns.reopen,
   useDeleteSettlement: () => mocks.returns.remove,
 }));
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => ({ user: { role: mocks.role } }) }));

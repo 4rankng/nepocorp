@@ -1,6 +1,6 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { and, eq, inArray, isNull, notLike } from 'drizzle-orm';
+import { and, eq, inArray, isNull, notLike, like, sql } from 'drizzle-orm';
 
 /**
  * Ledger note prefix used when an advance is booked against a TRIP
@@ -20,6 +20,7 @@ import {
   getAdvanceSettlement,
   getOutstandingAdvanceBalance,
   listAdvanceRequests,
+  reopenAdvanceSettlement,
   updateAdvanceSettlement,
 } from '../services/advance.service';
 import { validateSettlementInputs } from '../services/settlement-validation';
@@ -190,15 +191,29 @@ describe('forwarder settlement streamlined workflow', () => {
   });
 
   after(async () => {
-    if (ids.settlements.length) {
-      await db.delete(s.ledger).where(and(
-        eq(s.ledger.txnType, TxnType.FORWARDER_SETTLEMENT),
-        inArray(s.ledger.txnId, ids.settlements),
-      ));
-      await db.delete(s.settlementExpenses).where(inArray(s.settlementExpenses.settlementId, ids.settlements));
-      await db.delete(s.advanceSettlementRequests).where(inArray(s.advanceSettlementRequests.settlementId, ids.settlements));
-      await db.delete(s.advanceSettlements).where(inArray(s.advanceSettlements.id, ids.settlements));
-    }
+    try {
+      // Carry-forward advances minted by approveAdvanceSettlement (NEPO-73
+      // reopen/approve legs) reference this run's users but are never in
+      // ids.requests — sweep them by their reason marker while the
+      // settlements (their codes) still exist.
+      if (ids.settlements.length) {
+        const settlementCodes = await db.select({ code: s.advanceSettlements.code })
+          .from(s.advanceSettlements)
+          .where(inArray(s.advanceSettlements.id, ids.settlements));
+        for (const { code } of settlementCodes) {
+          if (!code) continue;
+          await db.delete(s.advanceRequests).where(like(s.advanceRequests.reason, `Ops tạm ứng chuyển từ phiếu ${code}%`));
+        }
+      }
+      if (ids.settlements.length) {
+        await db.delete(s.ledger).where(and(
+          eq(s.ledger.txnType, TxnType.FORWARDER_SETTLEMENT),
+          inArray(s.ledger.txnId, ids.settlements),
+        ));
+        await db.delete(s.settlementExpenses).where(inArray(s.settlementExpenses.settlementId, ids.settlements));
+        await db.delete(s.advanceSettlementRequests).where(inArray(s.advanceSettlementRequests.settlementId, ids.settlements));
+        await db.delete(s.advanceSettlements).where(inArray(s.advanceSettlements.id, ids.settlements));
+      }
     // `txn_id` is a polymorphic reference — a FORWARDER_ADVANCE row can point at
     // either an advance_requests row or a trips row, and the two id spaces
     // overlap. Scope by entity_type so teardown can never delete a trip's own
@@ -227,7 +242,11 @@ describe('forwarder settlement streamlined workflow', () => {
     if (ids.routes.length) await db.delete(s.routes).where(inArray(s.routes.id, ids.routes));
     if (ids.cargoTypes.length) await db.delete(s.cargoTypes).where(inArray(s.cargoTypes.id, ids.cargoTypes));
     if (ids.users.length) await db.delete(s.users).where(inArray(s.users.id, ids.users));
-    await client.end();
+    } finally {
+      // Always close the pool — an aborted cleanup must not leave the test
+      // process hanging until the runner's own timeout (286s wall before).
+      await client.end();
+    }
   });
 
   test('PENDING expenses require their exact general or container scope to be COMPLETED', async () => {
@@ -635,9 +654,73 @@ describe('forwarder settlement streamlined workflow', () => {
         assert.strictEqual(err.statusCode, 409);
         assert.match(err.message, new RegExp(row.code));
         assert.match(err.message, /đã duyệt/);
+        assert.match(err.message, /Mở lại phiếu/);
         return true;
       },
     );
+
+    // NEPO-73 — reopening unwinds the carry-forward surplus and puts the
+    // phiếu back into editable state. The 'Thanh toán tạm ứng' row (the
+    // advance paid, 400k) legitimately stays.
+    const reopened = await reopenAdvanceSettlement(settlement.id, accountantId);
+    assert.equal(reopened.status, 'CHECKED_BY_ACCOUNTANT');
+    const netDuringReopen = await db.select({
+      net: sql<string>`coalesce(sum(${s.ledger.debit} - ${s.ledger.credit}), 0)`,
+    }).from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_SETTLEMENT), eq(s.ledger.txnId, settlement.id),
+    ));
+    assert.equal(Number(netDuringReopen[0]?.net ?? 0), 400_000);
+
+    // The accountant corrects the expense on the reopened phiếu…
+    const readjusted = await adjustSettlementExpense(settlement.id, expense.id, accountantId, {
+      buyAmount: 360_000, adjustmentReason: 'Sửa lại sau khi mở phiếu',
+    });
+    assert.equal(readjusted.totalExpenseAmount, '360000');
+
+    // …and re-approval keeps the advance payment row intact (the delta-aware
+    // posting adds nothing) while the expense delta posts as an ADJUSTMENT.
+    await approveAdvanceSettlement(settlement.id, accountantId);
+    const netAfterReapprove = await db.select({
+      net: sql<string>`coalesce(sum(${s.ledger.debit} - ${s.ledger.credit}), 0)`,
+    }).from(s.ledger).where(and(
+      eq(s.ledger.txnType, TxnType.FORWARDER_SETTLEMENT), eq(s.ledger.txnId, settlement.id),
+    ));
+    assert.equal(Number(netAfterReapprove[0]?.net ?? 0), 400_000);
+    await assert.rejects(
+      db.transaction((tx) => updateTripExpense(tx, expense.id, { buyAmount: "999000" })),
+      /Mở lại phiếu/,
+    );
+
+    // Reopen also unwinds the carry-forward advance an approval minted for a
+    // surplus phiếu: rejected + countered, and the re-approval mints a fresh
+    // one from the corrected refundAmount.
+    const surplusExpense = await insertExpense({ approvalStatus: 'APPROVED', buyAmount: 400_000 });
+    const surplusRequest = await insertApprovedRequest(500_000);
+    const surplusSettlement = await createAdvanceSettlement(forwarderId, {
+      advanceRequestIds: [surplusRequest], tripExpenseIds: [surplusExpense.id],
+      refundAmount: 100_000,
+    });
+    ids.settlements.push(surplusSettlement.id);
+    await approveAdvanceSettlement(surplusSettlement.id, accountantId);
+    const [mintedCarry] = await db.select().from(s.advanceRequests).where(and(
+      eq(s.advanceRequests.requesterId, forwarderId),
+      notLike(s.advanceRequests.reason, 'Test hoàn ứng riêng%'),
+      like(s.advanceRequests.reason, `Ops tạm ứng chuyển từ phiếu ${surplusSettlement.code}%`),
+      eq(s.advanceRequests.status, 'APPROVED'),
+    ));
+    assert.ok(mintedCarry, 'approval should mint a carry-forward advance for the surplus');
+
+    await reopenAdvanceSettlement(surplusSettlement.id, accountantId);
+    const [rejectedCarry] = await db.select().from(s.advanceRequests).where(eq(s.advanceRequests.id, mintedCarry.id));
+    assert.equal(rejectedCarry.status, 'REJECTED');
+    await approveAdvanceSettlement(surplusSettlement.id, accountantId);
+    const [remintedCarry] = await db.select().from(s.advanceRequests).where(and(
+      eq(s.advanceRequests.requesterId, forwarderId),
+      like(s.advanceRequests.reason, `Ops tạm ứng chuyển từ phiếu ${surplusSettlement.code}%`),
+      eq(s.advanceRequests.status, 'APPROVED'),
+    ));
+    assert.ok(remintedCarry, 're-approval mints a fresh carry-forward for the corrected refund');
+    assert.notEqual(remintedCarry.id, mintedCarry.id);
   });
 
   test('forwarder edit clears nullable fields but preserves required-field invariants', async () => {

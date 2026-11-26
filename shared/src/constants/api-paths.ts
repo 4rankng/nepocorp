@@ -170,6 +170,7 @@ export const FINANCIAL = {
   ADVANCE_SETTLEMENT_CHECK: (id: number) => `/advance-settlements/${id}/check`,
   ADVANCE_SETTLEMENT_APPROVE: (id: number) => `/advance-settlements/${id}/approve`,
   ADVANCE_SETTLEMENT_REJECT: (id: number) => `/advance-settlements/${id}/reject`,
+  ADVANCE_SETTLEMENT_REOPEN: (id: number) => `/advance-settlements/${id}/reopen`,
   ADVANCE_SETTLEMENT_DETAIL: (id: number) => `/advance-settlements/${id}`,
   ADVANCE_SETTLEMENT_EXPORT: (id: number, format: string) => `/advance-settlements/${id}/export?format=${format}`,
   ADVANCE_BALANCES: '/advance-balances',

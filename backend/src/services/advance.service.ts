@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as s from '../db/schema';
-import { eq, and, desc, inArray, notInArray, ne, sql, count, isNull, notLike, or } from 'drizzle-orm';
+import { eq, and, desc, inArray, notInArray, ne, sql, count, isNull, notLike, or, like } from 'drizzle-orm';
 import { NotificationType, TxnType, round2dp } from '@tingting/shared';
 import { LedgerService } from './ledger.service';
 import { emitNotification } from './notification.service';
@@ -992,15 +992,25 @@ export async function approveAdvanceSettlement(id: number, approvedBy: number) {
       postedThisRun.set(link.expenseId, (postedThisRun.get(link.expenseId) ?? 0) + delta);
     }
 
-    await LedgerService.postEntry(tx, {
-      txnType: TxnType.FORWARDER_SETTLEMENT,
-      txnId: settlement.id,
-      entityType: 'FORWARDER',
-      entityId: settlement.forwarderId,
-      debit: advanceTotal,
-      credit: 0,
-      note: `Thanh toán tạm ứng #${settlement.id}`,
-    });
+    // Delta-aware: a phiếu re-approved after 'Mở lại phiếu' already has net
+    // settlement entries on the books (the reopen countered them) — post only
+    // the outstanding delta so re-approval never double-counts the payment.
+    const [settledPosted] = await tx.select({
+      net: sql<string>`coalesce(sum(${s.ledger.debit} - ${s.ledger.credit}), 0)`,
+    }).from(s.ledger)
+      .where(and(eq(s.ledger.txnType, TxnType.FORWARDER_SETTLEMENT), eq(s.ledger.txnId, settlement.id)));
+    const settledDelta = round2dp(advanceTotal - Number(settledPosted?.net ?? 0));
+    if (settledDelta !== 0) {
+      await LedgerService.postEntry(tx, {
+        txnType: TxnType.FORWARDER_SETTLEMENT,
+        txnId: settlement.id,
+        entityType: 'FORWARDER',
+        entityId: settlement.forwarderId,
+        debit: settledDelta > 0 ? settledDelta : 0,
+        credit: settledDelta < 0 ? Math.abs(settledDelta) : 0,
+        note: `Thanh toán tạm ứng #${settlement.id}`,
+      });
+    }
 
     // A surplus is retained by Ops for the next settlement, not returned to
     // the company. Materialize it as a normal approved advance so it remains
@@ -1224,6 +1234,76 @@ export async function rejectAdvanceSettlement(id: number, rejectedBy: number) {
         eq(s.advanceSettlements.id, id),
         inArray(s.advanceSettlements.status, ['PENDING', 'CHECKED_BY_ACCOUNTANT']),
       ))
+      .returning();
+    if (!updated) throw new AdvanceError(409, 'Request was modified by another operation');
+
+    const [enriched] = await enrichWithNames([updated]);
+    return enrichSettlementWithRequests(enriched);
+  });
+}
+
+/**
+ * Mở lại một phiếu hoàn ứng ĐÃ DUYỆT (NEPO-73 — kế toán/giám đốc được sửa
+ * phiếu sau duyệt; quyết định Frank 26/11). The 'Thanh toán tạm ứng' ledger
+ * row (one per phiếu, enforced by ledger_forwarder_settlement_once_idx)
+ * records the advance paid and stays; any carry-forward advance minted at
+ * approval is unwound (request → REJECTED, its ledger row removed) so the
+ * corrected re-approval mints a fresh one from the new refundAmount. The
+ * phiếu returns as CHECKED_BY_ACCOUNTANT — still awaiting sign-off, so
+ * canEditExpenses/adjustSettlementExpense and a later approve all accept it;
+ * re-approval posts expense deltas via the existing ADJUSTMENT mechanism.
+ */
+export async function reopenAdvanceSettlement(id: number, reopenedBy: number) {
+  return db.transaction(async (tx) => {
+    const [settlement] = await tx.select()
+      .from(s.advanceSettlements)
+      .where(eq(s.advanceSettlements.id, id))
+      .for('update');
+    if (!settlement) throw new AdvanceError(404, 'Advance settlement not found');
+    if (settlement.status !== 'APPROVED') {
+      throw new AdvanceError(409, 'Chỉ mở lại phiếu đã duyệt');
+    }
+    if (settlement.forwarderId === reopenedBy) {
+      throw new AdvanceError(403, 'Không thể mở lại phiếu thanh toán của chính mình');
+    }
+
+    // The 'Thanh toán tạm ứng' row records the ADVANCE paid (sum of linked
+    // requests) — an expense correction on the phiếu does not change it, and
+    // the unique index permits exactly one row per phiếu, so it stays. Only
+    // carry-forwards (surplus retained at approval) are unwound: the
+    // corrected re-approval mints them fresh from the new refundAmount.
+    const carryForwards = await tx.select({ id: s.advanceRequests.id, amount: s.advanceRequests.amount })
+      .from(s.advanceRequests)
+      .where(and(
+        eq(s.advanceRequests.requesterId, settlement.forwarderId),
+        like(s.advanceRequests.reason, `Ops tạm ứng chuyển từ phiếu ${settlement.code}%`),
+        eq(s.advanceRequests.status, 'APPROVED'),
+      ));
+    for (const carry of carryForwards) {
+      const [rejected] = await tx.update(s.advanceRequests)
+        .set({ status: 'REJECTED', approvedBy: reopenedBy, approvedAt: new Date(), updatedAt: new Date() })
+        .where(and(eq(s.advanceRequests.id, carry.id), eq(s.advanceRequests.status, 'APPROVED')))
+        .returning();
+      if (rejected) {
+        await tx.delete(s.ledger).where(and(
+          eq(s.ledger.txnType, TxnType.FORWARDER_ADVANCE),
+          eq(s.ledger.txnId, rejected.id),
+          eq(s.ledger.txnTable, 'advance_requests'),
+        ));
+      }
+    }
+
+    const now = new Date();
+    const [updated] = await tx.update(s.advanceSettlements)
+      .set({
+        status: 'CHECKED_BY_ACCOUNTANT',
+        checkedBy: reopenedBy,
+        checkedAt: now,
+        approvedBy: null,
+        approvedAt: null,
+        updatedAt: now,
+      })
+      .where(and(eq(s.advanceSettlements.id, id), eq(s.advanceSettlements.status, 'APPROVED')))
       .returning();
     if (!updated) throw new AdvanceError(409, 'Request was modified by another operation');
 

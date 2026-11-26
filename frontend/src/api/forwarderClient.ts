@@ -207,4 +207,7 @@ export const forwarderClient = {
   rejectAdvanceSettlement: async (id: number) => {
     return api.post(FINANCIAL.ADVANCE_SETTLEMENT_REJECT(id), {});
   },
+  reopenAdvanceSettlement: async (id: number) => {
+    return api.post(FINANCIAL.ADVANCE_SETTLEMENT_REOPEN(id), {});
+  },
 };

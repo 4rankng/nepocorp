@@ -7,7 +7,7 @@ import { api } from '../lib/api';
 import { useConfirm } from '../components/useConfirm';
 import { useToast } from '../components/shared/Toast';
 import { downloadBlob } from '../lib/download';
-import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement, useDeleteSettlement, pendingAction } from '../hooks/useForwarderQueries';
+import { useForwarderSettlementDetail, useAdminSettlementDetail, useUpdateAdvanceSettlement, useUpdateMyAdvanceSettlement, useUpdateSettlementExpense, useApproveSettlement, useRejectSettlement, useReopenSettlement, useDeleteSettlement, pendingAction } from '../hooks/useForwarderQueries';
 import { useAuth } from '../hooks/useAuth';
 import { canApproveSettlement, canAdjustSettlementAmounts, canDeleteSettlementNow } from '../features/advances/settlementPermissions';
 import { PageHeader } from '../components/UI';
@@ -109,6 +109,7 @@ export default function SettlementPrintPage() {
   const updateMySettlement = useUpdateMyAdvanceSettlement();
   const approveSettlement = useApproveSettlement();
   const rejectSettlement = useRejectSettlement();
+  const reopenSettlement = useReopenSettlement();
   const deleteSettlement = useDeleteSettlement();
   // A hook that returns nothing — a module the dev server is midway through
   // replacing, a hook disabled for the role, a mocked module — must not blank
@@ -118,9 +119,11 @@ export default function SettlementPrintPage() {
   const { pendingKind: signOffPending } = pendingAction([
     { kind: 'approve', mutation: approveSettlement },
     { kind: 'reject', mutation: rejectSettlement },
+    { kind: 'reopen', mutation: reopenSettlement },
   ]);
   const approvingSettlement = signOffPending === 'approve';
   const rejectingSettlement = signOffPending === 'reject';
+  const reopeningSettlement = signOffPending === 'reopen';
   const savingSettlement = updateSettlement?.isPending === true;
   const savingMySettlement = updateMySettlement?.isPending === true;
   const savingExpense = updateExpense?.isPending === true;
@@ -215,6 +218,22 @@ export default function SettlementPrintPage() {
       toast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi từ chối phiếu' });
     }
   };
+  // NEPO-73 — reopen an approved phiếu so the accountant can correct it: the
+  // approval's ledger entries are countered, the phiếu returns to awaiting
+  // sign-off, and Sửa chi phí works again. Handler mirrors approve/reject.
+  const handleReopenSettlement = async () => {
+    const ok = await confirm(
+      `Mở lại phiếu hoàn ứng ${s.code}? Bút toán "Thanh toán tạm ứng" của lần duyệt sẽ bị đảo bằng entry đối ứng; phiếu về trạng thái chờ ký để sửa chi phí.`,
+      { confirmLabel: 'Mở lại phiếu' },
+    );
+    if (!ok) return;
+    try {
+      await reopenSettlement.mutateAsync(s.id);
+      toast({ kind: 'success', message: `Đã mở lại phiếu ${s.code} — có thể Sửa chi phí` });
+    } catch (err) {
+      toast({ kind: 'error', message: err instanceof Error ? err.message : 'Lỗi khi mở lại phiếu' });
+    }
+  };
   const expenses = s.linkedExpenses || [];
   const requests = s.linkedRequests || [];
   const totalAdvance = requests.reduce((sum, r) => sum + Number(r.amount), 0);
@@ -238,6 +257,9 @@ export default function SettlementPrintPage() {
   const awaitingSignOff = s.status === 'PENDING' || s.status === 'CHECKED_BY_ACCOUNTANT';
   const canEditExpenses = !isPortal && canAdjustSettlementAmounts(user?.role) && awaitingSignOff;
   const maySignOff = !isPortal && canApproveSettlement(user?.role) && awaitingSignOff;
+  // NEPO-73 — an APPROVED phiếu can be reopened (kế toán/giám đốc) to correct
+  // it; the ledger counters itself and Sửa chi phí works again.
+  const mayReopen = !isPortal && canApproveSettlement(user?.role) && s.status === 'APPROVED';
   // Removing the phiếu is its own right: the same office band as approve/reject,
   // and only while the service still deletes it (PENDING). See kanban 101026154020.
   const mayDelete = !isPortal && canDeleteSettlementNow(user?.role, s.status);
@@ -326,11 +348,13 @@ export default function SettlementPrintPage() {
               status={s.status}
               maySignOff={maySignOff}
               mayDelete={mayDelete}
+              mayReopen={mayReopen}
               busy={{
                 approving: approvingSettlement,
                 rejecting: rejectingSettlement,
                 deleting,
                 saving: savingSettlement,
+                reopening: reopeningSettlement,
               }}
               onBack={handleBack}
               onPreview={() => setShowPreview(true)}
@@ -342,6 +366,7 @@ export default function SettlementPrintPage() {
               }}
               onApprove={() => void handleApproveSettlement()}
               onReject={() => void handleRejectSettlement()}
+              onReopen={() => void handleReopenSettlement()}
               onDelete={() => void handleDelete()}
             />
           }

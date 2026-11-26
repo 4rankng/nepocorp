@@ -6,7 +6,7 @@ import { asyncHandler } from '../../middleware/asyncHandler';
 import { getUser } from '../../middleware/auth';
 import { getAdvanceSettlement } from '../../services/advance.service';
 import { exportSettlementXlsx, exportSettlementHtml } from '../../services/settlement-export.service';
-import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, restoreAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, deleteAdvanceSettlement, getOutstandingAdvanceBalances, adjustSettlementExpense, updateAdvanceSettlement } from '../../services/advance.service';
+import { listAdvanceRequests, approveAdvanceRequest, rejectAdvanceRequest, restoreAdvanceRequest, listAdvanceSettlements, checkAdvanceSettlement, approveAdvanceSettlement, rejectAdvanceSettlement, reopenAdvanceSettlement, deleteAdvanceSettlement, getOutstandingAdvanceBalances, adjustSettlementExpense, updateAdvanceSettlement } from '../../services/advance.service';
 import { throwValidation } from '../../lib/validation';
 import { formatLocalDate } from '../../lib/format';
 
@@ -83,6 +83,12 @@ router.post('/advance-settlements/:id/approve', requireRoles(Role.ADMIN, Role.MA
 router.post('/advance-settlements/:id/reject', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id as string);
   const result = await rejectAdvanceSettlement(id, getUser(req).userId);
+  res.json(result);
+}));
+
+router.post('/advance-settlements/:id/reopen', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const result = await reopenAdvanceSettlement(id, getUser(req).userId);
   res.json(result);
 }));
 

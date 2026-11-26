@@ -1,4 +1,4 @@
-import { ArrowLeft, Printer, FileSpreadsheet, CheckCircle2, XCircle, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Printer, FileSpreadsheet, CheckCircle2, XCircle, Trash2, Loader2, Undo2 } from 'lucide-react';
 import { ADVANCE_SETTLEMENT_STATUS_LABELS, type AdvanceSettlementStatus } from '@tingting/shared';
 import { StatusPill } from '../components/UI';
 import { advanceSettlementStatusVariant } from '../lib/status-variants';
@@ -21,27 +21,31 @@ export function SettlementHeaderActions({
   status,
   maySignOff,
   mayDelete,
+  mayReopen,
   busy,
   onBack,
   onPreview,
   onExport,
   onApprove,
   onReject,
+  onReopen,
   onDelete,
 }: {
   code: string;
   status: AdvanceSettlementStatus;
   maySignOff: boolean;
   mayDelete: boolean;
-  busy: { approving: boolean; rejecting: boolean; deleting: boolean; saving: boolean };
+  mayReopen: boolean;
+  busy: { approving: boolean; rejecting: boolean; deleting: boolean; saving: boolean; reopening: boolean };
   onBack: () => void;
   onPreview: () => void;
   onExport: () => void;
   onApprove: () => void;
   onReject: () => void;
+  onReopen: () => void;
   onDelete: () => void;
 }) {
-  const signOffBusy = busy.approving || busy.rejecting;
+  const signOffBusy = busy.approving || busy.rejecting || busy.reopening;
 
   return (
     <div className="settlement-detail__header-actions">
@@ -61,8 +65,18 @@ export function SettlementHeaderActions({
         </button>
       </div>
 
-      {(maySignOff || mayDelete) && (
+      {(maySignOff || mayDelete || mayReopen) && (
         <div className="settlement-detail__header-decisions">
+          {mayReopen && (
+            <button
+              className="btn btn--secondary btn--sm"
+              disabled={signOffBusy}
+              onClick={onReopen}
+              title="Đưa phiếu về trạng thái chờ ký để sửa chi phí; bút toán thanh toán tạm ứng được đảo bằng entry đối ứng"
+            >
+              {busy.reopening ? <Loader2 size={14} className="spin" /> : <Undo2 size={14} />} Mở lại phiếu
+            </button>
+          )}
           {maySignOff && (
             <button
               className="btn btn--danger btn--sm"
