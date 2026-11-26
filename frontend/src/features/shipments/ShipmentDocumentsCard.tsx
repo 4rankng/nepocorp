@@ -11,7 +11,7 @@ import type { Role, ShipmentDocument } from '@tingting/shared';
 import { useToast } from '../../components/shared/Toast';
 import { downloadBlob } from '../../lib/download';
 import { formatErrorMessage } from '../../lib/api';
-import { formatDate, formatDateTimeVN } from '../../lib/format';
+import { formatDateTimeVN } from '../../lib/format';
 import {
   useDeleteShipmentDocument,
   useUploadShipmentDocument,

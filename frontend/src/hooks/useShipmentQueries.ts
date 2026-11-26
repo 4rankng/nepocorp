@@ -46,7 +46,7 @@ function useInvalidateShipment() {
       qc.invalidateQueries({ queryKey: qk.shipments.costRegister(id) });
     }
     // Lô writes can move totals surfaced elsewhere (dashboard ops alerts).
-    qc.invalidateQueries({ queryKey: ['dashboard'] });
+    qc.invalidateQueries({ queryKey: qk.dashboard.main });
   };
 }
 
@@ -116,7 +116,7 @@ export function useLinkTripShipment() {
     mutationFn: ({ tripId, shipmentId }: { tripId: number; shipmentId: number | null }) =>
       shipmentClient.linkTrip(tripId, { shipmentId }),
     onSuccess: (_data, vars) => {
-      qc.invalidateQueries({ queryKey: ['trips'] });
+      qc.invalidateQueries({ queryKey: qk.trips.all });
       if (vars.shipmentId != null) invalidate(vars.shipmentId);
     },
   });

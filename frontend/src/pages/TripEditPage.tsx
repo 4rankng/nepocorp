@@ -47,7 +47,7 @@ export default function TripEditPage() {
 
   // Lô biển đang mở (NEPO-63) — select gắn chuyến vào lô trên trang sửa.
   const { data: shipmentOptions } = useQuery({
-    queryKey: ['shipments', 'options'],
+    queryKey: qk.shipments.options,
     queryFn: () => shipmentClient.list({ pageSize: 300 }),
     staleTime: 2 * 60 * 1000,
   });

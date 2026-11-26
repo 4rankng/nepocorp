@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Save, X } from 'lucide-react';
 import { TripFlowType } from '@tingting/shared';
-import type { Role, Shipment, ShipmentDetail } from '@tingting/shared';
+import type { Shipment, ShipmentDetail } from '@tingting/shared';
 import { Modal } from '../../components/UI';
 import { SearchableSelect } from '../../design-system';
 import { useToast } from '../../components/shared/Toast';
@@ -18,7 +18,6 @@ import {
   useCreateShipment,
   useUpdateShipment,
 } from '../../hooks/useShipmentQueries';
-import { canWriteShipments } from './shipmentDisplay';
 import './ShipmentFormModal.css';
 
 interface Props {
@@ -67,8 +66,6 @@ function formFromShipment(s: Shipment | null): FormState {
     notes: s?.notes ?? '',
   };
 }
-
-const EMPTY_FORM: FormState = formFromShipment(null);
 
 const FLOW_TYPE_OPTIONS = [
   { value: TripFlowType.XUAT, label: 'Hàng xuất' },

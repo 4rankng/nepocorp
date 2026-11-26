@@ -265,6 +265,8 @@ export const qk = {
   shipments: {
     list: (params?: { search?: string; customerId?: number; page?: number; pageSize?: number }) =>
       ['shipments', params ?? {}] as const,
+    /** Open shipments dropdown options (trip create/edit forms). */
+    options: ['shipments', 'options'] as const,
     /** Broad prefix — mutations invalidate every shipment list variant. */
     all: ['shipments'] as const,
     /** Normalize id like trips.detail so URL-string ids match numeric refreshes. */
