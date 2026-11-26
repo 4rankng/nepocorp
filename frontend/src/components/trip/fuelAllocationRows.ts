@@ -4,8 +4,17 @@ import { createDefaultFuelAllocations, type FuelAllocationFormRow } from '../../
 /** Same shape the catalogs bootstrap endpoint returns for suppliers. */
 type CatalogSuppliers = Array<Pick<Supplier, 'id' | 'name' | 'shortName' | 'status' | 'isFuelSupplier'>>;
 
-export function fuelSupplierLabel(supplier: Pick<Supplier, 'name' | 'shortName'> | undefined): string {
-  return supplier?.shortName ?? supplier?.name ?? 'Nhà cung cấp đã lưu';
+/**
+ * Allocation rows read exactly what the saved record carries: the legal
+ * supplier name, which is also what the backend returns on every allocation
+ * row (GET /trips/:id `supplierName`) and prints on the fuel voucher.
+ * shortName is an operational label and may diverge from the record (NEPO-76:
+ * the demo supplier "Kim Lộc" carried shortName "Đông Đạt", so rows showed a
+ * counterparty no purchase was saved against) — it must never override the
+ * name on an allocation row.
+ */
+export function fuelSupplierLabel(supplier: Pick<Supplier, 'name'> | undefined): string {
+  return supplier?.name ?? 'Nhà cung cấp đã lưu';
 }
 
 /**

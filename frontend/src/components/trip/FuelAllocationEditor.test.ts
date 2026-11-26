@@ -20,9 +20,12 @@ describe('normalizeFuelAllocationRows', () => {
     expect(activeFuelSuppliers(fromBootstrap)).toEqual(suppliers);
   });
 
-  it('uses the configured short name for operational fuel labels and falls back to the legal name', () => {
-    expect(fuelSupplierLabel(suppliers[0])).toBe('Petrolimex');
+  it('labels rows with the legal name the record carries, never the short name', () => {
+    // NEPO-76: a short name that diverges from the record (demo supplier
+    // "Kim Lộc" carried shortName "Đông Đạt") must not rename the row.
+    expect(fuelSupplierLabel(suppliers[0])).toBe('Petrolimex Mộc Châu');
     expect(fuelSupplierLabel(suppliers[1])).toBe('Long Hưng');
+    expect(fuelSupplierLabel(undefined)).toBe('Nhà cung cấp đã lưu');
   });
 
   it('renders every active fuel supplier and the cash row by default', () => {
