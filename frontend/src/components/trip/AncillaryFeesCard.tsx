@@ -318,7 +318,6 @@ export function AncillaryFeesCard({ tripId, readOnly = false, hideAddButton = fa
                                 <div
                                   className="fee-action-container"
                                   ref={activeActionId === fee.id ? actionMenuRef : null}
-                                  style={{ marginLeft: 6 }}
                                 >
                                   <button
                                     type="button"
