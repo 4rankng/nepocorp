@@ -441,7 +441,11 @@
 }
 @keyframes tcCardIn {
   from { opacity: 0; transform: translateY(6px) scale(0.992); }
-  to   { opacity: 1; transform: translateY(0)   scale(1);     }
+  /* transform:none (not translateY(0) scale(1)) — with fill-mode:both a
+     non-none endpoint keeps a transform on every card forever, a permanent
+     stacking context that lets later cards paint over a row's open ⋯
+     dropdown. */
+  to   { opacity: 1; transform: none; }
 }
 .tc-bento > .tc-card:nth-child(1)  { animation-delay: 0.00s; }
 .tc-bento > .tc-card:nth-child(2)  { animation-delay: 0.05s; }

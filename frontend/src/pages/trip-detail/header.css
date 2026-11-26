@@ -30,6 +30,11 @@
 
 .td-page-head {
   position: relative;
+  /* The header and its ⋯ overflow menu must paint above the animated columns
+     that follow — .trip-body/.anim run a transform entrance that creates a
+     stacking context on every visit; without a z-index here the KPI rail
+     covered the open menu (NEPO-72 follow-up). */
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
