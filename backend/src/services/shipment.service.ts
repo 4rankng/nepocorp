@@ -37,6 +37,8 @@ import type {
   ShipmentDocument,
   ShipmentProfitSummary,
   LotCostRegister,
+  LotSupplierFeeSummary,
+  LotSupplierFeeEntry,
   LotCostRow,
   LotCostGroup,
   TruckTransferCostRow,
@@ -120,6 +122,15 @@ async function assertShipmentExists(id: number): Promise<void> {
   const [row] = await db.select({ id: s.shipments.id })
     .from(s.shipments).where(eq(s.shipments.id, id)).limit(1);
   if (!row) throw new ApiError(404, 'Không tìm thấy lô hàng');
+}
+
+/** Phải trả attribution — the fee's NCC must be a live, active supplier. */
+async function assertSupplierUsable(supplierId: number): Promise<void> {
+  const [row] = await db.select({ id: s.suppliers.id })
+    .from(s.suppliers)
+    .where(and(eq(s.suppliers.id, supplierId), isNull(s.suppliers.deletedAt), eq(s.suppliers.status, 'ACTIVE')))
+    .limit(1);
+  if (!row) throw new ApiError(400, 'Nhà cung cấp không tồn tại hoặc đã ngừng hoạt động');
 }
 
 export async function listShipments(filters: {
@@ -514,12 +525,14 @@ export function deriveCostAmountVnd(input: {
 
 export async function addShipmentCost(shipmentId: number, input: ShipmentCostInput, userId: number | null): Promise<ShipmentCost> {
   await assertShipmentExists(shipmentId);
+  if (input.supplierId != null) await assertSupplierUsable(input.supplierId);
   const [row] = await db.insert(s.shipmentCosts).values({
     shipmentId,
     costType: input.costType,
     direction: input.direction ?? 'SUPPLIER',
     serviceMode: input.serviceMode ?? 'SERVICE',
     description: input.description,
+    supplierId: input.supplierId ?? null,
     currency: input.currency ?? 'VND',
     fxAmount: input.currency === 'USD' ? String(input.fxAmount) : null,
     exchangeRate: input.currency === 'USD' ? String(input.exchangeRate) : null,
@@ -539,6 +552,9 @@ export async function updateShipmentCost(shipmentId: number, costId: number, inp
     .limit(1);
   if (!current) throw new ApiError(404, 'Không tìm thấy chi phí');
   await assertCostNotOnDebitNote(costId);
+  if (input.supplierId !== undefined && input.supplierId !== null) {
+    await assertSupplierUsable(input.supplierId);
+  }
   const merged = {
     currency: (input.currency ?? current.currency) as 'VND' | 'USD',
     fxAmount: input.fxAmount !== undefined ? input.fxAmount : (current.fxAmount != null ? Number(current.fxAmount) : null),
@@ -557,6 +573,7 @@ export async function updateShipmentCost(shipmentId: number, costId: number, inp
   if (input.vatRate !== undefined) set.vatRate = String(input.vatRate);
   if (input.awaitingInvoice !== undefined) set.awaitingInvoice = input.awaitingInvoice;
   if (input.incurredDate !== undefined) set.incurredDate = input.incurredDate;
+  if (input.supplierId !== undefined) set.supplierId = input.supplierId;
   if (input.note !== undefined) set.note = input.note ?? null;
   const [row] = await db.update(s.shipmentCosts).set(set)
     .where(eq(s.shipmentCosts.id, costId)).returning();
@@ -641,7 +658,8 @@ export async function getLotCostRegister(shipmentId: number, role?: Role | null)
   const costRowsResult = await db.execute(sql`
     select sc.id, sc.cost_type, sc.direction, sc.service_mode, sc.description,
            sc.currency, sc.fx_amount, sc.exchange_rate, sc.amount, sc.vat_rate,
-           sc.awaiting_invoice, sc.incurred_date, sc.note,
+           sc.awaiting_invoice, sc.incurred_date, sc.note, sc.supplier_id,
+           sup.name as supplier_name,
            exists (
              select 1 from billing_document_lines bdl
              join billing_documents bd on bd.id = bdl.document_id
@@ -651,6 +669,7 @@ export async function getLotCostRegister(shipmentId: number, role?: Role | null)
                and bd.deleted_at is null
            ) as on_debit_note
     from shipment_costs sc
+    left join suppliers sup on sup.id = sc.supplier_id
     where sc.shipment_id = ${shipmentId}
     order by sc.incurred_date, sc.id
   `);
@@ -658,7 +677,7 @@ export async function getLotCostRegister(shipmentId: number, role?: Role | null)
     id: number; cost_type: string; direction: string; service_mode: string;
     description: string; currency: string; fx_amount: string | null; exchange_rate: string | null;
     amount: string; vat_rate: string; awaiting_invoice: boolean; incurred_date: string;
-    note: string | null; on_debit_note: boolean;
+    note: string | null; supplier_id: number | null; supplier_name: string | null; on_debit_note: boolean;
   }>).map((row) => ({
     id: Number(row.id),
     costType: row.cost_type,
@@ -668,11 +687,13 @@ export async function getLotCostRegister(shipmentId: number, role?: Role | null)
     currency: row.currency,
     fxAmount: row.fx_amount,
     exchangeRate: row.exchange_rate,
-    amount: row.amount,
+    amount: Number(row.amount),
     vatRate: row.vat_rate,
     awaitingInvoice: Boolean(row.awaiting_invoice),
     incurredDate: String(row.incurred_date),
     note: row.note,
+    supplierId: row.supplier_id != null ? Number(row.supplier_id) : null,
+    supplierName: row.supplier_name ?? null,
     onDebitNote: Boolean(row.on_debit_note),
   }));
 
@@ -710,6 +731,8 @@ export async function getLotCostRegister(shipmentId: number, role?: Role | null)
       awaitingInvoice: cost.awaitingInvoice,
       incurredDate: String(cost.incurredDate),
       note: cost.note,
+      supplierId: cost.supplierId,
+      supplierName: cost.supplierName,
     };
   });
 
@@ -750,6 +773,56 @@ export async function getLotCostRegister(shipmentId: number, role?: Role | null)
         .reduce((sum, row) => sum + row.amount, 0),
     },
   };
+}
+
+/**
+ * NEPO-68 đối soát — Phải trả surface: every Trả-NCC fee of a live lô,
+ * grouped by the supplier it is owed to (rows without an attribution land in
+ * the supplierId=null "chưa gắn NCC" entry). Read model only — nothing here
+ * posts to the vendor ledger; accruals stay in the expense flow.
+ */
+export async function getLotSupplierFeeSummary(): Promise<LotSupplierFeeSummary> {
+  const rows = await db.select({
+    supplierId: s.shipmentCosts.supplierId,
+    supplierName: s.suppliers.name,
+    amount: s.shipmentCosts.amount,
+    shipmentId: s.shipmentCosts.shipmentId,
+  }).from(s.shipmentCosts)
+    .innerJoin(s.shipments, eq(s.shipmentCosts.shipmentId, s.shipments.id))
+    .leftJoin(s.suppliers, eq(s.shipmentCosts.supplierId, s.suppliers.id))
+    .where(and(
+      eq(s.shipmentCosts.direction, 'SUPPLIER'),
+      isNull(s.shipments.deletedAt),
+    ));
+
+  const byKey = new Map<string, { supplierId: number | null; supplierName: string | null; feeCount: number; lotIds: Set<number>; total: number }>();
+  let total = 0;
+  let unattributedTotal = 0;
+  for (const row of rows) {
+    const amount = Number(row.amount);
+    total += amount;
+    const key = row.supplierId != null ? `s${row.supplierId}` : 'unattributed';
+    let entry = byKey.get(key);
+    if (!entry) {
+      entry = { supplierId: row.supplierId, supplierName: row.supplierName, feeCount: 0, lotIds: new Set(), total: 0 };
+      byKey.set(key, entry);
+    }
+    entry.feeCount += 1;
+    entry.lotIds.add(row.shipmentId);
+    entry.total += amount;
+    if (row.supplierId == null) unattributedTotal += amount;
+  }
+
+  const entries: LotSupplierFeeEntry[] = [...byKey.entries()]
+    .map(([key, e]) => ({
+      supplierId: e.supplierId,
+      supplierName: e.supplierName ?? (e.supplierId == null ? null : `NCC #${e.supplierId}`),
+      feeCount: e.feeCount,
+      lotCount: e.lotIds.size,
+      total: Math.round(e.total),
+    }))
+    .sort((a, b) => b.total - a.total);
+  return { entries, total: Math.round(total), unattributedTotal: Math.round(unattributedTotal) };
 }
 
 export type { LinkTripShipmentInput };

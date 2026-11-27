@@ -304,6 +304,8 @@ export const qk = {
     payablesSummary: (category: string | undefined) => ['payables-summary', category ?? 'all'] as const,
     /** Broad prefix — matches all payablesSummary queries regardless of category. */
     payablesSummaryAll: ['payables-summary'] as const,
+    /** NEPO-68 đối soát — lot fees owed to suppliers, grouped by NCC. */
+    lotSupplierFees: ['lot-supplier-fees'] as const,
     /** See `customerStatement` — AP mirror, keyed by supplier id + range. */
     supplierStatement: (
       supplierId: number | undefined,

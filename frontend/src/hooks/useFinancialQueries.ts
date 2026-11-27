@@ -59,6 +59,15 @@ export function usePayablesSummary(category?: PayablesCategory) {
   });
 }
 
+/** NEPO-68 đối soát — lot fees owed to suppliers, grouped by NCC (read model). */
+export function useLotSupplierFees() {
+  return useQuery({
+    queryKey: qk.financial.lotSupplierFees,
+    queryFn: () => financialClient.getLotSupplierFees(),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
 /** Invalidate every cached payables-summary query, regardless of category. */
 export function useInvalidatePayablesSummary() {
   const qc = useQueryClient();

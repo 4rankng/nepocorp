@@ -7,6 +7,7 @@ import { getUser } from '../../middleware/auth';
 import { getDashboardStats, getPnlReport, distributeProfit, getReceivablesSummary, previewDistribution, getDistributionHistory } from '../../services/reporting.service';
 import { getFuelVarianceReport } from '../../services/pnl.service';
 import { getShipmentProfitReport } from '../../services/shipment-profit.service';
+import { getLotSupplierFeeSummary } from '../../services/shipment.service';
 import { getCustomerAgingList } from '../../services/receivables.service';
 import { getApprovalQueue } from '../../services/approval-queue.service';
 import { getOcrUsageStatus } from '../../services/ocr-usage.service';
@@ -75,6 +76,13 @@ router.get('/reports/shipment-profit', requireRoles(Role.ADMIN, Role.MANAGER, Ro
     return res.status(400).json({ error: 'Kỳ báo không hợp lệ' });
   }
   res.json(await getShipmentProfitReport(month, year));
+}));
+
+// NEPO-68 đối soát — Phải trả surface: lot fees owed to suppliers, grouped by
+// the supplier (unattributed rows land in the null bucket). Read model only —
+// no ledger posting; accruals stay in the expense flow. Financial roles only.
+router.get('/reports/lot-supplier-fees', requireRoles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTANT), asyncHandler(async (_req: Request, res: Response) => {
+  res.json(await getLotSupplierFeeSummary());
 }));
 
 // ─── Receivables summary ──────────────────────────────────────────────────────

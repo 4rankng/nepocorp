@@ -1174,6 +1174,8 @@ export interface ShipmentCost {
   /** Local YYYY-MM-DD. */
   incurredDate: string;
   note: string | null;
+  /** Phải trả attribution — NCC mà dòng Trả NCC này đang nợ (đối soát). */
+  supplierId: number | null;
   createdBy: number | null;
   createdAt: string;
   updatedAt: string;
@@ -1703,6 +1705,26 @@ export interface LotCostRow {
   awaitingInvoice: boolean;
   incurredDate: string;
   note: string | null;
+  /** Phải trả attribution — NCC này đang nợ (đối soát); null = chưa gắn NCC. */
+  supplierId: number | null;
+  supplierName: string | null;
+}
+
+/** NEPO-68 đối soát — Phải trả surface: lot fees owed to suppliers, grouped
+ *  by supplier. Reconciliation visibility only — these rows never post to the
+ *  vendor ledger from this link (accruals stay in the expense flow). */
+export interface LotSupplierFeeEntry {
+  supplierId: number | null;
+  supplierName: string | null;
+  feeCount: number;
+  lotCount: number;
+  total: number;
+}
+
+export interface LotSupplierFeeSummary {
+  entries: LotSupplierFeeEntry[];
+  total: number;
+  unattributedTotal: number;
 }
 
 export interface LotCostGroup {

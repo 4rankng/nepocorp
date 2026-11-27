@@ -62,6 +62,7 @@ export type {
   OpsToday, ShipmentOpsAlert, ShipmentProfitReport, ShipmentProfitReportRow,
   ShipmentDetail, ShipmentTripRow, ShipmentBillingDocSummary,
   ShipmentInfo, LotCostRow, LotCostGroup, TruckTransferCostRow, LotCostRegister,
+  LotSupplierFeeEntry, LotSupplierFeeSummary,
   CustomerMonthlySoa, CustomerMonthlySoaRow, CustomerMonthlySoaCell,
   LiveFleetVehicle, LiveFleetResponse, LiveFleetStatus, LiveFleetDetails, LiveFleetLeg,
   GpsStop,

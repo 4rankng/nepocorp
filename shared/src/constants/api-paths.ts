@@ -195,6 +195,7 @@ export const REPORTS = {
   DASHBOARD: '/reports/dashboard',
   PNL: '/reports/pnl',
   SHIPMENT_PROFIT: '/reports/shipment-profit',
+  LOT_SUPPLIER_FEES: '/reports/lot-supplier-fees',
   RECEIVABLES_SUMMARY: '/reports/receivables-summary',
   RECEIVABLES_AGING: '/reports/receivables-aging',
   PAYABLES_SUMMARY: '/reports/payables-summary',

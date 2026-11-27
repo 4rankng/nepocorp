@@ -989,6 +989,10 @@ export const shipmentCosts = pgTable('shipment_costs', {
   direction: varchar('direction', { length: 10 }).notNull().default('SUPPLIER'),  // CUSTOMER | SUPPLIER
   serviceMode: varchar('service_mode', { length: 10 }).notNull().default('SERVICE'), // SERVICE | ADVANCE
   description: varchar('description', { length: 500 }).notNull(),
+  // Phải trả attribution (NEPO-68 đối soát): which supplier the fee is owed
+  // to. Nullable — rows without it stay in the "chưa gắn NCC" bucket on the
+  // payables surface. No ledger posting happens from this link alone.
+  supplierId: integer('supplier_id').references(() => suppliers.id),
   currency: varchar('currency', { length: 3 }).notNull().default('VND'),
   fxAmount: numeric('fx_amount', { precision: 18, scale: 2 }),
   exchangeRate: numeric('exchange_rate', { precision: 18, scale: 4 }),
@@ -1002,6 +1006,7 @@ export const shipmentCosts = pgTable('shipment_costs', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('shipment_costs_shipment_idx').on(table.shipmentId),
+  index('shipment_costs_supplier_idx').on(table.supplierId),
   check('shipment_costs_direction_check', sql`${table.direction} IN ('CUSTOMER', 'SUPPLIER')`),
   check('shipment_costs_service_mode_check', sql`${table.serviceMode} IN ('SERVICE', 'ADVANCE')`),
   check('shipment_costs_currency_check', sql`${table.currency} IN ('VND', 'USD')`),

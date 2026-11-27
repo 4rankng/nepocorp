@@ -18,6 +18,7 @@ import type {
   BillingDocumentType,
   SaveBillingDocumentInput,
   GenerateBillingDocumentInput,
+  LotSupplierFeeSummary,
 } from '@tingting/shared';
 
 export interface CustomerAging {
@@ -103,6 +104,10 @@ export const financialClient = {
       overdueSuppliers: number;
       categoryCounts?: Record<PayablesCategory, number>;
     }>(`${REPORTS.PAYABLES_SUMMARY}${toQuery({ category })}`),
+
+  // NEPO-68 đối soát — lot fees owed to suppliers, grouped by NCC (read model).
+  getLotSupplierFees: () =>
+    api.get<LotSupplierFeeSummary>(REPORTS.LOT_SUPPLIER_FEES),
 
   postCommission: (data: { supplierId: number; amount: number; tripId?: number; note?: string }) =>
     api.post<{ ok: true }>(FINANCIAL.COMMISSIONS, data),

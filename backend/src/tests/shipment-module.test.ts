@@ -8,10 +8,12 @@ import {
   addShipmentCost,
   createShipment,
   getLotCostRegister,
+  getLotSupplierFeeSummary,
   getShipmentById,
   getShipmentDetail,
   listShipments,
   updateShipment,
+  updateShipmentCost,
 } from '../services/shipment.service';
 import { setTripShipment } from '../services/trip-mutations.service';
 import { getTripById } from '../services/trip-queries.service';
@@ -28,6 +30,7 @@ import { disconnectRedis } from '../lib/redis';
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const createdShipmentIds: number[] = [];
+const createdSupplierIds: number[] = [];
 const createdCustomerIds: number[] = [];
 const createdTripIds: number[] = [];
 const testStartedAt = new Date(Date.now() - 5_000);
@@ -80,6 +83,11 @@ after(async () => {
   }
   if (createdCustomerIds.length > 0) {
     await db.delete(s.customers).where(inArray(s.customers.id, createdCustomerIds));
+  }
+  if (createdSupplierIds.length > 0) {
+    await db.update(s.shipmentCosts).set({ supplierId: null })
+      .where(inArray(s.shipmentCosts.supplierId, createdSupplierIds));
+    await db.delete(s.suppliers).where(inArray(s.suppliers.id, createdSupplierIds));
   }
   await db.delete(s.auditLogs).where(gte(s.auditLogs.createdAt, testStartedAt));
   await db.delete(s.users).where(or(
@@ -275,6 +283,61 @@ describe('NEPO-61 lô profit rollup', () => {
     const advanceGroup = register.groups.find((g) => g.group === FeeGroup.LINE_ADVANCE);
     assert.equal(advanceGroup?.rows.length, 1, 'nộp hộ row still listed');
     assert.equal(advanceGroup?.payTotal, 2_000_000);
+  });
+});
+
+describe('NEPO-68 đối soát — Phải trả attribution', () => {
+  test('cost rows carry the supplier; unknown supplier rejected; summary groups by NCC', async () => {
+    const [supplier] = await db.insert(s.suppliers).values({
+      name: `NCC đối soát ${Date.now()}`, status: 'ACTIVE',
+    }).returning({ id: s.suppliers.id });
+    createdSupplierIds.push(supplier.id);
+
+    const mct = await seedCustomer('Mộc Trà phải trả', 'MPTR');
+    const shipment = await createShipment({ customerId: mct.id }, null);
+    createdShipmentIds.push(shipment.id);
+
+    const fee = await addShipmentCost(shipment.id, {
+      costType: FeeGroup.LINE_ADVANCE, direction: 'SUPPLIER', serviceMode: 'ADVANCE',
+      description: 'Nộp hộ hãng tàu (gắn NCC)', currency: 'VND', amount: 2_000_000,
+      vatRate: 0.08, awaitingInvoice: false, incurredDate: '2026-11-20',
+      supplierId: supplier.id,
+    }, null);
+    assert.equal(fee.supplierId, supplier.id);
+
+    const unattributed = await addShipmentCost(shipment.id, {
+      costType: FeeGroup.LIFTING, direction: 'SUPPLIER', serviceMode: 'SERVICE',
+      description: 'Nâng hạ chưa gắn NCC', currency: 'VND', amount: 300_000,
+      vatRate: 0.08, awaitingInvoice: false, incurredDate: '2026-11-20',
+    }, null);
+    assert.equal(unattributed.supplierId, null);
+
+    await assert.rejects(
+      () => addShipmentCost(shipment.id, {
+        costType: FeeGroup.OTHER, direction: 'SUPPLIER', serviceMode: 'SERVICE',
+        description: 'NCC ma', currency: 'VND', amount: 1,
+        vatRate: 0, awaitingInvoice: false, incurredDate: '2026-11-20',
+        supplierId: 99_999_999,
+      }, null),
+      (error: unknown) => error instanceof ApiError && error.statusCode === 400,
+    );
+
+    const register = await getLotCostRegister(shipment.id);
+    const advanceRow = register.groups.find((g) => g.group === FeeGroup.LINE_ADVANCE)?.rows[0];
+    assert.equal(advanceRow?.supplierId, supplier.id);
+    assert.match(advanceRow?.supplierName ?? '', /NCC đối soát/);
+
+    const summary = await getLotSupplierFeeSummary();
+    const attributed = summary.entries.find((e) => e.supplierId === supplier.id);
+    assert.ok(attributed, 'attributed supplier appears on the payables surface');
+    assert.equal(attributed.total, 2_000_000);
+    assert.equal(attributed.lotCount, 1);
+    assert.ok(summary.unattributedTotal >= 300_000, 'unattributed bucket holds the fee without NCC');
+    assert.equal(summary.total >= summary.unattributedTotal, true);
+
+    // Clearing the attribution via PUT (undefined keeps, null clears).
+    const cleared = await updateShipmentCost(shipment.id, fee.id, { supplierId: null });
+    assert.equal(cleared.supplierId, null);
   });
 });
 

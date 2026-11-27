@@ -17,6 +17,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Download, FileText, PencilLine, Plus, Receipt, Send, Trash2 } from 'lucide-react';
 import {
   FeeGroup,
+  Role,
   FEE_GROUP_LABELS,
   LOT_FEE_STATUS_LABELS,
   SHIPMENT_DOC_TYPE_LABELS,
@@ -32,7 +33,10 @@ import type {
   ShipmentCost,
   ShipmentDetail,
 } from '@tingting/shared';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
+import { useCatalogs } from '../hooks/useCatalogs';
+import { forwarderClient } from '../api/forwarderClient';
 import {
   useAddShipmentCost,
   useDeleteShipmentCost,
@@ -97,6 +101,7 @@ const EMPTY_COST_FORM = {
   awaitingInvoice: false,
   incurredDate: new Date().toISOString().slice(0, 10),
   note: '',
+  supplierId: '' as string,
 };
 
 type CostForm = typeof EMPTY_COST_FORM;
@@ -138,6 +143,25 @@ export default function ShipmentDetailPage() {
   const [costForm, setCostForm] = useState<CostForm>(EMPTY_COST_FORM);
   const [editingCostId, setEditingCostId] = useState<number | null>(null);
   const [formError, setFormError] = useState('');
+  // Phải trả attribution picker: catalogs bootstrap covers office roles; the
+  // FORWARDER portal reads its own trimmed supplier list (no catalogs access).
+  const isForwarder = user?.role === Role.FORWARDER;
+  const { data: catalogData } = useCatalogs();
+  const { data: forwarderSuppliers } = useQuery({
+    queryKey: qk.forwarder.suppliers,
+    queryFn: () => forwarderClient.listSuppliers(),
+    enabled: isForwarder && costFormOpen && costForm.direction === 'SUPPLIER',
+    staleTime: 5 * 60 * 1000,
+  });
+  const costSupplierOptions = useMemo(() => {
+    if (isForwarder) {
+      const items = forwarderSuppliers?.items ?? [];
+      return items.map((s) => ({ id: s.id, name: s.name }));
+    }
+    return (catalogData?.suppliers ?? [])
+      .filter((s) => s.status === 'ACTIVE')
+      .map((s) => ({ id: s.id, name: s.shortName || s.name }));
+  }, [isForwarder, forwarderSuppliers, catalogData]);
   // NEPO-61 — chứng từ upload type (B/L, C/O, Kiểm dịch, Hun trùng…), not hardcoded OTHER.
   const [uploadDocType, setUploadDocType] = useState<ShipmentDocType>(ShipmentDocType.OTHER);
 
@@ -179,6 +203,7 @@ export default function ShipmentDetailPage() {
       awaitingInvoice: row.awaitingInvoice,
       incurredDate: row.incurredDate,
       note: row.note ?? '',
+      supplierId: row.supplierId != null ? String(row.supplierId) : '',
     });
     setEditingCostId(row.id);
     setFormError('');
@@ -219,6 +244,8 @@ export default function ShipmentDetailPage() {
       awaitingInvoice: costForm.awaitingInvoice,
       incurredDate: costForm.incurredDate,
       note: costForm.note.trim() || null,
+      // Phải trả attribution — chỉ dòng Trả NCC mới gắn NCC.
+      supplierId: costForm.direction === 'SUPPLIER' && costForm.supplierId ? Number(costForm.supplierId) : null,
     };
     try {
       if (editingCostId != null) {
@@ -472,6 +499,7 @@ export default function ShipmentDetailPage() {
                             <span className="lot-register__fx">
                               {formatDate(row.incurredDate)}
                               {row.note ? ` — ${row.note}` : ''}
+                              {row.direction === 'SUPPLIER' && row.supplierName ? ` — NCC: ${row.supplierName}` : ''}
                             </span>
                           </td>
                           <td>
@@ -795,6 +823,21 @@ export default function ShipmentDetailPage() {
                 <option value="ADVANCE">Nộp hộ</option>
               </select>
             </label>
+            {costForm.direction === 'SUPPLIER' && (
+              <label className="lot-cost-form__field">
+                <span className="lot-cost-form__label">Nhà cung cấp (đối soát)</span>
+                <select
+                  className="input"
+                  value={costForm.supplierId}
+                  onChange={(e) => setCostForm((f) => ({ ...f, supplierId: e.target.value }))}
+                >
+                  <option value="">— Chưa gắn NCC —</option>
+                  {costSupplierOptions.map((s) => (
+                    <option key={s.id} value={String(s.id)}>{s.name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="lot-cost-form__field">
               <span className="lot-cost-form__label">Ngày phát sinh</span>
               <input

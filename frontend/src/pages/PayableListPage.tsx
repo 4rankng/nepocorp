@@ -6,7 +6,7 @@ import { Search, Gift, ChevronDown } from 'lucide-react';
 import { PageHeader, Modal } from '../components/UI';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import { AnchoredDropdown } from '../components/shared/AnchoredDropdown';
-import { usePayablesSummary, usePostCommission } from '../hooks/useQueries';
+import { usePayablesSummary, usePostCommission, useLotSupplierFees } from '../hooks/useQueries';
 import { useCatalogs } from '../hooks/useCatalogs';
 import { useAuth } from '../hooks/useAuth';
 import { usePageAnimations } from '../hooks/animations';
@@ -451,6 +451,56 @@ export default function PayableListPage() {
         isPending={postCommission.isPending}
         error={commissionError}
       />
+
+      {/* ── NEPO-68 đối soát — lot fees owed to suppliers (read model, not ledger debt) ── */}
+      <LotFeesSection />
+    </div>
+  );
+}
+
+function LotFeesSection() {
+  const { data, isLoading } = useLotSupplierFees();
+  if (isLoading || !data || data.total === 0) return null;
+  return (
+    <div className="payables-data-card" style={{ marginTop: 16 }}>
+      <h2 style={{ margin: '0 0 4px', fontSize: 'var(--fs-body)', fontWeight: 700 }}>
+        Chi phí lô chưa lên sổ NCC
+        <span style={{ marginLeft: 8, fontWeight: 400, color: 'var(--fg-3)', fontSize: 'var(--fs-xs)' }}>
+          đối soát — chưa tính vào công nợ nhà cung cấp bên trên
+        </span>
+      </h2>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-body)' }}>
+          <thead>
+            <tr style={{ textAlign: 'left', color: 'var(--fg-3)', borderBottom: '1px solid var(--border-2)' }}>
+              <th style={{ padding: '8px 10px' }}>Nhà cung cấp</th>
+              <th style={{ padding: '8px 10px', textAlign: 'right' }}>Số dòng phí</th>
+              <th style={{ padding: '8px 10px', textAlign: 'right' }}>Số lô</th>
+              <th style={{ padding: '8px 10px', textAlign: 'right' }}>Tổng tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.entries.map((entry) => (
+              <tr key={entry.supplierId ?? 'unattributed'} style={{ borderBottom: '1px solid var(--border-1)' }}>
+                <td style={{ padding: '8px 10px' }}>
+                  {entry.supplierName ?? <span style={{ color: 'var(--warning)' }}>Chưa gắn NCC</span>}
+                </td>
+                <td style={{ padding: '8px 10px', textAlign: 'right' }}>{entry.feeCount}</td>
+                <td style={{ padding: '8px 10px', textAlign: 'right' }}>{entry.lotCount}</td>
+                <td style={{ padding: '8px 10px', textAlign: 'right' }}>{entry.total.toLocaleString('vi-VN')} ₫</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{ borderTop: '2px solid var(--border-2)', fontWeight: 700 }}>
+              <td style={{ padding: '10px' }}>Tổng cộng</td>
+              <td />
+              <td />
+              <td style={{ padding: '10px', textAlign: 'right' }}>{data.total.toLocaleString('vi-VN')} ₫</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
   );
 }

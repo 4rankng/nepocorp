@@ -56,6 +56,8 @@ export const shipmentCostSchema = z.object({
   awaitingInvoice: z.coerce.boolean().default(false),
   incurredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày phát sinh phải có dạng YYYY-MM-DD'),
   note: z.string().trim().max(500).optional().nullable(),
+  // Phải trả attribution — NCC mà dòng Trả NCC này đang nợ (đối soát, NEPO-68).
+  supplierId: z.coerce.number().int().positive().nullable().optional(),
 }).superRefine((data, ctx) => {
   if (data.currency === 'USD') {
     if (data.fxAmount == null || data.exchangeRate == null) {
