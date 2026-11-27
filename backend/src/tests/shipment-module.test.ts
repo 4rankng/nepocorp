@@ -1,7 +1,7 @@
 import { after, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { and, eq, gte, inArray, like, or } from 'drizzle-orm';
-import { FeeGroup, Role, TripStatus } from '@tingting/shared';
+import { FeeGroup, Role, SHIPMENT_COST_EDIT_ROLES, SHIPMENT_WRITE_ROLES, TripStatus } from '@tingting/shared';
 import { db, client } from '../db';
 import * as s from '../db/schema';
 import {
@@ -319,12 +319,20 @@ describe('NEPO-61 shipments Casbin matrix', () => {
     assert.ok(await enforcer.enforce(Role.FORWARDER, 'shipments', 'read'));
     assert.ok(await enforcer.enforce(Role.MANAGER, 'shipments', 'write'));
     assert.ok(await enforcer.enforce(Role.ACCOUNTANT, 'shipments', 'read'));
-    // Kế toán: read-only trên policy.csv — route-level SHIPMENT_WRITE_ROLES
-    // không bao giờ được hỏi vì mount casbinAuthz chặn write trước (403).
-    assert.ok(!(await enforcer.enforce(Role.ACCOUNTANT, 'shipments', 'write')));
+    // Spec §7 "Kế toán: sửa chi phí" — ACCOUNTANT now passes the mount-level
+    // write gate; the route-level requireRoles still refuses every mutation
+    // except PUT /:id/costs/:costId (SHIPMENT_COST_EDIT_ROLES).
+    assert.ok(await enforcer.enforce(Role.ACCOUNTANT, 'shipments', 'write'));
     assert.ok(await enforcer.enforce(Role.DISPATCHER, 'shipments', 'read'));
     assert.ok(!(await enforcer.enforce(Role.DISPATCHER, 'shipments', 'write')));
     assert.ok(!(await enforcer.enforce(Role.DRIVER, 'shipments', 'read')));
+  });
+
+  test('ACCOUNTANT cannot edit the lô itself, only its cost lines', async () => {
+    await initEnforcer(); // loads policy.csv — keeps the matrix test above honest
+    // The role arrays are the route gates: lot master stays WRITE-only.
+    assert.ok(!SHIPMENT_WRITE_ROLES.includes(Role.ACCOUNTANT));
+    assert.ok(SHIPMENT_COST_EDIT_ROLES.includes(Role.ACCOUNTANT));
   });
 
   test('soft-deleted shipments disappear from reads', async () => {

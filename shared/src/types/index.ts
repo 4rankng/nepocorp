@@ -1250,6 +1250,9 @@ export interface ShipmentProfitReportRow {
   tripRunningCosts: number;
   /** Phí nộp hộ chi — đã nằm trong supplierCosts, chỉ hiển thị để đối soát. */
   passportFeeMemo: number;
+  /** Phí nộp hộ hãng tàu (LINE_ADVANCE) — không vào Chi Trả NCC cũng không
+   *  vào lợi nhuận, chỉ hiển thị để đối soát (NEPO-68). */
+  lineAdvanceMemo: number;
   profit: number;
   billingDocumentCount: number;
   /** Chưa có Giấy báo nợ nào (thu chưa phát hành). */
@@ -1267,6 +1270,7 @@ export interface ShipmentProfitReport {
     supplierCosts: number;
     tripRunningCosts: number;
     passportFeeMemo: number;
+    lineAdvanceMemo: number;
     profit: number;
   };
 }
@@ -1793,6 +1797,9 @@ export interface BillingLineRenderData {
   // NEPO-62 — fee still waiting for its invoice: the line prints with an
   // empty amount cell and never contributes to the document total.
   blankAmount?: boolean;
+  // NEPO-62 VAT — the source cost row's VAT rate, stamped by the server so
+  // clients can render the same VAT-inclusive Tổng cộng the server stores.
+  vatRate?: number;
 }
 
 export interface BillingDocumentLine {

@@ -24,7 +24,6 @@ p, ACCOUNTANT, config, delete
 p, ACCOUNTANT, financial, read
 p, ACCOUNTANT, financial, write
 p, ACCOUNTANT, financial, delete
-p, ACCOUNTANT, audit_logs, read
 p, ACCOUNTANT, maps, read
 p, ACCOUNTANT, upload, write
 p, ACCOUNTANT, photos, read
@@ -73,6 +72,12 @@ p, ACCOUNTANT, shipments, read
 p, FORWARDER, shipments, read
 p, FORWARDER, shipments, write
 p, FORWARDER, shipments, delete
+# Spec §7 "Kế toán: sửa chi phí" — ACCOUNTANT passes the mount-level write
+# gate for /api/shipments, but every route keeps requireRoles narrowing:
+# PUT /:id/costs/:costId accepts SHIPMENT_COST_EDIT_ROLES (WRITE + ACCOUNTANT),
+# all other mutations (lô, chứng từ, tạo/xóa chi phí) stay WRITE-only via
+# requireRoles, so kế toán vẫn chỉ chạm được dòng phí.
+p, ACCOUNTANT, shipments, write
 # NEPO-63 — DISPATCHER (điều xe): tạo/sửa chuyến, đọc lô để gắn chuyến.
 # Chưa có ghi financial/audit_logs — tiền và sổ cái không thuộc vai điều xe.
 p, DISPATCHER, trips, read

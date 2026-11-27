@@ -206,6 +206,10 @@ export default function BillingDocumentBuilder({
       description: line.description,
       routeName: line.routeName ?? null,
       containerNumbers: line.containerNumbers ?? null,
+      // NEPO-62 VAT — carry renderData (blankAmount / vatRate) so the server
+      // sees the same line the editor rendered; it still re-derives both
+      // flags from the source cost rows before totaling.
+      renderData: (line.renderData ?? null) as Record<string, unknown> | null,
       baseAmount: Number(line.baseAmount),
       amountOverride: line.amountOverride != null ? Number(line.amountOverride) : null,
       excluded: line.excluded ?? false,
@@ -425,7 +429,8 @@ export default function BillingDocumentBuilder({
                                 <td />
                               </tr>
                               {containerGroup.lines.map(({ line, index }) => {
-                                const amount = line.amountOverride != null ? line.amountOverride : line.baseAmount;
+                                const blank = line.renderData?.blankAmount === true;
+                                const amount = blank ? null : (line.amountOverride != null ? line.amountOverride : line.baseAmount);
                                 return (
                                   <tr key={`${line.sourceType}-${line.sourceId ?? 'adhoc'}-${index}`} className={`billing-builder__item-row${line.excluded ? ' is-excluded' : ''}`}>
                                     <td>
@@ -457,13 +462,17 @@ export default function BillingDocumentBuilder({
                                       />
                                     </td>
                                     <td>
-                                      <InputWithPrefix
-                                        value={String(amount)}
-                                        onChange={(v) => updateLine(index, { amountOverride: moneyInputToNumber(v) ?? null })}
-                                        prefix=""
-                                        type="money"
-                                        mono
-                                      />
+                                      {blank ? (
+                                        <span className="mono" title="Chờ hóa đơn — in không có số tiền, không cộng Tổng cộng">—</span>
+                                      ) : (
+                                        <InputWithPrefix
+                                          value={String(amount)}
+                                          onChange={(v) => updateLine(index, { amountOverride: moneyInputToNumber(v) ?? null })}
+                                          prefix=""
+                                          type="money"
+                                          mono
+                                        />
+                                      )}
                                     </td>
                                     <td className="billing-builder__row-actions">
                                       <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`${line.excluded ? 'Khôi phục' : 'Xóa'} dòng ${index + 1}`}>
@@ -513,7 +522,8 @@ export default function BillingDocumentBuilder({
                                 <b className="mono">{formatAmount(containerGroup.subtotal)}</b>
                               </div>
                               {containerGroup.lines.map(({ line, index }) => {
-                                const amount = line.amountOverride != null ? line.amountOverride : line.baseAmount;
+                                const blank = line.renderData?.blankAmount === true;
+                                const amount = blank ? null : (line.amountOverride != null ? line.amountOverride : line.baseAmount);
                                 return (
                                   <div key={`${line.sourceType}-${line.sourceId ?? 'adhoc'}-${index}-mobile`} className={`billing-builder__mobile-item${line.excluded ? ' is-excluded' : ''}`}>
                                     <textarea
@@ -546,13 +556,17 @@ export default function BillingDocumentBuilder({
                                     <div className="billing-builder__mobile-money">
                                       <label>
                                         <span>Số tiền</span>
-                                        <InputWithPrefix
-                                          value={String(amount)}
-                                          onChange={(v) => updateLine(index, { amountOverride: moneyInputToNumber(v) ?? null })}
-                                          prefix=""
-                                          type="money"
-                                          mono
-                                        />
+                                        {blank ? (
+                                          <span className="mono" title="Chờ hóa đơn — in không có số tiền, không cộng Tổng cộng">—</span>
+                                        ) : (
+                                          <InputWithPrefix
+                                            value={String(amount)}
+                                            onChange={(v) => updateLine(index, { amountOverride: moneyInputToNumber(v) ?? null })}
+                                            prefix=""
+                                            type="money"
+                                            mono
+                                          />
+                                        )}
                                       </label>
                                       <button className="billing-builder__action billing-builder__action--delete" type="button" onClick={() => removeLine(index)} disabled={busy} aria-label={`${line.excluded ? 'Khôi phục' : 'Xóa'} dòng ${index + 1}`}>
                                         {line.excluded ? <RotateCcw size={17} /> : <Trash2 size={17} />}

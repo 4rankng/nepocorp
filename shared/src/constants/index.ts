@@ -538,4 +538,9 @@ export const SHIPMENT_CUTOFF_WARN_DAYS = 3;
  *  Xóa lô không có endpoint. Đọc rộng hơn qua policy.csv (shipments read). */
 export const SHIPMENT_WRITE_ROLES: readonly Role[] = [Role.ADMIN, Role.MANAGER, Role.FORWARDER] as const;
 
+/** Vai được sửa dòng chi phí lô đã có (PUT /costs/:costId): WRITE + Kế toán
+ *  ("sửa chi phí" theo spec §7). Tạo/xóa chi phí vẫn chỉ WRITE; sửa lô hàng
+ *  (PUT /:id) vẫn chỉ WRITE — kế toán chỉ chạm được dòng phí. */
+export const SHIPMENT_COST_EDIT_ROLES: readonly Role[] = [...SHIPMENT_WRITE_ROLES, Role.ACCOUNTANT] as const;
+
 export * from './api-paths';

@@ -404,6 +404,7 @@ export default function FinancePage() {
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>Tổng thu</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>Chi trả NCC</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>Chi chạy xe</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }} title="Phí nộp hộ hãng tàu — không vào Chi trả NCC, chỉ đối soát (NEPO-68)">Nộp hộ (đối soát)</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }} title="Đã nằm trong Chi trả NCC — chỉ đối soát, không trừ lần hai">Hộ chi (đối soát)</th>
                       <th style={{ padding: '8px 10px', textAlign: 'right' }}>Lợi nhuận</th>
                     </tr>
@@ -420,6 +421,7 @@ export default function FinancePage() {
                         <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatNumber(row.revenueInclVat)}</td>
                         <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatNumber(row.supplierCosts)}</td>
                         <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatNumber(row.tripRunningCosts)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--fg-3)' }}>{formatNumber(row.lineAdvanceMemo)}</td>
                         <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--fg-3)' }}>{formatNumber(row.passportFeeMemo)}</td>
                         <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: row.profit < 0 ? 'var(--danger)' : 'var(--success)' }}>{formatNumber(row.profit)}</td>
                       </tr>
@@ -431,6 +433,7 @@ export default function FinancePage() {
                       <td style={{ padding: '10px', textAlign: 'right' }}>{formatNumber(shipmentProfit.totals.revenueInclVat)}</td>
                       <td style={{ padding: '10px', textAlign: 'right' }}>{formatNumber(shipmentProfit.totals.supplierCosts)}</td>
                       <td style={{ padding: '10px', textAlign: 'right' }}>{formatNumber(shipmentProfit.totals.tripRunningCosts)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right', color: 'var(--fg-3)' }}>{formatNumber(shipmentProfit.totals.lineAdvanceMemo)}</td>
                       <td style={{ padding: '10px', textAlign: 'right', color: 'var(--fg-3)' }}>{formatNumber(shipmentProfit.totals.passportFeeMemo)}</td>
                       <td style={{ padding: '10px', textAlign: 'right', color: shipmentProfit.totals.profit < 0 ? 'var(--danger)' : 'var(--success)' }}>{formatNumber(shipmentProfit.totals.profit)}</td>
                     </tr>

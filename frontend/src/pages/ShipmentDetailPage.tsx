@@ -58,6 +58,7 @@ import { useToast } from '../components/shared/Toast';
 import { Breadcrumbs } from '../components/shared/Breadcrumbs';
 import {
   canWriteShipments,
+  canEditShipmentCosts,
   canCreateBillingDocuments,
   canManageBillingDocuments,
   canSeeBillingDocuments,
@@ -115,6 +116,8 @@ export default function ShipmentDetailPage() {
   const [editOpen, setEditOpen] = useState(() => searchParams.get('edit') === '1');
 
   const canWrite = canWriteShipments(user?.role);
+  // Spec §7 — kế toán sửa được dòng chi phí đã có (edit-only, không tạo/xóa).
+  const canEditCosts = canEditShipmentCosts(user?.role);
   // NEPO-63 — the debit-note button follows the billing-documents server
   // policy, NOT the lô-write policy: ketoan sees it, forwarder does not.
   const canIssueDebitNote = canCreateBillingDocuments(user?.role);
@@ -458,6 +461,7 @@ export default function ShipmentDetailPage() {
                         <th>VAT</th>
                         <th>Trạng thái</th>
                         {canWrite && <th />}
+                        {!canWrite && canEditCosts && <th />}
                       </tr>
                     </thead>
                     <tbody>
@@ -508,15 +512,17 @@ export default function ShipmentDetailPage() {
                               <span className="lot-register__fx">—</span>
                             )}
                           </td>
-                          {canWrite && (
+                          {(canWrite || canEditCosts) && (
                             <td>
                               <div className="lot-billing__actions">
                                 <button className="icon-btn" title="Sửa" onClick={() => openEditCost(row)}>
                                   <PencilLine size={14} />
                                 </button>
-                                <button className="icon-btn" title="Xóa" onClick={() => removeCost(row)}>
-                                  <Trash2 size={14} />
-                                </button>
+                                {canWrite && (
+                                  <button className="icon-btn" title="Xóa" onClick={() => removeCost(row)}>
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           )}

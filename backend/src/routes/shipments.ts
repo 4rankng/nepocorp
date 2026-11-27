@@ -13,7 +13,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import multer from 'multer';
 import { randomUUID } from 'crypto';
-import { Role, SHIPMENT_WRITE_ROLES } from '@tingting/shared';
+import { Role, SHIPMENT_WRITE_ROLES, SHIPMENT_COST_EDIT_ROLES } from '@tingting/shared';
 import {
   createShipmentSchema,
   updateShipmentSchema,
@@ -41,6 +41,8 @@ registerAuditEvent('DELETE', '/api/shipments/', '/costs/', AuditEvent.SHIPMENT_C
 
 const router = Router();
 const WRITE = [...SHIPMENT_WRITE_ROLES] as [Role, ...Role[]];
+// Spec §7 — kế toán sửa được dòng chi phí đã có (không tạo/xóa, không sửa lô).
+const COST_EDIT = [...SHIPMENT_COST_EDIT_ROLES] as [Role, ...Role[]];
 
 // Chứng từ uploads accept PDFs + images (B/L, C/O scans are usually PDFs).
 // No sharp pipeline here — unlike trip photos these documents are stored as
@@ -116,6 +118,13 @@ router.delete('/:id/documents/:docId', requireRoles(...WRITE), asyncHandler(asyn
   res.json({ ok: true });
 }));
 
+// Danh sách chứng từ của lô — same audience as GET /:id (which embeds the
+// list); this explicit route exists so API consumers don't need the detail
+// payload. Reads were previously answered 403 by the casbin mount gate.
+router.get('/:id/documents', asyncHandler(async (req: Request, res: Response) => {
+  res.json(await shipmentService.listShipmentDocuments(Number(req.params.id)));
+}));
+
 router.get('/:id/documents/:docId/file', asyncHandler(async (req: Request, res: Response) => {
   const { document, buffer } = await shipmentService.readShipmentDocumentFile(
     Number(req.params.id), Number(req.params.docId),
@@ -132,7 +141,7 @@ router.post('/:id/costs', requireRoles(...WRITE), asyncHandler(async (req: Reque
   res.status(201).json(cost);
 }));
 
-router.put('/:id/costs/:costId', requireRoles(...WRITE), asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id/costs/:costId', requireRoles(...COST_EDIT), asyncHandler(async (req: Request, res: Response) => {
   const data = updateShipmentCostSchema.parse(req.body);
   res.json(await shipmentService.updateShipmentCost(Number(req.params.id), Number(req.params.costId), data));
 }));

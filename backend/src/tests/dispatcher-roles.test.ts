@@ -23,6 +23,7 @@ import { initEnforcer, getEnforcer } from '../casbin/enforcer';
 import { resolveAuditEvent } from '../services/audit-registry';
 import { renderAuditMessage } from '../services/audit-templates';
 import type { AuditPayload } from '../services/audit-types';
+import { SHIPMENT_WRITE_ROLES, Role } from '@tingting/shared';
 import { describe, test } from './payment-ledger-test-utils';
 
 describe('dispatcher role gates', () => {
@@ -42,9 +43,12 @@ describe('dispatcher role gates', () => {
     assert.equal(await enforcer.enforce('FORWARDER', 'shipments', 'write'), true);
     assert.equal(await enforcer.enforce('FORWARDER', 'financial', 'write'), false);
 
-    // Kế toán: tạo Báo nợ (financial write) nhưng KHÔNG sửa lô (policy landed contract).
+    // Kế toán: tạo Báo nợ (financial write); shipments write passes the mount
+    // gate since spec §7 "sửa chi phí", but route-level requireRoles narrows it
+    // to PUT /:id/costs/:costId only — kế toán không sửa được lô hàng.
     assert.equal(await enforcer.enforce('ACCOUNTANT', 'financial', 'write'), true);
-    assert.equal(await enforcer.enforce('ACCOUNTANT', 'shipments', 'write'), false);
+    assert.equal(await enforcer.enforce('ACCOUNTANT', 'shipments', 'write'), true);
+    assert.ok(!SHIPMENT_WRITE_ROLES.includes(Role.ACCOUNTANT), 'lô hàng vẫn chỉ WRITE-only roles');
     assert.equal(await enforcer.enforce('ACCOUNTANT', 'shipments', 'read'), true);
 
     // Admin wildcard giữ nguyên.

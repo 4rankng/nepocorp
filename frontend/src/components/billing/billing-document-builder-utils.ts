@@ -46,8 +46,12 @@ export function normalizeLine(line: BillingDocumentLine): BillingDocumentLine {
 }
 
 export function lineTotal(line: BillingDocumentLine): number {
-  if (line.excluded) return 0;
-  return line.amountOverride != null ? Number(line.amountOverride) : Number(line.baseAmount);
+  // NEPO-62 VAT — mirrors the server's debitNoteTotals: Chờ hóa đơn lines
+  // contribute nothing; a SHIPMENT_COST line's total carries its VAT rate.
+  if (line.excluded || line.renderData?.blankAmount) return 0;
+  const amount = line.amountOverride != null ? Number(line.amountOverride) : Number(line.baseAmount);
+  const vat = line.sourceType === 'SHIPMENT_COST' ? (line.renderData?.vatRate ?? 0) : 0;
+  return Math.round(amount * (1 + vat));
 }
 
 export function thisMonthRange(): { from: string; to: string } {

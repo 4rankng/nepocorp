@@ -16,7 +16,7 @@ export {
   TRACKING,
   CarrierType, SettlementMethod, ApprovalStatus, DebitNoteMode,
   // NEPO-61/63 — lô write-role gate + dashboard cutoff window
-  SHIPMENT_WRITE_ROLES, SHIPMENT_CUTOFF_WARN_DAYS,
+  SHIPMENT_WRITE_ROLES, SHIPMENT_CUTOFF_WARN_DAYS, SHIPMENT_COST_EDIT_ROLES,
   TruckCapRole,
   // NEPO-62 — lot costs
   TripFlowType, FeeGroup, LotFeeStatus, TruckTransferCostKey, ShipmentDocType,

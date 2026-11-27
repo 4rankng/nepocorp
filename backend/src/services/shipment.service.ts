@@ -226,6 +226,31 @@ function canSeeBillingDocuments(role: Role | null | undefined): boolean {
   return role === Role.ADMIN || role === Role.MANAGER || role === Role.ACCOUNTANT;
 }
 
+/** Documents of one lô, newest first — same payload GET /:id embeds, exposed
+ *  as its own read so API consumers don't need the detail envelope. */
+export async function listShipmentDocuments(id: number): Promise<ShipmentDocument[]> {
+  const rows = await db.select().from(s.shipmentDocuments)
+    .where(eq(s.shipmentDocuments.shipmentId, id))
+    .orderBy(desc(s.shipmentDocuments.createdAt), desc(s.shipmentDocuments.id));
+  return rows.map(toShipmentDocument);
+}
+
+/** NEPO-72 — a fee already printed on a live Báo nợ is frozen: editing or
+ *  deleting it would silently change an issued document's numbers. */
+async function assertCostNotOnDebitNote(costId: number): Promise<void> {
+  const [hit] = await db.select({ id: s.billingDocumentLines.id })
+    .from(s.billingDocumentLines)
+    .innerJoin(s.billingDocuments, eq(s.billingDocumentLines.documentId, s.billingDocuments.id))
+    .where(and(
+      eq(s.billingDocumentLines.sourceType, 'SHIPMENT_COST'),
+      eq(s.billingDocumentLines.sourceId, costId),
+      eq(s.billingDocuments.type, 'DEBIT_NOTE'),
+      isNull(s.billingDocuments.deletedAt),
+    ))
+    .limit(1);
+  if (hit) throw new ApiError(409, 'Dòng chi phí đã lên Báo nợ — không thể sửa hoặc xóa. Phát hành -BS01 cho phí phát sinh sau.');
+}
+
 export async function getShipmentDetail(id: number, role?: Role | null) {
   const shipment = await getShipmentById(id);
   const [documents, costs, profit, billingDocuments, trips] = await Promise.all([
@@ -513,6 +538,7 @@ export async function updateShipmentCost(shipmentId: number, costId: number, inp
     .where(and(eq(s.shipmentCosts.id, costId), eq(s.shipmentCosts.shipmentId, shipmentId)))
     .limit(1);
   if (!current) throw new ApiError(404, 'Không tìm thấy chi phí');
+  await assertCostNotOnDebitNote(costId);
   const merged = {
     currency: (input.currency ?? current.currency) as 'VND' | 'USD',
     fxAmount: input.fxAmount !== undefined ? input.fxAmount : (current.fxAmount != null ? Number(current.fxAmount) : null),
@@ -544,6 +570,7 @@ export async function deleteShipmentCost(shipmentId: number, costId: number): Pr
     .where(and(eq(s.shipmentCosts.id, costId), eq(s.shipmentCosts.shipmentId, shipmentId)))
     .limit(1);
   if (!row) throw new ApiError(404, 'Không tìm thấy chi phí');
+  await assertCostNotOnDebitNote(costId);
   await db.delete(s.shipmentCosts).where(eq(s.shipmentCosts.id, costId));
   return { description: row.description };
 }

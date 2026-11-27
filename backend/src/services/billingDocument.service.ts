@@ -86,6 +86,80 @@ export function documentLedgerAdjustment(lines: BillingDocumentLine[]): number {
   }, 0));
 }
 
+// ─── NEPO-62 VAT — Báo nợ Tổng cộng gồm VAT của phí lô ───────────────────────
+// The approved fixture prices each Thu-khách cost row with its VAT rate and
+// sums the VAT-inclusive amounts into totalInclVat (30tr ×1.08 + 5tr ×1.08 =
+// 37.8tr). Lines keep printing their pre-VAT fee; the total applies the VAT.
+// TRIP freight keeps its legacy pre-VAT posting (trip completion already
+// booked the base), so only SHIPMENT_COST lines carry the multiplier.
+
+interface ShipmentCostLineFlags { vat: number; awaiting: boolean }
+
+/** VAT rate + awaiting flag of every SHIPMENT_COST source row a line set
+ *  references — the server's own truth, never the client payload's. */
+async function shipmentCostLineFlags(lines: Array<Pick<BillingDocumentLine, 'sourceType' | 'sourceId'>>): Promise<Map<number, ShipmentCostLineFlags>> {
+  const ids = [...new Set(lines
+    .filter((l) => l.sourceType === 'SHIPMENT_COST' && l.sourceId != null)
+    .map((l) => l.sourceId as number))];
+  const map = new Map<number, ShipmentCostLineFlags>();
+  if (ids.length === 0) return map;
+  const rows = await db.select({ id: s.shipmentCosts.id, vatRate: s.shipmentCosts.vatRate, awaitingInvoice: s.shipmentCosts.awaitingInvoice })
+    .from(s.shipmentCosts)
+    .where(inArray(s.shipmentCosts.id, ids));
+  for (const row of rows) {
+    map.set(row.id, { vat: Number(row.vatRate) || 0, awaiting: row.awaitingInvoice });
+  }
+  return map;
+}
+
+function lineVatMultiplier(line: Pick<BillingDocumentLine, 'sourceType' | 'sourceId'>, flags: Map<number, ShipmentCostLineFlags>): number {
+  if (line.sourceType !== 'SHIPMENT_COST' || line.sourceId == null) return 1;
+  return 1 + (flags.get(line.sourceId)?.vat ?? 0);
+}
+
+/** Server-side re-derivation of the two flags a client payload must never
+ *  control: a cost row awaiting its invoice is ALWAYS a blank-amount line
+ *  (its stale renderData can no longer leak the amount into the total), and
+ *  a billable row always carries its VAT rate for the total. */
+export function normalizeDebitNoteLines(
+  lines: BillingDocumentLine[],
+  flags: Map<number, ShipmentCostLineFlags>,
+): BillingDocumentLine[] {
+  return lines.map((line) => {
+    if (line.sourceType !== 'SHIPMENT_COST' || line.sourceId == null) return line;
+    const flag = flags.get(line.sourceId);
+    if (!flag) return line; // source row since deleted — frozen as saved
+    if (flag.awaiting) {
+      return { ...line, renderData: { ...(line.renderData ?? {}), blankAmount: true } };
+    }
+    const rest: BillingLineRenderData = { ...(line.renderData ?? {}) };
+    delete rest.blankAmount;
+    return { ...line, renderData: { ...rest, vatRate: flag.vat } };
+  });
+}
+
+/** VAT-inclusive total + AR adjustment for one Báo nợ; blank-amount lines
+ *  (Chờ hóa đơn) contribute nothing to either. */
+export function debitNoteTotals(
+  lines: BillingDocumentLine[],
+  flags: Map<number, ShipmentCostLineFlags>,
+): { total: number; adjustment: number } {
+  let total = 0;
+  let adjustment = 0;
+  for (const line of lines) {
+    const mult = lineVatMultiplier(line, flags);
+    if (line.renderData?.blankAmount) continue;
+    const effective = effectiveAmount(line);
+    total += effective * mult;
+    if (line.sourceType === 'ADHOC' || line.sourceType === 'SHIPMENT_COST') {
+      adjustment += effective * mult;
+    } else {
+      adjustment += effective - Number(line.baseAmount);
+    }
+  }
+  return { total: Math.round(total), adjustment: Math.round(adjustment) };
+}
+
 // ─── Billing document templates ───────────────────────────────────────────────
 
 const cloneColumns = (cols: readonly DebitNoteTemplateColumn[]): DebitNoteTemplateColumn[] =>
@@ -875,7 +949,7 @@ async function buildLotDebitLines(
       unit: 'lần',
       routeName: null,
       containerNumbers: null,
-      renderData: cost.awaitingInvoice ? { blankAmount: true } : null,
+      renderData: cost.awaitingInvoice ? { blankAmount: true } : { vatRate: Number(cost.vatRate) || 0 },
       baseAmount: Number(cost.amount),
       amountOverride: null,
       excluded: false,
@@ -912,6 +986,13 @@ export async function generateDraft(input: GenerateBillingDocumentInput): Promis
   } else {
     // Debit notes are customer-facing AR only.
     throw new ApiError(400, 'Loại tài liệu không hợp lệ cho đối tượng này');
+  }
+
+  if (type === 'DEBIT_NOTE' && entityType === 'CUSTOMER') {
+    const flags = await shipmentCostLineFlags(result.lines);
+    const lines = normalizeDebitNoteLines(result.lines as BillingDocumentLine[], flags);
+    const { total } = debitNoteTotals(lines, flags);
+    return { type, entityType, entityId, entityName: result.entityName, rangeFrom: from, rangeTo: to, lines, totalInclVat: total };
   }
 
   const total = result.lines.reduce((sum, l) => sum + effectiveAmount(l), 0);
@@ -997,8 +1078,9 @@ export async function createLotSupplement(mainId: number, userId: number | null)
     ))).length; // supplements already in the chain
   const documentNumber = `${main.documentNumber ?? `DN-${main.id}`}-BS${String(supplementCount + 1).padStart(2, '0')}`;
   const lines = draft.lines as BillingDocumentLine[];
-  const total = docTotal(lines);
-  const adjustment = documentLedgerAdjustment(lines);
+  const flags = await shipmentCostLineFlags(lines);
+  const normalized = normalizeDebitNoteLines(lines, flags);
+  const { total, adjustment } = debitNoteTotals(normalized, flags);
 
   const docId = await db.transaction(async (tx) => {
     await LedgerService.lockEntity(tx, 'CUSTOMER', main.entityId);
@@ -1018,7 +1100,7 @@ export async function createLotSupplement(mainId: number, userId: number | null)
       createdBy: userId,
     }).returning({ id: s.billingDocuments.id });
     if (!doc) throw new ApiError(500, 'Không lưu được tài liệu bổ sung');
-    await persistLines(tx, doc.id, lines);
+    await persistLines(tx, doc.id, normalized);
     await postDebitNoteDelta(tx, { documentId: doc.id, customerId: main.entityId, delta: adjustment });
     return doc.id;
   });
@@ -1035,10 +1117,17 @@ async function hydrateShipmentInfo(documentId: number): Promise<ShipmentInfo | n
 export async function saveDocument(input: SaveBillingDocumentInput, userId: number | null): Promise<BillingDocument> {
   assertBillingDocumentScope(input.type, input.entityType);
   await assertCarrierEligibility(input.entityType, input.entityId);
-  const total = docTotal(input.lines as BillingDocumentLine[]);
-  const desiredAdjustment = input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER'
-    ? documentLedgerAdjustment(input.lines as BillingDocumentLine[])
-    : 0;
+  // NEPO-62 VAT — Báo nợ Tổng cộng includes the lô fees' VAT; blank-amount
+  // (Chờ hóa đơn) lines are re-derived from the source rows here so a stale
+  // client renderData can never leak an awaiting fee into the total.
+  const isCustomerDebitNote = input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER';
+  const costFlags = isCustomerDebitNote
+    ? await shipmentCostLineFlags(input.lines)
+    : new Map<number, ShipmentCostLineFlags>();
+  const lines = isCustomerDebitNote ? normalizeDebitNoteLines(input.lines, costFlags) : input.lines;
+  const { total, adjustment: desiredAdjustment } = isCustomerDebitNote
+    ? debitNoteTotals(lines, costFlags)
+    : { total: docTotal(input.lines as BillingDocumentLine[]), adjustment: 0 };
   // Resolve the document template and freeze a render-only snapshot onto the doc
   // so re-exports stay stable after the template is edited/deleted.
   let resolvedTemplateId = input.debitNoteTemplateId ?? null;
@@ -1107,7 +1196,7 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
         debitNoteTemplateSnapshot: snapshot,
       }).where(eq(s.billingDocuments.id, existing.id));
       await tx.delete(s.billingDocumentLines).where(eq(s.billingDocumentLines.documentId, existing.id));
-      await persistLines(tx, existing.id, input.lines);
+      await persistLines(tx, existing.id, lines);
       await postDebitNoteDelta(tx, {
         documentId: existing.id,
         customerId: input.entityId,
@@ -1134,7 +1223,7 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
       debitNoteTemplateSnapshot: snapshot,
     }).returning();
     if (!doc) throw new ApiError(500, 'Không lưu được tài liệu');
-    await persistLines(tx, doc.id, input.lines);
+    await persistLines(tx, doc.id, lines);
     await postDebitNoteDelta(tx, {
       documentId: doc.id,
       customerId: input.entityId,
@@ -1148,10 +1237,17 @@ export async function saveDocument(input: SaveBillingDocumentInput, userId: numb
 export async function updateDocument(id: number, input: SaveBillingDocumentInput): Promise<BillingDocument> {
   assertBillingDocumentScope(input.type, input.entityType);
   await assertCarrierEligibility(input.entityType, input.entityId);
-  const total = docTotal(input.lines as BillingDocumentLine[]);
-  const desiredAdjustment = input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER'
-    ? documentLedgerAdjustment(input.lines as BillingDocumentLine[])
-    : 0;
+  // NEPO-62 VAT — same rule as saveDocument: totals re-derived from the
+  // source cost rows, so an admin edit can neither bill an awaiting fee
+  // (Chờ hóa đơn stays amount-less) nor drop a billable row's VAT.
+  const isCustomerDebitNote = input.type === 'DEBIT_NOTE' && input.entityType === 'CUSTOMER';
+  const costFlags = isCustomerDebitNote
+    ? await shipmentCostLineFlags(input.lines)
+    : new Map<number, ShipmentCostLineFlags>();
+  const lines = isCustomerDebitNote ? normalizeDebitNoteLines(input.lines, costFlags) : input.lines;
+  const { total, adjustment: desiredAdjustment } = isCustomerDebitNote
+    ? debitNoteTotals(lines, costFlags)
+    : { total: docTotal(input.lines as BillingDocumentLine[]), adjustment: 0 };
   // Re-snapshot on every edit so the doc never shows stale template styling on
   // new line data (the doc is always-editable; snapshot = last-saved render
   // state). Preserve the existing template link unless the builder sent an
@@ -1189,7 +1285,7 @@ export async function updateDocument(id: number, input: SaveBillingDocumentInput
       debitNoteTemplateSnapshot: snapshot,
     }).where(eq(s.billingDocuments.id, id));
     await tx.delete(s.billingDocumentLines).where(eq(s.billingDocumentLines.documentId, id));
-    await persistLines(tx, id, input.lines);
+    await persistLines(tx, id, lines);
     await postDebitNoteDelta(tx, {
       documentId: id,
       customerId: input.entityId,
@@ -1267,9 +1363,26 @@ export async function getDocument(id: number): Promise<BillingDocument> {
 }
 
 async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Promise<BillingDocument> {
-  const lines = await db.select().from(s.billingDocumentLines)
+  const rawLines = await db.select().from(s.billingDocumentLines)
     .where(eq(s.billingDocumentLines.documentId, doc.id))
     .orderBy(s.billingDocumentLines.sortOrder);
+  let lines: BillingDocumentLine[] = rawLines.map((l) => ({
+    id: l.id, documentId: l.documentId, sourceType: l.sourceType as BillingDocumentLine['sourceType'],
+    sourceId: l.sourceId ?? null, lineType: l.lineType as BillingDocumentLine['lineType'],
+    typeLabel: l.typeLabel, unit: l.unit,
+    description: l.description, routeName: l.routeName,
+    containerNumbers: splitContainers(l.containerNumbers),
+    renderData: (l.renderData as BillingLineRenderData | null) ?? null,
+    baseAmount: Number(l.baseAmount), amountOverride: l.amountOverride != null ? Number(l.amountOverride) : null,
+    excluded: l.excluded, sortOrder: l.sortOrder,
+  }));
+  // NEPO-62 VAT — re-stamp the server's awaiting/VAT flags onto stored lines:
+  // notes saved before this enrichment lack renderData.vatRate, and a stale
+  // client payload must not be the only place blankAmount lives.
+  if (doc.type === 'DEBIT_NOTE') {
+    const flags = await shipmentCostLineFlags(lines);
+    lines = normalizeDebitNoteLines(lines, flags);
+  }
   // NEPO-62 QA — notes saved before the container/seal snapshot existed, or
   // before the booking's số cont/seal text was merged in, freeze an empty
   // container list. Complete it from the live lô at read time so the API
@@ -1300,19 +1413,7 @@ async function hydrateDocument(doc: typeof s.billingDocuments.$inferSelect): Pro
     debitNoteTemplateId: doc.debitNoteTemplateId ?? null,
     debitNoteTemplateSnapshot: (doc.debitNoteTemplateSnapshot as DebitNoteTemplateSnapshot | null) ?? null,
     createdAt: doc.createdAt.toISOString(), updatedAt: doc.updatedAt.toISOString(),
-    lines: lines.map((l) => {
-      const line: BillingDocumentLine = {
-        id: l.id, documentId: l.documentId, sourceType: l.sourceType as BillingDocumentLine['sourceType'],
-        sourceId: l.sourceId ?? null, lineType: l.lineType as BillingDocumentLine['lineType'],
-        typeLabel: l.typeLabel, unit: l.unit,
-        description: l.description, routeName: l.routeName,
-        containerNumbers: splitContainers(l.containerNumbers),
-        renderData: (l.renderData as BillingLineRenderData | null) ?? null,
-        baseAmount: Number(l.baseAmount), amountOverride: l.amountOverride != null ? Number(l.amountOverride) : null,
-        excluded: l.excluded, sortOrder: l.sortOrder,
-      };
-      return { ...line, description: canonicalFreightDescription(line) };
-    }),
+    lines: lines.map((l) => ({ ...l, description: canonicalFreightDescription(l) })),
   };
 }
 

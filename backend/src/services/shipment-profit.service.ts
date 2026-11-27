@@ -37,6 +37,7 @@ interface PerShipmentMoney {
   supplierBuys: number;
   passportFees: number;
   supplierCosts: number;
+  lineAdvance: number;
   revenueInclVat: number;
   billingDocumentCount: number;
 }
@@ -59,7 +60,7 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
 
     const mainDocs = alias(s.billingDocuments, 'main_docs');
 
-    const [tripAgg, buyAgg, mainDocAgg, costAgg, suppDocAgg] = await Promise.all([
+    const [tripAgg, buyAgg, mainDocAgg, costAgg, advanceAgg, suppDocAgg] = await Promise.all([
       // Trips: EXTERNAL freight (chi trả NCC) vs OWN running cost (chi chạy xe).
       db.select({
         shipmentId: s.trips.shipmentId,
@@ -109,6 +110,15 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
         ne(s.shipmentCosts.costType, 'LINE_ADVANCE'),
       )).groupBy(s.shipmentCosts.shipmentId),
 
+      // NEPO-68 — nộp hộ hãng tàu chỉ đối soát: memo column, không trừ.
+      db.select({
+        shipmentId: s.shipmentCosts.shipmentId,
+        lineAdvance: sql<string>`coalesce(sum(${s.shipmentCosts.amount}), 0)`,
+      }).from(s.shipmentCosts).where(and(
+        eq(s.shipmentCosts.direction, 'SUPPLIER'),
+        eq(s.shipmentCosts.costType, 'LINE_ADVANCE'),
+      )).groupBy(s.shipmentCosts.shipmentId),
+
       // Phụ lục (-BS01) đếm qua parentDocumentId join — chúng VẪN mang
       // shipmentId của lô (createLotSupplement ghi sẵn), nên aggregate phía
       // trên phải loại qua parentDocumentId IS NULL để không đếm hai lần.
@@ -132,7 +142,7 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
       if (!e) {
         e = {
           linkedTripCount: 0, externalFreight: 0, runningCosts: 0, supplierBuys: 0,
-          passportFees: 0, supplierCosts: 0, revenueInclVat: 0, billingDocumentCount: 0,
+          passportFees: 0, supplierCosts: 0, lineAdvance: 0, revenueInclVat: 0, billingDocumentCount: 0,
         };
         byShipment.set(shipmentId, e);
       }
@@ -151,6 +161,9 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
     }
     for (const r of costAgg) {
       entryFor(r.shipmentId).supplierCosts = Number(r.supplierCosts);
+    }
+    for (const r of advanceAgg) {
+      entryFor(r.shipmentId).lineAdvance = Number(r.lineAdvance);
     }
     for (const r of mainDocAgg) {
       const e = entryFor(r.shipmentId as number);
@@ -186,6 +199,7 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
         supplierCosts,
         tripRunningCosts: m.runningCosts,
         passportFeeMemo: m.passportFees,
+        lineAdvanceMemo: m.lineAdvance,
         profit,
         billingDocumentCount: m.billingDocumentCount,
         unbilled: m.billingDocumentCount === 0,
@@ -198,10 +212,11 @@ export async function getShipmentProfitReport(month: number, year: number): Prom
         acc.supplierCosts += r.supplierCosts;
         acc.tripRunningCosts += r.tripRunningCosts;
         acc.passportFeeMemo += r.passportFeeMemo;
+        acc.lineAdvanceMemo += r.lineAdvanceMemo;
         acc.profit += r.profit;
         return acc;
       },
-      { revenueInclVat: 0, supplierCosts: 0, tripRunningCosts: 0, passportFeeMemo: 0, profit: 0 },
+      { revenueInclVat: 0, supplierCosts: 0, tripRunningCosts: 0, passportFeeMemo: 0, lineAdvanceMemo: 0, profit: 0 },
     );
 
     return { month, year, periodFrom, periodTo, rows, totals };

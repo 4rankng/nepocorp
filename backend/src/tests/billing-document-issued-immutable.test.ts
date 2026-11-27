@@ -206,7 +206,9 @@ describe('issued lot debit note is immutable (NEPO-69)', () => {
     assert.equal(keys.some((k) => k === `TRIP:${tripB}`), false, 'billed freight B excluded');
     assert.equal(keys.some((k) => k === `SHIPMENT_COST:${billedCostId}`), false, 'billed fee excluded');
     assert.deepEqual(keys, [`SHIPMENT_COST:${afterCostId}`], 'only the post-issuance fee remains');
-    assert.equal(draft.totalInclVat, 400_000);
+    // NEPO-62 VAT — fee seeds without an explicit vatRate → DB default 8%:
+    // the draft total bills VAT-inclusive (400k × 1.08).
+    assert.equal(draft.totalInclVat, 432_000);
   });
 
   test('the -BS01 supplement flow still works for post-issuance fees', async () => {
@@ -218,8 +220,9 @@ describe('issued lot debit note is immutable (NEPO-69)', () => {
     assert.equal(supp.parentDocumentId, mainDocId);
     const keys = supp.lines.map((l) => `${l.sourceType}:${l.sourceId}`);
     assert.deepEqual(keys, [`SHIPMENT_COST:${afterCostId}`], 'only the new fee rides the supplement');
-    assert.equal(supp.totalInclVat, 400_000);
-    assert.equal(supp.ledgerAdjustmentAmount, 400_000);
+    // NEPO-62 VAT — VAT-inclusive total and matching AR delta (400k × 1.08).
+    assert.equal(supp.totalInclVat, 432_000);
+    assert.equal(supp.ledgerAdjustmentAmount, 432_000);
   });
 });
 

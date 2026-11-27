@@ -5,6 +5,7 @@
  */
 import {
   SHIPMENT_CUTOFF_WARN_DAYS,
+  SHIPMENT_COST_EDIT_ROLES,
   SHIPMENT_WRITE_ROLES,
   TRIP_STATUS_COLORS,
   TRIP_STATUS_LABELS,
@@ -18,6 +19,12 @@ import type { Role, ShipmentProfitSummary } from '@tingting/shared';
 /** Lô create/edit + chứng từ + chi phí — same roles the backend requires. */
 export function canWriteShipments(role: Role | null | undefined): boolean {
   return role != null && (SHIPMENT_WRITE_ROLES as readonly Role[]).includes(role);
+}
+
+/** Spec §7 — kế toán sửa được dòng chi phí đã có (không tạo/xóa). The edit
+ *  affordance shows for these roles; Thêm dòng/Xóa stay canWriteShipments. */
+export function canEditShipmentCosts(role: Role | null | undefined): boolean {
+  return role != null && (SHIPMENT_COST_EDIT_ROLES as readonly Role[]).includes(role);
 }
 
 /** Báo nợ đã phát hành chỉ ADMIN được sửa/xóa (backend 403 với vai khác). */

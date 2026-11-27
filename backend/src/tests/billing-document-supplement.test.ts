@@ -114,8 +114,10 @@ describe('lot debit note supplement (-BS01)', () => {
     const costIds = supp.lines.filter((l) => l.sourceType === 'SHIPMENT_COST').map((l) => l.sourceId);
     assert.deepEqual(costIds.sort(), [afterCostId, blankCostId].sort(), 'only the two new fee rows');
     assert.equal(supp.lines.some((l) => l.sourceType === 'TRIP'), false, 'freight already billed on the main note');
-    assert.equal(supp.totalInclVat, 500000, 'Chờ hóa đơn rides along amount-less');
-    assert.equal(supp.ledgerAdjustmentAmount, 500000);
+    // NEPO-62 VAT — 500k × 1.08 (fee seeds with the DB-default 8% rate);
+    // the Chờ hóa đơn row rides along amount-less.
+    assert.equal(supp.totalInclVat, 540000, 'Chờ hóa đơn rides along amount-less');
+    assert.equal(supp.ledgerAdjustmentAmount, 540000);
 
     const [adj] = await db.select().from(s.ledger).where(and(
       eq(s.ledger.txnType, TxnType.ADJUSTMENT),
@@ -123,7 +125,7 @@ describe('lot debit note supplement (-BS01)', () => {
       eq(s.ledger.txnTable, 'billing_documents'),
     ));
     assert.ok(adj, 'supplement posts its AR delta');
-    assert.equal(adj.debit, '500000');
+    assert.equal(adj.debit, '540000');
     assert.match(adj.note ?? '', new RegExp(`#${supp.id}\\b`));
   });
 
@@ -149,7 +151,7 @@ describe('lot debit note supplement (-BS01)', () => {
       [lateCost.id],
       'BS02 covers only rows no live document carries — BS01 rows stay put',
     );
-    assert.equal(supp2.totalInclVat, 300000);
+    assert.equal(supp2.totalInclVat, 324000); // NEPO-62 VAT — 300k × 1.08
   });
 
   test('deleting an un-issued supplement reverses the AR delta and frees its fee rows', async () => {
@@ -165,11 +167,11 @@ describe('lot debit note supplement (-BS01)', () => {
     const supp = await createLotSupplement(mainDocId, null);
     docIds.push(supp.id);
     assert.equal(supp.documentNumber, `${mainNumber}-BS03`);
-    assert.equal(supp.totalInclVat, 400000, 'Chờ hóa đơn rides along amount-less');
+    assert.equal(supp.totalInclVat, 432000, 'Chờ hóa đơn rides along amount-less'); // NEPO-62 VAT — 400k × 1.08
 
     const deleted = await deleteDocument(supp.id);
     assert.equal(deleted.documentNumber, `${mainNumber}-BS03`);
-    assert.equal(Number(deleted.totalInclVat), 400000);
+    assert.equal(Number(deleted.totalInclVat), 432000);
 
     const [row] = await db.select({ deletedAt: s.billingDocuments.deletedAt })
       .from(s.billingDocuments).where(eq(s.billingDocuments.id, supp.id));
@@ -178,7 +180,7 @@ describe('lot debit note supplement (-BS01)', () => {
     const [rev] = await db.select().from(s.ledger).where(and(
       eq(s.ledger.txnType, TxnType.ADJUSTMENT),
       eq(s.ledger.txnId, supp.id),
-      eq(s.ledger.credit, '400000'),
+      eq(s.ledger.credit, '432000'),
     ));
     assert.ok(rev, 'deletion posts the reversal credit');
 
