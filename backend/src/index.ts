@@ -108,7 +108,16 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// Auth routes: login is public, /me and /users use their own authMiddleware
+// Auth routes: login is public, /me and users use their own authMiddleware
+// Every /api response is Cache-Control: no-store — these are authenticated,
+// mutable business reads (catalogs, ledgers, reports). Without it the browser
+// may reuse a cached body whose data changed server-side, so a freshly
+// deployed or freshly edited dataset can render wrong until the entry expires.
+app.use('/api', (_req, res: express.Response, next: express.NextFunction) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
 app.use('/api/auth', authRoutes);
 
 // ── Protected routes (auth + Casbin) — specific paths first, catch-all /api last
